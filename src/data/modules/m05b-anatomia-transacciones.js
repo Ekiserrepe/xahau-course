@@ -98,7 +98,8 @@ A diferencia de blockchains con finalidad probabilística (Bitcoin, Ethereum), e
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function flujoCompleto() {
   const client = new Client("wss://xahau-test.net");
@@ -112,7 +113,7 @@ async function flujoCompleto() {
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoDePrueba",
+    Destination: "rMXEZJecFdn1dVtE21pZ8duZz2E36KGaCp",
     Amount: "5000000", // 5 XAH en drops
   };
 
@@ -221,18 +222,18 @@ Estos campos existen en **todo tipo de transacción**:
 
 Xahau soporta muchos tipos de transacción. Los más comunes:
 
-- **Payment** — Enviar XAH o tokens
-- **TrustSet** — Crear o modificar una trust line
-- **OfferCreate** — Crear una oferta en el DEX
-- **OfferCancel** — Cancelar una oferta del DEX
-- **AccountSet** — Configurar flags de tu cuenta
-- **SetHook** — Instalar o gestionar Hooks (smart contracts)
-- **URITokenMint** — Crear un NFT (URIToken)
-- **URITokenBuy** — Comprar un URIToken
-- **URITokenCreateSellOffer** — Poner a la venta un URIToken
-- **EscrowCreate** — Crear un pago condicional
-- **EscrowFinish** — Completar un escrow
-- **EscrowCancel** — Cancelar un escrow
+- [Payment](https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/) — Enviar XAH o tokens
+- [TrustSet](https://xahau.network/docs/protocol-reference/transactions/transaction-types/trustset/) — Crear o modificar una trust line
+- [OfferCreate](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/) — Crear una oferta en el DEX
+- [OfferCancel](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercancel/) — Cancelar una oferta del DEX
+- [AccountSet](https://xahau.network/docs/protocol-reference/transactions/transaction-types/accountset/) — Configurar flags de tu cuenta
+- [SetHook](https://xahau.network/docs/protocol-reference/transactions/transaction-types/sethook/) — Instalar o gestionar Hooks (smart contracts)
+- [URITokenMint](https://xahau.network/docs/protocol-reference/transactions/transaction-types/uritokenmint/) — Crear un NFT (URIToken)
+- [URITokenBuy](https://xahau.network/docs/protocol-reference/transactions/transaction-types/uritokenbuy/) — Comprar un URIToken
+- [URITokenCreateSellOffer](https://xahau.network/docs/protocol-reference/transactions/transaction-types/uritokencreateselloffer/) — Poner a la venta un URIToken
+- [EscrowCreate](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowcreate/) — Crear un pago condicional
+- [EscrowFinish](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowfinish/) — Completar un escrow
+- [EscrowCancel](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowcancel/) — Cancelar un escrow
 
 ### Fee — El coste de la transacción
 
@@ -269,7 +270,7 @@ Muchos tipos de transacción aceptan un campo **Flags** que modifica su comporta
 
 - Los flags son **valores numéricos** que se combinan con operaciones de bits
 - Ejemplo: \`Flags: 1\` en URITokenMint activa \`tfBurnable\`
-- Ejemplo: \`Flags: 0x00020000\` en OfferCreate activa \`tfImmediateOrCancel\`
+- Ejemplo: \`Flags: 131072\` en OfferCreate activa \`tfImmediateOrCancel\`
 - Puedes combinar flags sumando sus valores
 
 ### Memos — Datos adjuntos
@@ -279,7 +280,8 @@ Puedes adjuntar datos a cualquier transacción usando el campo **Memos**:
 - **MemoType**: Tipo MIME en hexadecimal (ej: "text/plain")
 - **MemoData**: El contenido en hexadecimal
 - Los memos son **públicos** y permanentes en el ledger
-- No afectan la lógica de la transacción, solo almacenan información adicional`,
+- No afectan la lógica de la transacción, solo almacenan información adicional
+- Si no tienes la necesidad de hacerlo, se recomienda no usar estos campos para no almacenar datos innecesarios en la blockchain`,
         en: "",
         jp: "",
       },
@@ -524,7 +526,8 @@ Xahau soporta **multi-firma**: una transacción que requiere la firma de **múlt
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function firmaDetallada() {
   const client = new Client("wss://xahau-test.net");
@@ -541,7 +544,7 @@ async function firmaDetallada() {
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoAqui",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "1000000",
   };
 
@@ -597,7 +600,8 @@ firmaDetallada().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 // =============================================
 // PASO 1: En el dispositivo CONECTADO
@@ -610,7 +614,7 @@ async function prepararOnline() {
   const tx = {
     TransactionType: "Payment",
     Account: "rTuDireccionAqui",
-    Destination: "rDestinoAqui",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
 
@@ -631,7 +635,7 @@ async function prepararOnline() {
 // =============================================
 function firmarOffline(preparedJSON) {
   // La clave privada SOLO existe en el dispositivo offline
-  const wallet = Wallet.fromSeed("sEdVxxxClaveDelDispositivoOffline", {algorithm: 'secp256k1'});
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   const signed = wallet.sign(preparedJSON);
 
@@ -800,7 +804,8 @@ result.result.hash                     → Hash único de la transacción
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function enviarConManejo() {
   const client = new Client("wss://xahau-test.net");
@@ -811,7 +816,7 @@ async function enviarConManejo() {
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoAqui",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "1000000",
   };
 
@@ -883,7 +888,8 @@ enviarConManejo().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function comparar() {
   const client = new Client("wss://xahau-test.net");
@@ -896,7 +902,7 @@ async function comparar() {
   const tx1 = await client.autofill({
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoAqui",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "1000000",
   });
   const signed1 = wallet.sign(tx1);
@@ -915,7 +921,7 @@ async function comparar() {
   const tx2 = await client.autofill({
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoAqui",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "1000000",
   });
   const signed2 = wallet.sign(tx2);
@@ -1091,7 +1097,7 @@ Cuando se cierra un ledger, se calcula un **hash** que resume:
 - Todas las transacciones incluidas y sus metadatas
 - El estado completo del ledger (árbol de estado)
 
-Si un validador calcula un hash diferente al 80% de la UNL, su ledger se descarta — esto garantiza la consistencia de la red.`,
+Si un validador calcula un hash diferente al 80% de la UNL, su ledger se descarta, esto garantiza la consistencia de la red.`,
         en: "",
         jp: "",
       },
@@ -1103,7 +1109,8 @@ Si un validador calcula un hash diferente al 80% de la UNL, su ledger se descart
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function analizarMetadata() {
   const client = new Client("wss://xahau-test.net");
@@ -1115,7 +1122,7 @@ async function analizarMetadata() {
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoAqui",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "5000000", // 5 XAH
   };
 
@@ -1199,7 +1206,8 @@ analizarMetadata().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: `require("dotenv").config();
+const { Client } = require("xahau");
 
 async function consultarReserva(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1208,8 +1216,8 @@ async function consultarReserva(address) {
   // Obtener info del servidor para las reservas actuales
   const serverInfo = await client.request({ command: "server_info" });
   const ledgerInfo = serverInfo.result.info.validated_ledger;
-  const reservaBase = ledgerInfo.reserve_base / 1000000; // En XAH
-  const reservaObjeto = ledgerInfo.reserve_inc / 1000000; // En XAH
+  const reservaBase = ledgerInfo.reserve_base_xrp; // En XAH
+  const reservaObjeto = ledgerInfo.reserve_inc_xrp; // En XAH
 
   console.log("=== RESERVAS DE LA RED ===");
   console.log("Reserva base (por cuenta):", reservaBase, "XAH");
@@ -1228,7 +1236,7 @@ async function consultarReserva(address) {
   const reservaTotal = reservaBase + (ownerCount * reservaObjeto);
   const disponible = balance - reservaTotal;
 
-  console.log("\\n=== TU CUENTA ===");
+  console.log("\n=== TU CUENTA ===");
   console.log("Dirección:", address);
   console.log("Balance total:", balance, "XAH");
   console.log("Objetos en el ledger:", ownerCount);
@@ -1250,15 +1258,15 @@ async function consultarReserva(address) {
     porTipo[tipo] = (porTipo[tipo] || 0) + 1;
   }
 
-  console.log("\\n=== OBJETOS POR TIPO ===");
+  console.log("\n=== OBJETOS POR TIPO ===");
   for (const [tipo, cantidad] of Object.entries(porTipo)) {
     console.log("  " + tipo + ":", cantidad, "(reserva:", cantidad * reservaObjeto, "XAH)");
   }
 
   await client.disconnect();
 }
-
-consultarReserva("rTuDireccionAqui");`,
+//Puedes usar tu cuenta o rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
+consultarReserva("rTuCuentaAqui");`,
         },
       ],
       slides: [
