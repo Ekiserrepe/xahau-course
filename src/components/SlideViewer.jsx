@@ -1,0 +1,109 @@
+import React, { useState, useEffect } from 'react'
+
+export default function SlideViewer({ slides, lang, labels, onExit, theme }) {
+  const [current, setCurrent] = useState(0)
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault()
+        setCurrent((c) => Math.min(c + 1, slides.length - 1))
+      }
+      if (e.key === 'ArrowLeft') setCurrent((c) => Math.max(c - 1, 0))
+      if (e.key === 'Escape') onExit()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [slides.length, onExit])
+
+  const slide = slides[current]
+  const isLight = theme === 'light'
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{
+        background: isLight
+          ? 'linear-gradient(135deg, #f0f1f5 0%, #e8eaf0 50%, #f0f1f5 100%)'
+          : 'linear-gradient(135deg, #080818 0%, #0d0d2b 50%, #0a0a1f 100%)',
+      }}
+    >
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-6 py-3" style={{ background: 'var(--color-overlay)' }}>
+        <span className="text-sm font-mono" style={{ color: 'var(--color-text-muted)' }}>
+          {current + 1} {labels.slideOf} {slides.length}
+        </span>
+        <button
+          onClick={onExit}
+          className="px-4 py-1.5 rounded-lg text-sm font-medium"
+          style={{
+            background: 'var(--color-button-bg)',
+            color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          {labels.exitSlides} (Esc)
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 flex items-center justify-center px-8">
+        <div className="text-center max-w-4xl w-full">
+          <div className="text-7xl mb-8">{slide.visual}</div>
+          <h2
+            className="text-4xl font-black mb-8 tracking-tight font-mono"
+            style={{ color: 'var(--color-text-heading)' }}
+          >
+            {slide.title[lang]}
+          </h2>
+          <div
+            className="text-xl leading-relaxed whitespace-pre-line"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            {slide.content[lang]}
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-center gap-4 pb-6">
+        <button
+          onClick={() => setCurrent((c) => Math.max(c - 1, 0))}
+          disabled={current === 0}
+          className="px-6 py-2.5 rounded-lg font-medium transition-all"
+          style={{
+            background: current === 0 ? 'var(--color-button-disabled-bg)' : 'var(--color-button-bg)',
+            color: current === 0 ? 'var(--color-text-faint)' : 'var(--color-text-secondary)',
+            border: '1px solid var(--color-border)',
+          }}
+        >
+          ← {labels.prev}
+        </button>
+        <div className="flex gap-2">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrent(idx)}
+              className="w-3 h-3 rounded-full transition-all"
+              style={{
+                background: idx === current ? 'var(--color-accent)' : 'var(--color-border)',
+                transform: idx === current ? 'scale(1.3)' : 'scale(1)',
+              }}
+            />
+          ))}
+        </div>
+        <button
+          onClick={() => setCurrent((c) => Math.min(c + 1, slides.length - 1))}
+          disabled={current === slides.length - 1}
+          className="px-6 py-2.5 rounded-lg font-medium transition-all"
+          style={{
+            background: current === slides.length - 1 ? 'var(--color-button-disabled-bg)' : 'var(--color-accent)',
+            color: current === slides.length - 1 ? 'var(--color-text-faint)' : '#000',
+          }}
+        >
+          {labels.next} →
+        </button>
+      </div>
+    </div>
+  )
+}

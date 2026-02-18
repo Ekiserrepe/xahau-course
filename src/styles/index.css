@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark theme (default) */
+  --color-bg: #080818;
+  --color-surface: #0e0e24;
+  --color-surface-alt: #121230;
+  --color-border: #1e1e3a;
+  --color-border-light: #1a1a30;
+  --color-text: #c8d6e5;
+  --color-text-heading: #f0f0f5;
+  --color-text-secondary: #aab;
+  --color-text-muted: #667;
+  --color-text-dim: #555;
+  --color-text-faint: #333;
+  --color-accent: #c8ff00;
+  --color-icon-bg: #1a1a3a;
+  --color-button-bg: #1e1e3a;
+  --color-button-disabled-bg: #0a0a1a;
+  --color-code-bg: #0d0d1a;
+  --color-code-header: #13132a;
+  --color-code-text: #c8d6e5;
+  --color-scrollbar-track: #080818;
+  --color-scrollbar-thumb: #2a2a4a;
+  --color-overlay: rgba(0,0,0,0.4);
+  --color-header-gradient: rgba(200,255,0,0.06);
+  --color-done-bg: rgba(200,255,0,0.05);
+  --color-done-border: rgba(200,255,0,0.2);
+  --color-hover-bg: rgba(255,255,255,0.02);
+  --color-complete-bg: rgba(200,255,0,0.1);
+  --color-complete-border: rgba(200,255,0,0.3);
+  --color-copy-active-bg: #1a3a1a;
+  --color-inline-code-bg: #080818;
+}
+
+[data-theme="light"] {
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f8f9fc;
+  --color-border: #d8dae0;
+  --color-border-light: #e0e2e8;
+  --color-text: #2d3748;
+  --color-text-heading: #1a202c;
+  --color-text-secondary: #4a5568;
+  --color-text-muted: #718096;
+  --color-text-dim: #a0aec0;
+  --color-text-faint: #cbd5e0;
+  --color-accent: #d4a80e;
+  --color-icon-bg: #e8eaf0;
+  --color-button-bg: #e2e4ea;
+  --color-button-disabled-bg: #edf0f4;
+  --color-code-bg: #f1f3f7;
+  --color-code-header: #e6e8ee;
+  --color-code-text: #2d3748;
+  --color-scrollbar-track: #f4f5f7;
+  --color-scrollbar-thumb: #c0c4cc;
+  --color-overlay: rgba(0,0,0,0.15);
+  --color-header-gradient: rgba(212,168,14,0.06);
+  --color-done-bg: rgba(212,168,14,0.08);
+  --color-done-border: rgba(212,168,14,0.25);
+  --color-hover-bg: rgba(0,0,0,0.02);
+  --color-complete-bg: rgba(212,168,14,0.12);
+  --color-complete-border: rgba(212,168,14,0.3);
+  --color-copy-active-bg: #faf3d8;
+  --color-inline-code-bg: #e8eaf0;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 3px;
+}
+
+/* Code block styling */
+pre code {
+  font-family: 'Fira Code', monospace;
+}
