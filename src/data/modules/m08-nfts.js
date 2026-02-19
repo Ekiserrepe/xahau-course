@@ -15,7 +15,7 @@ export default {
         jp: "",
       },
       theory: {
-        es: `En Xahau, los NFTs se implementan como **URITokens** — objetos nativos del ledger que representan tokens no fungibles con una URI asociada.
+        es: `En Xahau, los NFTs se implementan como **URITokens**, objetos nativos del ledger que representan tokens no fungibles con una URI asociada.
 
 ### ¿Qué es un URIToken?
 
@@ -58,7 +58,8 @@ Un URIToken es un objeto del ledger que contiene:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 function toHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
@@ -68,7 +69,7 @@ async function mintURIToken() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const creator = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
+  const creator = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Crear un URIToken con una URI que apunta a los metadatos
   const mint = {
