@@ -1,5 +1,5 @@
 export default {
-  id: "m11",
+  id: "m13",
   icon: "🎓",
   title: {
     es: "Proyecto final",
@@ -8,7 +8,7 @@ export default {
   },
   lessons: [
     {
-      id: "m11l1",
+      id: "m13l1",
       title: {
         es: "Diseño del proyecto",
         en: "",
@@ -108,7 +108,7 @@ Todo el proyecto se ejecuta en **testnet**. Los tokens y NFTs no tienen valor re
       ],
     },
     {
-      id: "m11l2",
+      id: "m13l2",
       title: {
         es: "Paso 1: Crear y financiar wallets",
         en: "",
@@ -254,7 +254,7 @@ setup().catch(console.error);`,
       ],
     },
     {
-      id: "m11l3",
+      id: "m13l3",
       title: {
         es: "Paso 2: Enviar pagos y emitir tokens",
         en: "",
@@ -470,7 +470,7 @@ pagosYTokens().catch(console.error);`,
       ],
     },
     {
-      id: "m11l4",
+      id: "m13l4",
       title: {
         es: "Paso 3: NFTs y trading",
         en: "",
@@ -715,7 +715,7 @@ nftsYDex().catch(console.error);`,
       ],
     },
     {
-      id: "m11l5",
+      id: "m13l5",
       title: {
         es: "Resumen y próximos pasos",
         en: "",

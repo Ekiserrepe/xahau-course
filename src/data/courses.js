@@ -19,8 +19,9 @@ import m07 from './modules/m07-tokens.js'
 import m08 from './modules/m08-nfts.js'
 import m09 from './modules/m09-smart-contracts.js'
 import m10 from './modules/m10-dex.js'
-import m11 from './modules/m11-herramientas.js'
-import m12 from './modules/m12-proyecto-final.js'
+import m11 from './modules/m11-escrows-cheques.js'
+import m12 from './modules/m12-herramientas.js'
+import m13 from './modules/m13-proyecto-final.js'
 
 export const COURSE_DATA = [
   m00,
@@ -36,4 +37,5 @@ export const COURSE_DATA = [
   m10,
   m11,
   m12,
+  m13,
 ]

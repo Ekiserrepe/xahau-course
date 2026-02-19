@@ -15,7 +15,7 @@ export default {
         jp: "",
       },
       theory: {
-        es: `En Xahau (y XRPL), los tokens fungibles funcionan de manera diferente a ERC-20 en Ethereum. No necesitas desplegar un smart contract para crear un token. En su lugar, se usa un sistema basado en **TrustLines** (líneas de confianza).
+        es: `En Xahau, los tokens fungibles funcionan de manera diferente a ERC-20 en Ethereum. No necesitas desplegar un smart contract para crear un token. En su lugar, se usa un sistema basado en **TrustLines** (líneas de confianza).
 
 ### ¿Cómo funciona?
 
@@ -55,22 +55,23 @@ Cada TrustLine consume una **reserva de propietario** (owner reserve) de la cuen
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // Wallet del receptor (quien quiere recibir el token)
-  const receiver = Wallet.fromSeed("sEdVxxxTuSeedReceptor", {algorithm: 'secp256k1'});
+  const receiver = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Crear TrustLine: "confío en el emisor para hasta 1,000,000 USD"
   const trustSet = {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "USD",
-      issuer: "rDireccionDelEmisor",
+      currency: "YourTokenName",
+      issuer: "YourIssuerAddress",
       value: "1000000", // Límite máximo que acepto
     },
   };
@@ -83,7 +84,7 @@ async function createTrustLine() {
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("¡TrustLine creada con éxito!");
-    console.log("Ahora puedes recibir USD del emisor");
+    console.log("Ahora puedes recibir del emisor desde tu cuenta "+ receiver.address);
   }
 
   await client.disconnect();
@@ -98,14 +99,15 @@ createTrustLine();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // Wallet del emisor del token
-  const issuer = Wallet.fromSeed("sEdVxxxSeedDelEmisor", {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Enviar 100 USD al receptor (que ya tiene TrustLine)
   const payment = {
@@ -126,7 +128,7 @@ async function issueTokens() {
   console.log("Resultado:", result.result.meta.TransactionResult);
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡100 USD emitidos con éxito!");
+    console.log("¡Tokens emitidos con éxito!");
   }
 
   await client.disconnect();
@@ -166,6 +168,235 @@ issueTokens();`,
       ],
     },
     {
+      id: "m6l1b",
+      title: {
+        es: "Proceso completo: crear y distribuir tu propio token",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `Ahora que entiendes cómo funcionan las TrustLines, vamos a ver el proceso completo para crear tu propio token y distribuirlo. A diferencia de otras blockchains, en Xahau **no necesitas desplegar ningún contrato**. El proceso se realiza enteramente con transacciones nativas.
+
+### Visión general del proceso
+
+El flujo completo para crear y distribuir un token es:
+
+1. **Preparar la cuenta emisora**: Crear (o usar) una cuenta dedicada exclusivamente a emitir el token
+2. **Configurar flags del emisor**: Activar \`DefaultRipple\` para que el token sea transferible entre terceros
+3. **Preparar la cuenta de reserva/distribución**: Crear (o usar) una segunda cuenta que recibirá el supply inicial y desde la cual se distribuirán los tokens
+4. **Crear TrustLine desde la cuenta de reserva**: La cuenta de distribución crea una TrustLine hacia el emisor
+5. **Emitir los tokens**: El emisor envía el supply total a la cuenta de reserva mediante un Payment
+6. **Distribuir**: Desde la cuenta de reserva se distribuyen los tokens a los usuarios finales (que previamente deben tener TrustLine)
+
+### ¿Por qué usar dos cuentas separadas?
+
+Es una buena práctica separar la **cuenta emisora** de la **cuenta de distribución**:
+
+- **Cuenta emisora**: Solo se usa para emitir y para configurar el token (freeze, clawback, etc.). Se puede proteger con multi-signing o desactivar la clave maestra una vez configurada
+- **Cuenta de distribución/reserva**: Tiene el supply circulante y se usa para operar día a día (vender en el DEX, distribuir a usuarios, etc.)
+
+Esta separación reduce el riesgo: si la cuenta de distribución se ve comprometida, el emisor puede congelar los tokens. Si todo estuviera en una sola cuenta, una brecha comprometería tanto la emisión como la distribución.
+
+### Código de moneda: 3 caracteres vs hex
+
+- Tokens con nombre de **3 caracteres** (ej: \`USD\`, \`EUR\`, \`EKI\`) se usan directamente
+- Tokens con nombre **más largo** (ej: \`EURZ\`, \`MyToken\`) deben convertirse a un código hexadecimal de 40 caracteres
+
+\`\`\`
+// Función para convertir nombre largo a hex de 40 chars
+function currencyToHex(name) {
+  const hex = Buffer.from(name, "ascii").toString("hex").toUpperCase();
+  return hex.padEnd(40, "0");
+}
+
+console.log(currencyToHex("EURZ"));
+
+// "EURZ" → "4555525A00000000000000000000000000000000"
+\`\`\`
+
+### Resumen de transacciones necesarias
+
+| Paso | Transacción | Cuenta que ejecuta |
+|---|---|---|
+| Configurar emisor | \`AccountSet\` (SetFlag: 8) | Emisor |
+| Crear TrustLine | \`TrustSet\` | Cuenta de reserva |
+| Emitir supply | \`Payment\` (Amount como IOU) | Emisor |
+| Distribuir | \`Payment\` (Amount como IOU) | Cuenta de reserva |`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Proceso completo: configurar emisor, crear TrustLine, emitir y distribuir token",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// Necesitas dos wallets con fondos en testnet y definelas en tu .env:
+//   ISSUER_SEED  → Cuenta emisora del token
+//   RESERVE_SEED  → Cuenta de reserva/distribución
+// Puedes obtener fondos del faucet: https://xahau-test.net/accounts
+
+async function createAndDistributeToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // === CUENTAS ===
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
+  const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
+
+  const TOKEN_CURRENCY = "YourTokenName";          // Nombre del token (3 chars) o hex de 40 chars para nombres largos
+  const TOTAL_SUPPLY = "1000000";        // Supply total a emitir
+
+  console.log("=== Creación de token ===");
+  console.log("Emisor:", issuer.address);
+  console.log("Reserva:", reserve.address);
+  console.log("Token:", TOKEN_CURRENCY);
+  console.log("Supply:", TOTAL_SUPPLY);
+
+  // === PASO 1: Configurar la cuenta emisora con DefaultRipple ===
+  console.log("\\n--- Paso 1: Configurar DefaultRipple en el emisor ---");
+  const accountSet = {
+    TransactionType: "AccountSet",
+    Account: issuer.address,
+    SetFlag: 8, // asfDefaultRipple
+  };
+
+  const prep1 = await client.autofill(accountSet);
+  const signed1 = issuer.sign(prep1);
+  const result1 = await client.submitAndWait(signed1.tx_blob);
+  console.log("DefaultRipple:", result1.result.meta.TransactionResult);
+
+  if (result1.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error configurando el emisor. Abortando.");
+    await client.disconnect();
+    return;
+  }
+
+  // === PASO 2: La cuenta de reserva crea TrustLine hacia el emisor ===
+  console.log("\\n--- Paso 2: Crear TrustLine (reserva → emisor) ---");
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: reserve.address,
+    LimitAmount: {
+      currency: TOKEN_CURRENCY,
+      issuer: issuer.address,
+      value: TOTAL_SUPPLY, // Aceptar hasta el supply total
+    },
+  };
+
+  const prep2 = await client.autofill(trustSet);
+  const signed2 = reserve.sign(prep2);
+  const result2 = await client.submitAndWait(signed2.tx_blob);
+  console.log("TrustLine:", result2.result.meta.TransactionResult);
+
+  if (result2.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error creando TrustLine. Abortando.");
+    await client.disconnect();
+    return;
+  }
+
+  // === PASO 3: El emisor envía todo el supply a la cuenta de reserva ===
+  console.log("\\n--- Paso 3: Emitir tokens (emisor → reserva) ---");
+  const issuePayment = {
+    TransactionType: "Payment",
+    Account: issuer.address,
+    Destination: reserve.address,
+    Amount: {
+      currency: TOKEN_CURRENCY,
+      issuer: issuer.address,
+      value: TOTAL_SUPPLY,
+    },
+  };
+
+  const prep3 = await client.autofill(issuePayment);
+  const signed3 = issuer.sign(prep3);
+  const result3 = await client.submitAndWait(signed3.tx_blob);
+  console.log("Emisión:", result3.result.meta.TransactionResult);
+
+  if (result3.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error emitiendo tokens. Abortando.");
+    await client.disconnect();
+    return;
+  }
+
+  console.log("\\n¡Token creado y distribuido a la cuenta de reserva!");
+  console.log("Supply total:", TOTAL_SUPPLY, TOKEN_CURRENCY);
+
+  // === VERIFICAR: Consultar balance de la cuenta de reserva ===
+  console.log("\\n--- Verificación ---");
+  const lines = await client.request({
+    command: "account_lines",
+    account: reserve.address,
+    ledger_index: "validated",
+  });
+
+  const tokenLine = lines.result.lines.find(
+    (l) => l.currency === TOKEN_CURRENCY && l.account === issuer.address
+  );
+
+  if (tokenLine) {
+    console.log("Balance de reserva:", tokenLine.balance, TOKEN_CURRENCY);
+    console.log("Emisor:", tokenLine.account);
+    console.log("Límite:", tokenLine.limit, TOKEN_CURRENCY);
+  }
+
+  // === PASO 4 (ejemplo): Distribuir tokens a un usuario final ===
+  // El usuario final debe crear primero su TrustLine hacia el emisor
+  // Luego la cuenta de reserva le envía tokens:
+  //
+  // const distribution = {
+  //   TransactionType: "Payment",
+  //   Account: reserve.address,
+  //   Destination: "rDireccionDelUsuarioFinal",
+  //   Amount: {
+  //     currency: TOKEN_CURRENCY,
+  //     issuer: issuer.address,
+  //     value: "100",
+  //   },
+  // };
+
+  await client.disconnect();
+}
+
+createAndDistributeToken();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "Proceso de creación de un token", en: "", jp: "" },
+          content: {
+            es: "No necesitas smart contracts\n\n1️⃣ Configurar emisor (DefaultRipple)\n2️⃣ Crear TrustLine desde cuenta reserva\n3️⃣ Emitir supply (Payment del emisor)\n4️⃣ Distribuir a usuarios finales\n\nTodo con transacciones nativas",
+            en: "",
+            jp: "",
+          },
+          visual: "🏭",
+        },
+        {
+          title: { es: "Dos cuentas: emisor + reserva", en: "", jp: "" },
+          content: {
+            es: "Buena práctica: separar responsabilidades\n\n• Emisor: solo configura y emite\n  → Proteger con multi-sign\n  → Desactivar clave maestra\n\n• Reserva: opera día a día\n  → Distribuye a usuarios\n  → Vende en el DEX\n\nSi la reserva se compromete, el emisor puede congelar",
+            en: "",
+            jp: "",
+          },
+          visual: "🔐",
+        },
+        {
+          title: { es: "Resumen de transacciones", en: "", jp: "" },
+          content: {
+            es: "AccountSet → DefaultRipple en emisor\nTrustSet → Reserva confía en emisor\nPayment → Emisor envía supply a reserva\nPayment → Reserva distribuye a usuarios\n\nUsuarios finales necesitan TrustLine\nantes de poder recibir el token",
+            en: "",
+            jp: "",
+          },
+          visual: "📋",
+        },
+      ],
+    },
+    {
       id: "m6l2",
       title: {
         es: "Gestión avanzada de tokens",
@@ -185,7 +416,6 @@ La cuenta emisora puede configurar flags importantes:
 
 - **DefaultRipple**: Permite que los tokens se transfieran entre terceros sin pasar por el emisor. **Es necesario activarlo** si quieres que tus tokens sean libremente transferibles
 - **RequireAuth**: Requiere que el emisor autorice cada TrustLine antes de que alguien pueda recibir tokens
-- **DisallowXRP**: Señala que la cuenta no quiere recibir XAH (es solo una señal, no lo bloquea técnicamente)
 
 ### Transferencia entre terceros (Rippling)
 
@@ -238,45 +468,7 @@ async function getTokenBalances(address) {
 
 getTokenBalances("rTuDireccionAqui");`,
         },
-        {
-          title: {
-            es: "Configurar cuenta emisora con DefaultRipple",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-
-async function configureIssuer() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const issuer = Wallet.fromSeed("sEdVxxxSeedDelEmisor", {algorithm: 'secp256k1'});
-
-  // Activar DefaultRipple para que los tokens
-  // se puedan transferir entre terceros
-  const accountSet = {
-    TransactionType: "AccountSet",
-    Account: issuer.address,
-    SetFlag: 8, // asfDefaultRipple
-  };
-
-  const prepared = await client.autofill(accountSet);
-  const signed = issuer.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("Resultado:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡DefaultRipple activado!");
-    console.log("Tus tokens ahora son libremente transferibles");
-  }
-
-  await client.disconnect();
-}
-
-configureIssuer();`,
-        },
+        
       ],
       slides: [
         {
@@ -316,7 +508,7 @@ configureIssuer();`,
         jp: "",
       },
       theory: {
-        es: `Xahau incluye un **exchange descentralizado (DEX) nativo** directamente en el protocolo. No necesitas smart contracts ni plataformas externas para intercambiar tokens — todo se hace con transacciones nativas.
+        es: `Xahau incluye un **exchange descentralizado (DEX) nativo** directamente en el protocolo. No necesitas smart contracts ni plataformas externas para intercambiar tokens, todo se hace con transacciones nativas.
 
 ### OfferCreate: colocar órdenes en el DEX
 
@@ -339,12 +531,16 @@ El DEX mantiene un **order book** (libro de órdenes) para cada par de tokens:
 - **Bids (ofertas de compra)**: Órdenes que quieren comprar un token
 - **Asks (ofertas de venta)**: Órdenes que quieren vender un token
 
-Cuando una nueva orden coincide con una existente (el precio se cruza), se ejecuta automáticamente — total o parcialmente.
+Cuando una nueva orden coincide con una existente (el precio se cruza), se ejecuta automáticamente, total o parcialmente.
 
 ### Flags especiales de OfferCreate
 
 - **tfImmediateOrCancel**: La orden se ejecuta inmediatamente contra las órdenes existentes. Lo que no se llene se cancela al instante. No queda nada en el libro de órdenes
 - **tfPassive**: La orden solo se ejecuta contra órdenes existentes que tengan un precio igual o mejor. No se coloca en el libro si no hay match inmediato
+- **tfFillOrKill**: La orden se ejecuta completamente o se cancela. No se permiten ejecuciones parciales.
+- **tfSell**: Indica que la orden es una venta (en lugar de una compra). Afecta cómo se interpreta TakerPays y TakerGets.
+
+Visita más información sobre los flags en la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/#offercreate-flags).
 
 ### Consultar el libro de órdenes: book_offers
 
@@ -371,25 +567,26 @@ Todo en una sola transacción, de forma transparente. Esto mejora la liquidez de
           code: `const { Client } = require("xahau");
 
 async function viewOrderBook() {
-  const client = new Client("wss://xahau-test.net");
+ //Nos conectamos a Xahau Mainnet para este ejemplo que habrá más posibilidadesde que el DEX esté activo. En testnet suele haber poca actividad en el DEX, pero puedes probar con ambos.
+  const client = new Client("wss://xahau.network");
   await client.connect();
 
-  const issuerAddress = "rDireccionDelEmisorUSD";
+  const issuerAddress = "rEvernodee8dJLaFsujS6q1EiXvZYmHXr8";
 
-  // Consultar ofertas: ¿quién vende USD a cambio de XAH?
+  // Consultar ofertas: ¿quién vende EVR a cambio de XAH?
   const response = await client.request({
     command: "book_offers",
     taker_pays: {
       currency: "XAH",
     },
     taker_gets: {
-      currency: "USD",
+      currency: "EVR",
       issuer: issuerAddress,
     },
     limit: 10,
   });
 
-  console.log("=== Libro de órdenes: USD → XAH ===");
+  console.log("=== Libro de órdenes: EVR → XAH ===");
   console.log(\`Ofertas encontradas: \${response.result.offers.length}\\n\`);
 
   for (const offer of response.result.offers) {
@@ -400,7 +597,7 @@ async function viewOrderBook() {
         : offer.TakerPays.value;
 
     console.log(\`Cuenta: \${offer.Account}\`);
-    console.log(\`  Vende: \${getsUSD} USD\`);
+    console.log(\`  Vende: \${getsUSD} EVR\`);
     console.log(\`  Pide:  \${paysXAH} XAH\`);
     console.log(\`  Sequence: \${offer.Sequence}\\n\`);
   }
@@ -412,29 +609,30 @@ viewOrderBook();`,
         },
         {
           title: {
-            es: "Crear una oferta en el DEX (vender 100 USD por XAH)",
+            es: "Crear una oferta en el DEX (vender 100 Tokens por XAH)",
             en: "",
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function createOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const trader = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
-  const issuerAddress = "rDireccionDelEmisorUSD";
+  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuerAddress = "rDireccionDelEmisorToken";
 
-  // Vender 100 USD a cambio de 500 XAH
+  // Vender 100 Token a cambio de 50 XAH
   const offer = {
     TransactionType: "OfferCreate",
     Account: trader.address,
-    // Lo que quiero recibir: 500 XAH
-    TakerPays: xahToDrops(500),
-    // Lo que estoy dispuesto a dar: 100 USD
+    // Lo que quiero recibir: 50 XAH
+    TakerPays: xahToDrops(50),
+    // Lo que estoy dispuesto a dar: 100 Tokens
     TakerGets: {
-      currency: "USD",
+      currency: "YourTokenName",
       issuer: issuerAddress,
       value: "100",
     },
@@ -448,7 +646,7 @@ async function createOffer() {
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("¡Oferta creada en el DEX!");
-    console.log(\`Vendiendo 100 USD por 500 XAH (5 XAH/USD)\`);
+    console.log(\`Vendiendo 100 Tokens por 50 XAH (0.5 XAH/Token)\`);
     console.log(\`Sequence de la oferta: \${prepared.Sequence}\`);
   }
 
@@ -464,13 +662,14 @@ createOffer();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const trader = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
+  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Cancelar una oferta usando su OfferSequence
   const cancel = {
@@ -508,7 +707,7 @@ cancelOffer();`,
         {
           title: { es: "OfferCreate: anatomía de una orden", en: "", jp: "" },
           content: {
-            es: "TakerPays → Lo que quieres RECIBIR\nTakerGets → Lo que estás dispuesto a DAR\n\nFlags especiales:\n• tfImmediateOrCancel → Ejecutar o cancelar\n• tfPassive → Solo match existente\n\nOfferCancel → Cancelar orden abierta",
+            es: "TakerPays → Lo que quieres RECIBIR\nTakerGets → Lo que estás dispuesto a DAR\n\nFlags especiales:\n• tfImmediateOrCancel → Ejecutar o cancelar\n• tfPassive → Solo match existente\n• tfFillOrKill → Ejecutar todo o nada\n• tfSell → Indica que es una venta\n\nOfferCancel → Cancelar orden abierta",
             en: "",
             jp: "",
           },

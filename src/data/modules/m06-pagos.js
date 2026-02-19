@@ -3,7 +3,7 @@ export default {
   icon: "💸",
   title: {
     es: "Creación y uso de pagos",
-    en: "",
+    en: "Creating and using payments",
     jp: "",
   },
   lessons: [
@@ -11,7 +11,7 @@ export default {
       id: "m5l1",
       title: {
         es: "Anatomía de una transacción de pago",
-        en: "",
+        en: "Anatomy of a payment transaction",
         jp: "",
       },
       theory: {
@@ -74,14 +74,72 @@ Allí encontrarás:
 - Flags disponibles (tfPartialPayment, tfLimitQuality, etc.)
 - Lista completa de códigos de error y sus causas
 - Casos especiales y comportamientos avanzados`,
-        en: "",
+        en: `The **Payment** is the most fundamental transaction on Xahau. It allows you to send XAH (or tokens) from one account to another.
+
+### Payment transaction fields
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | Always \`"Payment"\` |
+| \`Account\` | Sender address (the payer) |
+| \`Destination\` | Recipient address |
+| \`Amount\` | Amount to send (in drops for native XAH) |
+| \`Fee\` | Transaction cost (in drops) |
+| \`Sequence\` | Sequence number of the sending account |
+| \`NetworkID\` | Network identifier (required on Xahau) |
+
+### Drops vs XAH
+
+Native XAH amounts are expressed in **drops**:
+- 1 XAH = **1,000,000 drops**
+- The \`Amount\` field for native XAH is a **string** with the number of drops
+- Example: \`"10000000"\` = 10 XAH
+
+### Fees (transaction costs)
+
+Fees on Xahau are extremely low and predictable:
+- A typical payment costs **12 drops** (0.000012 XAH)
+- Fees are **burned** (destroyed), they do not go to any validator
+- The \`xahau\` library can calculate the fee automatically with \`autofill()\`
+
+### Sending IOUs (tokens) instead of native XAH
+
+When you send native XAH, the \`Amount\` field is a **string** with the amount in drops. But when you send an **IOU** (a token issued by an account, such as USD, EUR, etc.), \`Amount\` becomes an **object** with three fields:
+
+\`\`\`
+{
+  "currency": "USD",       // Currency code (3 characters or 40-char hex)
+  "issuer": "rIssuerAddress",  // Account that issued the token
+  "value": "100"           // Amount as a string
+}
+\`\`\`
+
+**Prerequisites for sending IOUs:**
+- **The sender must have funds**: Your account must hold a balance of that IOU. You can obtain it through a previous payment, a DEX trade, or directly from the token issuer.
+- **The recipient must have a TrustLine**: The destination account must have previously created a TrustLine (\`TrustSet\`) for that IOU with the same issuer. Without a TrustLine, the payment will fail with \`tecPATH_DRY\` or \`tecNO_LINE\`.
+
+### Why do IOUs or tokens other than XAH need these fields?
+
+It is possible for multiple entities to issue the same type of IOU. For example, different banks could issue their own EUR or USD token. The only way to differentiate them is by specifying the issuer if they share the same token name.
+
+
+
+### More information about Payment
+
+The Payment transaction has many more optional fields, flags, and possible errors than we cover here. For a complete reference, see the [official documentation](https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/)
+
+There you will find:
+- All optional fields (SendMax, DeliverMin, InvoiceID, etc.)
+- Available flags (tfPartialPayment, tfLimitQuality, etc.)
+- Complete list of error codes and their causes
+- Special cases and advanced behaviors`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Enviar un pago de XAH entre dos cuentas",
-            en: "",
+            en: "Send an XAH payment between two accounts",
             jp: "",
           },
           language: "javascript",
@@ -129,7 +187,7 @@ sendPayment();`,
         {
           title: {
             es: "Enviar un pago de IOU (token) entre dos cuentas",
-            en: "",
+            en: "Send an IOU (token) payment between two accounts",
             jp: "",
           },
           language: "javascript",
@@ -183,28 +241,28 @@ sendIOUPayment();`,
       ],
       slides: [
         {
-          title: { es: "Transacción Payment", en: "", jp: "" },
+          title: { es: "Transacción Payment", en: "Payment Transaction", jp: "" },
           content: {
             es: "La transacción más básica de Xahau\n\n• Account → Quien envía\n• Destination → Quien recibe\n• Amount → Cantidad (en drops para XAH)\n• 1 XAH = 1,000,000 drops",
-            en: "",
+            en: "The most basic transaction on Xahau\n\n• Account → The sender\n• Destination → The receiver\n• Amount → Quantity (in drops for XAH)\n• 1 XAH = 1,000,000 drops",
             jp: "",
           },
           visual: "💸",
         },
         {
-          title: { es: "Envío de IOUs (tokens)", en: "", jp: "" },
+          title: { es: "Envío de IOUs (tokens)", en: "Sending IOUs (tokens)", jp: "" },
           content: {
             es: "Amount pasa a ser un objeto:\n\n• currency → Código del token (USD, EUR...)\n• issuer → Cuenta emisora del token\n• value → Cantidad como string\n\nRequisitos:\n• Tener saldo del IOU\n• Destino con TrustLine activa",
-            en: "",
+            en: "Amount becomes an object:\n\n• currency → Token code (USD, EUR...)\n• issuer → Token issuer account\n• value → Amount as a string\n\nRequirements:\n• Hold a balance of the IOU\n• Destination with an active TrustLine",
             jp: "",
           },
           visual: "🪙",
         },
         {
-          title: { es: "Documentación oficial", en: "", jp: "" },
+          title: { es: "Documentación oficial", en: "Official documentation", jp: "" },
           content: {
             es: "Referencia completa de Payment:\ https://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• Campos opcionales (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Códigos de error completos\n• Casos especiales y avanzados",
-            en: "",
+            en: "Complete Payment reference:\ https://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• Optional fields (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Complete error codes\n• Special cases and advanced behaviors",
             jp: "",
           },
           visual: "📖",
@@ -215,7 +273,7 @@ sendIOUPayment();`,
       id: "m5l2",
       title: {
         es: "Pagos con Destination Tag y memos",
-        en: "",
+        en: "Payments with Destination Tag and memos",
         jp: "",
       },
       theory: {
@@ -248,14 +306,42 @@ Cada transacción devuelve un código de resultado:
 - \`tecNO_DST\`: La cuenta de destino no existe
 - \`tecDST_TAG_NEEDED\`: Se requiere Destination Tag
 - \`tecNO_DST_INSUF_XAH\`: El destino no tiene suficiente XAH para la reserva`,
-        en: "",
+        en: `In addition to the basic payment, Xahau supports additional fields that allow you to add context and functionality to payments.
+
+### Destination Tag
+
+The **Destination Tag** is an integer that allows the receiver to identify individual payments. It is especially useful for:
+- **Exchanges**: Identifying which user a deposit belongs to
+- **Services**: Associating a payment with an order or invoice
+- If an account has the \`RequireDestTag\` flag enabled, **you cannot send it a payment without a tag**
+
+The system allows up to 32 bits for the Destination Tag, which means you can use integers up to 4,294,967,295. It is important to always verify with the recipient what the correct Destination Tag is before sending a payment, as sending a payment without a tag or with an incorrect tag to an account that requires one can result in loss of funds.
+
+There is also the **Source Tag**, which serves the same purpose but for the sender. However, the Destination Tag is much more common and widely used in practice.
+
+### Memos
+
+**Memos** allow you to attach arbitrary data to a transaction:
+- \`MemoType\`: Type of the memo (e.g., "text/plain", "application/json")
+- \`MemoData\`: The memo content
+- Memos are encoded in **hexadecimal**
+- They are public and visible to everyone on the ledger
+
+### Transaction results
+
+Each transaction returns a result code:
+- \`tesSUCCESS\`: The transaction was successful
+- \`tecUNFUNDED_PAYMENT\`: Insufficient funds
+- \`tecNO_DST\`: The destination account does not exist
+- \`tecDST_TAG_NEEDED\`: Destination Tag is required
+- \`tecNO_DST_INSUF_XAH\`: The destination does not have enough XAH for the reserve`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Pago con Source, Destination Tag y Memos",
-            en: "",
+            en: "Payment with Source Tag, Destination Tag, and Memos",
             jp: "",
           },
           language: "javascript",
@@ -337,7 +423,7 @@ sendPaymentWithMemo();`,
         {
           title: {
             es: "Verificar un pago recibido",
-            en: "",
+            en: "Verify a received payment",
             jp: "",
           },
           language: "javascript",
@@ -382,28 +468,28 @@ verifyPayment("TU_HASH_DE_TRANSACCION_AQUI");`,
       ],
       slides: [
         {
-          title: { es: "Destination Tag", en: "", jp: "" },
+          title: { es: "Destination Tag", en: "Destination Tag", jp: "" },
           content: {
             es: "Número para identificar pagos individuales\n\n• Usado por exchanges y servicios\n• Asocia pagos con usuarios/pedidos\n• Algunas cuentas lo requieren\n• Es un número entero (uint32)",
-            en: "",
+            en: "A number to identify individual payments\n\n• Used by exchanges and services\n• Associates payments with users/orders\n• Some accounts require it\n• It is an integer (uint32)",
             jp: "",
           },
           visual: "🏷️",
         },
         {
-          title: { es: "Memos", en: "", jp: "" },
+          title: { es: "Memos", en: "Memos", jp: "" },
           content: {
             es: "Datos adjuntos a una transacción\n\n• MemoType → Tipo (text/plain, etc.)\n• MemoData → Contenido\n• Codificados en hexadecimal\n• Públicos en el ledger",
-            en: "",
+            en: "Data attached to a transaction\n\n• MemoType → Type (text/plain, etc.)\n• MemoData → Content\n• Encoded in hexadecimal\n• Public on the ledger",
             jp: "",
           },
           visual: "📝",
         },
         {
-          title: { es: "Seguridad del DestinationTag", en: "", jp: "" },
+          title: { es: "Seguridad del DestinationTag", en: "Destination Tag security", jp: "" },
           content: {
             es: "• Flag RequireDestTag en la cuenta destino\n• Sin tag → error tecDST_TAG_NEEDED\n• Exchanges exigen tag para depósitos\n• Sin tag correcto = fondos perdidos\n• Siempre valida el tag antes de enviar\n• Maneja errores: tecNO_DST, tecUNFUNDED",
-            en: "",
+            en: "• RequireDestTag flag on the destination account\n• No tag → error tecDST_TAG_NEEDED\n• Exchanges require a tag for deposits\n• Wrong or missing tag = lost funds\n• Always validate the tag before sending\n• Handle errors: tecNO_DST, tecUNFUNDED",
             jp: "",
           },
           visual: "🔒",
@@ -414,7 +500,7 @@ verifyPayment("TU_HASH_DE_TRANSACCION_AQUI");`,
       id: "m5l3",
       title: {
         es: "Pagos cross-currency y pathfinding",
-        en: "",
+        en: "Cross-currency payments and pathfinding",
         jp: "",
       },
       theory: {
@@ -453,440 +539,73 @@ El flag \`tfPartialPayment\` (valor: \`0x00020000\`) permite que un pago entregu
 - Útil cuando la liquidez puede variar entre la consulta y la ejecución
 - Usa \`DeliverMin\` para establecer un mínimo aceptable
 - **IMPORTANTE**: Al recibir pagos, siempre verifica \`delivered_amount\` en los metadatos, **no** el campo \`Amount\`. Un atacante podría enviar un pago parcial que muestre un \`Amount\` alto pero entregue mucho menos`,
-        en: "",
+        en: `Xahau not only allows sending native XAH or same-type tokens: it also supports **cross-currency payments**, where the sender sends one currency and the receiver gets a different one. This is possible thanks to the **built-in DEX** and the **pathfinding** system.
+
+### Cross-currency payments
+
+A cross-currency payment allows, for example, the sender to pay in XAH and the receiver to get USD. Xahau automatically finds the best path through the DEX to convert the currencies.
+
+### The pathfinding system
+
+Pathfinding is the mechanism that finds conversion routes between currencies:
+- Xahau searches for **paths** through trust lines and DEX orders
+- It can chain multiple intermediate conversions
+- It always tries to find the **best rate** available
+
+### Key fields in cross-currency payments
+
+| Field | Description |
+|---|---|
+| \`Amount\` | What the receiver should receive (destination currency) |
+| \`SendMax\` | Maximum the sender is willing to spend (source currency) |
+| \`DeliverMin\` | Minimum the receiver must receive (with partial payments) |
+| \`Paths\` | Conversion routes found by pathfinding |
+
+### The ripple_path_find command
+
+Before sending a cross-currency payment, use \`ripple_path_find\` to:
+- Check if a path exists between the two currencies
+- Obtain the \`Paths\` needed for the transaction
+- Know the estimated cost (\`source_amount\`)
+
+### Partial payments (tfPartialPayment)
+
+The \`tfPartialPayment\` flag (value: \`0x00020000\`) allows a payment to deliver **less** than what is specified in \`Amount\`:
+- Useful when liquidity may vary between the query and execution
+- Use \`DeliverMin\` to set an acceptable minimum
+- **IMPORTANT**: When receiving payments, always check \`delivered_amount\` in the metadata, **not** the \`Amount\` field. An attacker could send a partial payment that shows a high \`Amount\` but delivers much less`,
         jp: "",
       },
       codeBlocks: [
-        {
-          title: {
-            es: "Buscar rutas de pago entre monedas con ripple_path_find",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-
-async function findPaymentPaths() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const senderAddress = "rDireccionDelEmisor";
-  const receiverAddress = "rDireccionDelReceptor";
-  const issuerAddress = "rDireccionDelEmisorDeUSD";
-
-  // Buscar rutas para entregar 100 USD al receptor
-  const pathResponse = await client.request({
-    command: "ripple_path_find",
-    source_account: senderAddress,
-    destination_account: receiverAddress,
-    destination_amount: {
-      currency: "USD",
-      issuer: issuerAddress,
-      value: "100",
-    },
-  });
-
-  const alternatives = pathResponse.result.alternatives;
-  console.log("=== Rutas de pago encontradas ===");
-  console.log(\`Se encontraron \${alternatives.length} alternativas\\n\`);
-
-  for (let i = 0; i < alternatives.length; i++) {
-    const alt = alternatives[i];
-    console.log(\`--- Alternativa \${i + 1} ---\`);
-
-    // El coste para el emisor
-    if (typeof alt.source_amount === "string") {
-      // XAH nativo (en drops)
-      const xah = Number(alt.source_amount) / 1_000_000;
-      console.log(\`Coste: \${xah} XAH\`);
-    } else {
-      // Token
-      console.log(
-        \`Coste: \${alt.source_amount.value} \${alt.source_amount.currency}\`
-      );
-    }
-
-    console.log(\`Paths: \${alt.paths_computed.length} saltos\`);
-
-    // Mostrar los saltos intermedios
-    for (const path of alt.paths_computed) {
-      const steps = path.map((step) => {
-        if (step.currency) return step.currency;
-        if (step.account) return step.account.slice(0, 8) + "...";
-        return "?";
-      });
-      console.log(\`  Ruta: \${steps.join(" → ")}\`);
-    }
-  }
-
-  await client.disconnect();
-}
-
-findPaymentPaths();`,
-        },
-        {
-          title: {
-            es: "Enviar un pago cross-currency (XAH a USD token)",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-
-async function sendCrossCurrencyPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const sender = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
-  const receiverAddress = "rDireccionDelReceptor";
-  const usdIssuer = "rDireccionDelEmisorDeUSD";
-
-  // Primero, buscar rutas de pago
-  const pathResponse = await client.request({
-    command: "ripple_path_find",
-    source_account: sender.address,
-    destination_account: receiverAddress,
-    destination_amount: {
-      currency: "USD",
-      issuer: usdIssuer,
-      value: "50",
-    },
-  });
-
-  if (pathResponse.result.alternatives.length === 0) {
-    console.log("No se encontraron rutas de pago disponibles.");
-    await client.disconnect();
-    return;
-  }
-
-  const bestAlt = pathResponse.result.alternatives[0];
-  console.log("Mejor ruta encontrada.");
-
-  if (typeof bestAlt.source_amount === "string") {
-    console.log(
-      \`Coste estimado: \${Number(bestAlt.source_amount) / 1_000_000} XAH\`
-    );
-  } else {
-    console.log(
-      \`Coste estimado: \${bestAlt.source_amount.value} \${bestAlt.source_amount.currency}\`
-    );
-  }
-
-  // Construir el pago cross-currency
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: receiverAddress,
-    // Lo que el receptor debe recibir
-    Amount: {
-      currency: "USD",
-      issuer: usdIssuer,
-      value: "50",
-    },
-    // Máximo que estamos dispuestos a gastar (añadir un 5% de margen)
-    SendMax:
-      typeof bestAlt.source_amount === "string"
-        ? String(Math.ceil(Number(bestAlt.source_amount) * 1.05))
-        : {
-            currency: bestAlt.source_amount.currency,
-            issuer: bestAlt.source_amount.issuer,
-            value: String(Number(bestAlt.source_amount.value) * 1.05),
-          },
-    // Rutas de conversión
-    Paths: bestAlt.paths_computed,
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("\\nResultado:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    // Siempre verificar delivered_amount, no Amount
-    const delivered = result.result.meta.delivered_amount;
-    if (typeof delivered === "string") {
-      console.log(
-        \`Entregado: \${Number(delivered) / 1_000_000} XAH\`
-      );
-    } else {
-      console.log(
-        \`Entregado: \${delivered.value} \${delivered.currency}\`
-      );
-    }
-  }
-
-  await client.disconnect();
-}
-
-sendCrossCurrencyPayment();`,
-        },
+        
       ],
       slides: [
         {
-          title: { es: "Pagos cross-currency", en: "", jp: "" },
+          title: { es: "Pagos cross-currency", en: "Cross-currency payments", jp: "" },
           content: {
             es: "Envía una moneda, el receptor recibe otra\n\n• El DEX integrado convierte automáticamente\n• Amount = lo que recibe el receptor\n• SendMax = máximo que paga el emisor\n• Paths = rutas de conversión",
-            en: "",
+            en: "Send one currency, the receiver gets another\n\n• The built-in DEX converts automatically\n• Amount = what the receiver gets\n• SendMax = maximum the sender pays\n• Paths = conversion routes",
             jp: "",
           },
           visual: "🔄",
         },
         {
-          title: { es: "Pathfinding", en: "", jp: "" },
+          title: { es: "Pathfinding", en: "Pathfinding", jp: "" },
           content: {
             es: "ripple_path_find busca rutas de conversión\n\n1. Indica cuenta origen y destino\n2. Especifica la moneda y cantidad destino\n3. Obtén alternativas con coste estimado\n4. Usa paths_computed en tu Payment",
-            en: "",
+            en: "ripple_path_find searches for conversion routes\n\n1. Specify source and destination accounts\n2. Specify the destination currency and amount\n3. Get alternatives with estimated cost\n4. Use paths_computed in your Payment",
             jp: "",
           },
           visual: "🗺️",
         },
         {
-          title: { es: "Pagos parciales", en: "", jp: "" },
+          title: { es: "Pagos parciales", en: "Partial payments", jp: "" },
           content: {
             es: "Flag tfPartialPayment permite entregar menos\n\n• Útil cuando la liquidez varía\n• DeliverMin = mínimo aceptable\n• SIEMPRE verificar delivered_amount\n• NUNCA confiar en el campo Amount\n\n⚠️ Riesgo de seguridad si no se verifica",
-            en: "",
+            en: "tfPartialPayment flag allows delivering less\n\n• Useful when liquidity varies\n• DeliverMin = acceptable minimum\n• ALWAYS verify delivered_amount\n• NEVER trust the Amount field\n\n⚠️ Security risk if not verified",
             jp: "",
           },
           visual: "⚠️",
-        },
-      ],
-    },
-    {
-      id: "m5l4",
-      title: {
-        es: "Escrows: pagos condicionales",
-        en: "",
-        jp: "",
-      },
-      theory: {
-        es: `Un **Escrow** es un mecanismo de pago condicional que bloquea fondos hasta que se cumplan ciertas condiciones. Es como un sobre sellado con dinero que solo se puede abrir bajo circunstancias específicas.
-
-### Casos de uso
-
-- **Pagos programados**: Liberar fondos en una fecha futura determinada
-- **Atomic swaps**: Intercambios condicionales entre partes que no confían entre sí
-- **Liberación condicional**: Fondos que solo se liberan cuando se proporciona una prueba criptográfica
-- **Vesting**: Distribución gradual de tokens a lo largo del tiempo
-
-### EscrowCreate: crear un escrow
-
-El tipo de transacción \`EscrowCreate\` bloquea una cantidad de XAH con condiciones:
-
-| Campo | Descripción |
-|---|---|
-| \`Amount\` | Cantidad de XAH a bloquear (en drops) |
-| \`Destination\` | Cuenta que recibirá los fondos |
-| \`FinishAfter\` | Timestamp mínimo para completar el escrow |
-| \`CancelAfter\` | Timestamp a partir del cual se puede cancelar |
-| \`Condition\` | Crypto-condición opcional para la liberación |
-
-**Reglas importantes**:
-- Debes especificar al menos \`FinishAfter\` o \`Condition\` (o ambos)
-- Si usas \`CancelAfter\`, debe ser posterior a \`FinishAfter\`
-- Los timestamps usan la **Ripple Epoch** (segundos desde 01/01/2000 00:00:00 UTC)
-
-### EscrowFinish: completar el escrow
-
-Cualquier cuenta puede ejecutar \`EscrowFinish\` para liberar los fondos al destinatario:
-- Solo funciona después de \`FinishAfter\` (si se especificó)
-- Si hay \`Condition\`, debe proporcionarse el \`Fulfillment\` correcto
-- Los campos \`Owner\` y \`OfferSequence\` identifican qué escrow completar
-
-### EscrowCancel: cancelar el escrow
-
-Con \`EscrowCancel\` se devuelven los fondos al creador:
-- Solo funciona después de \`CancelAfter\`
-- Cualquier cuenta puede ejecutar la cancelación
-- Los fondos vuelven a la cuenta que creó el escrow
-
-### Crypto-condiciones
-
-Xahau soporta crypto-condiciones del protocolo **Interledger (ILP)**:
-- Basadas en el estándar **PREIMAGE-SHA-256**
-- El creador genera un \`Condition\` (hash) y guarda el \`Fulfillment\` (preimagen)
-- Para completar el escrow, se debe proporcionar el \`Fulfillment\` que corresponda al \`Condition\`
-- Esto permite escrows que solo se liberan cuando alguien demuestra conocer un secreto`,
-        en: "",
-        jp: "",
-      },
-      codeBlocks: [
-        {
-          title: {
-            es: "Crear un escrow con bloqueo temporal (FinishAfter = 5 minutos)",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function createTimeLockedEscrow() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const sender = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
-
-  // Ripple Epoch: segundos desde 01/01/2000 00:00:00 UTC
-  // Diferencia con Unix Epoch: 946684800 segundos
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-  const now = Math.floor(Date.now() / 1000);
-
-  // FinishAfter: 5 minutos en el futuro
-  const finishAfter = now - RIPPLE_EPOCH_OFFSET + 5 * 60;
-  // CancelAfter: 24 horas en el futuro (si nadie lo completa, se puede cancelar)
-  const cancelAfter = now - RIPPLE_EPOCH_OFFSET + 24 * 60 * 60;
-
-  const escrowCreate = {
-    TransactionType: "EscrowCreate",
-    Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
-    Amount: xahToDrops(100), // Bloquear 100 XAH
-    FinishAfter: finishAfter,
-    CancelAfter: cancelAfter,
-  };
-
-  const prepared = await client.autofill(escrowCreate);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== EscrowCreate ===");
-  console.log("Resultado:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Hash:", signed.hash);
-    console.log("Sequence:", prepared.Sequence);
-    console.log(
-      "FinishAfter:",
-      new Date((finishAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
-    );
-    console.log(
-      "CancelAfter:",
-      new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
-    );
-    console.log("\\n¡Guarda el Sequence! Lo necesitas para EscrowFinish.");
-    console.log(\`Sequence del escrow: \${prepared.Sequence}\`);
-  }
-
-  await client.disconnect();
-}
-
-createTimeLockedEscrow();`,
-        },
-        {
-          title: {
-            es: "Completar (finish) un escrow después del tiempo de bloqueo",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-
-async function finishEscrow(ownerAddress, escrowSequence) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Cualquier cuenta puede ejecutar el EscrowFinish
-  const executor = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
-
-  // Primero, verificar que el escrow existe consultando account_objects
-  const objects = await client.request({
-    command: "account_objects",
-    account: ownerAddress,
-    type: "escrow",
-    ledger_index: "validated",
-  });
-
-  const escrow = objects.result.account_objects.find(
-    (obj) => obj.PreviousTxnLgrSeq !== undefined
-  );
-
-  if (!escrow) {
-    console.log("No se encontró el escrow. Puede que ya haya sido completado o cancelado.");
-    await client.disconnect();
-    return;
-  }
-
-  console.log("=== Escrow encontrado ===");
-  console.log("Amount:", Number(escrow.Amount) / 1_000_000, "XAH");
-  console.log("Destination:", escrow.Destination);
-
-  // Verificar si ya pasó el FinishAfter
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-  const now = Math.floor(Date.now() / 1000);
-  const finishAfterUnix = escrow.FinishAfter + RIPPLE_EPOCH_OFFSET;
-
-  if (now < finishAfterUnix) {
-    const remaining = finishAfterUnix - now;
-    console.log(
-      \`\\nAún no puedes completar este escrow. Faltan \${remaining} segundos.\`
-    );
-    console.log(
-      \`Disponible a partir de: \${new Date(finishAfterUnix * 1000).toISOString()}\`
-    );
-    await client.disconnect();
-    return;
-  }
-
-  console.log("\\nEl tiempo de bloqueo ha pasado. Completando escrow...");
-
-  const escrowFinish = {
-    TransactionType: "EscrowFinish",
-    Account: executor.address,
-    Owner: ownerAddress,
-    OfferSequence: escrowSequence,
-  };
-
-  const prepared = await client.autofill(escrowFinish);
-  const signed = executor.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("\\n=== EscrowFinish ===");
-  console.log("Resultado:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("¡Escrow completado! Los fondos han sido entregados.");
-    console.log("Hash:", signed.hash);
-  } else if (txResult === "tecNO_TARGET") {
-    console.log("El escrow no fue encontrado. Puede haber sido cancelado.");
-  }
-
-  await client.disconnect();
-}
-
-// Usa la dirección del creador y el Sequence del EscrowCreate
-finishEscrow("rDireccionDelCreador", 12345);`,
-        },
-      ],
-      slides: [
-        {
-          title: { es: "¿Qué es un Escrow?", en: "", jp: "" },
-          content: {
-            es: "Pago condicional que bloquea fondos\n\n• Bloqueo temporal (FinishAfter)\n• Cancelación automática (CancelAfter)\n• Condición criptográfica (Condition)\n\nUsos: pagos programados, vesting, atomic swaps",
-            en: "",
-            jp: "",
-          },
-          visual: "🔐",
-        },
-        {
-          title: { es: "Ciclo de vida del Escrow", en: "", jp: "" },
-          content: {
-            es: "1. EscrowCreate → Bloquea los fondos\n     ↓ (pasa el tiempo)\n2. EscrowFinish → Libera al destinatario\n     ó\n2. EscrowCancel → Devuelve al creador\n\n• FinishAfter debe pasar antes de Finish\n• CancelAfter debe pasar antes de Cancel",
-            en: "",
-            jp: "",
-          },
-          visual: "⏳",
-        },
-        {
-          title: { es: "Crypto-condiciones", en: "", jp: "" },
-          content: {
-            es: "Escrows con prueba criptográfica:\n\n• Condition = hash SHA-256\n• Fulfillment = preimagen secreta\n• Solo quien conozca el secreto puede completar\n• Basado en Interledger Protocol\n\nIdeal para intercambios trustless entre partes",
-            en: "",
-            jp: "",
-          },
-          visual: "🔑",
         },
       ],
     },
