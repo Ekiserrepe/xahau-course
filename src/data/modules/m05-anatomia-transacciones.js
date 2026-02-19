@@ -3,7 +3,7 @@ export default {
   icon: "🔬",
   title: {
     es: "Anatomía de una transacción",
-    en: "",
+    en: "Anatomy of a transaction",
     jp: "",
   },
   lessons: [
@@ -11,7 +11,7 @@ export default {
       id: "m5bl1",
       title: {
         es: "Ciclo de vida de una transacción",
-        en: "",
+        en: "Lifecycle of a transaction",
         jp: "",
       },
       theory: {
@@ -87,14 +87,85 @@ A diferencia de blockchains con finalidad probabilística (Bitcoin, Ethereum), e
 - Si una transacción es incluida en un ledger validado, es **final**
 - No hay reorgs, ni forks, ni "confirmaciones pendientes"
 - \`tesSUCCESS\` = éxito garantizado, para siempre`,
-        en: "",
+        en: `Before diving into tokens, NFTs, or smart contracts, it is essential to understand **how a transaction works from start to finish** in Xahau. This knowledge will help you diagnose issues and build robust applications.
+
+### The complete flow
+
+A transaction in Xahau goes through **5 phases** from the moment you create it until it is permanently recorded in the ledger:
+
+1. **Build** — You define the transaction fields (type, source, destination, amount, etc.)
+2. **Prepare (autofill)** — The client automatically fills in technical fields (Fee, Sequence, LastLedgerSequence, NetworkID)
+3. **Sign** — Your private key generates a cryptographic signature proving you authorize the transaction
+4. **Submit** — The signed transaction is sent to a network node
+5. **Validate** — Validators include it in a ledger through consensus and the result is final
+
+### Phase 1: Build
+
+You define a JavaScript object with the transaction fields:
+
+\`\`\`
+const tx = {
+  TransactionType: "Payment",
+  Account: "rSource...",
+  Destination: "rDestination...",
+  Amount: "1000000",
+};
+\`\`\`
+
+You only need the **essential** fields. The technical fields are automatically filled in during the next phase.
+
+### Phase 2: Prepare (autofill)
+
+The \`client.autofill(tx)\` method queries the node and fills in the missing fields:
+
+- **Fee**: The transaction cost (in drops). It is calculated based on the current network load
+- **Sequence**: Your account's sequence number (incremented with each transaction)
+- **LastLedgerSequence**: The maximum ledger in which the transaction can be included (protection against "ghost" transactions)
+- **NetworkID**: Network identifier (testnet vs mainnet)
+
+### Phase 3: Sign
+
+The \`wallet.sign(prepared)\` method generates:
+- A **digital signature** using your private key (ed25519 or secp256k1)
+- The **tx_blob**: the serialized transaction in hexadecimal format, ready to send
+
+The signature proves that **you and only you** authorized this transaction. No one can modify the transaction after signing without invalidating the signature.
+
+### Phase 4: Submit
+
+The signed transaction is sent to the node using \`client.submit(tx_blob)\` or \`client.submitAndWait(tx_blob)\`:
+
+- **submit**: Sends and returns the preliminary result immediately
+- **submitAndWait**: Sends and **waits** until the transaction is validated or rejected
+
+The node propagates it to other nodes in the network.
+
+### Phase 5: Validate (Consensus)
+
+The network validators decide whether to include the transaction in the next ledger:
+
+1. The transaction reaches the **validators' queues**
+2. Validators propose including it in the next ledger
+3. If at least **80% of the UNL** agrees, it is included
+4. The ledger closes and the result is **final and irreversible**
+
+### How long does it take?
+
+The time from submission to validation is typically **3 to 5 seconds**, the time it takes to close a ledger in Xahau. There are no 10-minute blocks like Bitcoin, nor variable confirmation times.
+
+### Finality: irreversible results
+
+Unlike blockchains with probabilistic finality (Bitcoin, Ethereum), in Xahau the result is **deterministic**:
+- If a transaction is included in a validated ledger, it is **final**
+- There are no reorgs, no forks, no "pending confirmations"
+- \`tesSUCCESS\` = guaranteed success, forever`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "El flujo completo paso a paso",
-            en: "",
+            en: "The complete flow step by step",
             jp: "",
           },
           language: "javascript",
@@ -165,28 +236,28 @@ flujoCompleto().catch(console.error);`,
       ],
       slides: [
         {
-          title: { es: "5 fases de una transacción", en: "", jp: "" },
+          title: { es: "5 fases de una transacción", en: "5 phases of a transaction", jp: "" },
           content: {
             es: "1. Construir → Definir campos (tipo, origen, destino)\n2. Preparar → autofill (Fee, Sequence, NetworkID)\n3. Firmar → Firma digital con clave privada\n4. Enviar → submit / submitAndWait\n5. Validar → Consenso → Resultado final",
-            en: "",
+            en: "1. Build → Define fields (type, source, destination)\n2. Prepare → autofill (Fee, Sequence, NetworkID)\n3. Sign → Digital signature with private key\n4. Submit → submit / submitAndWait\n5. Validate → Consensus → Final result",
             jp: "",
           },
           visual: "📋",
         },
         {
-          title: { es: "Autofill: campos automáticos", en: "", jp: "" },
+          title: { es: "Autofill: campos automáticos", en: "Autofill: automatic fields", jp: "" },
           content: {
             es: "client.autofill() rellena por ti:\n\n• Fee → Coste según carga de red\n• Sequence → Número de tx de tu cuenta\n• LastLedgerSequence → Protección anti-fantasma\n• NetworkID → Testnet vs Mainnet",
-            en: "",
+            en: "client.autofill() fills in for you:\n\n• Fee → Cost based on network load\n• Sequence → Your account's tx number\n• LastLedgerSequence → Anti-ghost protection\n• NetworkID → Testnet vs Mainnet",
             jp: "",
           },
           visual: "⚙️",
         },
         {
-          title: { es: "Finalidad determinista", en: "", jp: "" },
+          title: { es: "Finalidad determinista", en: "Deterministic finality", jp: "" },
           content: {
             es: "Validación en 3-5 segundos\n\n• Sin reorgs ni forks\n• Sin confirmaciones pendientes\n• tesSUCCESS = éxito para siempre\n• Resultado final e irreversible\n\nDiferente a Bitcoin/Ethereum (probabilístico)",
-            en: "",
+            en: "Validation in 3-5 seconds\n\n• No reorgs or forks\n• No pending confirmations\n• tesSUCCESS = success forever\n• Final and irreversible result\n\nDifferent from Bitcoin/Ethereum (probabilistic)",
             jp: "",
           },
           visual: "✅",
@@ -197,7 +268,7 @@ flujoCompleto().catch(console.error);`,
       id: "m5bl2",
       title: {
         es: "Campos de una transacción",
-        en: "",
+        en: "Transaction fields",
         jp: "",
       },
       theory: {
@@ -282,14 +353,94 @@ Puedes adjuntar datos a cualquier transacción usando el campo **Memos**:
 - Los memos son **públicos** y permanentes en el ledger
 - No afectan la lógica de la transacción, solo almacenan información adicional
 - Si no tienes la necesidad de hacerlo, se recomienda no usar estos campos para no almacenar datos innecesarios en la blockchain`,
-        en: "",
+        en: `Every transaction in Xahau is an **object with specific fields**. Some fields are required, others are optional, and others are filled in by \`autofill()\`. Understanding each field will give you full control over your transactions.
+
+### Fields common to all transactions
+
+These fields exist in **every transaction type**:
+
+| Field | Required | Description |
+|---|---|---|
+| **TransactionType** | Yes | Type: "Payment", "TrustSet", "OfferCreate", etc. |
+| **Account** | Yes | Your address (rXXX...) — who sends the transaction |
+| **Fee** | Autofill | Cost in drops (1 XAH = 1,000,000 drops) |
+| **Sequence** | Autofill | Your account's sequence number |
+| **LastLedgerSequence** | Autofill | Maximum ledger to include the tx |
+| **NetworkID** | Autofill | Network ID (21337 for Xahau mainnet) |
+| **SigningPubKey** | Auto (sign) | Your public key (added when signing) |
+| **TxnSignature** | Auto (sign) | The digital signature (added when signing) |
+
+### TransactionType — Transaction types
+
+Xahau supports many transaction types. The most common:
+
+- [Payment](https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/) — Send XAH or tokens
+- [TrustSet](https://xahau.network/docs/protocol-reference/transactions/transaction-types/trustset/) — Create or modify a trust line
+- [OfferCreate](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/) — Create an offer on the DEX
+- [OfferCancel](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercancel/) — Cancel a DEX offer
+- [AccountSet](https://xahau.network/docs/protocol-reference/transactions/transaction-types/accountset/) — Configure your account flags
+- [SetHook](https://xahau.network/docs/protocol-reference/transactions/transaction-types/sethook/) — Install or manage Hooks (smart contracts)
+- [URITokenMint](https://xahau.network/docs/protocol-reference/transactions/transaction-types/uritokenmint/) — Create an NFT (URIToken)
+- [URITokenBuy](https://xahau.network/docs/protocol-reference/transactions/transaction-types/uritokenbuy/) — Buy a URIToken
+- [URITokenCreateSellOffer](https://xahau.network/docs/protocol-reference/transactions/transaction-types/uritokencreateselloffer/) — List a URIToken for sale
+- [EscrowCreate](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowcreate/) — Create a conditional payment
+- [EscrowFinish](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowfinish/) — Complete an escrow
+- [EscrowCancel](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowcancel/) — Cancel an escrow
+
+### Fee — The transaction cost
+
+The Fee in Xahau works differently from other blockchains:
+
+- It is expressed in **drops** (1 XAH = 1,000,000 drops)
+- The base fee is **12 drops** (0.000012 XAH) — extremely cheap
+- The fee is **burned** — it does not go to validators or anyone. It is destroyed
+- When the network is congested, the fee can temporarily increase (**fee escalation**)
+- \`autofill()\` calculates the optimal fee based on the current network load
+
+### Sequence — Transaction ordering
+
+The Sequence is an **incremental counter** for your account:
+
+- It starts at the number assigned when the account is activated
+- It increments by 1 with each successful transaction
+- It ensures transactions are processed **in order**
+- If you send two transactions with the same Sequence, only one will be processed
+- If an intermediate Sequence is missing (e.g., you send 5, 6, 8 without 7), transactions 8+ are queued until 7 is resolved
+
+### LastLedgerSequence — Protection against ghost transactions
+
+The LastLedgerSequence field is an **expiration date** for your transaction:
+
+- It specifies the **maximum ledger number** in which it can be included
+- If the current ledger exceeds this number and the transaction has not been processed, it is discarded
+- It prevents "lost" transactions from executing minutes or hours later
+- \`autofill()\` sets it automatically (typically current ledger + 20)
+
+### Flags — Behavior modifiers
+
+Many transaction types accept a **Flags** field that modifies their behavior:
+
+- Flags are **numeric values** combined using bitwise operations
+- Example: \`Flags: 1\` in URITokenMint enables \`tfBurnable\`
+- Example: \`Flags: 131072\` in OfferCreate enables \`tfImmediateOrCancel\`
+- You can combine flags by adding their values
+
+### Memos — Attached data
+
+You can attach data to any transaction using the **Memos** field:
+
+- **MemoType**: MIME type in hexadecimal (e.g., "text/plain")
+- **MemoData**: The content in hexadecimal
+- Memos are **public** and permanent on the ledger
+- They do not affect the transaction logic, they only store additional information
+- If you do not need to use them, it is recommended to avoid these fields to prevent storing unnecessary data on the blockchain`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Inspeccionar los campos antes y después de autofill",
-            en: "",
+            en: "Inspect fields before and after autofill",
             jp: "",
           },
           language: "javascript",
@@ -337,7 +488,7 @@ inspeccionarCampos().catch(console.error);`,
         {
           title: {
             es: "Construir distintos tipos de transacción",
-            en: "",
+            en: "Build different transaction types",
             jp: "",
           },
           language: "javascript",
@@ -404,28 +555,28 @@ console.log("Todos comparten: TransactionType, Account, Fee, Sequence.");`,
       ],
       slides: [
         {
-          title: { es: "Campos comunes", en: "", jp: "" },
+          title: { es: "Campos comunes", en: "Common fields", jp: "" },
           content: {
             es: "Toda transacción tiene:\n\n• TransactionType → Tipo de operación\n• Account → Quién envía\n• Fee → Coste (en drops, se quema)\n• Sequence → Orden de txs de la cuenta\n• LastLedgerSequence → Caducidad\n• NetworkID → Red (testnet/mainnet)",
-            en: "",
+            en: "Every transaction has:\n\n• TransactionType → Type of operation\n• Account → Who sends it\n• Fee → Cost (in drops, burned)\n• Sequence → Account tx ordering\n• LastLedgerSequence → Expiration\n• NetworkID → Network (testnet/mainnet)",
             jp: "",
           },
           visual: "📝",
         },
         {
-          title: { es: "Tipos de transacción", en: "", jp: "" },
+          title: { es: "Tipos de transacción", en: "Transaction types", jp: "" },
           content: {
             es: "• Payment → Enviar XAH o tokens\n• TrustSet → Trust lines\n• OfferCreate/Cancel → DEX\n• AccountSet → Configurar cuenta\n• SetHook → Smart contracts\n• URITokenMint/Buy → NFTs\n• EscrowCreate/Finish → Pagos condicionales",
-            en: "",
+            en: "• Payment → Send XAH or tokens\n• TrustSet → Trust lines\n• OfferCreate/Cancel → DEX\n• AccountSet → Configure account\n• SetHook → Smart contracts\n• URITokenMint/Buy → NFTs\n• EscrowCreate/Finish → Conditional payments",
             jp: "",
           },
           visual: "📦",
         },
         {
-          title: { es: "Fee, Sequence y Flags", en: "", jp: "" },
+          title: { es: "Fee, Sequence y Flags", en: "Fee, Sequence and Flags", jp: "" },
           content: {
             es: "Fee: 12 drops base (~gratis), se quema\n\nSequence: contador incremental\n• Garantiza orden de ejecución\n• Sin huecos: txs quedan en cola\n\nFlags: modifican comportamiento\n• Se combinan sumando valores\n• Cada tipo tiene sus flags propios",
-            en: "",
+            en: "Fee: 12 drops base (~free), burned\n\nSequence: incremental counter\n• Ensures execution order\n• No gaps: txs are queued\n\nFlags: modify behavior\n• Combined by adding values\n• Each type has its own flags",
             jp: "",
           },
           visual: "🔢",
@@ -436,7 +587,7 @@ console.log("Todos comparten: TransactionType, Account, Fee, Sequence.");`,
       id: "m5bl3",
       title: {
         es: "Firma digital y serialización",
-        en: "",
+        en: "Digital signature and serialization",
         jp: "",
       },
       theory: {
@@ -515,14 +666,88 @@ Xahau soporta **multi-firma**: una transacción que requiere la firma de **múlt
 - Cada firmante firma la transacción por separado
 - Las firmas se combinan y se envían juntas
 - Útil para cuentas compartidas, DAOs, o seguridad adicional`,
-        en: "",
+        en: `The digital signature is the mechanism that ensures **only you can authorize transactions** from your account. Understanding how it works will help you grasp Xahau's security and debug signing issues.
+
+### What is a digital signature?
+
+A digital signature is a mathematical proof that:
+1. **You created the transaction** (authentication)
+2. **No one modified it** after signing (integrity)
+3. **You cannot deny** having signed it (non-repudiation)
+
+### Signing algorithms in Xahau
+
+Xahau supports two cryptographic algorithms:
+
+| Algorithm | Seed prefix | Characteristics |
+|---|---|---|
+| **ed25519** | sEd... | Faster, modern, recommended |
+| **secp256k1** | s... (no Ed) | Compatible with Bitcoin/Ethereum, older |
+
+When you generate a wallet with \`Wallet.generate()\`, **ed25519** is used by default. Seeds starting with \`sEd\` use ed25519.
+
+### The signing process step by step
+
+1. **Serialization**: The transaction (JSON object) is converted to **binary format** following the Xahau protocol. Each field has a type code and a specific order.
+
+2. **Hashing**: The serialized binary is passed through a hash function (SHA-512 half) to obtain a **32-byte digest**.
+
+3. **Signing**: Your private key generates a cryptographic signature over that hash. This signature can only be verified with your public key.
+
+4. **Assembly**: The signature (\`TxnSignature\`) and your public key (\`SigningPubKey\`) are added to the serialized transaction, generating the final **tx_blob**.
+
+### tx_blob: the transaction ready to send
+
+The \`tx_blob\` is a hexadecimal string containing **the entire transaction** (fields + signature) in binary format. It is what is actually sent to the network:
+
+\`\`\`
+wallet.sign(prepared)
+// Returns: { tx_blob: "1200002280000000...", hash: "A1B2C3..." }
+\`\`\`
+
+- **tx_blob**: The serialized and signed transaction (hex)
+- **hash**: The unique transaction identifier (to look it up later)
+
+### Signature verification
+
+When a node receives your tx_blob:
+
+1. It deserializes the blob to extract the fields
+2. It extracts the \`SigningPubKey\` and the \`TxnSignature\`
+3. It verifies that the signature matches the data and the public key
+4. It verifies that the public key corresponds to the \`Account\` address
+5. If everything matches, the transaction is valid
+
+If someone modifies **a single bit** of the tx_blob, the signature becomes invalid and the transaction is rejected.
+
+### Offline signing
+
+You can sign transactions **without an internet connection**:
+
+1. On a connected device: prepare the transaction with \`autofill()\`
+2. Copy the prepared transaction to an offline device
+3. On the offline device: sign with \`wallet.sign()\`
+4. Copy the \`tx_blob\` back to the connected device
+5. Submit with \`client.submit(tx_blob)\`
+
+This is useful for **cold wallets** — the private keys never touch an internet-connected device.
+
+### Multi-signing (MultiSign)
+
+Xahau supports **multi-signing**: a transaction that requires signatures from **multiple accounts** to be valid. It is configured with \`SignerListSet\`:
+
+- You define a list of signers (SignerList) with their weights
+- You set a minimum quorum
+- Each signer signs the transaction separately
+- The signatures are combined and submitted together
+- Useful for shared accounts, DAOs, or additional security`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Firma y verificación del tx_blob",
-            en: "",
+            en: "Signing and verifying the tx_blob",
             jp: "",
           },
           language: "javascript",
@@ -596,7 +821,7 @@ firmaDetallada().catch(console.error);`,
         {
           title: {
             es: "Firma offline: preparar en un lado, firmar en otro",
-            en: "",
+            en: "Offline signing: prepare on one side, sign on another",
             jp: "",
           },
           language: "javascript",
@@ -672,28 +897,28 @@ demo().catch(console.error);`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es una firma digital?", en: "", jp: "" },
+          title: { es: "¿Qué es una firma digital?", en: "What is a digital signature?", jp: "" },
           content: {
             es: "Prueba matemática de que:\n\n• Tú creaste la transacción (autenticación)\n• Nadie la modificó (integridad)\n• No puedes negar haberla firmado (no repudio)\n\nAlgoritmos: ed25519 (sEd...) o secp256k1 (s...)",
-            en: "",
+            en: "Mathematical proof that:\n\n• You created the transaction (authentication)\n• No one modified it (integrity)\n• You cannot deny having signed it (non-repudiation)\n\nAlgorithms: ed25519 (sEd...) or secp256k1 (s...)",
             jp: "",
           },
           visual: "🔏",
         },
         {
-          title: { es: "El proceso de firma", en: "", jp: "" },
+          title: { es: "El proceso de firma", en: "The signing process", jp: "" },
           content: {
             es: "1. Serializar → JSON a binario\n2. Hash → SHA-512 half (32 bytes)\n3. Firmar → Clave privada genera firma\n4. Ensamblar → tx_blob (hex)\n\nwallet.sign(prepared)\n→ { tx_blob: \"1200...\", hash: \"A1B2...\" }",
-            en: "",
+            en: "1. Serialize → JSON to binary\n2. Hash → SHA-512 half (32 bytes)\n3. Sign → Private key generates signature\n4. Assemble → tx_blob (hex)\n\nwallet.sign(prepared)\n→ { tx_blob: \"1200...\", hash: \"A1B2...\" }",
             jp: "",
           },
           visual: "🔐",
         },
         {
-          title: { es: "Firma offline y multi-firma", en: "", jp: "" },
+          title: { es: "Firma offline y multi-firma", en: "Offline signing and multi-signing", jp: "" },
           content: {
             es: "Firma offline (cold wallet):\n• Preparar online → Firmar offline → Enviar online\n• Claves nunca tocan internet\n\nMulti-firma (MultiSign):\n• Múltiples firmantes con pesos\n• Quórum mínimo configurable\n• Ideal para cuentas compartidas",
-            en: "",
+            en: "Offline signing (cold wallet):\n• Prepare online → Sign offline → Submit online\n• Keys never touch the internet\n\nMulti-signing (MultiSign):\n• Multiple signers with weights\n• Configurable minimum quorum\n• Ideal for shared accounts",
             jp: "",
           },
           visual: "🧊",
@@ -704,7 +929,7 @@ demo().catch(console.error);`,
       id: "m5bl4",
       title: {
         es: "Envío, validación y resultados",
-        en: "",
+        en: "Submission, validation and results",
         jp: "",
       },
       theory: {
@@ -793,14 +1018,98 @@ result.result.meta.AffectedNodes      → Qué cambió en el ledger
 result.result.ledger_index             → En qué ledger se incluyó
 result.result.hash                     → Hash único de la transacción
 \`\`\``,
-        en: "",
+        en: `Once the transaction is signed, you need to send it to the network and understand the possible outcomes. Xahau has a very detailed **result code** system that tells you exactly what happened.
+
+### submit vs submitAndWait
+
+The \`xahau\` library offers two methods for sending transactions:
+
+**client.submit(tx_blob)**:
+- Sends the transaction and returns **immediately**
+- The preliminary result indicates whether the transaction was accepted by the node (not whether it was validated)
+- You need to query later with \`tx\` to see the final result
+- Useful when you want to send many transactions quickly
+
+**client.submitAndWait(tx_blob)**:
+- Sends the transaction and **waits** until it is included in a validated ledger
+- Returns the final result directly
+- More convenient for most cases
+- May take 3-10 seconds (1-2 ledgers)
+
+### Result code categories
+
+Transaction results are divided into categories based on their **prefix**:
+
+### tes — Success
+
+\`tesSUCCESS\` is the only success code. It means the transaction was processed correctly and the changes were applied to the ledger.
+
+### tec — Transaction included but failed
+
+\`tec\` codes mean the transaction was **included in a ledger** (and the fee was charged), but the operation **was not executed**:
+
+| Code | Meaning |
+|---|---|
+| **tecUNFUNDED_PAYMENT** | You do not have enough balance for the payment |
+| **tecNO_LINE** | No trust line exists for the token |
+| **tecNO_DST** | The destination account does not exist |
+| **tecDST_TAG_NEEDED** | The destination account requires a DestinationTag |
+| **tecNO_PERMISSION** | You do not have permission for this operation |
+| **tecINSUFFICIENT_RESERVE** | You do not have enough XAH for the new object's reserve |
+| **tecPATH_DRY** | No viable payment path was found |
+| **tecKILLED** | Offer canceled by tfFillOrKill flag |
+
+**Important**: For \`tec\` errors, the fee **is still charged** even though the operation fails.
+
+### tef — Error before processing
+
+\`tef\` codes indicate the transaction was **rejected before being processed**. The fee is **not charged**:
+
+| Code | Meaning |
+|---|---|
+| **tefPAST_SEQ** | The Sequence was already used (duplicate transaction) |
+| **tefMAX_LEDGER** | LastLedgerSequence has already passed (expired transaction) |
+| **tefALREADY** | The transaction is already in the queue |
+
+### tem — Malformed error
+
+\`tem\` codes indicate the transaction is **malformed** and could never be valid:
+
+| Code | Meaning |
+|---|---|
+| **temMALFORMED** | Invalid fields or incorrect format |
+| **temBAD_AMOUNT** | Invalid amount (negative, zero in XAH, etc.) |
+| **temBAD_FEE** | Invalid fee |
+| **temDISABLED** | The feature is disabled on this network |
+| **temINVALID_FLAG** | Invalid flag for this transaction type |
+
+### ter — Temporary error (retry)
+
+\`ter\` codes indicate a **temporary** error that may resolve if you retry:
+
+| Code | Meaning |
+|---|---|
+| **terPRE_SEQ** | A previous transaction is pending (prior Sequence) |
+| **terQUEUED** | The transaction is queued waiting (too many in flight) |
+| **terINSUF_FEE_B** | Insufficient fee given the current load |
+
+### Reading the complete result
+
+The result object contains all the information you need:
+
+\`\`\`
+result.result.meta.TransactionResult  → The code (tesSUCCESS, etc.)
+result.result.meta.AffectedNodes      → What changed in the ledger
+result.result.ledger_index             → Which ledger it was included in
+result.result.hash                     → Unique transaction hash
+\`\`\``,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Manejar todos los tipos de resultado",
-            en: "",
+            en: "Handle all result types",
             jp: "",
           },
           language: "javascript",
@@ -884,7 +1193,7 @@ enviarConManejo().catch(console.error);`,
         {
           title: {
             es: "Diferencia entre submit y submitAndWait",
-            en: "",
+            en: "Difference between submit and submitAndWait",
             jp: "",
           },
           language: "javascript",
@@ -953,28 +1262,28 @@ comparar().catch(console.error);`,
       ],
       slides: [
         {
-          title: { es: "submit vs submitAndWait", en: "", jp: "" },
+          title: { es: "submit vs submitAndWait", en: "submit vs submitAndWait", jp: "" },
           content: {
             es: "submit():\n• Envía y devuelve inmediatamente\n• Resultado preliminar (no final)\n• Rápido, para enviar muchas txs\n\nsubmitAndWait():\n• Envía y espera validación (3-10s)\n• Resultado final directo\n• Recomendado para la mayoría de casos",
-            en: "",
+            en: "submit():\n• Sends and returns immediately\n• Preliminary result (not final)\n• Fast, for sending many txs\n\nsubmitAndWait():\n• Sends and waits for validation (3-10s)\n• Direct final result\n• Recommended for most cases",
             jp: "",
           },
           visual: "📤",
         },
         {
-          title: { es: "Códigos de resultado", en: "", jp: "" },
+          title: { es: "Códigos de resultado", en: "Result codes", jp: "" },
           content: {
             es: "• tesSUCCESS → Éxito\n• tec... → Incluida pero falló (fee cobrado)\n• tef... → Rechazada (fee NO cobrado)\n• tem... → Mal formada (error de formato)\n• ter... → Error temporal (reintentar)\n\nSiempre verifica meta.TransactionResult",
-            en: "",
+            en: "• tesSUCCESS → Success\n• tec... → Included but failed (fee charged)\n• tef... → Rejected (fee NOT charged)\n• tem... → Malformed (format error)\n• ter... → Temporary error (retry)\n\nAlways check meta.TransactionResult",
             jp: "",
           },
           visual: "🏷️",
         },
         {
-          title: { es: "Errores tec más comunes", en: "", jp: "" },
+          title: { es: "Errores tec más comunes", en: "Most common tec errors", jp: "" },
           content: {
             es: "• tecUNFUNDED_PAYMENT → Sin balance\n• tecNO_DST → Destino no existe\n• tecDST_TAG_NEEDED → Falta tag\n• tecNO_LINE → Sin trust line\n• tecINSUFFICIENT_RESERVE → Sin reserva\n• tecPATH_DRY → Sin ruta de pago\n\nEl fee SE cobra en errores tec",
-            en: "",
+            en: "• tecUNFUNDED_PAYMENT → No balance\n• tecNO_DST → Destination doesn't exist\n• tecDST_TAG_NEEDED → Missing tag\n• tecNO_LINE → No trust line\n• tecINSUFFICIENT_RESERVE → No reserve\n• tecPATH_DRY → No payment path\n\nThe fee IS charged on tec errors",
             jp: "",
           },
           visual: "⚠️",
@@ -985,7 +1294,7 @@ comparar().catch(console.error);`,
       id: "m5bl5",
       title: {
         es: "Transacciones a nivel del ledger",
-        en: "",
+        en: "Transactions at the ledger level",
         jp: "",
       },
       theory: {
@@ -1098,14 +1407,122 @@ Cuando se cierra un ledger, se calcula un **hash** que resume:
 - El estado completo del ledger (árbol de estado)
 
 Si un validador calcula un hash diferente al 80% de la UNL, su ledger se descarta, esto garantiza la consistencia de la red.`,
-        en: "",
+        en: `To truly understand how transactions work, you need to see what happens **inside the ledger** when a transaction is processed. This will help you debug complex issues and understand metadata.
+
+### How does a transaction modify the ledger?
+
+When a transaction is successfully processed, it modifies the **ledger state** — the objects stored in the ledger database. These changes are recorded in the transaction's **metadata**.
+
+### AffectedNodes — The transaction's footprint
+
+The \`meta.AffectedNodes\` field is an array that describes **exactly what changed** in the ledger. Each affected node can be one of three types:
+
+### CreatedNode — New object
+
+A new object was created in the ledger:
+
+\`\`\`
+{
+  "CreatedNode": {
+    "LedgerEntryType": "RippleState",  // Object type
+    "LedgerIndex": "ABC123...",         // Unique object ID
+    "NewFields": {                      // The new object's fields
+      "Balance": { "value": "100" },
+      "LowLimit": { ... },
+      "HighLimit": { ... }
+    }
+  }
+}
+\`\`\`
+
+Examples: new trust line, new DEX offer, new URIToken.
+
+### ModifiedNode — Modified object
+
+An existing object was modified:
+
+\`\`\`
+{
+  "ModifiedNode": {
+    "LedgerEntryType": "AccountRoot",
+    "LedgerIndex": "DEF456...",
+    "PreviousFields": {                // State BEFORE
+      "Balance": "100000000"
+    },
+    "FinalFields": {                   // State AFTER
+      "Balance": "95000000",
+      "Sequence": 43
+    }
+  }
+}
+\`\`\`
+
+\`PreviousFields\` only shows the fields that **changed** (not all the object's fields). \`FinalFields\` shows the complete state after the change.
+
+### DeletedNode — Deleted object
+
+An object was removed from the ledger:
+
+\`\`\`
+{
+  "DeletedNode": {
+    "LedgerEntryType": "Offer",
+    "LedgerIndex": "GHI789...",
+    "FinalFields": {                   // State at the time of deletion
+      "TakerPays": "0",
+      "TakerGets": "0"
+    }
+  }
+}
+\`\`\`
+
+Examples: completed/canceled offer, deleted trust line (zero balance), burned URIToken.
+
+### Balance changes — Follow the money
+
+In a payment transaction, you can trace exactly how money moved by observing the \`ModifiedNode\` entries of type \`AccountRoot\`:
+
+- The source account: \`Balance\` decreases (sent XAH)
+- The destination account: \`Balance\` increases (received XAH)
+- The difference between balances is the \`Amount\` + \`Fee\`
+
+For tokens (IOUs), changes are visible in the \`ModifiedNode\` entries of type \`RippleState\`.
+
+### Reserves — The reserve system
+
+The Xahau ledger uses a **reserve** system that affects your available balance:
+
+- **Base reserve**: 1 XAH — minimum for an account to exist
+- **Owner reserve**: 0.2 XAH for each object your account owns
+
+Each object in the ledger (trust line, offer, URIToken, Hook) increases your reserve. Reserved XAH cannot be spent until you remove the object.
+
+### Processing order within a ledger
+
+Within a ledger, transactions are processed in a **deterministic order**:
+
+1. Transactions are sorted by **canonical hash** (not by Sequence or submission time)
+2. They are processed sequentially in that order
+3. Each transaction sees the ledger state after the previous transaction
+4. If two transactions compete for the same resources, the first one (by hash) wins
+
+This ensures that **all validators compute exactly the same result**, regardless of the order in which they received the transactions.
+
+### The ledger hash
+
+When a ledger closes, a **hash** is calculated that summarizes:
+- The previous ledger's hash (chain of ledgers)
+- All included transactions and their metadata
+- The complete ledger state (state tree)
+
+If a validator computes a different hash from 80% of the UNL, its ledger is discarded — this guarantees network consistency.`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Analizar los AffectedNodes de una transacción",
-            en: "",
+            en: "Analyze a transaction's AffectedNodes",
             jp: "",
           },
           language: "javascript",
@@ -1202,7 +1619,7 @@ analizarMetadata().catch(console.error);`,
         {
           title: {
             es: "Consultar la reserva actual de tu cuenta",
-            en: "",
+            en: "Query your account's current reserve",
             jp: "",
           },
           language: "javascript",
@@ -1271,28 +1688,28 @@ consultarReserva("rTuCuentaAqui");`,
       ],
       slides: [
         {
-          title: { es: "AffectedNodes", en: "", jp: "" },
+          title: { es: "AffectedNodes", en: "AffectedNodes", jp: "" },
           content: {
             es: "Cada transacción registra qué cambió:\n\n• CreatedNode → Nuevo objeto en el ledger\n• ModifiedNode → Objeto existente modificado\n  (PreviousFields → FinalFields)\n• DeletedNode → Objeto eliminado\n\nLa huella exacta de la transacción",
-            en: "",
+            en: "Each transaction records what changed:\n\n• CreatedNode → New object in the ledger\n• ModifiedNode → Existing object modified\n  (PreviousFields → FinalFields)\n• DeletedNode → Object deleted\n\nThe exact footprint of the transaction",
             jp: "",
           },
           visual: "🔍",
         },
         {
-          title: { es: "Sistema de reservas", en: "", jp: "" },
+          title: { es: "Sistema de reservas", en: "Reserve system", jp: "" },
           content: {
             es: "Reserva base: 1 XAH por cuenta\nReserva por objeto: 0.2 XAH cada uno\n\nObjetos que consumen reserva:\n• Trust lines, Ofertas DEX\n• URITokens, Hooks\n\nEliminar objeto = liberar reserva\nDisponible = Balance - Reserva total",
-            en: "",
+            en: "Base reserve: 1 XAH per account\nOwner reserve: 0.2 XAH each\n\nObjects that consume reserve:\n• Trust lines, DEX Offers\n• URITokens, Hooks\n\nDelete object = free reserve\nAvailable = Balance - Total reserve",
             jp: "",
           },
           visual: "💰",
         },
         {
-          title: { es: "Orden y consistencia", en: "", jp: "" },
+          title: { es: "Orden y consistencia", en: "Order and consistency", jp: "" },
           content: {
             es: "Dentro de un ledger:\n\n• Txs ordenadas por hash canónico\n• Procesadas secuencialmente\n• Mismo resultado en todos los nodos\n\nHash del ledger resume:\n• Ledger anterior + Txs + Estado\n• 80% UNL debe coincidir\n• Garantiza consistencia total",
-            en: "",
+            en: "Within a ledger:\n\n• Txs ordered by canonical hash\n• Processed sequentially\n• Same result on all nodes\n\nLedger hash summarizes:\n• Previous ledger + Txs + State\n• 80% UNL must agree\n• Guarantees total consistency",
             jp: "",
           },
           visual: "🔗",

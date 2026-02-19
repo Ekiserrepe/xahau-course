@@ -43,13 +43,37 @@ Los fees en Xahau son extremadamente bajos y predecibles:
 - Los fees se **queman** (destruyen), no van a ningún validador
 - La librería \`xahau\` puede calcular el fee automáticamente con \`autofill()\`
 
-### Ciclo de vida de una transacción
+### Enviar IOUs (tokens) en lugar de XAH nativo
 
-1. **Construir**: Crear el objeto de transacción con los campos necesarios
-2. **Autofill**: Rellenar automáticamente Fee, Sequence y NetworkID
-3. **Firmar**: Firmar con la clave privada del emisor
-4. **Enviar**: Enviar la transacción firmada al nodo
-5. **Validar**: Esperar a que se incluya en un ledger validado`,
+Cuando envías XAH nativo, el campo \`Amount\` es un **string** con la cantidad en drops. Pero cuando envías un **IOU** (token emitido por una cuenta, como USD, EUR, etc.), \`Amount\` pasa a ser un **objeto** con tres campos:
+
+\`\`\`
+{
+  "currency": "USD",       // Código de la moneda (3 caracteres o hex de 40)
+  "issuer": "rDireccionDelEmisor",  // Cuenta que emitió el token
+  "value": "100"           // Cantidad como string
+}
+\`\`\`
+
+**Requisitos previos para enviar IOUs:**
+- **El emisor debe tener fondos**: Tu cuenta debe poseer saldo de ese IOU. Puedes obtenerlo mediante un pago previo, un intercambio en el DEX, o directamente del emisor del token.
+- **El receptor debe tener una TrustLine**: La cuenta de destino debe haber creado previamente una TrustLine (\`TrustSet\`) para ese IOU con el mismo emisor. Sin TrustLine, el pago fallará con \`tecPATH_DRY\` o \`tecNO_LINE\`.
+
+### ¿Por qué los IOUs o tokens diferentes de XAH necesitan estos campos?
+
+Puede darse el caso de que varias entidades emitan el mismo tipo de IOU. Por ejemplo, distintos bancos podrían emitir su propio EUR o USD token. La única forma de diferenciarlos sería especificando quién es el emisor si comparten el mismo nombre de token.
+
+
+
+### Más información sobre Payment
+
+La transacción Payment tiene muchos más campos opcionales, flags y posibles errores de los que cubrimos aquí. Para una referencia completa consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/)
+
+Allí encontrarás:
+- Todos los campos opcionales (SendMax, DeliverMin, InvoiceID, etc.)
+- Flags disponibles (tfPartialPayment, tfLimitQuality, etc.)
+- Lista completa de códigos de error y sus causas
+- Casos especiales y comportamientos avanzados`,
         en: "",
         jp: "",
       },
@@ -61,20 +85,21 @@ Los fees en Xahau son extremadamente bajos y predecibles:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function sendPayment() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // Wallet del emisor (usa tu seed de testnet)
-  const sender = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
+  // Wallet del emisor (usa tu seed de testnet), si tienes una seed que no es secp256k1, elimina la parte ", {algorithm: 'secp256k1'}" 
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Construir la transacción de pago
   const payment = {
     TransactionType: "Payment",
     Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: xahToDrops(10), // 10 XAH
   };
 
@@ -101,34 +126,88 @@ async function sendPayment() {
 
 sendPayment();`,
         },
+        {
+          title: {
+            es: "Enviar un pago de IOU (token) entre dos cuentas",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// El código no va a funcionar a no ser que tengas saldo del IOU y el destino tenga TrustLine activa. Modifica los campos según tu configuración de testnet.
+async function sendIOUPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Wallet del emisor (usa tu seed de testnet), si tienes una seed que no es secp256k1, elimina la parte ", {algorithm: 'secp256k1'}" 
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Para enviar un IOU, Amount es un objeto con currency, issuer y value
+  // Requisitos:
+  //   1. El sender debe tener saldo de este IOU
+  //   2. El destino debe tener una TrustLine para este IOU
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rDireccionDelDestinatario",
+    //Aquí modificarías el currency, issuer y value según el token que quieras enviar
+    Amount: {
+      currency: "USD",
+      issuer: "rDireccionDelEmisorDelToken",
+      value: "50", // 50 USD
+    },
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Resultado:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("¡Pago de IOU enviado con éxito!");
+  } else if (txResult === "tecPATH_DRY") {
+    console.log("Error: No hay ruta de pago. ¿Tiene el destino una TrustLine?");
+  } else if (txResult === "tecUNFUNDED_PAYMENT") {
+    console.log("Error: No tienes suficiente saldo de este IOU.");
+  }
+
+  await client.disconnect();
+}
+
+sendIOUPayment();`,
+        },
       ],
       slides: [
         {
           title: { es: "Transacción Payment", en: "", jp: "" },
           content: {
-            es: "La transacción más básica de Xahau\n\n• Account → Quien envía\n• Destination → Quien recibe\n• Amount → Cantidad (en drops)\n• 1 XAH = 1,000,000 drops",
+            es: "La transacción más básica de Xahau\n\n• Account → Quien envía\n• Destination → Quien recibe\n• Amount → Cantidad (en drops para XAH)\n• 1 XAH = 1,000,000 drops",
             en: "",
             jp: "",
           },
           visual: "💸",
         },
         {
-          title: { es: "Ciclo de vida", en: "", jp: "" },
+          title: { es: "Envío de IOUs (tokens)", en: "", jp: "" },
           content: {
-            es: "1️⃣ Construir → Campos de la tx\n2️⃣ Autofill → Fee, Sequence, NetworkID\n3️⃣ Firmar → Con tu clave privada\n4️⃣ Enviar → submitAndWait()\n5️⃣ Validar → tesSUCCESS = éxito",
+            es: "Amount pasa a ser un objeto:\n\n• currency → Código del token (USD, EUR...)\n• issuer → Cuenta emisora del token\n• value → Cantidad como string\n\nRequisitos:\n• Tener saldo del IOU\n• Destino con TrustLine activa",
             en: "",
             jp: "",
           },
-          visual: "🔄",
+          visual: "🪙",
         },
         {
-          title: { es: "De submit a resultado final", en: "", jp: "" },
+          title: { es: "Documentación oficial", en: "", jp: "" },
           content: {
-            es: "• Submit → Tx enviada al nodo\n• Nodo propaga a la red de validadores\n• Consenso → Incluida en un ledger\n• Resultado final en meta.TransactionResult\n• Fee se quema (no va a validadores)\n• submitAndWait espera la validación",
+            es: "Referencia completa de Payment:\ https://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• Campos opcionales (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Códigos de error completos\n• Casos especiales y avanzados",
             en: "",
             jp: "",
           },
-          visual: "✅",
+          visual: "📖",
         },
       ],
     },
@@ -148,6 +227,10 @@ El **Destination Tag** es un número entero que permite al receptor identificar 
 - **Exchanges**: Identificar a qué usuario pertenece un depósito
 - **Servicios**: Asociar un pago con un pedido o factura
 - Si una cuenta tiene activado el flag \`RequireDestTag\`, **no puedes enviarle un pago sin tag**
+
+El sistema permite hasta 32 bits para el Destination Tag, lo que significa que puedes usar números enteros de hasta 4,294,967,295. Es importante que siempre verifiques con el receptor cuál es el Destination Tag correcto antes de enviar un pago, ya que enviar un pago sin tag o con un tag incorrecto a una cuenta que lo requiere puede resultar en la pérdida de fondos.
+
+Además existe el **Source Tag**, que cumple la misma función pero para el emisor. Sin embargo, el Destination Tag es mucho más común y ampliamente utilizado en la práctica.
 
 ### Memos
 
@@ -171,35 +254,44 @@ Cada transacción devuelve un código de resultado:
       codeBlocks: [
         {
           title: {
-            es: "Pago con Destination Tag y Memos",
+            es: "Pago con Source, Destination Tag y Memos",
             en: "",
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
 
 // Función auxiliar para convertir texto a hexadecimal
 function toHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+function hexToString(hex) {
+  if (!hex) return null;
+  return Buffer.from(hex, "hex").toString("utf8");
 }
 
 async function sendPaymentWithMemo() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const sender = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
+  // Wallet del emisor (usa tu seed de testnet), si tienes una seed que no es secp256k1, elimina la parte ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {
+    algorithm: "secp256k1",
+  });
 
   const payment = {
     TransactionType: "Payment",
     Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: xahToDrops(5), // 5 XAH
-    DestinationTag: 12345, // Tag para identificar el pago
+    SourceTag: 1, // Tag del emisor para identificar el pago
+    DestinationTag: 12345, // Tag de destino para identificar el pago
     Memos: [
       {
         Memo: {
           MemoType: toHex("text/plain"),
-          MemoData: toHex("Pago del curso de Xahau - Módulo 5"),
+          MemoData: toHex("Pago del curso de Xahau"),
         },
       },
     ],
@@ -215,7 +307,26 @@ async function sendPaymentWithMemo() {
   if (txResult === "tesSUCCESS") {
     console.log("¡Pago con memo enviado!");
     console.log("Hash:", signed.hash);
-    console.log("Destination Tag:", 12345);
+    const lookup = await client.request({
+      command: "tx",
+      transaction: signed.hash,
+    });
+
+    const tx = lookup.result.tx_json ?? lookup.result;
+    console.log("Source Tag:", tx.SourceTag);
+    console.log("Destination Tag:", tx.DestinationTag);
+
+    if (tx.Memos) {
+      tx.Memos.forEach((memoWrapper, index) => {
+        const memo = memoWrapper.Memo;
+
+        const memoType = hexToString(memo.MemoType);
+        const memoData = hexToString(memo.MemoData);
+
+        console.log("MemoType:", memoType);
+        console.log("MemoData:", memoData);
+      });
+    }
   }
 
   await client.disconnect();
@@ -265,7 +376,7 @@ async function verifyPayment(txHash) {
 
   await client.disconnect();
 }
-
+// Ejemplo de hash de transacción: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
 verifyPayment("TU_HASH_DE_TRANSACCION_AQUI");`,
         },
       ],
