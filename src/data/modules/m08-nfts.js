@@ -19,7 +19,8 @@ export default {
 
 ### ¿Qué es un URIToken?
 
-Un URIToken es un objeto del ledger que contiene:
+Un URIToken es un objeto **único** en el ledger que contiene:
+- **ID**: Identificador único del token (LedgerIndex)
 - **URI**: Un enlace a los metadatos o contenido del NFT (imagen, JSON, etc.)
 - **Digest**: Hash opcional del contenido al que apunta la URI (para verificar integridad)
 - **Owner**: La cuenta propietaria actual
@@ -75,6 +76,7 @@ async function mintURIToken() {
   const mint = {
     TransactionType: "URITokenMint",
     Account: creator.address,
+    // URI de ejemplo (puede ser IPFS, HTTPS, etc.) - Ejemplo: ipfs://bafybeieza5w4rkes55paw7jgpo4kzsbyywhw7ildltk3kjx2ttkmt7texa/106.json
     URI: toHex("https://ejemplo.com/nft/metadata.json"),
     Flags: 1, // tfBurnable: el emisor puede quemar el token
   };
@@ -190,7 +192,7 @@ getURITokens("rTuDireccionAqui");`,
 
 ### Flujo de venta
 
-1. El propietario crea una **oferta de venta** con \`URITokenCreateSellOffer\`, indicando el precio en XAH
+1. El propietario crea una **oferta de venta** con \`URITokenCreateSellOffer\`, indicando el precio en XAH o en otra divisa.
 2. Cualquiera puede **comprar** el URIToken con \`URITokenBuy\`, pagando el precio establecido
 3. El propietario puede **cancelar** la oferta con \`URITokenCancelSellOffer\`
 
@@ -216,20 +218,21 @@ El propietario actual siempre puede quemar (destruir) su URIToken con \`URIToken
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const owner = Wallet.fromSeed("sEdVxxxSeedDelPropietario", {algorithm: 'secp256k1'});
+  const owner = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Crear oferta de venta por 50 XAH
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
     URITokenID: "TU_URITOKEN_ID_AQUI", // ID del URIToken a vender
-    Amount: xahToDrops(50), // Precio: 50 XAH
+    Amount: xahToDrops(5), // Precio: 5 XAH
   };
 
   const prepared = await client.autofill(sellOffer);
@@ -239,7 +242,7 @@ async function sellURIToken() {
   console.log("Resultado:", result.result.meta.TransactionResult);
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡URIToken puesto a la venta por 50 XAH!");
+    console.log("¡URIToken puesto a la venta por 5 XAH!");
   }
 
   await client.disconnect();
@@ -254,20 +257,21 @@ sellURIToken();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const buyer = Wallet.fromSeed("sEdVxxxSeedDelComprador", {algorithm: 'secp256k1'});
+  const buyer = Wallet.fromSeed(process.env.BUYER_SEED, {algorithm: 'secp256k1'});
 
   // Comprar el URIToken pagando el precio de venta
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
     URITokenID: "TU_URITOKEN_ID_AQUI", // ID del URIToken a comprar
-    Amount: xahToDrops(50), // Debe coincidir con el precio de venta
+    Amount: xahToDrops(5), // Debe coincidir con el precio de venta
   };
 
   const prepared = await client.autofill(buy);
@@ -333,7 +337,6 @@ La URI es un enlace que apunta al contenido o metadatos del NFT. Hay varias opci
 
 - **IPFS links** (\`ipfs://QmXxx...\`): Almacenamiento descentralizado. El contenido es inmutable y direccionado por hash. Es la opción **recomendada** para producción
 - **HTTPS links** (\`https://mi-servidor.com/metadata/1.json\`): Almacenamiento centralizado. Fácil de implementar pero depende de que el servidor esté disponible
-- **Data URIs** (\`data:application/json;base64,...\`): Para datos pequeños incrustados directamente. Útil para metadatos simples sin dependencia externa
 
 ### El campo Digest: verificación de integridad
 
@@ -345,14 +348,23 @@ Siguiendo un estándar similar a ERC-721, los metadatos JSON de un URIToken típ
 
 \`\`\`json
 {
-  "name": "Mi NFT #1",
-  "description": "Descripción del NFT",
-  "image": "ipfs://QmXxxImageHash...",
-  "attributes": [
-    { "trait_type": "Color", "value": "Azul" },
-    { "trait_type": "Rareza", "value": "Legendario" },
-    { "trait_type": "Poder", "value": 95 }
-  ]
+    "content": {
+        "url": "ipfs://bafybeign6w3zkxxqohchtxyv4qot6zrwcrvosmmrz2c6ayijl67h42s3km/106.png"
+    },
+    "details": {
+        "title": "Nombre de tu NFT",
+        "categories": [
+            "0001"
+        ],
+        "publisher": {
+            "name": "Tu nombre",
+            "url": "https://www.tuweb.com",
+            "email": "tucorreo@gmail.com"
+        },
+        "group": {
+            "title": "Título de tu colección"
+        }
+    }
 }
 \`\`\`
 
@@ -361,7 +373,6 @@ Siguiendo un estándar similar a ERC-721, los metadatos JSON de un URIToken típ
 | Opción | Ventajas | Desventajas |
 |---|---|---|
 | **IPFS** | Descentralizado, inmutable, direccionado por hash | Necesita pinning para persistencia |
-| **Arweave** | Permanente, pago único | Coste por almacenamiento |
 | **Servidor centralizado** | Simple, rápido | Punto único de fallo, mutable |
 
 ### Buenas prácticas
@@ -374,158 +385,13 @@ Siguiendo un estándar similar a ERC-721, los metadatos JSON de un URIToken típ
         jp: "",
       },
       codeBlocks: [
-        {
-          title: {
-            es: "Mintear un URIToken con URI de IPFS y Digest",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-const crypto = require("crypto");
-
-function toHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-
-async function mintWithIPFSAndDigest() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const creator = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
-
-  // Metadatos JSON del NFT (esto se sube a IPFS)
-  const metadata = JSON.stringify({
-    name: "Xahau NFT #1",
-    description: "Mi primer NFT en Xahau con IPFS",
-    image: "ipfs://QmExampleImageHash123456789",
-    attributes: [
-      { trait_type: "Colección", value: "Xahau Academy" },
-      { trait_type: "Número", value: 1 },
-    ],
-  });
-
-  // Calcular el digest SHA-256 del contenido
-  const digest = crypto
-    .createHash("sha256")
-    .update(metadata)
-    .digest("hex")
-    .toUpperCase();
-
-  console.log("Digest SHA-256:", digest);
-
-  // URI apuntando al JSON en IPFS (después de subirlo)
-  const ipfsURI = "ipfs://QmExampleMetadataHash123456789";
-
-  const mint = {
-    TransactionType: "URITokenMint",
-    Account: creator.address,
-    URI: toHex(ipfsURI),
-    Digest: digest,
-    Flags: 1, // tfBurnable
-  };
-
-  const prepared = await client.autofill(mint);
-  const signed = creator.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("Resultado:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡URIToken creado con IPFS URI y Digest!");
-
-    const created = result.result.meta.AffectedNodes.find(
-      (n) => n.CreatedNode?.LedgerEntryType === "URIToken"
-    );
-    if (created) {
-      console.log("URIToken ID:", created.CreatedNode.LedgerIndex);
-    }
-  }
-
-  await client.disconnect();
-}
-
-mintWithIPFSAndDigest();`,
-        },
-        {
-          title: {
-            es: "Leer un URIToken y verificar su Digest contra el contenido",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client } = require("xahau");
-const crypto = require("crypto");
-const https = require("https");
-
-async function verifyURITokenDigest(ownerAddress, uriTokenID) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Obtener los URITokens de la cuenta
-  const response = await client.request({
-    command: "account_objects",
-    account: ownerAddress,
-    type: "uri_token",
-    ledger_index: "validated",
-  });
-
-  // Buscar el URIToken específico
-  const token = response.result.account_objects.find(
-    (t) => t.index === uriTokenID
-  );
-
-  if (!token) {
-    console.log("URIToken no encontrado");
-    await client.disconnect();
-    return;
-  }
-
-  const uri = Buffer.from(token.URI, "hex").toString("utf8");
-  const digestOnLedger = token.Digest;
-
-  console.log("=== Verificación de URIToken ===");
-  console.log("ID:", token.index);
-  console.log("URI:", uri);
-  console.log("Digest en ledger:", digestOnLedger);
-
-  if (!digestOnLedger) {
-    console.log("\\n⚠ Este URIToken no tiene Digest. No se puede verificar.");
-    await client.disconnect();
-    return;
-  }
-
-  // Simular la obtención del contenido (en producción,
-  // descargarías el contenido real de la URI)
-  const contenidoSimulado = '{"name":"Xahau NFT #1","description":"Ejemplo"}';
-
-  // Calcular el hash del contenido descargado
-  const digestCalculado = crypto
-    .createHash("sha256")
-    .update(contenidoSimulado)
-    .digest("hex")
-    .toUpperCase();
-
-  console.log("Digest calculado:", digestCalculado);
-
-  if (digestCalculado === digestOnLedger) {
-    console.log("\\n✓ ¡Verificación exitosa! El contenido es auténtico.");
-  } else {
-    console.log("\\n✗ ¡ATENCIÓN! El contenido ha sido modificado.");
-    console.log("El digest no coincide con el registrado en el ledger.");
-  }
-
-  await client.disconnect();
-}
-
-verifyURITokenDigest("rDireccionDelOwner", "URI_TOKEN_ID_AQUI");`,
-        },
+        
       ],
       slides: [
         {
           title: { es: "El campo URI: opciones de enlace", en: "", jp: "" },
           content: {
-            es: "¿A dónde apunta tu NFT?\n\n• ipfs://Qm... → Descentralizado e inmutable\n• https://... → Centralizado pero simple\n• data:... → Datos inline pequeños\n\nRecomendado: IPFS para producción",
+            es: "¿A dónde apunta tu NFT?\n\n• ipfs://Qm... → Descentralizado e inmutable\n• https://... → Centralizado pero simple\n",
             en: "",
             jp: "",
           },
