@@ -3,7 +3,7 @@ export default {
   icon: "🎨",
   title: {
     es: "Creación y uso de NFTs",
-    en: "",
+    en: "Creating and Using NFTs",
     jp: "",
   },
   lessons: [
@@ -11,7 +11,7 @@ export default {
       id: "m7l1",
       title: {
         es: "URITokens: NFTs nativos en Xahau",
-        en: "",
+        en: "URITokens: Native NFTs on Xahau",
         jp: "",
       },
       theory: {
@@ -48,14 +48,46 @@ Un URIToken es un objeto **único** en el ledger que contiene:
 ### Flags de URITokenMint
 
 - **tfBurnable (1)**: Permite que el emisor pueda quemar el token aunque ya no sea el propietario`,
-        en: "",
+        en: `On Xahau, NFTs are implemented as **URITokens**, native ledger objects that represent non-fungible tokens with an associated URI.
+
+### What Is a URIToken?
+
+A URIToken is a **unique** object on the ledger that contains:
+- **ID**: Unique token identifier (LedgerIndex)
+- **URI**: A link to the NFT's metadata or content (image, JSON, etc.)
+- **Digest**: Optional hash of the content the URI points to (for integrity verification)
+- **Owner**: The current owner account
+- **Issuer**: The account that originally created it
+
+### URIToken vs ERC-721
+
+| Feature | ERC-721 (Ethereum) | URIToken (Xahau) |
+|---|---|---|
+| Create collection | Deploy Solidity contract | Not required |
+| Mint NFT | Contract function | \`URITokenMint\` transaction |
+| Transfer | Contract function | \`URITokenBuy\` transaction |
+| Metadata | tokenURI in contract | Native URI on the object |
+| Cost | Expensive gas | Minimal fee (~12 drops) |
+| Verification | Depends on contract | Native Digest on the ledger |
+
+### URIToken-Related Transactions
+
+- **URITokenMint**: Create a new URIToken
+- **URITokenBurn**: Destroy a URIToken
+- **URITokenCreateSellOffer**: List a URIToken for sale
+- **URITokenCancelSellOffer**: Cancel a sell offer
+- **URITokenBuy**: Buy a URIToken that is listed for sale
+
+### URITokenMint Flags
+
+- **tfBurnable (1)**: Allows the issuer to burn the token even if they are no longer the owner`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Crear (mintear) un URIToken",
-            en: "",
+            en: "Create (Mint) a URIToken",
             jp: "",
           },
           language: "javascript",
@@ -108,7 +140,7 @@ mintURIToken();`,
         {
           title: {
             es: "Consultar los URITokens de una cuenta",
-            en: "",
+            en: "Query URITokens for an Account",
             jp: "",
           },
           language: "javascript",
@@ -152,28 +184,28 @@ getURITokens("rTuDireccionAqui");`,
       ],
       slides: [
         {
-          title: { es: "URITokens en Xahau", en: "", jp: "" },
+          title: { es: "URITokens en Xahau", en: "URITokens on Xahau", jp: "" },
           content: {
             es: "NFTs nativos del ledger de Xahau\n\n• URI → Enlace a metadatos\n• Digest → Hash de verificación\n• Owner → Propietario actual\n• Issuer → Creador original\n\nSin necesidad de smart contracts",
-            en: "",
+            en: "Native NFTs on the Xahau ledger\n\n• URI → Link to metadata\n• Digest → Verification hash\n• Owner → Current owner\n• Issuer → Original creator\n\nNo smart contracts needed",
             jp: "",
           },
           visual: "🎨",
         },
         {
-          title: { es: "Operaciones con URITokens", en: "", jp: "" },
+          title: { es: "Operaciones con URITokens", en: "URIToken Operations", jp: "" },
           content: {
             es: "• URITokenMint → Crear NFT\n• URITokenBurn → Destruir NFT\n• URITokenCreateSellOffer → Vender\n• URITokenCancelSellOffer → Cancelar venta\n• URITokenBuy → Comprar",
-            en: "",
+            en: "• URITokenMint → Create NFT\n• URITokenBurn → Destroy NFT\n• URITokenCreateSellOffer → Sell\n• URITokenCancelSellOffer → Cancel sale\n• URITokenBuy → Buy",
             jp: "",
           },
           visual: "🔧",
         },
         {
-          title: { es: "URIToken vs ERC-721", en: "", jp: "" },
+          title: { es: "URIToken vs ERC-721", en: "URIToken vs ERC-721", jp: "" },
           content: {
             es: "URIToken (Xahau):\n• Nativo del ledger, sin contratos\n• Fee mínimo (~12 drops)\n• Digest nativo para verificación\n\nERC-721 (Ethereum):\n• Requiere contrato Solidity\n• Gas costoso y variable\n• Verificación depende del contrato",
-            en: "",
+            en: "URIToken (Xahau):\n• Native to the ledger, no contracts\n• Minimal fee (~12 drops)\n• Native Digest for verification\n\nERC-721 (Ethereum):\n• Requires Solidity contract\n• Expensive and variable gas\n• Verification depends on contract",
             jp: "",
           },
           visual: "⚖️",
@@ -184,7 +216,7 @@ getURITokens("rTuDireccionAqui");`,
       id: "m7l2",
       title: {
         es: "Compra-venta de URITokens",
-        en: "",
+        en: "Buying and Selling URITokens",
         jp: "",
       },
       theory: {
@@ -207,14 +239,32 @@ Para transferir un URIToken sin coste (regalar), puedes crear una oferta de vent
 ### Quemar un URIToken
 
 El propietario actual siempre puede quemar (destruir) su URIToken con \`URITokenBurn\`. Si el token fue creado con el flag \`tfBurnable\`, el emisor original también puede quemarlo.`,
-        en: "",
+        en: `Xahau includes a native system for buying and selling URITokens, with no need for external marketplaces or smart contracts.
+
+### Sale Flow
+
+1. The owner creates a **sell offer** with \`URITokenCreateSellOffer\`, specifying the price in XAH or another currency.
+2. Anyone can **buy** the URIToken with \`URITokenBuy\`, paying the listed price
+3. The owner can **cancel** the offer with \`URITokenCancelSellOffer\`
+
+### Sale to a Specific Recipient
+
+You can create a sell offer directed at a specific account using the \`Destination\` field. Only that account will be able to buy the URIToken.
+
+### Free Transfer
+
+To transfer a URIToken at no cost (as a gift), you can create a sell offer with \`Amount: "0"\` and a specific \`Destination\`.
+
+### Burning a URIToken
+
+The current owner can always burn (destroy) their URIToken with \`URITokenBurn\`. If the token was created with the \`tfBurnable\` flag, the original issuer can also burn it.`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Poner un URIToken a la venta",
-            en: "",
+            en: "List a URIToken for Sale",
             jp: "",
           },
           language: "javascript",
@@ -253,7 +303,7 @@ sellURIToken();`,
         {
           title: {
             es: "Comprar un URIToken que está a la venta",
-            en: "",
+            en: "Buy a URIToken That Is Listed for Sale",
             jp: "",
           },
           language: "javascript",
@@ -293,28 +343,28 @@ buyURIToken();`,
       ],
       slides: [
         {
-          title: { es: "Flujo de venta", en: "", jp: "" },
+          title: { es: "Flujo de venta", en: "Sale Flow", jp: "" },
           content: {
             es: "1️⃣ URITokenCreateSellOffer → Poner precio\n2️⃣ URITokenBuy → Comprador paga\n3️⃣ Transferencia automática\n\nTodo nativo, sin marketplace externo",
-            en: "",
+            en: "1️⃣ URITokenCreateSellOffer → Set price\n2️⃣ URITokenBuy → Buyer pays\n3️⃣ Automatic transfer\n\nAll native, no external marketplace",
             jp: "",
           },
           visual: "💰",
         },
         {
-          title: { es: "Transferir y quemar", en: "", jp: "" },
+          title: { es: "Transferir y quemar", en: "Transfer and Burn", jp: "" },
           content: {
             es: "Transferir gratis:\n• SellOffer con Amount: 0 + Destination\n\nQuemar (destruir):\n• URITokenBurn por el propietario\n• O por el emisor si tiene flag tfBurnable",
-            en: "",
+            en: "Free transfer:\n• SellOffer with Amount: 0 + Destination\n\nBurn (destroy):\n• URITokenBurn by the owner\n• Or by the issuer if tfBurnable flag is set",
             jp: "",
           },
           visual: "🔥",
         },
         {
-          title: { es: "Quemar URITokens en detalle", en: "", jp: "" },
+          title: { es: "Quemar URITokens en detalle", en: "Burning URITokens in Detail", jp: "" },
           content: {
             es: "Flag tfBurnable (1) al mintear:\n• Permite al emisor quemar el token\n• Incluso si ya no es propietario\n\nSin tfBurnable:\n• Solo el propietario actual puede quemar\n\nUsos: eliminar errores de minteo,\ncontenido expirado, tokens revocables",
-            en: "",
+            en: "tfBurnable flag (1) at mint time:\n• Allows the issuer to burn the token\n• Even if they are no longer the owner\n\nWithout tfBurnable:\n• Only the current owner can burn\n\nUse cases: fix minting errors,\nexpired content, revocable tokens",
             jp: "",
           },
           visual: "🗑️",
@@ -325,7 +375,7 @@ buyURIToken();`,
       id: "m7l3",
       title: {
         es: "Metadatos y estándares para URITokens",
-        en: "",
+        en: "Metadata and Standards for URITokens",
         jp: "",
       },
       theory: {
@@ -381,7 +431,58 @@ Siguiendo un estándar similar a ERC-721, los metadatos JSON de un URIToken típ
 - **Usa IPFS para producción**: La inmutabilidad y descentralización protegen el valor del NFT
 - **Mantén el JSON consistente**: Sigue el estándar de metadatos para compatibilidad con marketplaces y exploradores
 - **No pongas datos sensibles en la URI**: Todo es público en el ledger`,
-        en: "",
+        en: `Metadata is the key to making an NFT useful and verifiable. On Xahau, URITokens use the **URI** and **Digest** fields to link to and verify associated content.
+
+### The URI Field: What to Put in It
+
+The URI is a link that points to the NFT's content or metadata. There are several options:
+
+- **IPFS links** (\`ipfs://QmXxx...\`): Decentralized storage. Content is immutable and hash-addressed. This is the **recommended** option for production
+- **HTTPS links** (\`https://my-server.com/metadata/1.json\`): Centralized storage. Easy to implement but depends on server availability
+
+### The Digest Field: Integrity Verification
+
+The **Digest** is a SHA-256 hash of the content the URI points to. It allows anyone to verify that the content has not been altered since the NFT was created. It is stored as a 64-character hexadecimal string on the ledger.
+
+### JSON Metadata Standard
+
+Following a standard similar to ERC-721, the JSON metadata for a URIToken typically includes:
+
+\`\`\`json
+{
+    "content": {
+        "url": "ipfs://bafybeign6w3zkxxqohchtxyv4qot6zrwcrvosmmrz2c6ayijl67h42s3km/106.png"
+    },
+    "details": {
+        "title": "Your NFT Name",
+        "categories": [
+            "0001"
+        ],
+        "publisher": {
+            "name": "Your name",
+            "url": "https://www.yourwebsite.com",
+            "email": "youremail@gmail.com"
+        },
+        "group": {
+            "title": "Your Collection Title"
+        }
+    }
+}
+\`\`\`
+
+### Storage Options
+
+| Option | Advantages | Disadvantages |
+|---|---|---|
+| **IPFS** | Decentralized, immutable, hash-addressed | Requires pinning for persistence |
+| **Centralized server** | Simple, fast | Single point of failure, mutable |
+
+### Best Practices
+
+- **Always set the Digest**: Allows verifying content integrity at any time
+- **Use IPFS for production**: Immutability and decentralization protect the NFT's value
+- **Keep JSON consistent**: Follow the metadata standard for compatibility with marketplaces and explorers
+- **Do not put sensitive data in the URI**: Everything is public on the ledger`,
         jp: "",
       },
       codeBlocks: [
@@ -389,338 +490,31 @@ Siguiendo un estándar similar a ERC-721, los metadatos JSON de un URIToken típ
       ],
       slides: [
         {
-          title: { es: "El campo URI: opciones de enlace", en: "", jp: "" },
+          title: { es: "El campo URI: opciones de enlace", en: "The URI Field: Link Options", jp: "" },
           content: {
             es: "¿A dónde apunta tu NFT?\n\n• ipfs://Qm... → Descentralizado e inmutable\n• https://... → Centralizado pero simple\n",
-            en: "",
+            en: "Where does your NFT point to?\n\n• ipfs://Qm... → Decentralized and immutable\n• https://... → Centralized but simple\n",
             jp: "",
           },
           visual: "🔗",
         },
         {
-          title: { es: "Digest: verificación de integridad", en: "", jp: "" },
+          title: { es: "Digest: verificación de integridad", en: "Digest: Integrity Verification", jp: "" },
           content: {
             es: "SHA-256 del contenido → grabado en el ledger\n\n• Cualquiera puede verificar\n• Detecta alteraciones\n• 64 caracteres hexadecimales\n\nSiempre establece el Digest para proteger tu NFT",
-            en: "",
+            en: "SHA-256 of the content → recorded on the ledger\n\n• Anyone can verify\n• Detects tampering\n• 64 hexadecimal characters\n\nAlways set the Digest to protect your NFT",
             jp: "",
           },
           visual: "🔏",
         },
         {
-          title: { es: "Estándar de metadatos JSON", en: "", jp: "" },
+          title: { es: "Estándar de metadatos JSON", en: "JSON Metadata Standard", jp: "" },
           content: {
             es: "Estructura recomendada (similar a ERC-721):\n\n• name → Nombre del NFT\n• description → Descripción\n• image → Enlace a la imagen\n• attributes → Array de propiedades\n\nConsistencia = compatibilidad con exploradores",
-            en: "",
+            en: "Recommended structure (similar to ERC-721):\n\n• name → NFT name\n• description → Description\n• image → Link to image\n• attributes → Array of properties\n\nConsistency = compatibility with explorers",
             jp: "",
           },
           visual: "📋",
-        },
-      ],
-    },
-    {
-      id: "m7l4",
-      title: {
-        es: "Proyecto práctico: crear una colección de NFTs",
-        en: "",
-        jp: "",
-      },
-      theory: {
-        es: `En esta lección práctica vamos a crear una colección completa de NFTs en Xahau: desde el minteo programático hasta la transferencia, pasando por la consulta y gestión de los tokens.
-
-### Planificando tu colección de NFTs
-
-Antes de mintear, define:
-- **Nombre de la colección** y tema visual
-- **Cantidad de NFTs**: Cuántos tokens vas a crear
-- **Metadatos**: Estructura JSON consistente para todos los NFTs
-- **Almacenamiento**: Dónde guardar las imágenes y metadatos (IPFS recomendado)
-- **Flags**: ¿Quieres que sean quemables por el emisor? (tfBurnable)
-
-### Minteo programático: crear múltiples URITokens
-
-Para crear una colección, iteras sobre tus metadatos y ejecutas \`URITokenMint\` para cada uno. Es importante esperar la confirmación de cada transacción antes de enviar la siguiente para evitar problemas de secuencia.
-
-### Listar todos los URITokens de un emisor
-
-Usando \`account_objects\` con filtro \`type: "uri_token"\` puedes obtener todos los URITokens de una cuenta. Esto te permite construir un catálogo o galería de tu colección.
-
-### Construir una galería simple
-
-Con la lista de URITokens puedes:
-1. Obtener cada URI
-2. Descargar los metadatos JSON
-3. Mostrar nombre, descripción, imagen y atributos
-
-### Flujo de transferencia
-
-Para transferir un URIToken a otro usuario:
-1. El propietario crea una **oferta de venta** (\`URITokenCreateSellOffer\`) — puede ser con precio 0 para regalo, o con \`Destination\` para venta privada
-2. El comprador ejecuta \`URITokenBuy\` pagando el monto establecido
-3. La propiedad se transfiere automáticamente
-
-### Quemar URITokens no deseados
-
-Si necesitas eliminar URITokens de tu colección (errores de minteo, tokens sobrantes), usa \`URITokenBurn\`. El propietario siempre puede quemar sus tokens. Si se usó \`tfBurnable\` al mintear, el emisor original también puede hacerlo.`,
-        en: "",
-        jp: "",
-      },
-      codeBlocks: [
-        {
-          title: {
-            es: "Mintear un lote de 3 URITokens con diferentes metadatos",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-const crypto = require("crypto");
-
-function toHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-
-async function mintCollection() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const creator = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
-
-  // Definir los metadatos de cada NFT de la colección
-  const collection = [
-    {
-      name: "Xahau Warrior #1",
-      description: "Guerrero legendario de la colección Xahau",
-      image: "ipfs://QmImageHash1",
-      attributes: [
-        { trait_type: "Clase", value: "Guerrero" },
-        { trait_type: "Poder", value: 85 },
-      ],
-    },
-    {
-      name: "Xahau Mage #2",
-      description: "Mago ancestral de la colección Xahau",
-      image: "ipfs://QmImageHash2",
-      attributes: [
-        { trait_type: "Clase", value: "Mago" },
-        { trait_type: "Poder", value: 92 },
-      ],
-    },
-    {
-      name: "Xahau Healer #3",
-      description: "Sanador sagrado de la colección Xahau",
-      image: "ipfs://QmImageHash3",
-      attributes: [
-        { trait_type: "Clase", value: "Sanador" },
-        { trait_type: "Poder", value: 78 },
-      ],
-    },
-  ];
-
-  const mintedTokens = [];
-
-  for (let i = 0; i < collection.length; i++) {
-    const metadata = JSON.stringify(collection[i]);
-
-    // Calcular digest del contenido
-    const digest = crypto
-      .createHash("sha256")
-      .update(metadata)
-      .digest("hex")
-      .toUpperCase();
-
-    // En producción, subirías metadata a IPFS y usarías el CID real
-    const uri = \`ipfs://QmCollectionMetadata\${i + 1}\`;
-
-    const mint = {
-      TransactionType: "URITokenMint",
-      Account: creator.address,
-      URI: toHex(uri),
-      Digest: digest,
-      Flags: 1, // tfBurnable
-    };
-
-    const prepared = await client.autofill(mint);
-    const signed = creator.sign(prepared);
-    const result = await client.submitAndWait(signed.tx_blob);
-
-    const txResult = result.result.meta.TransactionResult;
-    console.log(\`[\${i + 1}/\${collection.length}] \${collection[i].name}: \${txResult}\`);
-
-    if (txResult === "tesSUCCESS") {
-      const created = result.result.meta.AffectedNodes.find(
-        (n) => n.CreatedNode?.LedgerEntryType === "URIToken"
-      );
-      if (created) {
-        mintedTokens.push({
-          id: created.CreatedNode.LedgerIndex,
-          name: collection[i].name,
-        });
-      }
-    }
-  }
-
-  console.log("\\n=== Colección minteada ===");
-  for (const token of mintedTokens) {
-    console.log(\`  \${token.name} → ID: \${token.id}\`);
-  }
-
-  await client.disconnect();
-}
-
-mintCollection();`,
-        },
-        {
-          title: {
-            es: "Listar todos los URITokens de una cuenta con sus metadatos",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client } = require("xahau");
-
-async function listCollectionWithMetadata(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const response = await client.request({
-    command: "account_objects",
-    account: address,
-    type: "uri_token",
-    ledger_index: "validated",
-  });
-
-  const tokens = response.result.account_objects;
-  console.log(\`=== Colección de NFTs de \${address} ===\`);
-  console.log(\`Total: \${tokens.length} URITokens\\n\`);
-
-  for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
-    const uri = Buffer.from(token.URI, "hex").toString("utf8");
-
-    console.log(\`--- NFT #\${i + 1} ---\`);
-    console.log(\`  ID:     \${token.index}\`);
-    console.log(\`  URI:    \${uri}\`);
-    console.log(\`  Emisor: \${token.Issuer}\`);
-
-    if (token.Digest) {
-      console.log(\`  Digest: \${token.Digest}\`);
-    }
-
-    if (token.Amount) {
-      const precio = Number(token.Amount) / 1_000_000;
-      console.log(\`  Estado: En venta por \${precio} XAH\`);
-    } else {
-      console.log(\`  Estado: No está a la venta\`);
-    }
-
-    // En producción, aquí descargarías el JSON de la URI
-    // y mostrarías name, description, image, attributes
-    // const metadata = await fetch(convertIPFStoHTTP(uri));
-    // console.log("  Nombre:", metadata.name);
-
-    console.log();
-  }
-
-  await client.disconnect();
-}
-
-listCollectionWithMetadata("rTuDireccionAqui");`,
-        },
-        {
-          title: {
-            es: "Transferir un URIToken a otra cuenta (venta + compra)",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function transferURIToken() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const seller = Wallet.fromSeed("sEdVxxxSeedDelVendedor", {algorithm: 'secp256k1'});
-  const buyer = Wallet.fromSeed("sEdVxxxSeedDelComprador", {algorithm: 'secp256k1'});
-
-  const uriTokenID = "TU_URITOKEN_ID_AQUI";
-  const precioXAH = 25; // Precio de venta: 25 XAH
-
-  // PASO 1: El vendedor crea la oferta de venta
-  console.log("Paso 1: Creando oferta de venta...");
-  const sellOffer = {
-    TransactionType: "URITokenCreateSellOffer",
-    Account: seller.address,
-    URITokenID: uriTokenID,
-    Amount: xahToDrops(precioXAH),
-    Destination: buyer.address, // Venta dirigida al comprador
-  };
-
-  const prepSell = await client.autofill(sellOffer);
-  const signedSell = seller.sign(prepSell);
-  const resultSell = await client.submitAndWait(signedSell.tx_blob);
-
-  console.log("Oferta de venta:", resultSell.result.meta.TransactionResult);
-
-  if (resultSell.result.meta.TransactionResult !== "tesSUCCESS") {
-    console.log("Error al crear la oferta de venta");
-    await client.disconnect();
-    return;
-  }
-
-  // PASO 2: El comprador acepta y compra el URIToken
-  console.log("\\nPaso 2: Comprando el URIToken...");
-  const buyTx = {
-    TransactionType: "URITokenBuy",
-    Account: buyer.address,
-    URITokenID: uriTokenID,
-    Amount: xahToDrops(precioXAH),
-  };
-
-  const prepBuy = await client.autofill(buyTx);
-  const signedBuy = buyer.sign(prepBuy);
-  const resultBuy = await client.submitAndWait(signedBuy.tx_blob);
-
-  console.log("Compra:", resultBuy.result.meta.TransactionResult);
-
-  if (resultBuy.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log(\`\\n¡Transferencia completada!\`);
-    console.log(\`El URIToken ahora pertenece a \${buyer.address}\`);
-    console.log(\`El vendedor recibió \${precioXAH} XAH\`);
-  }
-
-  await client.disconnect();
-}
-
-transferURIToken();`,
-        },
-      ],
-      slides: [
-        {
-          title: { es: "Planificar tu colección de NFTs", en: "", jp: "" },
-          content: {
-            es: "Antes de mintear, define:\n\n• Nombre y tema de la colección\n• Cantidad de NFTs a crear\n• Estructura de metadatos JSON\n• Almacenamiento: IPFS recomendado\n• Flags: tfBurnable si necesitas control",
-            en: "",
-            jp: "",
-          },
-          visual: "📝",
-        },
-        {
-          title: { es: "Minteo y gestión programática", en: "", jp: "" },
-          content: {
-            es: "Crear colección en un loop:\n\n1️⃣ Preparar metadatos para cada NFT\n2️⃣ Calcular Digest SHA-256\n3️⃣ URITokenMint por cada uno\n4️⃣ Esperar confirmación entre cada mint\n\naccount_objects → Listar toda la colección",
-            en: "",
-            jp: "",
-          },
-          visual: "⚙️",
-        },
-        {
-          title: { es: "Transferencia y ciclo de vida", en: "", jp: "" },
-          content: {
-            es: "Flujo de transferencia:\n\n1️⃣ Vendedor → URITokenCreateSellOffer\n2️⃣ Comprador → URITokenBuy\n3️⃣ Propiedad transferida automáticamente\n\nQuemar: URITokenBurn para eliminar\nGratis: Amount 0 + Destination",
-            en: "",
-            jp: "",
-          },
-          visual: "🔄",
         },
       ],
     },
