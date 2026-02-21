@@ -1,5 +1,5 @@
 export default {
-  id: "m11",
+  id: "m10",
   icon: "🔐",
   title: {
     es: "Escrows, Cheques y Tickets",
@@ -8,7 +8,7 @@ export default {
   },
   lessons: [
     {
-      id: "m11l1",
+      id: "m10l1",
       title: {
         es: "Escrows: pagos condicionales",
         en: "",
@@ -247,7 +247,7 @@ finishEscrow("rDireccionDelCreador", 12345);`,
       ],
     },
     {
-      id: "m11l2",
+      id: "m10l2",
       title: {
         es: "Cheques: pagos diferidos",
         en: "",
@@ -471,7 +471,7 @@ cashCheck("TU_CHECK_ID_AQUI");`,
       ],
     },
     {
-      id: "m11l3",
+      id: "m10l3",
       title: {
         es: "Tickets: secuencias fuera de orden",
         en: "",

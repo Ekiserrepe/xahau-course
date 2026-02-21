@@ -1,5 +1,5 @@
 export default {
-  id: "m12",
+  id: "m11",
   icon: "🧰",
   title: {
     es: "Herramientas del ecosistema Xahau",
@@ -8,7 +8,7 @@ export default {
   },
   lessons: [
     {
-      id: "m12l1",
+      id: "m11l1",
       title: {
         es: "Xaman: la wallet principal de Xahau",
         en: "",
@@ -122,7 +122,7 @@ Las dApps se conectan a Xaman de dos formas:
       ],
     },
     {
-      id: "m12l2",
+      id: "m11l2",
       title: {
         es: "Exploradores de bloques",
         en: "",
@@ -311,7 +311,7 @@ explorarTransaccion("TU_HASH_DE_TRANSACCION_AQUI");`,
       ],
     },
     {
-      id: "m12l3",
+      id: "m11l3",
       title: {
         es: "Hooks Builder: IDE online para smart contracts",
         en: "",
@@ -438,7 +438,7 @@ Considera migrar a un entorno local cuando:
       ],
     },
     {
-      id: "m12l4",
+      id: "m11l4",
       title: {
         es: "Recursos para desarrolladores",
         en: "",

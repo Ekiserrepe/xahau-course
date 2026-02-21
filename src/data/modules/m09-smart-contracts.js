@@ -36,17 +36,17 @@ La diferencia más importante es el **modelo de ejecución**:
 - En Ethereum, **tú llamas** al smart contract enviando una transacción al contrato
 - En Xahau, los Hooks se **ejecutan automáticamente** cuando una transacción pasa por una cuenta que tiene un Hook instalado
 
-Los Hooks son como **filtros** o **interceptores** que reaccionan a las transacciones. Pueden:
+Los Hooks son como **filtros** o **interceptores** que reaccionan a las transacciones. Entre muchas opciones, pueden:
 - **Aceptar** la transacción (\`accept()\`)
 - **Rechazar** la transacción (\`rollback()\`)
 - **Emitir** nuevas transacciones (\`emit()\`)
 - **Leer y escribir** estado persistente (\`state()\`, \`state_set()\`)
 
-### Límites
+### Algunas datos curiosos
 
 - Máximo **10 Hooks** por cuenta
-- Cada Hook tiene su propio **namespace** para estado
-- El WASM tiene un tamaño máximo permitido
+- Cada Hook tiene su propio **namespace** para guardar información, pero puede utilizar otros que no son el propio  si tiene permisos
+- La primera vez que se instala un Hook, el código WASM se almacena en el ledger y se le asigna un hash. Si otro usuario quiere instalar el mismo Hook, puede hacer uso del identificador y no necesita tener acceso al código fuente para instalarlo.
 
 ### Funciones obligatorias
 
@@ -1084,6 +1084,324 @@ deployHookWithParams();`,
             jp: "",
           },
           visual: "🔧",
+        },
+      ],
+    },
+    {
+      id: "m8l6",
+      title: {
+        es: "Hooks Builder: Desarrollo online",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `[Hooks Builder](https://builder.xahau.network) es el entorno de desarrollo online para Hooks en **Xahau Testnet**. Permite escribir, compilar, desplegar y probar Hooks directamente desde el navegador sin necesidad de instalar nada en tu equipo. **Nota:** Recuerda guardar tus avances y seeds antes de cerrar el navegador, puede que no se guarden una vez cerrada la sesión.
+
+### Pestañas principales
+
+El Builder tiene tres pestañas principales que cubren todo el flujo de desarrollo:
+
+- **Develop**: Escribir y compilar Hooks en C
+- **Deploy**: Gestionar cuentas y desplegar Hooks
+- **Test**: Generar transacciones de prueba y ver logs
+
+### Paso 1: Gestionar cuentas en Deploy
+
+Antes de desarrollar, necesitas al menos una cuenta de testnet. En la pestaña **Deploy**:
+
+**Crear una cuenta nueva**
+1. Haz clic en **"Generate Account"** o el botón de crear cuenta
+2. El Builder generará automáticamente un par de claves (dirección + seed) y fondeará la cuenta con XAH de testnet a través del faucet
+3. Guarda el seed en un lugar seguro, lo necesitarás si cierras el navegador
+
+**Importar una cuenta existente**
+1. Haz clic en **"Import Account"** o el botón de importar
+2. Introduce el **seed** (secret) de tu cuenta de testnet
+3. La cuenta aparecerá en la lista con su balance y Hooks instalados
+
+Es recomendable tener al menos **dos cuentas**: una para instalar el Hook y otra para enviarle transacciones de prueba. **No utilices seeds de cuentas de Xahau Mainnet en el Builder por seguridad**, si necesitas una nueva seed, genérala dentro del Builder o visita [xahau-test.net](https://xahau-test.net/).
+
+### Paso 2: Desarrollar y compilar en Develop
+
+En la pestaña **Develop**:
+
+1. **Selecciona un ejemplo** del menú lateral o crea un archivo nuevo
+2. **Escribe tu Hook en C**, el editor tiene resaltado de sintaxis y autocompletado básico
+3. Haz clic en **"Compile To WASM"** para compilar el código C a WebAssembly
+4. Si hay errores, aparecerán en la consola inferior, revisa la línea y el mensaje de error
+5. Si la compilación es exitosa, recibirás el mensaje \`File xxxx.c compiled successfully. Ready to deploy.Go to deploy\`. El WASM resultante estará listo para desplegarse
+
+**Consejos**:
+- Empieza con los ejemplos incluidos para familiarizarte con la API
+- Los errores de compilación más comunes son: olvidar incluir \`hookapi.h\`, no declarar el guard \`_g()\`, o errores de tipos en las funciones de la API
+
+### Paso 3: Desplegar en Deploy
+
+Una vez compilado tu Hook, vuelve a la pestaña **Deploy**:
+
+1. **Selecciona la cuenta** donde quieres instalar el Hook y pulsa **Set Hook** para abrir el formulario de instalación
+2. **Configura los parámetros**:
+   - **Account**: la cuenta donde se instalará el Hook (ya seleccionada)
+   - **Sequence**: deja que el Builder lo complete automáticamente
+   - **Invoke on transactions** (HookOn): elige los tipos de transacción que activarán el Hook (puedes elegir varias)
+   - **Hook Namespace Seed**: el nombre en string que quieres usar como seed para el Namespace.
+   - **Hook Namespace (sha256)**: El sha256 generado a partir de la Seed utilizada en el campo anterior (no tocar).
+   - **Hook Parameters**: si tu Hook usa parámetros, configúralos aquí (nombre y valor en hex)
+   - **Fee**: pulsa en **Suggest** si el Hook da error de fee insuficiente, el Builder calculará el fee recomendado.
+3. Haz clic en **"Set Hook"** para enviar la transacción \`SetHook\`
+4. Confirma que el resultado es \`tesSUCCESS\` en la consola
+
+### Paso 4: Probar en Test
+
+La pestaña **Test** es donde verificas que tu Hook funciona correctamente:
+
+1. **Transaction type**: Elige el tipo de transacción que quieres enviar (Payment, OfferCreate, etc.).
+2. **Account**: El emisor de la transacción.
+3. **Sequence**: Deja que el Builder lo complete automáticamente.
+4. **Flags**: Configura los flags necesarios para la transacción.
+5. **Destination**: La dirección de destino de la transacción.
+6. **Amount**: El monto a enviar y el tipo (XAH o IOU), si aplica para la transacción.
+7. **Fee**: Pulsa en **Suggest** para que el Builder calcule el fee recomendado.
+8. **Hook parameters**: Si tu Hook usa parámetros, configúralos aquí (nombre y valor en hex).
+9. **Memos**: Si tu transacción necesita memos, añádelos aquí (opcional).
+10. Haz click en **Run Test**.
+
+Deberás estar atento en las pantallas de **Development Log** y **Debug Stream**. En **Debug Stream** puedes elegir que parte del escenario quieres revisar: eligiendo la cuenta si hay varias implicadas.
+
+**Flujo de pruebas recomendado**:
+
+- **Casos positivos**: envía transacciones que deberían ser aceptadas y verifica que pasa.
+- **Casos negativos**: envía transacciones que no deberían influir y verifica que es así.
+- **Casos límite**: prueba con montos exactos al límite, transacciones de tipos no esperados, etc.
+- **Casos no esperados**: prueba transacciones que no esperes por si el Hook las maneja de forma inesperada.
+- **Revisa el estado**: si tu Hook usa \`state()\`, verifica que los valores se guardan correctamente consultando \`account_objects\` o la información de estado en el Builder
+
+Una gran y consistente batería de pruebas es clave para asegurar que tu Hook se comporta correctamente en todas las situaciones. Si puedes, pide a otras personas que tambièn prueben tu Hook con casos que tú no hayas considerado.
+
+### Limitaciones del Builder
+
+- Solo funciona con **Xahau Testnet**, no con Mainnet
+- Para desarrollo más avanzado o despliegue en producción, necesitarás un entorno local
+- El estado de tus cuentas y Hooks se mantiene entre sesiones si no limpias el navegador. No suele ocurrir lo mismo con los Hooks.`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [],
+      slides: [
+        {
+          title: { es: "Hooks Builder — Pestañas", en: "", jp: "" },
+          content: {
+            es: "builder.xahau.network\n\n📝 Develop — Escribir y compilar Hooks\n🚀 Deploy — Gestionar cuentas y desplegar\n🧪 Test — Probar con transacciones reales\n\nTodo desde el navegador, sin instalar nada",
+            en: "",
+            jp: "",
+          },
+          visual: "🌐",
+        },
+        {
+          title: { es: "Flujo de trabajo en el Builder", en: "", jp: "" },
+          content: {
+            es: "1. Deploy → Crear o importar cuentas de testnet\n2. Develop → Escribir Hook en C y compilar\n3. Deploy → Instalar Hook en la cuenta\n4. Test → Enviar transacciones de prueba\n5. Revisar logs y mensajes del Hook",
+            en: "",
+            jp: "",
+          },
+          visual: "🔄",
+        },
+        {
+          title: { es: "Pestaña Test — Verificar tu Hook", en: "", jp: "" },
+          content: {
+            es: "• Seleccionar cuenta de origen (distinta al Hook)\n• Elegir tipo de transacción\n• Configurar campos y enviar\n• Revisar logs: accept(), rollback(), trace()\n\nProbar: caso positivo, negativo y límites",
+            en: "",
+            jp: "",
+          },
+          visual: "🧪",
+        },
+      ],
+    },
+    {
+      id: "m8l7",
+      title: {
+        es: "Desarrollo local de Hooks con hooks-cli",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `Para desarrollo profesional, despliegue en **Xahau Mainnet** o proyectos que requieran mayor control, necesitas un entorno de desarrollo local. La herramienta principal es [hooks-cli](https://github.com/Xahau/hooks-cli), una CLI oficial que permite compilar Hooks en C a WebAssembly desde tu terminal.
+
+### ¿Qué es hooks-cli?
+
+**hooks-cli** es una herramienta de línea de comandos que simplifica todo el proceso de compilación de Hooks:
+
+- Compila código C a WebAssembly (.wasm) listo para desplegar
+- Incluye todas las dependencias necesarias (compilador, headers, hookapi.h)
+- No necesitas configurar manualmente clang, wasm-ld ni las cabeceras del API de Hooks
+- Funciona en macOS, Linux y Windows
+
+### Instalación
+
+\`\`\`bash
+# Instalar hooks-cli globalmente con npm
+npm install -g hooks-cli
+\`\`\`
+
+Una vez instalado, el comando \`hooks-cli\` estará disponible en tu terminal.
+
+### Crear carpeta de tu proyecto Hook
+
+\`\`\`bash
+# Crear una carpeta para tu proyecto Hook
+hooks-cli init c mi-proyecto-hook
+\`\`\`
+
+El comando generará una estructura básica de proyecto con un ejemplo de Hook en C, un archivo .env para configuración, y archivos de configuración de TypeScript y npm:
+
+\`\`\`bash
+mi-proyecto-hook/
+├── contracts/
+│   ├── base.c
+├── .env
+├── package.json
+├── tsconfig.json
+└── src/
+    └── index.ts
+\`\`\`
+
+### Instalar dependencias de tu proyecto
+
+\`\`\`bash
+# Crear una carpeta para tu proyecto Hook
+cd mi-proyecto-hook
+yarn install
+\`\`\`
+
+Dentro de esta carpeta, puedes organizar tu código fuente, archivos compilados y scripts de despliegue como prefieras. Una estructura común es tener una carpeta \`src/\` para el código C, una carpeta \`build/\` para los archivos .wasm compilados, y una carpeta \`scripts/\` para scripts de despliegue.
+
+### Compilar un Hook
+
+Para compilar un archivo C a WebAssembly (.wasm):
+
+\`\`\`bash
+# Compilar un Hook
+yarn run build
+
+#Otra opción
+# hooks-cli compile-c contracts build/
+# El resultado será my_hook.wasm en el /build de tu proyecto
+\`\`\`
+
+El archivo \`.wasm\` resultante es el binario que desplegarás en Xahau usando una transacción \`SetHook\`.
+
+### Despliegue del Hook en Xahau
+
+Una vez tengamos nuestro Hook en formato .wasm, necesitamos desplegarlo en Xahau. Para automatizar este proceso, puedes usar la librería \`xahau\` y generar una transacción \`SetHook\` que incluya el código del Hook en formato .wasm:
+
+\`\`\`javascript
+const createHook = {
+      "TransactionType": "SetHook",
+      "Account": mywallet.address,
+      "Flags": 0,
+      "Hooks": [
+        {
+          "Hook": {
+            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
+            "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
+            "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
+            "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
+            "Flags": 1,
+            "HookApiVersion": 0
+          }
+        }
+      ],
+    };
+\`\`\`
+
+
+### Referencia y documentación
+
+Para información completa sobre hooks-cli, opciones avanzadas de compilación y la API completa de Hooks, consulta:
+
+- **hooks-cli**: [github.com/Xahau/hooks-cli](https://github.com/Xahau/hooks-cli) — Repositorio oficial con instrucciones de instalación y uso
+- **Hooks Toolkit**: [hooks-toolkit.com](https://hooks-toolkit.com/) — Documentación completa del toolkit, incluye guías, referencia de la API de Hooks (\`hookapi.h\`), ejemplos y herramientas adicionales para el desarrollo de Hooks`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Script de despliegue de un Hook en .wasm",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function createHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const mywallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Comprar el URIToken pagando el precio de venta
+      const createHook = {
+      "TransactionType": "SetHook",
+      "Account": mywallet.address,
+      "Flags": 0,
+      "Hooks": [
+        {
+          "Hook": {
+            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
+            "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
+            "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
+            "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
+            "Flags": 1,
+            "HookApiVersion": 0
+          }
+        }
+      ],
+    };
+
+  const prepared = await client.autofill(createHook);
+  const signed = mywallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Resultado:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("¡La instalación del Hook fue exitosa! para ", mywallet.address);  }
+
+  await client.disconnect();
+}
+
+createHook();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "hooks-cli — Compilación local", en: "", jp: "" },
+          content: {
+            es: "Herramienta oficial para compilar Hooks\n\nnpm install -g hooks-cli\nhooks-cli build my_hook.c\n\n• Compila C → WebAssembly\n• Incluye todas las dependencias\n• macOS, Linux y Windows",
+            en: "",
+            jp: "",
+          },
+          visual: "🔨",
+        },
+        {
+          title: { es: "Estructura de proyecto", en: "", jp: "" },
+          content: {
+            es: "mi-proyecto-hook/\n├── src/my_hook.c\n├── build/my_hook.wasm\n├── scripts/deploy.js\n├── package.json\n└── .env\n\nFlujo: escribir → compilar → desplegar → probar",
+            en: "",
+            jp: "",
+          },
+          visual: "📁",
+        },
+        {
+          title: { es: "Recursos de referencia", en: "", jp: "" },
+          content: {
+            es: "• hooks-cli: github.com/Xahau/hooks-cli\n  Repositorio oficial y guía de uso\n\n• Hooks Toolkit: hooks-toolkit.com\n  Documentación completa, API reference y ejemplos\n\n• Builder (testnet): builder.xahau.network",
+            en: "",
+            jp: "",
+          },
+          visual: "📚",
         },
       ],
     },
