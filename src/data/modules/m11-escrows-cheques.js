@@ -2,7 +2,7 @@ export default {
   id: "m11",
   icon: "🔐",
   title: {
-    es: "Escrows y Cheques",
+    es: "Escrows, Cheques y Tickets",
     en: "",
     jp: "",
   },
@@ -463,6 +463,185 @@ cashCheck("TU_CHECK_ID_AQUI");`,
           title: { es: "Check vs Payment vs Escrow", en: "", jp: "" },
           content: {
             es: "Payment → Transferencia inmediata\n\nEscrow → Fondos bloqueados con condiciones\n• Tiempo, crypto-condición o ambos\n• Fondos realmente bloqueados\n\nCheck → Promesa de pago diferido\n• Receptor decide cuándo cobrar\n• Fondos NO bloqueados (pueden gastarse)\n• Más flexible, menos garantías",
+            en: "",
+            jp: "",
+          },
+          visual: "⚖️",
+        },
+      ],
+    },
+    {
+      id: "m11l3",
+      title: {
+        es: "Tickets: secuencias fuera de orden",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `Un **Ticket** es un mecanismo que permite enviar transacciones **fuera del orden secuencial** normal. Normalmente, cada transacción en Xahau debe usar el siguiente número de \`Sequence\` de la cuenta. Los Tickets eliminan esa restricción reservando números de secuencia por adelantado.
+
+### ¿Qué es un Ticket?
+
+Cada cuenta en Xahau tiene un número de \`Sequence\` que se incrementa con cada transacción. Esto significa que las transacciones deben procesarse estrictamente en orden. Los Tickets solucionan este problema:
+
+- Un Ticket **reserva** un número de secuencia para uso futuro
+- La transacción que usa un Ticket especifica \`TicketSequence\` en lugar de \`Sequence\`
+- Los Tickets se pueden usar en **cualquier orden**, no importa cuándo fueron creados
+
+### ¿Para qué sirven los Tickets?
+
+- **Transacciones paralelas**: Preparar y firmar múltiples transacciones sin depender del orden
+- **Transacciones pre-firmadas**: Firmar transacciones por adelantado y enviarlas cuando convenga
+- **Multi-signing**: Diferentes firmantes pueden preparar transacciones independientes sin bloquear la secuencia
+- **Contingencias**: Tener transacciones de respaldo listas sin consumir la secuencia normal
+
+### TicketCreate: reservar Tickets
+
+La transacción \`TicketCreate\` reserva uno o más números de secuencia:
+
+| Campo | Descripción |
+|---|---|
+| \`TransactionType\` | \`"TicketCreate"\` |
+| \`Account\` | Cuenta que reserva los tickets |
+| \`TicketCount\` | Número de tickets a crear (1-250) |
+
+### Coste de reserva
+
+Cada Ticket creado consume una **reserva de propietario** (owner reserve) de la cuenta, igual que una TrustLine o una oferta en el DEX. Esto significa que por cada Ticket activo, necesitas tener XAH adicional bloqueado en tu cuenta. El Ticket se elimina (y la reserva se libera) cuando se usa o cuando se cancela.
+
+### Límites
+
+- **Máximo por transacción**: Puedes crear hasta **250 Tickets** en una sola transacción \`TicketCreate\`
+- **Máximo por cuenta**: Una cuenta puede tener hasta **250 Tickets** activos simultáneamente
+- Los Tickets **no caducan** — permanecen en el ledger hasta que se usan o se cancelan
+
+### Usar un Ticket en una transacción
+
+Para usar un Ticket, incluye estos campos en tu transacción:
+- \`Sequence: 0\` — indica que no se usa la secuencia normal
+- \`TicketSequence: N\` — el número del Ticket a consumir
+
+El Ticket se destruye automáticamente al usarse, liberando la reserva.
+
+### Cancelar Tickets no usados
+
+Si ya no necesitas un Ticket, puedes cancelarlo para liberar la reserva. No existe una transacción específica para cancelar Tickets. En su lugar, puedes usar una transacción \`AccountSet\` vacía (sin cambios) que consuma el Ticket.`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Crear Tickets y usarlos para encadenar múltiples pagos",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function paymentsWithTickets() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // === PASO 1: Crear 3 Tickets ===
+  console.log("=== Paso 1: Crear Tickets ===");
+  const ticketCreate = {
+    TransactionType: "TicketCreate",
+    Account: sender.address,
+    TicketCount: 3, // Reservar 3 tickets
+  };
+
+  const prepTicket = await client.autofill(ticketCreate);
+  const signedTicket = sender.sign(prepTicket);
+  const resultTicket = await client.submitAndWait(signedTicket.tx_blob);
+
+  console.log("TicketCreate:", resultTicket.result.meta.TransactionResult);
+
+  if (resultTicket.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error creando tickets.");
+    await client.disconnect();
+    return;
+  }
+
+  // Extraer los TicketSequence de los nodos creados
+  const ticketSequences = resultTicket.result.meta.AffectedNodes
+    .filter((n) => n.CreatedNode?.LedgerEntryType === "Ticket")
+    .map((n) => n.CreatedNode.NewFields.TicketSequence)
+    .sort((a, b) => a - b);
+
+  console.log("Tickets creados:", ticketSequences);
+
+  // === PASO 2: Usar los Tickets para enviar pagos (en cualquier orden) ===
+  console.log("\\n=== Paso 2: Enviar pagos con Tickets ===");
+
+  const destinations = [
+    { address: "rDestino1XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Pago A" },
+    { address: "rDestino2XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Pago B" },
+    { address: "rDestino3XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Pago C" },
+  ];
+
+  // Podemos enviarlos en cualquier orden, incluso en paralelo
+  // Aquí los enviamos en orden inverso para demostrar la flexibilidad
+  for (let i = destinations.length - 1; i >= 0; i--) {
+    const dest = destinations[i];
+    const ticketSeq = ticketSequences[i];
+
+    const payment = {
+      TransactionType: "Payment",
+      Account: sender.address,
+      Destination: dest.address,
+      Amount: xahToDrops(dest.amount),
+      Sequence: 0,               // No usar secuencia normal
+      TicketSequence: ticketSeq,  // Usar el Ticket reservado
+    };
+
+    const prepared = await client.autofill(payment);
+    // autofill puede sobreescribir Sequence, así que lo forzamos
+    prepared.Sequence = 0;
+    prepared.TicketSequence = ticketSeq;
+
+    const signed = sender.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    const txResult = result.result.meta.TransactionResult;
+    console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
+  }
+
+  console.log("\\n¡Todos los pagos enviados con Tickets!");
+  console.log("Los Tickets usados se han destruido y la reserva liberada.");
+
+  await client.disconnect();
+}
+
+paymentsWithTickets();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "¿Qué es un Ticket?", en: "", jp: "" },
+          content: {
+            es: "Reserva números de secuencia por adelantado\n\n• Permite transacciones fuera de orden\n• Sequence: 0 + TicketSequence: N\n• Se destruye al usarse\n• Máximo 250 por cuenta\n\nCada Ticket consume reserva de propietario",
+            en: "",
+            jp: "",
+          },
+          visual: "🎫",
+        },
+        {
+          title: { es: "Casos de uso", en: "", jp: "" },
+          content: {
+            es: "• Transacciones paralelas sin bloqueo\n• Pre-firmar txs para enviar después\n• Multi-signing independiente\n• Contingencias y respaldos\n\nTicketCreate → Reservar (1-250)\nUsar → Sequence: 0 + TicketSequence\nCancelar → AccountSet vacío con Ticket",
+            en: "",
+            jp: "",
+          },
+          visual: "🔀",
+        },
+        {
+          title: { es: "Tickets vs Secuencia normal", en: "", jp: "" },
+          content: {
+            es: "Secuencia normal:\n• Estricto orden: 1, 2, 3, 4...\n• Si falla la 2, la 3 se bloquea\n\nCon Tickets:\n• Cualquier orden: 3, 1, 2...\n• Independientes entre sí\n• Cada uno consume owner reserve\n• Se liberan al usarse o cancelarse",
             en: "",
             jp: "",
           },

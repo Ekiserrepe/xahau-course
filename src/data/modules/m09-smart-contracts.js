@@ -42,6 +42,12 @@ Los Hooks son como **filtros** o **interceptores** que reaccionan a las transacc
 - **Emitir** nuevas transacciones (\`emit()\`)
 - **Leer y escribir** estado persistente (\`state()\`, \`state_set()\`)
 
+### Límites
+
+- Máximo **10 Hooks** por cuenta
+- Cada Hook tiene su propio **namespace** para estado
+- El WASM tiene un tamaño máximo permitido
+
 ### Funciones obligatorias
 
 Todo Hook debe implementar dos funciones:
@@ -184,35 +190,103 @@ int64_t cbak(uint32_t reserved) {
 ### Opciones de desarrollo
 
 **1. Hooks Builder (Online)**
-La forma más rápida de empezar. [hooks-builder.xrpl.org](https://hooks-builder.xrpl.org) te permite escribir, compilar y desplegar Hooks desde el navegador.
+La forma más rápida de empezar. [builder.xahau.network](https://builder.xahau.network) te permite escribir, compilar y desplegar Hooks desde el navegador. Incluye ejemplos, documentación y un entorno de desarrollo integrado. Ideal para pruebas rápidas y aprendizaje. Solo disponible para **Xahau Testnet**.
 
 **2. Desarrollo local**
-Para desarrollo local necesitas:
-- **Compilador C** (clang)
-- **wasm-cc**: Compilador de C a WebAssembly para Hooks
-- **Node.js**: Para scripts de despliegue con \`xahau\`
+Para desarrollo local (y posteriormente Xahau Mainnet) necesitas [xahau-toolkit](https://hooks-toolkit.com/), incluye una librería completa para poder compilar tus hooks y desplegarlos con scripts personalizados.
 
 ### Transacción SetHook
 
-La transacción \`SetHook\` instala, actualiza o elimina Hooks de tu cuenta:
+La transacción \`SetHook\` es la única transacción necesaria para gestionar Hooks. Con ella puedes **instalar**, **actualizar** y **eliminar** Hooks de tu cuenta. Los campos principales del objeto Hook dentro del array \`Hooks\` son:
 
-- **CreateCode**: El binario WASM del Hook (en hexadecimal)
-- **HookOn**: Máscara de bits que define qué tipos de transacción activan el Hook
-- **HookNamespace**: Espacio de nombres para el estado del Hook (32 bytes hex)
-- **HookApiVersion**: Versión de la API de Hooks (actualmente 0)
-- **HookParameters**: Parámetros de configuración opcionales
+| Campo | Descripción |
+|---|---|
+| \`CreateCode\` | El binario WASM del Hook (en hexadecimal) |
+| \`HookHash\` | Hash del Hook ya existente en el ledger (alternativa a CreateCode) |
+| \`HookOn\` | Máscara de bits que define qué tipos de transacción activan el Hook |
+| \`HookNamespace\` | Espacio de nombres para el estado del Hook (32 bytes hex) |
+| \`HookApiVersion\` | Versión de la API de Hooks (actualmente 0) |
+| \`HookParameters\` | Parámetros de configuración opcionales |
+| \`HookCanEmit\` | Lista de transacciones que el Hook puede emitir (seguridad) |
+| \`Flags\` | Flags de control (\`hsfOverride\`, \`hsfNSDelete\`, \`hsfCollect\`) |
+
+### Fases de gestión de un Hook
+
+### 1. Instalar un Hook por primera vez (con CreateCode)
+
+Cuando despliegas un Hook nuevo que nunca ha existido en la red, usas el campo \`CreateCode\` con el binario WASM completo. El nodo calcula el hash del WASM y almacena el código en el ledger. Si otro usuario ya desplegó el mismo código exacto, Xahau reutiliza la definición existente (deduplicación automática).
+
+\`\`\`
+Hook: {
+  CreateCode: "0061736D...",     // WASM en hex
+  HookOn: "0000000000000000",    // Todos los tipos de tx
+  HookNamespace: "00...00",      // 64 chars hex
+  HookApiVersion: 0,
+  Flags: 1,                      // hsfOverride
+}
+\`\`\`
+
+### 2. Instalar un Hook existente por HookHash
+
+Si un Hook ya fue desplegado antes (por ti o por otra cuenta), puedes instalarlo en tu cuenta **sin enviar todo el WASM otra vez**. Solo necesitas el \`HookHash\` (el hash SHA-256 del binario). Esto ahorra espacio y fees.
+
+\`\`\`
+Hook: {
+  HookHash: "A5B6C7D8...",      // Hash del Hook existente
+  HookOn: "0000000000000000",
+  HookNamespace: "00...00",
+  HookApiVersion: 0,
+  Flags: 1,                      // hsfOverride
+}
+\`\`\`
+
+El \`HookHash\` lo puedes obtener consultando los Hooks de una cuenta con \`account_objects\` o desde un explorador de bloques como [xahau-testnet.xrplwin.com](https://xahau-testnet.xrplwin.com).
+
+### 3. Actualizar un Hook
+
+Para actualizar un Hook en una posición, envías un nuevo \`SetHook\` con el nuevo \`CreateCode\` (o \`HookHash\`) en la misma posición del array \`Hooks\`. El flag \`hsfOverride\` (valor 1) es necesario para reemplazar un Hook existente. El estado previo del Hook se **mantiene** si el namespace no cambia.
+
+### 4. Eliminar un Hook
+
+Para eliminar un Hook de una posición, envías \`SetHook\` con \`CreateCode\` vacío y el flag \`hsfOverride\`:
+
+Si además quieres **limpiar todo el estado** del namespace de ese Hook, añade el flag \`hsfNSDelete\` (valor 2) combinado con \`hsfOverride\`: \`Flags: 3\`.
+
+### Flags de SetHook
+
+| Flag | Valor | Descripción |
+|---|---|---|
+| \`hsfOverride\` | 1 | Permite reemplazar o eliminar un Hook existente en esa posición |
+| \`hsfNSDelete\` | 2 | Elimina todo el estado del namespace al desinstalar |
+| \`hsfCollect\` | 4 | Recolecta los grants del Hook anterior |
 
 ### HookOn — Filtro de transacciones
 
-El campo \`HookOn\` es una máscara de bits invertida que controla en qué tipos de transacción se activa el Hook:
-- \`"0000000000000000"\` → Se activa en TODOS los tipos de transacción
-- Puedes configurar bits específicos para activar o desactivar tipos
+El campo \`HookOn\` controla en qué tipos de transacción se activa el Hook:
+- Puedes configurar bits específicos para activar o desactivar tipos usando esta [calculadora](https://richardah.github.io/xrpl-hookon-calculator/)
+- Si marcamos solo que se active en transacciones de pago, el Hook solo se ejecutará cuando la cuenta reciba o envíe un pago. El resultado en la calculadora es \`0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbffffe\`. Debemos eliminar la parte de \`0x\`y pasar el resultado a mayúsculas para usarlo en el campo HookOn. Por ejemplo: \`FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFE\`.
+- Se pueden marcar varias transacciones a la vez. Se recomienda precaución al configurar HookOn para no activar el Hook en tipos de transacción que no necesitas, ya que esto puede generar fees innecesarios y aumentar el riesgo de acciones que no esperemos.
 
-### Límites
+### HookCanEmit — Control de emisión de transacciones
 
-- Máximo **10 Hooks** por cuenta
-- Cada Hook tiene su propio **namespace** para estado
-- El WASM tiene un tamaño máximo permitido`,
+El campo \`HookCanEmit\` es un mecanismo de seguridad fundamental que limita qué transacciones puede emitir un Hook. Por defecto, un Hook tiene la capacidad de emitir transacciones autónomas (usando la función \`emit()\`), lo que podría representar un riesgo si el Hook tiene un bug o ha sido instalado sin revisar su código.
+
+\`HookCanEmit\` es un array que define explícitamente qué tipos de transacción puede emitir el Hook. Si se configura, el Hook **solo podrá emitir las transacciones listadas**, cualquier intento de emitir un tipo no incluido será rechazado por la red. Funciona igual que \`HookOn\`, pero en lugar de controlar la activación del Hook, controla su capacidad de emisión.
+
+- Puedes configurar bits específicos para activar o desactivar tipos usando esta [calculadora](https://richardah.github.io/xrpl-hookon-calculator/)
+- Si marcamos solo que se permita emisión de transacciones de pago, el resultado en la calculadora es \`0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbffffe\`. Debemos eliminar la parte de \`0x\`y pasar el resultado a mayúsculas para usarlo en el campo \`HookCanEmit\`. Por ejemplo: \`FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFE\`.
+- Aunque \`HookCanEmit\` es un campo opcional, se recomienda utilizarlo para no permitir que un Hook emita transacciones no deseadas, ya que esto puede generar acciones no desesadas de un Hook malicioso.
+
+**¿Por qué es importante para la seguridad?**
+
+- **Principio de mínimo privilegio**: Un Hook debería tener solo los permisos que necesita. Si tu Hook solo necesita enviar pagos, no debería poder emitir \`SetHook\`, \`AccountDelete\` u otras transacciones sensibles.
+- **Protección ante bugs**: Si un Hook tiene una vulnerabilidad, \`HookCanEmit\` limita el daño potencial al restringir las acciones que puede ejecutar.
+- **Auditoría y transparencia**: Al revisar un Hook instalado en una cuenta, \`HookCanEmit\` permite verificar rápidamente qué operaciones puede realizar de forma autónoma.
+- **Buena práctica**: Siempre configura \`HookCanEmit\` con el conjunto mínimo de transacciones necesarias para la lógica de tu Hook.
+
+### Más información
+
+Para una referencia completa de \`SetHook\`, incluyendo todos los campos, flags, reglas de validación y casos especiales, consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/sethook/).`,
         en: "",
         jp: "",
       },
@@ -843,27 +917,7 @@ Xahau permite **hasta 10 Hooks** por cuenta:
 - Los Hooks se instalan en **posiciones** (0 a 9) del array \`Hooks\`
 - **Orden de ejecución**: los Hooks se ejecutan en orden, empezando por la posición 0
 - Si un Hook en posición 0 hace \`rollback()\`, los Hooks siguientes **no se ejecutan**
-- Cada Hook puede tener su propio \`HookOn\` para activarse solo en ciertos tipos de transacción
-
-### HookOn — Control granular
-
-El campo \`HookOn\` es una **máscara de bits** que define qué tipos de transacción activan el Hook:
-
-- \`"0000000000000000"\` → Se activa en **todos** los tipos
-- Cada bit corresponde a un tipo de transacción
-- Puedes configurar Hooks para que solo reaccionen a pagos, ofertas, etc.
-
-### Actualizar un Hook
-
-Para actualizar un Hook existente, envías una nueva transacción \`SetHook\` con el nuevo \`CreateCode\` (WASM) en la misma posición.
-
-### Eliminar un Hook
-
-Para eliminar un Hook de una posición, envías \`SetHook\` con un objeto Hook vacío (\`{}\`) en esa posición, junto con el flag de eliminación.
-
-### Limpiar estado (Namespace reset)
-
-Al eliminar un Hook o cambiar su namespace, puedes limpiar todo el estado almacenado. Esto es útil para "resetear" un Hook sin necesidad de limpiarlo manualmente clave por clave.`,
+- Cada Hook puede tener su propio \`HookOn\` para activarse solo en ciertos tipos de transacción`,
         en: "",
         jp: "",
       },
