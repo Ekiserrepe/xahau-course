@@ -2,7 +2,7 @@ export default {
   id: "m10",
   icon: "🔐",
   title: {
-    es: "Escrows, Cheques y Tickets",
+    es: "Otras transacciones disponibles",
     en: "",
     jp: "",
   },
@@ -254,7 +254,7 @@ finishEscrow("rDireccionDelCreador", 12345);`,
         jp: "",
       },
       theory: {
-        es: `Un **Check** (cheque) es similar a un cheque bancario tradicional: el emisor crea un cheque por una cantidad determinada, y el receptor puede cobrarlo cuando lo desee. A diferencia de un pago directo, los fondos **no se transfieren inmediatamente** — el receptor debe ejecutar una acción para cobrar el cheque.
+        es: `Un **Check** (cheque) es similar a un cheque bancario tradicional: el emisor crea un cheque por una cantidad determinada, y el receptor puede cobrarlo cuando lo desee. A diferencia de un pago directo, los fondos **no se transfieren inmediatamente**, el receptor debe ejecutar una acción para cobrar el cheque.
 
 ### ¿Por qué usar Cheques en lugar de pagos directos?
 
@@ -646,6 +646,676 @@ paymentsWithTickets();`,
             jp: "",
           },
           visual: "⚖️",
+        },
+      ],
+    },
+    {
+      id: "m10l4",
+      title: {
+        es: "ClaimReward: reclamar recompensas de la red",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `Xahau cuenta con un sistema de **recompensas nativas** que distribuye XAH a las cuentas que participan activamente en la red. La transacción \`ClaimReward\` permite reclamar estas recompensas acumuladas.
+
+### ¿Cómo funcionan las recompensas en Xahau?
+
+A diferencia de blockchains Proof of Stake donde necesitas hacer staking, en Xahau las recompensas se distribuyen a cuentas que mantienen un balance activo en la red. El mecanismo funciona así:
+
+- Las recompensas se acumulan automáticamente en función de tu balance de XAH
+- Para recibirlas, debes enviar periódicamente una transacción \`ClaimReward\`
+- Al reclamar, las recompensas se añaden directamente al balance de tu cuenta
+- No necesitas delegar, bloquear fondos ni ejecutar un nodo validador
+
+### Transacción ClaimReward
+
+| Campo | Descripción |
+|---|---|
+| \`TransactionType\` | \`"ClaimReward"\` |
+| \`Account\` | Tu cuenta que reclama la recompensa |
+| \`Issuer\` | La dirección del emisor de recompensas (genesis account de la red) |
+| \`Flags\` | \`0\` para activar/reclamar, \`1\` para optar por no recibir recompensas |
+
+### Activar y reclamar recompensas
+
+La primera vez que envías \`ClaimReward\`, **activas** tu cuenta para recibir recompensas. Las siguientes ejecuciones reclaman las recompensas acumuladas desde la última vez. Es recomendable reclamar periódicamente (por ejemplo, una vez al día o a la semana) para mantener tus recompensas al día.
+
+### Desactivar recompensas
+
+Si por algún motivo quieres dejar de participar en el sistema de recompensas, puedes enviar \`ClaimReward\` con \`Flags: 1\`. Esto desactiva tu cuenta del sistema de recompensas.
+
+### Consideraciones
+
+- Las recompensas dependen del balance y del tiempo transcurrido desde la última reclamación
+- El fee de la transacción \`ClaimReward\` es estándar (como cualquier otra transacción)
+- Es compatible con cuentas que tengan Hooks instalados
+- La dirección de \`Issuer\` es específica de cada red (testnet vs mainnet)`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Reclamar recompensas de la red",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function claimReward() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Consultar información de la cuenta antes de reclamar
+  const accountInfo = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+
+  const balanceBefore = Number(accountInfo.result.account_data.Balance) / 1_000_000;
+  console.log("=== Estado antes de reclamar ===");
+  console.log("Cuenta:", wallet.address);
+  console.log("Balance actual:", balanceBefore, "XAH");
+
+  // Enviar ClaimReward
+  // Issuer: cuenta genesis de la red (varía entre testnet y mainnet)
+  const claimReward = {
+    TransactionType: "ClaimReward",
+    Account: wallet.address,
+    Issuer: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh", // Genesis account testnet
+  };
+
+  const prepared = await client.autofill(claimReward);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("\\n=== ClaimReward ===");
+  console.log("Resultado:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    // Consultar balance después
+    const accountAfter = await client.request({
+      command: "account_info",
+      account: wallet.address,
+      ledger_index: "validated",
+    });
+
+    const balanceAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
+    console.log("\\n=== Estado después de reclamar ===");
+    console.log("Balance nuevo:", balanceAfter, "XAH");
+    console.log("Recompensa obtenida:", (balanceAfter - balanceBefore).toFixed(6), "XAH");
+  }
+
+  await client.disconnect();
+}
+
+claimReward();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "ClaimReward", en: "", jp: "" },
+          content: {
+            es: "Recompensas nativas de Xahau\n\n• Se acumulan según tu balance de XAH\n• No requiere staking ni nodos\n• ClaimReward para reclamarlas\n• Se suman directamente a tu balance\n\nReclamar periódicamente (diario/semanal)",
+            en: "",
+            jp: "",
+          },
+          visual: "🎁",
+        },
+        {
+          title: { es: "Cómo reclamar", en: "", jp: "" },
+          content: {
+            es: "1ª vez → Activa tu cuenta para recompensas\nSiguientes → Reclama lo acumulado\n\nCampos:\n• Account: tu cuenta\n• Issuer: genesis account de la red\n• Flags: 0 (reclamar) / 1 (desactivar)\n\nFee estándar, compatible con Hooks",
+            en: "",
+            jp: "",
+          },
+          visual: "💰",
+        },
+      ],
+    },
+    {
+      id: "m10l5",
+      title: {
+        es: "Invoke: activar Hooks bajo demanda",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `La transacción \`Invoke\` es un tipo de transacción exclusivo de Xahau que permite **activar un Hook deliberadamente**, sin necesidad de enviar un pago u otra transacción con efecto económico. Es la forma de "llamar" a un Hook de forma directa.
+
+### ¿Por qué existe Invoke?
+
+Los Hooks se ejecutan reactivamente cuando una transacción pasa por la cuenta. Pero hay situaciones donde necesitas activar un Hook **sin que ocurra ninguna otra acción**:
+
+- **Cron jobs / tareas programadas**: Un Hook que necesita ejecutarse periódicamente para comprobar condiciones o emitir transacciones
+- **Triggers manuales**: Activar la lógica de un Hook cuando lo decides, sin enviar fondos
+- **Hooks de servicio**: Hooks diseñados para ser invocados directamente y que realizan una acción autónoma en respuesta
+
+### Transacción Invoke
+
+| Campo | Descripción |
+|---|---|
+| \`TransactionType\` | \`"Invoke"\` |
+| \`Account\` | Cuenta que envía el Invoke |
+| \`Destination\` | (Opcional) Cuenta cuyo Hook queremos activar. Si no se especifica, activa los Hooks de la propia cuenta |
+
+### Invoke como mecanismo Cron
+
+Uno de los usos más importantes de \`Invoke\` es crear un sistema de **tareas programadas (cron)**. El patrón es:
+
+1. Instalar un Hook que, al recibir un \`Invoke\`, compruebe si ha pasado cierto tiempo desde la última ejecución
+2. Si ha pasado el tiempo requerido, el Hook ejecuta su lógica (emitir pagos, actualizar estado, etc.)
+3. Un servicio externo o un usuario envía \`Invoke\` periódicamente para activar el Hook
+
+Este patrón permite tener lógica que se ejecuta cada hora, cada día o en cualquier intervalo, sin depender de un sistema centralizado más allá del trigger.
+
+### Invoke a tu propia cuenta vs a otra cuenta
+
+- **Sin Destination**: El \`Invoke\` activa los Hooks de tu propia cuenta. Útil para Hooks de mantenimiento o auto-gestión
+- **Con Destination**: El \`Invoke\` activa los Hooks de la cuenta de destino. El Hook de destino puede distinguir quién envió el Invoke y actuar en consecuencia
+
+### Consideraciones
+
+- \`Invoke\` no transfiere fondos — es solo un trigger
+- El Hook activado puede emitir transacciones si su lógica lo requiere
+- El fee es estándar, como cualquier otra transacción
+- El Hook debe tener \`Invoke\` habilitado en su \`HookOn\` para reaccionar a este tipo de transacción`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Invocar un Hook en otra cuenta",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function invokeHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Invoke a otra cuenta que tiene un Hook instalado
+  const invoke = {
+    TransactionType: "Invoke",
+    Account: wallet.address,
+    Destination: "rCuentaConHookInstalado", // Cuenta cuyo Hook queremos activar
+  };
+
+  const prepared = await client.autofill(invoke);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Invoke ===");
+  console.log("Resultado:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Hook invocado correctamente.");
+    console.log("Revisa los logs del Hook para ver su respuesta.");
+  }
+
+  await client.disconnect();
+}
+
+invokeHook();`,
+        },
+        {
+          title: {
+            es: "Invoke como cron: activar periódicamente tu propio Hook",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+/**
+ * Script que invoca tu propio Hook periódicamente.
+ * Útil para Hooks que necesitan ejecutarse cada cierto tiempo
+ * (por ejemplo, comprobar condiciones, emitir pagos programados, etc.)
+ */
+async function cronInvoke(intervalMinutes) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("=== Cron Invoke ===");
+  console.log("Cuenta:", wallet.address);
+  console.log(\`Intervalo: cada \${intervalMinutes} minutos\`);
+  console.log("Presiona Ctrl+C para detener\\n");
+
+  const executeInvoke = async () => {
+    try {
+      // Invoke sin Destination = activa los Hooks de tu propia cuenta
+      const invoke = {
+        TransactionType: "Invoke",
+        Account: wallet.address,
+      };
+
+      const prepared = await client.autofill(invoke);
+      const signed = wallet.sign(prepared);
+      const result = await client.submitAndWait(signed.tx_blob);
+
+      const txResult = result.result.meta.TransactionResult;
+      const timestamp = new Date().toISOString();
+      console.log(\`[\${timestamp}] Invoke: \${txResult} | Hash: \${signed.hash}\`);
+    } catch (error) {
+      console.error("Error en Invoke:", error.message);
+    }
+  };
+
+  // Ejecutar inmediatamente la primera vez
+  await executeInvoke();
+
+  // Programar ejecución periódica
+  setInterval(executeInvoke, intervalMinutes * 60 * 1000);
+}
+
+// Invocar cada 5 minutos
+cronInvoke(5);`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "Invoke", en: "", jp: "" },
+          content: {
+            es: "Activar un Hook directamente\n\n• No transfiere fondos\n• Solo es un trigger para el Hook\n• Sin Destination → tus propios Hooks\n• Con Destination → Hooks de otra cuenta\n\nEl Hook debe tener Invoke en su HookOn",
+            en: "",
+            jp: "",
+          },
+          visual: "📡",
+        },
+        {
+          title: { es: "Invoke como Cron", en: "", jp: "" },
+          content: {
+            es: "Patrón para tareas programadas:\n\n1. Hook comprueba si pasó el intervalo\n2. Si sí → ejecuta lógica (emit, state...)\n3. Servicio externo envía Invoke periódico\n\nUsos: pagos recurrentes, comprobaciones,\nactualizaciones de estado, mantenimiento",
+            en: "",
+            jp: "",
+          },
+          visual: "⏰",
+        },
+      ],
+    },
+    {
+      id: "m10l6",
+      title: {
+        es: "Remarks: datos arbitrarios en el ledger",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `La transacción \`Remark\` permite almacenar **datos arbitrarios** directamente en el ledger de Xahau. Es un mecanismo para registrar información on-chain sin que implique transferencia de fondos ni cambios de estado de la cuenta.
+
+### ¿Qué es una Remark?
+
+Una \`Remark\` es un tipo de transacción que sirve para escribir datos en la blockchain de forma permanente. No modifica balances, no crea objetos en el ledger y no altera el estado de la cuenta más allá del número de secuencia y el fee consumido.
+
+### ¿Para qué sirve?
+
+- **Registro inmutable**: Guardar un hash, un mensaje o cualquier dato que quieras que quede registrado de forma permanente en la blockchain
+- **Prueba de existencia**: Demostrar que un dato existía en un momento determinado (timestamping)
+- **Mensajes on-chain**: Enviar datos o mensajes a otra cuenta que se registran en el ledger
+- **Notarizaciones**: Registrar hashes de documentos, contratos o eventos para auditoría
+- **Metadata para Hooks**: Un Hook puede reaccionar a una \`Remark\` y procesar los datos incluidos en los Memos
+
+### Transacción Remark
+
+| Campo | Descripción |
+|---|---|
+| \`TransactionType\` | \`"Remark"\` |
+| \`Account\` | Cuenta que envía la remark |
+| \`Destination\` | (Opcional) Cuenta de destino |
+| \`Memos\` | Array de memos con los datos a registrar |
+
+Los datos se incluyen en el campo \`Memos\`, que es un array de objetos \`Memo\` con tres campos opcionales:
+
+- \`MemoType\`: Tipo/categoría del dato (en hexadecimal)
+- \`MemoData\`: El dato en sí (en hexadecimal)
+- \`MemoFormat\`: Formato del dato, por ejemplo \`text/plain\` o \`application/json\` (en hexadecimal)
+
+### Remark vs Payment con Memos
+
+Podrías pensar en usar un \`Payment\` de 1 drop con Memos para lograr algo similar. Sin embargo, \`Remark\` tiene ventajas:
+
+- **No transfiere fondos**: No necesitas enviar ni 1 drop
+- **Intención clara**: Es semánticamente correcto — el propósito es registrar datos, no pagar
+- **Compatible con Hooks**: Los Hooks pueden filtrar específicamente transacciones \`Remark\` con \`HookOn\`
+- **Sin efectos secundarios**: No altera balances de ninguna cuenta
+
+### Consideraciones
+
+- El fee es estándar, como cualquier otra transacción
+- Los datos en los Memos están en hexadecimal — necesitas convertir strings a hex
+- El tamaño de los Memos tiene un límite según el protocolo
+- Los datos son **públicos** — cualquiera puede leerlos en el ledger`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Registrar datos en el ledger con Remark",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// Función auxiliar para convertir strings a hexadecimal
+function stringToHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function sendRemark() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Ejemplo 1: Registrar un hash de documento (notarización)
+  const documentHash = "a1b2c3d4e5f6..."; // Hash SHA-256 de tu documento
+
+  const remark = {
+    TransactionType: "Remark",
+    Account: wallet.address,
+    Destination: "rCuentaDeDestinoOpcional",
+    Memos: [
+      {
+        Memo: {
+          MemoType: stringToHex("document/hash"),
+          MemoData: stringToHex(documentHash),
+          MemoFormat: stringToHex("text/plain"),
+        },
+      },
+      {
+        Memo: {
+          MemoType: stringToHex("document/name"),
+          MemoData: stringToHex("Contrato de servicio v2.1"),
+          MemoFormat: stringToHex("text/plain"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(remark);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Remark ===");
+  console.log("Resultado:", txResult);
+  console.log("Hash de la transacción:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nDatos registrados permanentemente en el ledger.");
+    console.log("Cualquiera puede verificar la existencia de este registro");
+    console.log("consultando la transacción:", signed.hash);
+  }
+
+  await client.disconnect();
+}
+
+sendRemark();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "Remark", en: "", jp: "" },
+          content: {
+            es: "Datos arbitrarios en el ledger\n\n• No transfiere fondos\n• Registra datos permanentes on-chain\n• Los datos van en Memos (hex)\n• Destination opcional\n\nUsos: notarización, timestamping,\nmensajes on-chain, metadata para Hooks",
+            en: "",
+            jp: "",
+          },
+          visual: "📋",
+        },
+        {
+          title: { es: "Remark vs Payment con Memos", en: "", jp: "" },
+          content: {
+            es: "Payment + Memos:\n• Transfiere fondos (mínimo 1 drop)\n• Propósito: enviar dinero\n\nRemark:\n• No transfiere nada\n• Propósito: registrar datos\n• Intención semántica clara\n• Hooks pueden filtrar por tipo Remark\n• Sin efectos en balances",
+            en: "",
+            jp: "",
+          },
+          visual: "⚖️",
+        },
+      ],
+    },
+    {
+      id: "m10l7",
+      title: {
+        es: "Remit: transacción multi-función",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `La transacción \`Remit\` es una operación exclusiva de Xahau que combina múltiples acciones en una sola transacción. Puede **activar cuentas**, **enviar pagos** (XAH o IOUs) y realizar **operaciones con URITokens** (transferir o mintear), todo de una vez. Además, **paga todos los fees** de activación de cuenta, TrustLines y reservas de URITokens.
+
+### ¿Por qué usar Remit?
+
+En lugar de enviar varias transacciones separadas (una para activar la cuenta, otra para pagar, otra para transferir un URIToken), \`Remit\` lo hace todo en una sola transacción atómica. Esto ahorra tiempo, fees y garantiza que todas las operaciones ocurren juntas o ninguna.
+
+### Campos de Remit
+
+| Campo | Requerido | Descripción |
+|---|---|---|
+| \`Account\` | Sí | Cuenta que envía la transacción |
+| \`Destination\` | Sí | Cuenta de destino |
+| \`Amounts\` | No | Array de hasta **32** objetos \`AmountEntry\` con pagos |
+| \`URITokenIDs\` | No | Array de hasta **32** IDs de URITokens a transferir |
+| \`MintURIToken\` | No | Objeto para mintear un nuevo URIToken directamente en el destino |
+| \`DestinationTag\` | No | Tag numérico para el destino |
+| \`Inform\` | No | Cuenta con Hook que será notificada de la transacción |
+| \`Blob\` | No | Datos arbitrarios en hex (hasta 128 KB) para uso de Hooks |
+| \`InvoiceID\` | No | Identificador de 256 bits para el motivo de la transacción |
+
+### AmountEntry
+
+Cada entrada del array \`Amounts\` contiene un campo \`Amount\` que puede ser XAH nativo (string de drops) o un IOU (objeto con \`currency\`, \`issuer\`, \`value\`):
+
+\`\`\`
+"Amounts": [
+  { "AmountEntry": { "Amount": "50000000" } },              // 50 XAH
+  { "AmountEntry": { "Amount": {                             // 100 USD
+    "currency": "USD",
+    "issuer": "rEmisorDelToken",
+    "value": "100"
+  }}}
+]
+\`\`\`
+
+No se permiten cantidades duplicadas de la misma divisa en el array.
+
+### MintURIToken
+
+El campo \`MintURIToken\` permite crear un nuevo URIToken que se asigna directamente a la cuenta de destino:
+
+| Campo | Descripción |
+|---|---|
+| \`URI\` | URI del token (máximo 256 bytes, en hex) |
+| \`Digest\` | (Opcional) Hash del contenido apuntado por el URI |
+| \`Flags\` | (Opcional) \`1\` (\`tfBurnable\`) permite al emisor quemar el token posteriormente |
+
+### Transferir URITokens
+
+Con \`URITokenIDs\` puedes transferir hasta 32 URITokens existentes al destino en una sola transacción. Los URITokens deben pertenecer a la cuenta que envía y tener los permisos necesarios.
+
+### Fees y reservas
+
+Remit paga automáticamente los costes adicionales asociados a cada acción:
+- **Activación de cuenta**: Si la cuenta de destino no existe, se activa con la reserva base
+- **TrustLines**: Si se envían IOUs y la cuenta de destino necesita nuevas TrustLines, se crean y se cubre la reserva
+- **Reservas de URITokens**: Las reservas por URITokens transferidos o minteados se cubren automáticamente
+
+Todos estos costes se deducen de la cuenta que envía la transacción (\`Account\`), además del fee estándar de la transacción.
+
+### Más información
+
+Para una referencia completa de \`Remit\`, incluyendo todos los campos y errores posibles, consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Remit: pago + minteo de URIToken en una sola transacción",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+function stringToHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function sendRemit() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Remit: enviar 25 XAH + mintear un URIToken para el destino
+  const remit = {
+    TransactionType: "Remit",
+    Account: wallet.address,
+    Destination: "rDireccionDelDestinatario",
+    // Enviar 25 XAH
+    Amounts: [
+      {
+        AmountEntry: {
+          Amount: xahToDrops(25),
+        },
+      },
+    ],
+    // Mintear un URIToken directamente en la cuenta de destino
+    MintURIToken: {
+      URI: stringToHex("https://example.com/nft/metadata.json"),
+      Digest: "A".repeat(64), // Hash SHA-256 del contenido (64 hex chars)
+      Flags: 1, // tfBurnable: el emisor puede quemar el token
+    },
+  };
+
+  const prepared = await client.autofill(remit);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Remit ===");
+  console.log("Resultado:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nEn una sola transacción:");
+    console.log("- Enviados 25 XAH al destino");
+    console.log("- URIToken minteado directamente en la cuenta destino");
+    console.log("- Fees de reservas cubiertos automáticamente");
+  }
+
+  await client.disconnect();
+}
+
+sendRemit();`,
+        },
+        {
+          title: {
+            es: "Remit: enviar múltiples divisas + transferir URITokens",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function remitMultiple() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Remit combinando: XAH + IOU + transferencia de URITokens
+  const remit = {
+    TransactionType: "Remit",
+    Account: wallet.address,
+    Destination: "rDireccionDelDestinatario",
+    // Enviar XAH + un IOU
+    Amounts: [
+      {
+        AmountEntry: {
+          Amount: xahToDrops(10), // 10 XAH
+        },
+      },
+      {
+        AmountEntry: {
+          Amount: {
+            currency: "USD",
+            issuer: "rEmisorDelToken",
+            value: "50", // 50 USD
+          },
+        },
+      },
+    ],
+    // Transferir URITokens existentes
+    URITokenIDs: [
+      "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
+    ],
+  };
+
+  const prepared = await client.autofill(remit);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Remit múltiple ===");
+  console.log("Resultado:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nTodo en una sola transacción atómica:");
+    console.log("- 10 XAH enviados");
+    console.log("- 50 USD enviados (TrustLine creada si no existía)");
+    console.log("- URIToken transferido al destino");
+  }
+
+  await client.disconnect();
+}
+
+remitMultiple();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "Remit — Transacción multi-función", en: "", jp: "" },
+          content: {
+            es: "Una transacción para todo:\n\n• Activar cuentas nuevas\n• Enviar hasta 32 pagos (XAH + IOUs)\n• Transferir hasta 32 URITokens\n• Mintear un URIToken en el destino\n\nTodo atómico: ocurre junto o no ocurre",
+            en: "",
+            jp: "",
+          },
+          visual: "📦",
+        },
+        {
+          title: { es: "Remit paga las reservas", en: "", jp: "" },
+          content: {
+            es: "El emisor cubre todos los costes:\n\n• Activación de cuenta destino\n• Creación de TrustLines necesarias\n• Reservas de URITokens\n• Fee estándar de la transacción\n\nAhorra fees y garantiza atomicidad\nvs múltiples transacciones separadas",
+            en: "",
+            jp: "",
+          },
+          visual: "💸",
         },
       ],
     },
