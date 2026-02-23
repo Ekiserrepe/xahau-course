@@ -753,7 +753,14 @@ Cuando una transacción emitida se **completa** (con éxito o fallo), Xahau llam
 
 - Existe un **máximo de emisiones por ejecución** del Hook
 - Las transacciones emitidas tienen **requisitos de fees** propios
-- Las emisiones aumentan la carga computacional del Hook`,
+- Las emisiones aumentan la carga computacional del Hook
+
+### Enlaces útiles
+
+- [Xahau Hooks 101](https://github.com/Handy4ndy/XahauHooks101): Una colección de hooks básicos para aprender a programar Hooks, entre ellos varios ejemplos de emisión por [@handy_andy](https://x.com/Handy_4ndy).
+- [Xahau Hook Tx Builder](https://tx-builder.xahau.tools/): Un traductor de transacciones JSON a lenguaje C para Hooks por [@_tequ_](https://x.com/_tequ_).
+
+`,
         en: "",
         jp: "",
       },
@@ -768,137 +775,89 @@ Cuando una transacción emitida se **completa** (con éxito o fallo), Xahau llam
           code: `#include "hookapi.h"
 
 /**
- * Hook: forward_ten_percent.c
- * Cuando la cuenta recibe un pago en XAH,
- * reenvía automáticamente el 10% a una dirección fija.
+ * Hook: ten_percent_forwarder.c
+ *
+ * Cuando la cuenta recibe un pago en XAH, reenvía automáticamente
+ * el 10% a la dirección hardcodeada en forward_to[].
+ *
+ * ── Cómo configurar la dirección destino ─────────────────────────────────
+ * La dirección debe estar en formato Account ID (20 bytes en hex),
+ * NO en formato rAddress. Para convertir usa una de estas herramientas:
+ *   https://hooks.services/tools/raddress-to-accountid
+ *   https://transia-rnd.github.io/xrpl-hex-visualizer/
+ *
+ * Ejemplo:
+ *   rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
+ *   → 4B50699E253C5098DEFE3A0872A79D129172F496
+ *   → { 0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U }
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
-// Dirección destino del 10% (account ID en hex, 20 bytes)
-// Reemplazar con la dirección real deseada
-#define FORWARD_TO "rDestinationAddressInHexHere0000"
-
-int64_t hook(uint32_t reserved) {
+int64_t hook(uint32_t reserved)
+{
+    //Las iteraciones de nuestro Hook, en este caso solo 1, ya que solo emitiremos una transacción y no tenemos bucles
     _g(1, 1);
-
-    // Solo procesar pagos (tipo 0)
-    int64_t tt = otxn_type();
-    if (tt != 0) {
-        accept(SBUF("forward10: No es un pago."), __LINE__);
-    }
-
-    // Verificar que somos el destino (pago entrante)
-    uint8_t hook_acc[20];
-    hook_account(SBUF(hook_acc));
-
-    uint8_t dest_acc[20];
-    int64_t dest_len = otxn_field(SBUF(dest_acc), sfDestination);
-
-    int is_incoming = 0;
-    for (int i = 0; GUARD(20), i < 20; i++) {
-        if (hook_acc[i] != dest_acc[i]) {
-            is_incoming = 0;
-            break;
-        }
-        if (i == 19) is_incoming = 1;
-    }
-
-    if (!is_incoming) {
-        accept(SBUF("forward10: Pago saliente, ignorar."), __LINE__);
-    }
-
-    // Obtener el monto del pago
-    unsigned char amount_buf[48];
-    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
-
-    // Solo XAH nativo (8 bytes)
-    if (amount_len != 8) {
-        accept(SBUF("forward10: No es XAH nativo."), __LINE__);
-    }
-
-    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-
-    // Calcular el 10%
-    int64_t forward_drops = drops / 10;
-
-    if (forward_drops < 1) {
-        accept(SBUF("forward10: Monto muy pequeño."), __LINE__);
-    }
-
     // Reservar espacio para 1 emisión
     etxn_reserve(1);
 
-    // Preparar la transacción emitida
-    uint8_t tx_buf[PREPARE_PAYMENT_SIMPLE_SIZE];
-    PREPARE_PAYMENT_SIMPLE(
-        tx_buf,
-        forward_drops,
-        FORWARD_TO,
-        0, 0
-    );
+    // Dirección destino del 10% — reemplaza estos bytes con los de tu cuenta
+    // rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r - Saca tu traducción en https://hooks.services/tools/raddress-to-accountid
+    uint8_t forward_to[20] = {
+        0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U
+    };
 
-    // Emitir la transacción
+    // Solo procesar pagos (tipo 0)
+    int64_t tt = otxn_type();
+    if (tt != 0)
+        accept(SBUF("forwarder: no es un pago"), __LINE__);
+
+    // Obtener el destino de la transacción entrante
+    uint8_t account_field[20];
+    int32_t account_field_len = otxn_field(SBUF(account_field), sfDestination);
+    if (account_field_len != 20)
+        accept(SBUF("forwarder: no se pudo leer el destino"), __LINE__);
+
+    // Obtener el Account ID de la cuenta que tiene el Hook instalado
+    unsigned char hook_accid[20];
+    hook_account(SBUF(hook_accid));
+
+    // Solo actuar si el Hook es el destinatario del pago (pago entrante)
+    int equal = 0;
+    BUFFER_EQUAL(equal, hook_accid, account_field, 20);
+    if (!equal)
+        accept(SBUF("forwarder: pago saliente, ignorar"), __LINE__);
+
+    // Leer el Amount — XAH nativo ocupa exactamente 8 bytes
+    unsigned char amount_buffer[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buffer), sfAmount);
+    if (amount_len != 8)
+        accept(SBUF("forwarder: no es XAH nativo"), __LINE__);
+
+    int64_t otxn_drops = AMOUNT_TO_DROPS(amount_buffer);
+    TRACEVAR(otxn_drops);
+
+    // Calcular el 10%
+    int64_t drops_to_forward = otxn_drops / 10;
+    TRACEVAR(drops_to_forward);
+
+    if (drops_to_forward < 1)
+        accept(SBUF("forwarder: importe demasiado pequeño"), __LINE__);
+
+    // Preparar y emitir el pago del 10%
+    unsigned char tx[PREPARE_PAYMENT_SIMPLE_SIZE];
+    PREPARE_PAYMENT_SIMPLE(tx, drops_to_forward, forward_to, 0, 0);
+
     uint8_t emithash[32];
-    int64_t emit_result = emit(SBUF(emithash), SBUF(tx_buf));
+    int64_t emit_result = emit(SBUF(emithash), SBUF(tx));
 
-    if (emit_result < 0) {
-        rollback(SBUF("forward10: Error al emitir."), __LINE__);
-    }
+    if (emit_result < 0)
+        rollback(SBUF("forwarder: error al emitir el pago"), __LINE__);
 
-    accept(SBUF("forward10: 10% reenviado."), __LINE__);
-    return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
+    accept(SBUF("forwarder: 10% reenviado correctamente"), __LINE__);
     return 0;
 }`,
         },
-        {
-          title: {
-            es: "cbak() que registra el resultado de una emisión",
-            en: "",
-            jp: "",
-          },
-          language: "c",
-          code: `#include "hookapi.h"
-
-/**
- * Hook: cbak_logger.c
- * Ejemplo de cbak() que registra si la transacción
- * emitida fue exitosa o falló, guardando el resultado
- * en el estado del Hook.
- */
-
-int64_t hook(uint32_t reserved) {
-    _g(1, 1);
-    // ... lógica del hook y emit() aquí ...
-    accept(SBUF("cbak_logger: Hook ejecutado."), __LINE__);
-    return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-
-    // Clave de estado para el último resultado de emisión
-    uint8_t state_key[32] = { 0 };
-    state_key[0] = 'E'; // 'E' de Emission result
-
-    // Obtener el hash de la transacción emitida
-    uint8_t emit_hash[32];
-    int64_t hash_len = otxn_field(SBUF(emit_hash), sfTransactionHash);
-
-    // Obtener el resultado de la transacción
-    uint8_t meta[512];
-    int64_t meta_len = otxn_field(SBUF(meta), sfTransactionResult);
-
-    // Guardar el resultado en el estado
-    // 1 = éxito, 0 = fallo
-    uint8_t result_val[1];
-    result_val[0] = (meta_len >= 0) ? 1 : 0;
-    state_set(SBUF(result_val), SBUF(state_key));
-
-    return 0;
-}`,
-        },
+        
       ],
       slides: [
         {
@@ -933,16 +892,16 @@ int64_t cbak(uint32_t reserved) {
     {
       id: "m8l5",
       title: {
-        es: "Parámetros, namespaces y gestión de Hooks",
+        es: "Parámetros, funciones, namespaces y gestión de Hooks",
         en: "",
         jp: "",
       },
       theory: {
-        es: `Los Hooks ofrecen varias herramientas para configuración, organización y gestión avanzada. En esta lección veremos **HookParameters**, **HookNamespace** en profundidad, y cómo gestionar múltiples Hooks en una cuenta.
+        es: `Los Hooks ofrecen varias herramientas para configuración, organización y gestión avanzada. En esta lección veremos **HookParameters**, **funciones**, **HookNamespace** en profundidad, y cómo gestionar múltiples Hooks en una cuenta.
 
-### HookParameters — Configuración sin recompilar
+### HookParameters: Introducir valores al Hook sin recompilar
 
-Los **HookParameters** permiten pasar configuración a un Hook **sin necesidad de recompilarlo**. Se definen al instalar el Hook con \`SetHook\`:
+Los **HookParameters** permiten pasar valores a un Hook **sin necesidad de recompilarlo**. Puedes incluirlos en cualquier transacción y un Hook podrá leer estos valores si los necesita para su lógica:
 
 - Cada parámetro tiene un **HookParameterName** (clave) y un **HookParameterValue** (valor)
 - Ambos son cadenas hexadecimales
@@ -952,7 +911,7 @@ Los **HookParameters** permiten pasar configuración a un Hook **sin necesidad d
 - Umbrales configurables (monto mínimo, máximo)
 - Direcciones de destino configurables
 - Feature flags (activar/desactivar funcionalidades)
-- Cualquier valor que quieras cambiar sin recompilar el WASM
+- Cualquier valor que quieras leer o cambiar sin recompilar el WASM
 
 ### hook_param() — Leer parámetros
 
