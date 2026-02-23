@@ -981,7 +981,7 @@ A lo largo de tus primeros pasos desarrollando Hooks, te encontrarás con necesi
  *   HookParameterName:  "414343494F4E"  (= "ACCION" en hex)
  *   HookParameterValue: "01"            (cualquier valor hex)
  *
- * Convierte strings a hex en: https://hooks.services/tools/string-to-hex
+ * Convierte strings a hex en: https://transia-rnd.github.io/xrpl-hex-visualizer/
  */
 
 int64_t hook(uint32_t reserved)
@@ -996,7 +996,7 @@ int64_t hook(uint32_t reserved)
 
     // ── Definir el nombre del parámetro a buscar ──────────────────────────────
     // "ACCION" en ASCII: A=41 C=43 C=43 I=49 O=4F N=4E
-    // Usa https://hooks.services/tools/string-to-hex para convertir tus propios nombres
+    // Usa https://transia-rnd.github.io/xrpl-hex-visualizer/ para convertir tus propios nombres,
     uint8_t param_name[]    = { 0x41U, 0x43U, 0x43U, 0x49U, 0x4FU, 0x4EU };
 
     // Buffer de salida donde otxn_param() escribirá el valor encontrado (máx. 32 bytes)
@@ -1057,12 +1057,12 @@ async function enviarConParametro() {
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
 
   // La cuenta que tiene el Hook instalado (puede ser la misma u otra)
-  const HOOK_ACCOUNT = "rDireccionConHookAqui";
+  const HOOK_ACCOUNT = "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r";
 
   // Convertir el nombre y valor del parámetro a hexadecimal
   // "ACCION" → 414343494F4E  (usa https://hooks.services/tools/string-to-hex)
   const paramName  = Buffer.from("ACCION").toString("hex").toUpperCase();
-  const paramValue = "01"; // Valor 01 = modo activado
+  const paramValue = "D204"; // Valor 1234 en Hex 
 
   const tx = {
     TransactionType: "Payment",
@@ -1092,7 +1092,7 @@ async function enviarConParametro() {
 
   if (txResult === "tesSUCCESS") {
     console.log("TX enviada. Revisa el Debug Stream en Hooks Builder");
-    console.log("Deberías ver las trazas del Hook con el valor del parámetro.");
+    console.log("Deberías ver las trazas del Hook con el valor del parámetro de tu cuenta. "+wallet.address);
   }
 
   await client.disconnect();
@@ -1100,81 +1100,6 @@ async function enviarConParametro() {
 
 // Enviar con acción 01
 enviarConParametro();`,
-        },
-        {
-          title: {
-            es: "Script para instalar el Hook con hook_param de configuración",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-const fs   = require("fs");
-const crypto = require("crypto");
-
-async function deployHookWithParams() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  const wasmBytes  = fs.readFileSync("./build/otxn_param_demo.wasm");
-  const hookBinary = wasmBytes.toString("hex").toUpperCase();
-
-  // Namespace a partir del nombre del Hook (SHA-256)
-  const namespace = crypto
-    .createHash("sha256")
-    .update("otxn_param_demo")
-    .digest("hex")
-    .toUpperCase();
-
-  // HookParameters de configuración (hook_param, NO otxn_param):
-  // Estos se almacenan junto al Hook y se leen con hook_param() desde el C
-  // "CFG" en hex = 434647
-  const cfgName  = Buffer.from("CFG").toString("hex").toUpperCase();
-  const cfgValue = "FF"; // valor de configuración de ejemplo
-
-  const setHook = {
-    TransactionType: "SetHook",
-    Account: wallet.address,
-    Hooks: [
-      {
-        Hook: {
-          CreateCode: hookBinary,
-          HookOn: "0".repeat(64),
-          HookNamespace: namespace,
-          HookApiVersion: 0,
-          Flags: 1,
-          // Estos son los hook_param (config estática)
-          HookParameters: [
-            {
-              HookParameter: {
-                HookParameterName:  cfgName,   // "CFG"
-                HookParameterValue: cfgValue,
-              },
-            },
-          ],
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(setHook);
-  const signed   = wallet.sign(prepared);
-  const result   = await client.submitAndWait(signed.tx_blob);
-
-  console.log("Resultado SetHook:", result.result.meta.TransactionResult);
-  console.log("Namespace:", namespace);
-  console.log("hook_param 'CFG' configurado con valor:", cfgValue);
-  console.log("");
-  console.log("Ahora puedes enviar transacciones con otxn_param 'ACCION'");
-  console.log("y el Hook los leerá con otxn_param() en tiempo de ejecucion.");
-
-  await client.disconnect();
-}
-
-deployHookWithParams();`,
         },
       ],
       slides: [
@@ -1217,7 +1142,7 @@ deployHookWithParams();`,
       theory: {
         es: `Cuando un Hook falla o se comporta de forma inesperada, necesitas una forma de **observar su ejecución interna**. El sistema de Hooks proporciona tres funciones de traza que emiten mensajes visibles en el **Debug Stream** de Hooks Builder y en los logs del nodo \`xahaud\`.
 
-### trace() — Mensaje de texto o buffer en hexadecimal
+### trace() Mensaje de texto o buffer en hexadecimal
 
 La función más general. Emite un mensaje de cadena o el contenido de un buffer en formato hex.
 
@@ -1235,7 +1160,7 @@ El tercer argumento controla el formato de salida:
 - \`0\` → imprime el buffer como texto (útil para mensajes)
 - \`1\` → imprime el buffer como hexadecimal (útil para datos binarios: cuentas, hashes, buffers de transacciones)
 
-### trace_num() — Mensaje + número entero
+### trace_num() Mensaje + número entero
 
 Emite una etiqueta descriptiva junto a un valor numérico entero. Ideal para inspeccionar cantidades en drops, contadores, valores de retorno de funciones y códigos de error.
 
@@ -1249,7 +1174,7 @@ trace_num(SBUF("state_set resultado: "), result);
 // Negativo = error; positivo o cero = éxito
 \`\`\`
 
-### trace_float() — Mensaje + número en coma flotante (XFL)
+### trace_float() Mensaje + número en coma flotante (XFL)
 
 Los Hooks usan el formato **XFL** (eXtended Float) para representar cantidades no enteras. \`trace_float()\` formatea el XFL de forma legible en el Debug Stream.
 
@@ -1260,13 +1185,64 @@ int64_t xfl_amount = slot_float(slot_no);
 trace_float(SBUF("importe en XFL: "), xfl_amount);
 \`\`\`
 
+### macro.h — Macros de debug disponibles en Hooks Builder
+
+Hooks Builder incluye el archivo \`macro.h\` con cuatro macros de conveniencia que envuelven las funciones \`trace*\` y solo se activan cuando la constante \`DEBUG\` está definida. Esto permite dejar las trazas en el código y eliminarlas de un solo golpe en producción simplemente sin definiendo \`DEBUG\`.
+
+\`\`\`c
+// Muestra el nombre de la variable y su valor como número entero (int64)
+#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+
+// Muestra el nombre de la variable y el contenido del buffer en hexadecimal
+#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+
+// Muestra el nombre de la variable y su valor como float XFL (eXtended Float)
+#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+
+// Muestra el nombre de la variable y el contenido del buffer como texto ASCII
+#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
+\`\`\`
+
+**Cómo funcionan internamente:**
+
+Todas usan el operador \`#v\` (stringification de C) para convertir el nombre de la variable en una cadena literal que actúa de etiqueta. Así, \`TRACEVAR(drops)\` imprimirá \`"drops = 5000000"\` sin que tengas que escribir la etiqueta a mano.
+
+| Macro | Función interna | Cuándo usarla |
+|---|---|---|
+| \`TRACEVAR(v)\` | \`trace_num()\` | Enteros: drops, contadores, códigos de retorno |
+| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | Buffers binarios: account IDs, hashes, claves |
+| \`TRACEXFL(v)\` | \`trace_float()\` | Valores XFL (importes en coma flotante) |
+| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | Buffers de texto: parámetros, memos ASCII |
+
+**Activar y desactivar el modo debug:**
+
+\`\`\`c
+// Al inicio del archivo, antes de incluir macro.h
+#define DEBUG 1       // Trazas activas — modo desarrollo
+// #define DEBUG 0    // Trazas desactivadas — modo producción
+
+#include "hookapi.h"
+// macro.h está disponible en Hooks Builder automáticamente
+\`\`\`
+
+Cuando \`DEBUG\` es \`0\` o no está definido, el compilador elimina completamente las macros del WASM generado: no hay coste de fees ni de tamaño.
+
+**Ejemplo de uso:**
+
+\`\`\`c
+uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
+int64_t drops        = 5000000;
+int64_t xfl_val      = float_set(0, drops);
+
+TRACEVAR(drops);       // → "drops = 5000000"
+TRACEHEX(param_name);  // → "param_name = 4143"
+TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
+TRACESTR(param_name);  // → "param_name = AC"
+\`\`\`
+
 ### ¿Dónde aparecen las trazas?
 
-Las trazas son visibles en tres lugares:
-
-1. **Hooks Builder → Debug Stream**: Selecciona la cuenta en el desplegable y verás todas las trazas en tiempo real para cada transacción procesada.
-2. **Logs del nodo xahaud** en modo debug (desarrollo local): Aparecen en la salida estándar del proceso \`xahaud\`.
-3. **Suscripción WebSocket al stream de debug**: Puedes recibirlas programáticamente desde Node.js (ver código de ejemplo más abajo).
+Las trazas son visibles en **Hooks Builder → Debug Stream**: Selecciona la cuenta en el desplegable y verás todas las trazas en tiempo real para cada transacción procesada.
 
 ### Trucos para mejorar el debugging
 
@@ -1360,177 +1336,85 @@ Las trazas tienen un coste en fees de ejecución y aumentan el tamaño del WASM.
 
 /**
  * Hook: debug_demo.c
- * Demuestra el uso de trace(), trace_num() y trace_float()
- * para inspeccionar la ejecución del Hook en tiempo real.
- * Solo acepta pagos en XAH y traza cada paso del proceso.
+ *
+ * Objetivo:
+ *  - Demostrar el uso de trace(), trace_num() y trace_float()
+ *    para inspeccionar la ejecución del Hook en tiempo real.
+ *  - Solo acepta pagos en XAH (monto nativo en 8 bytes).
+ *
+ * Importante (por tu error de compilación):
+ *  - En el HookAPI actual, trace() requiere 5 argumentos:
+ *      trace(msg_ptr, msg_len, data_ptr, data_len, as_hex)
+ *
+ *    Por eso NO vale:
+ *      trace(SBUF("hola"), 0);     // <- 3 args (2 + 1)
+ *
+ *    Lo correcto para "solo mensaje" es:
+ *      trace(SBUF("hola"), 0, 0, 0);
+ *
+ *    Y para "mensaje + buffer en hex":
+ *      trace(SBUF("label: "), SBUF(buffer), 1);
  */
 
-int64_t hook(uint32_t reserved) {
+int64_t hook(uint32_t reserved)
+{
     _g(1, 1);
 
-    // ── 1. Traza de inicio ──────────────────────────────────────────────────
-    trace(SBUF("debug_demo:hook() iniciado"), 0);
+    // ── 1. Traza de inicio (solo mensaje) ───────────────────────────────────
+    trace(SBUF("debug_demo:hook() iniciado"), 0, 0, 0);
 
-    // ── 2. Trazar la cuenta que tiene el Hook instalado ─────────────────────
+    // ── 2. Trazar la cuenta donde está instalado el Hook ────────────────────
+    // hook_account() llena 20 bytes con el AccountID (raw)
     uint8_t hook_acc[20];
     hook_account(SBUF(hook_acc));
-    trace(SBUF(hook_acc), 1);  // Imprime como hex: account ID de 20 bytes
 
-    // ── 3. Tipo de transacción ───────────────────────────────────────────────
+    // Mostrarlo como HEX. Ponemos un mensaje "label" y el buffer a la derecha.
+    trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+
+    // ── 3. Tipo de transacción entrante ─────────────────────────────────────
+    // otxn_type() devuelve el tipo numérico. En Hooks:
+    //  0 = Payment
     int64_t tt = otxn_type();
     trace_num(SBUF("debug_demo:tipo de tx (0=Payment): "), tt);
 
-    if (tt != 0) {
-        trace(SBUF("debug_demo:no es un pago — saliendo"), 0);
+    // Si no es Payment, no hacemos nada “malo”: simplemente aceptamos y salimos.
+    if (tt != 0)
+    {
+        trace(SBUF("debug_demo:no es un pago — saliendo"), 0, 0, 0);
         accept(SBUF("debug_demo:ok (no payment)"), __LINE__);
     }
 
-    trace(SBUF("debug_demo:rama pago alcanzada"), 0);
+    trace(SBUF("debug_demo:rama pago alcanzada"), 0, 0, 0);
 
-    // ── 4. Obtener el monto del pago ─────────────────────────────────────────
+    // ── 4. Obtener el Amount del Payment ────────────────────────────────────
+    // En XRPL/Xahau, sfAmount:
+    //  - Si es nativo (XAH), otxn_field devuelve 8 bytes.
+    //  - Si es IOU/token, devuelve más (no 8).
     unsigned char amount_buf[48];
     int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
     trace_num(SBUF("debug_demo:bytes leidos del Amount: "), amount_len);
 
-    if (amount_len != 8) {
-        trace(SBUF("debug_demo:Amount no es XAH (8 bytes) — rechazando"), 0);
+    // Solo permitimos XAH nativo. Si no es de 8 bytes, rechazamos.
+    if (amount_len != 8)
+    {
+        trace(SBUF("debug_demo:Amount no es XAH (8 bytes) — rechazando"), 0, 0, 0);
         rollback(SBUF("debug_demo:solo XAH nativo"), __LINE__);
     }
 
-    // ── 5. Trazar el valor en drops ──────────────────────────────────────────
+    // ── 5. Trazar el valor en drops ─────────────────────────────────────────
+    // amount_buf contiene el Amount nativo codificado; AMOUNT_TO_DROPS lo pasa a int64 (drops)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:drops recibidos: "), drops);
 
-    // ── 6. Trazar como XFL (formato de coma flotante de Xahau) ───────────────
-    int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-    if (slot_no >= 0) {
-        int64_t xfl_val = slot_float(slot_no);
-        trace_float(SBUF("debug_demo:monto como XFL: "), xfl_val);
-    } else {
-        trace_num(SBUF("debug_demo:slot_set fallo con: "), slot_no);
-    }
-
-    // ── 7. Trazar resultado de escribir estado ───────────────────────────────
-    uint8_t state_key[32] = { 0 };
-    state_key[0] = 'L'; // 'L' de LastAmount
-
-    int64_t write_result = state_set(SBUF(amount_buf), SBUF(state_key));
-    trace_num(SBUF("debug_demo:state_set resultado (>= 0 ok): "), write_result);
-
-    if (write_result < 0) {
-        // Error al guardar — traza el código de error exacto
-        trace_num(SBUF("debug_demo:ERROR en state_set, codigo: "), write_result);
-        rollback(SBUF("debug_demo:fallo al guardar estado"), __LINE__);
-    }
-
-    // ── 8. Trazar el hash de la transacción entrante ─────────────────────────
-    uint8_t txhash[32];
-    int64_t hash_len = otxn_field(SBUF(txhash), sfTransactionHash);
-    trace_num(SBUF("debug_demo:bytes del hash: "), hash_len);
-    if (hash_len == 32) {
-        trace(SBUF(txhash), 1);  // Hash en hex — puedes buscarlo en el explorador
-    }
-
-    // ── 9. Aceptar — __LINE__ te dice la línea exacta de salida ─────────────
-    trace(SBUF("debug_demo:pago aceptado, saliendo"), 0);
+    // ── 6. Aceptar y terminar ───────────────────────────────────────────────
+    // __LINE__ te deja rastrear exactamente desde qué línea saliste
+    trace(SBUF("debug_demo:pago aceptado, saliendo"), 0, 0, 0);
     accept(SBUF("debug_demo:ok"), __LINE__);
 
-    return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-
-    // Trazar resultados de transacciones emitidas
-    trace(SBUF("debug_demo:cbak() ejecutado"), 0);
-
-    int64_t tt = otxn_type();
-    trace_num(SBUF("debug_demo:cbak tipo tx emitida: "), tt);
-
+    // Nunca llega aquí porque accept/rollback terminan el hook,
+    // pero lo dejamos por buena forma.
     return 0;
 }`,
-        },
-        {
-          title: {
-            es: "Suscribirse al Debug Stream de xahaud desde Node.js",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `// debug-stream.js
-// Suscríbete al stream de debug de un nodo xahaud para recibir
-// las trazas de los Hooks en tiempo real desde Node.js.
-// Solo disponible en nodos con modo debug activo (testnet / nodo local).
-
-const WebSocket = require("ws");
-
-const NODE_URL  = "wss://xahau-test.net";
-const ACCOUNT   = "rTuDireccionConHookAqui"; // La cuenta con el Hook
-
-const ws = new WebSocket(NODE_URL);
-
-ws.on("open", () => {
-  console.log("Conectado al nodo xahaud");
-
-  // Suscribirse a las transacciones de la cuenta
-  ws.send(JSON.stringify({
-    command: "subscribe",
-    accounts: [ACCOUNT],
-  }));
-
-  console.log(\`Escuchando transacciones de \${ACCOUNT}...\`);
-  console.log("Las trazas del Hook aparecerán en el campo 'debug_info'");
-  console.log("(Solo visible en nodos con debug habilitado)\\n");
-});
-
-ws.on("message", (data) => {
-  const msg = JSON.parse(data.toString());
-
-  // Filtrar solo eventos de transacción validada
-  if (msg.type !== "transaction") return;
-  if (msg.status !== "closed")   return;
-
-  const tx   = msg.transaction;
-  const meta = msg.meta;
-
-  console.log("─".repeat(60));
-  console.log("TX tipo:    ", tx.TransactionType);
-  console.log("TX hash:    ", tx.hash);
-  console.log("Resultado:  ", meta?.TransactionResult);
-
-  // Las trazas del Hook aparecen en debug_info si el nodo lo expone
-  if (msg.debug_info) {
-    console.log("\\n=== TRAZAS DEL HOOK ===");
-    for (const entry of msg.debug_info) {
-      if (entry.trace) {
-        console.log("[trace]      ", entry.trace);
-      }
-      if (entry.trace_num !== undefined) {
-        console.log("[trace_num]  ", entry.label, "=", entry.trace_num);
-      }
-      if (entry.trace_float !== undefined) {
-        console.log("[trace_float]", entry.label, "=", entry.trace_float);
-      }
-    }
-    console.log("=".repeat(60));
-  }
-
-  // Ver HookExecutions en la metadata para saber si el Hook ejecutó
-  if (meta?.HookExecutions) {
-    console.log("\\n=== HOOK EXECUTIONS ===");
-    for (const he of meta.HookExecutions) {
-      const exec = he.HookExecution;
-      console.log("Hook cuenta:  ", exec.HookAccount);
-      console.log("Hook hash:    ", exec.HookHash);
-      console.log("Return code:  ", exec.HookReturnCode);
-      console.log("Return string:", Buffer.from(exec.HookReturnString, "hex").toString());
-      console.log("Emit count:   ", exec.HookEmitCount);
-    }
-  }
-});
-
-ws.on("error", (err) => console.error("Error WebSocket:", err.message));
-ws.on("close", ()  => console.log("Conexión cerrada"));`,
         },
       ],
       slides: [
