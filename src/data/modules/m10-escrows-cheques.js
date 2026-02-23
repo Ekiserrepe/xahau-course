@@ -15,7 +15,7 @@ export default {
         jp: "",
       },
       theory: {
-        es: `Un **Escrow** es un mecanismo de pago condicional que bloquea fondos hasta que se cumplan ciertas condiciones. Es como un sobre sellado con dinero que solo se puede abrir bajo circunstancias específicas.
+        es: `Un **Escrow** es un mecanismo de pago condicional que bloquea fondos hasta que se cumplan ciertas condiciones. Es como un sobre sellado con dinero que solo se puede abrir bajo circunstancias específicas. Una caja fuerte condicional.
 
 ### Casos de uso
 
@@ -30,7 +30,7 @@ El tipo de transacción \`EscrowCreate\` bloquea una cantidad de XAH con condici
 
 | Campo | Descripción |
 |---|---|
-| \`Amount\` | Cantidad de XAH a bloquear (en drops) |
+| \`Amount\` | Cantidad de XAH u otros activos a bloquear (en drops para XAH, objeto Amount para tokens) |
 | \`Destination\` | Cuenta que recibirá los fondos |
 | \`FinishAfter\` | Timestamp mínimo para completar el escrow |
 | \`CancelAfter\` | Timestamp a partir del cual se puede cancelar |
@@ -87,8 +87,8 @@ async function createTimeLockedEscrow() {
   const RIPPLE_EPOCH_OFFSET = 946684800;
   const now = Math.floor(Date.now() / 1000);
 
-  // FinishAfter: 5 minutos en el futuro
-  const finishAfter = now - RIPPLE_EPOCH_OFFSET + 5 * 60;
+  // FinishAfter: 2 minutos en el futuro
+  const finishAfter = now - RIPPLE_EPOCH_OFFSET + 2 * 60;
   // CancelAfter: 24 horas en el futuro (si nadie lo completa, se puede cancelar)
   const cancelAfter = now - RIPPLE_EPOCH_OFFSET + 24 * 60 * 60;
 
@@ -122,6 +122,8 @@ async function createTimeLockedEscrow() {
     );
     console.log("\\n¡Guarda el Sequence! Lo necesitas para EscrowFinish.");
     console.log(\`Sequence del escrow: \${prepared.Sequence}\`);
+    console.log(\`Tu dirección: \${sender.address}\`);
+
   }
 
   await client.disconnect();
@@ -326,7 +328,7 @@ Cualquiera de las dos partes (emisor o receptor) puede cancelar un cheque. Tambi
       codeBlocks: [
         {
           title: {
-            es: "Crear un cheque y cobrarlo",
+            es: "Crear un cheque",
             en: "",
             jp: "",
           },
@@ -339,7 +341,7 @@ async function checkExample() {
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rDireccionDelReceptor";
+  const receiverAddress = "rDireccionDelReceptor"; // Reemplaza con la dirección del receptor
 
   // === 1. Crear el cheque ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -369,7 +371,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("\\nGuarda este CheckID para poder cobrar el cheque.");
+      console.log("\\nGuarda este CheckID para poder cobrar el cheque de tu cuenta. " + sender.address);
     }
   }
 
@@ -393,7 +395,7 @@ async function cashCheck(checkID) {
   await client.connect();
 
   // El receptor cobra el cheque
-  const receiver = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'});
 
   // Opción 1: Cobrar una cantidad exacta
   const checkCash = {
