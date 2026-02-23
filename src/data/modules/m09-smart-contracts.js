@@ -986,67 +986,57 @@ A lo largo de tus primeros pasos desarrollando Hooks, te encontrarás con necesi
 
 int64_t hook(uint32_t reserved)
 {
+    // Guard obligatorio: (id_iteracion, max_iteraciones)
+    // Como no hay bucles en este Hook, basta con _g(1, 1)
     _g(1, 1);
 
-    trace(SBUF("otxn_param_demo: hook() iniciado"), 0);
+    // Traza de inicio con 4 argumentos: (label_ptr, label_len, data_ptr, data_len, as_hex)
+    // Cuando data_ptr y data_len son 0, solo se imprime la etiqueta
+    trace(SBUF("otxn_param_demo: hook() iniciado"), 0, 0, 0);
 
-    // Nombre del parámetro que queremos leer: "ACCION" → hex 414343494F4E
-    uint8_t param_name[]  = { 0x41U, 0x43U, 0x43U, 0x49U, 0x4FU, 0x4EU };
+    // ── Definir el nombre del parámetro a buscar ──────────────────────────────
+    // "ACCION" en ASCII: A=41 C=43 C=43 I=49 O=4F N=4E
+    // Usa https://hooks.services/tools/string-to-hex para convertir tus propios nombres
+    uint8_t param_name[]    = { 0x41U, 0x43U, 0x43U, 0x49U, 0x4FU, 0x4EU };
+
+    // Buffer de salida donde otxn_param() escribirá el valor encontrado (máx. 32 bytes)
     uint8_t param_value[32] = { 0 };
 
-    // Leer el parámetro de la transacción originante
+    // ── Leer el parámetro de la transacción originante ────────────────────────
+    // otxn_param() busca en los HookParameters de la tx que activó este Hook.
+    // Devuelve: bytes escritos (>0) si encontrado | negativo si error o no existe
     int64_t value_len = otxn_param(
-        SBUF(param_value),   // buffer de salida
-        SBUF(param_name)     // nombre del parámetro a buscar
+        SBUF(param_value),   // buffer donde se escribe el valor del parámetro
+        SBUF(param_name)     // nombre del parámetro que queremos leer
     );
 
-    trace_num(SBUF("otxn_param_demo: bytes leidos (neg=no existe): "), value_len);
+    // ── Trazar el nombre del parámetro buscado ────────────────────────────────
+    // TRACEVAR muestra el nombre de la variable y su contenido como valor numérico
+    TRACEVAR(param_name);
+    // TRACEHEX muestra el contenido del buffer en formato hexadecimal
+    // Verás: 414343494F4E → que corresponde a "ACCION"
+    TRACEHEX(param_name);
 
-    if (value_len == DOESNT_EXIST)
-    {
-        // La transacción no incluye el parámetro "ACCION"
-        trace(SBUF("otxn_param_demo: parametro ACCION no encontrado"), 0);
-        accept(SBUF("otxn_param_demo: sin parametro, nada que hacer"), __LINE__);
-    }
+    // ── Trazar el valor recibido ──────────────────────────────────────────────
+    // TRACEVAR del valor — útil para ver si el buffer tiene algo o está a ceros
+    TRACEVAR(param_value);
+    // TRACEHEX del valor — muestra los bytes exactos que envió el emisor de la tx
+    TRACEHEX(param_value);
 
-    if (value_len < 0)
-    {
-        // Otro error (TOO_BIG, OUT_OF_BOUNDS, etc.)
-        trace_num(SBUF("otxn_param_demo: error al leer otxn_param: "), value_len);
-        rollback(SBUF("otxn_param_demo: error leyendo parametro"), __LINE__);
-    }
+    // ── Mostrar el valor en dos formatos con trace() de 5 argumentos ─────────
+    // trace(label_ptr, label_len, data_ptr, data_len, as_hex)
+    //   as_hex = 0 → interpreta data como texto ASCII (legible si el valor es texto)
+    //   as_hex = 1 → muestra data como cadena hexadecimal (siempre legible)
 
-    // Parámetro encontrado — mostrarlo en el Debug Stream
+    // Como texto: útil cuando el valor es un string ("ON", "OFF", "MODO1", etc.)
+    trace(SBUF("otxn_param_demo: valor ACCION (texto): "), SBUF(param_value), 0);
 
-    // Como texto (si el valor es un string ASCII)
-    trace(SBUF("otxn_param_demo: valor del parametro ACCION (texto): "), 0);
-    trace(param_value, (uint32_t)value_len, 0);
+    // Como hex: siempre muestra los bytes exactos, ideal para valores binarios
+    trace(SBUF("otxn_param_demo: valor ACCION (hex): "),   SBUF(param_value), 1);
 
-    // Como hexadecimal (siempre legible independientemente del tipo)
-    trace(SBUF("otxn_param_demo: valor del parametro ACCION (hex): "), 0);
-    trace(param_value, (uint32_t)value_len, 1);
-
-    // Si el valor es un entero de 1 byte podemos leerlo directamente
-    if (value_len == 1)
-    {
-        int64_t accion_num = (int64_t)param_value[0];
-        trace_num(SBUF("otxn_param_demo: accion como numero: "), accion_num);
-
-        if (accion_num == 1)
-            trace(SBUF("otxn_param_demo: accion 01 → modo activado"), 0);
-        else if (accion_num == 2)
-            trace(SBUF("otxn_param_demo: accion 02 → modo desactivado"), 0);
-        else
-            trace(SBUF("otxn_param_demo: accion desconocida"), 0);
-    }
-
+    // Acepta la transacción. __LINE__ indica el número de línea exacto en el log,
+    // lo que facilita saber por qué camino salió el Hook en el Debug Stream
     accept(SBUF("otxn_param_demo: parametro leido y trazado"), __LINE__);
-    return 0;
-}
-
-int64_t cbak(uint32_t reserved)
-{
-    _g(1, 1);
     return 0;
 }`,
         },
