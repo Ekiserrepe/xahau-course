@@ -576,35 +576,29 @@ checkHooks("rTuDireccionAqui");`,
         jp: "",
       },
       theory: {
-        es: `Los Hooks pueden almacenar **datos persistentes** entre ejecuciones usando el sistema de estado (\`state\`). Esto permite que un Hook recuerde información entre transacciones.
-
-### Funciones de estado
-
-- \`state()\` — Lee un valor del estado usando una clave
-- \`state_set()\` — Escribe un valor en el estado para una clave
-- \`state_foreign()\` — Lee el estado de un Hook instalado en **otra cuenta**
+        es: `Los Hooks pueden almacenar **datos persistentes** entre ejecuciones usando el sistema de estado (\`state\`). Esto permite que un Hook tenga información disponible con la que trabajar en uno o varios \`Namespace\`.
 
 ### Estructura del estado
 
-El estado se organiza como pares **clave-valor**:
+El Namespace se identifica con 32 bytes (256 bits) en hexadecimal. El estado se organiza como pares **clave-valor**:
+
 - **Clave**: 32 bytes (256 bits). Si tu clave es más corta, se rellena con ceros
 - **Valor**: hasta 256 bytes por entrada
-- Cada entrada de estado se identifica por su clave dentro de un **namespace**
+- Cada entrada de estado se identifica por su clave dentro de un **Namespace**
 
-### HookNamespace — Aislamiento de estado
+### Limitaciones
 
-Cada Hook tiene un **HookNamespace** (32 bytes hex) que aísla su estado:
+- Una cuenta puede almacenar un máximo de 256 namespaces.
+- Los registros de clave-valor dependerá de tus reservas de XAH.
 
-- Dos Hooks diferentes en la **misma cuenta** tienen estados separados si usan namespaces distintos
-- Esto evita colisiones: un Hook no puede accidentalmente sobrescribir el estado de otro
-- El namespace se define al instalar el Hook con \`SetHook\`
+### Funciones de estado
 
-### state_foreign() — Leer estado ajeno
+Estas son algunas funciones que podemos utilizar para leer o escribir información en \`Namespace\`.
 
-Con \`state_foreign()\` puedes leer el estado de un Hook en otra cuenta:
-- Necesitas conocer la **cuenta**, el **namespace** y la **clave**
-- Es de solo lectura: no puedes modificar el estado de otro Hook
-- Útil para Hooks que necesitan consultar datos de otros Hooks
+- [state_set()](https://xahau.network/docs/hooks/functions/state/state/): Lee un valor del estado usando una clave
+- [state_set()](https://xahau.network/docs/hooks/functions/state/state_set/): Escribe un valor en el estado para una clave
+- [state_foreign()](https://xahau.network/docs/hooks/functions/state/state_foreign/): Lee el estado de un \`Namespace\`que no es el propio.
+- [state_foreign_set()](https://xahau.network/docs/hooks/functions/state/state_foreign_set/): Escribe un valor en el estado de un \`Namespace\`que no es el propio.
 
 ### Usos prácticos del estado
 
@@ -675,67 +669,6 @@ int64_t cbak(uint32_t reserved) {
     return 0;
 }`,
         },
-        {
-          title: {
-            es: "Hook con lista blanca de remitentes",
-            en: "",
-            jp: "",
-          },
-          language: "c",
-          code: `#include "hookapi.h"
-
-/**
- * Hook: whitelist.c
- * Solo acepta pagos de direcciones que están en la
- * lista blanca almacenada en el estado del Hook.
- * Las direcciones se agregan al estado externamente
- * (por ejemplo, con un script de administración).
- */
-
-int64_t hook(uint32_t reserved) {
-    _g(1, 1);
-
-    // Solo filtrar pagos (tipo 0)
-    int64_t tt = otxn_type();
-    if (tt != 0) {
-        accept(SBUF("whitelist: No es un pago, aceptado."), __LINE__);
-    }
-
-    // Obtener la cuenta de origen de la transacción (20 bytes)
-    uint8_t sender_acc[20];
-    int64_t sender_len = otxn_field(SBUF(sender_acc), sfAccount);
-
-    if (sender_len != 20) {
-        rollback(SBUF("whitelist: No se pudo leer el remitente."), __LINE__);
-    }
-
-    // Usar la cuenta del remitente como clave de estado
-    // La clave es de 32 bytes; los primeros 20 son la cuenta
-    uint8_t state_key[32] = { 0 };
-    COPY_20(state_key, sender_acc);
-
-    // Intentar leer el estado para esta clave
-    uint8_t is_allowed[1] = { 0 };
-    int64_t bytes_read = state(SBUF(is_allowed), SBUF(state_key));
-
-    // Si existe una entrada y su valor es 1, está en la whitelist
-    if (bytes_read == 1 && is_allowed[0] == 1) {
-        accept(SBUF("whitelist: Remitente autorizado."), __LINE__);
-    }
-
-    // No está en la whitelist: rechazar
-    rollback(
-        SBUF("whitelist: Remitente no autorizado. Pago rechazado."),
-        __LINE__
-    );
-
-    return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
-    return 0;
-}`,
-        },
       ],
       slides: [
         {
@@ -796,10 +729,10 @@ Esto es obligatorio. Si intentas emitir sin reservar, el Hook fallará.
 
 ### Paso a paso para emitir
 
-1. **\`etxn_reserve(N)\`** — Reservar espacio para N emisiones
-2. **Construir la transacción** — Llenar un buffer con los campos de la transacción serializada
-3. **\`etxn_details()\`** — Preparar los detalles de emisión (genera el hash de emisión)
-4. **\`emit()\`** — Enviar la transacción al ledger
+1. **\`etxn_reserve(N)\`**: Reservar espacio para N emisiones
+2. **Construir la transacción**: Llenar un buffer con los campos de la transacción serializada
+3. **\`etxn_details()\`**: Preparar los detalles de emisión (genera el hash de emisión)
+4. **\`emit()\`**: Enviar la transacción al ledger
 
 ### La función cbak()
 
@@ -820,7 +753,6 @@ Cuando una transacción emitida se **completa** (con éxito o fallo), Xahau llam
 
 - Existe un **máximo de emisiones por ejecución** del Hook
 - Las transacciones emitidas tienen **requisitos de fees** propios
-- No puedes emitir transacciones infinitas (el guard \`_g\` lo previene)
 - Las emisiones aumentan la carga computacional del Hook`,
         en: "",
         jp: "",
@@ -1229,6 +1161,362 @@ deployHookWithParams();`,
     {
       id: "m8l6",
       title: {
+        es: "Trazabilidad y debugging de Hooks",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `Cuando un Hook falla o se comporta de forma inesperada, necesitas una forma de **observar su ejecución interna**. El sistema de Hooks proporciona tres funciones de traza que emiten mensajes visibles en el **Debug Stream** de Hooks Builder y en los logs del nodo \`xahaud\`.
+
+### trace() — Mensaje de texto o buffer en hexadecimal
+
+La función más general. Emite un mensaje de cadena o el contenido de un buffer en formato hex.
+
+\`\`\`c
+// Emitir un mensaje de texto plano
+trace(SBUF("hook iniciado correctamente"), 0);  // 0 = mostrar como string
+
+// Emitir el contenido de un buffer en hexadecimal
+uint8_t account_buf[20];
+otxn_field(SBUF(account_buf), sfAccount);
+trace(SBUF(account_buf), 1);                    // 1 = mostrar como hex
+\`\`\`
+
+El tercer argumento controla el formato de salida:
+- \`0\` → imprime el buffer como texto (útil para mensajes)
+- \`1\` → imprime el buffer como hexadecimal (útil para datos binarios: cuentas, hashes, buffers de transacciones)
+
+### trace_num() — Mensaje + número entero
+
+Emite una etiqueta descriptiva junto a un valor numérico entero. Ideal para inspeccionar cantidades en drops, contadores, valores de retorno de funciones y códigos de error.
+
+\`\`\`c
+int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+trace_num(SBUF("drops recibidos: "), drops);
+
+// Ver el valor de retorno de una función para detectar errores
+int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
+trace_num(SBUF("state_set resultado: "), result);
+// Negativo = error; positivo o cero = éxito
+\`\`\`
+
+### trace_float() — Mensaje + número en coma flotante (XFL)
+
+Los Hooks usan el formato **XFL** (eXtended Float) para representar cantidades no enteras. \`trace_float()\` formatea el XFL de forma legible en el Debug Stream.
+
+\`\`\`c
+// Obtener el amount como XFL desde un slot
+int64_t slot_no = slot_set(SBUF(amount_buf), 0);
+int64_t xfl_amount = slot_float(slot_no);
+trace_float(SBUF("importe en XFL: "), xfl_amount);
+\`\`\`
+
+### ¿Dónde aparecen las trazas?
+
+Las trazas son visibles en tres lugares:
+
+1. **Hooks Builder → Debug Stream**: Selecciona la cuenta en el desplegable y verás todas las trazas en tiempo real para cada transacción procesada.
+2. **Logs del nodo xahaud** en modo debug (desarrollo local): Aparecen en la salida estándar del proceso \`xahaud\`.
+3. **Suscripción WebSocket al stream de debug**: Puedes recibirlas programáticamente desde Node.js (ver código de ejemplo más abajo).
+
+### Trucos para mejorar el debugging
+
+**1. Usa \`__LINE__\` como código de error en accept/rollback**
+
+El segundo argumento de \`accept()\` y \`rollback()\` es un código numérico. Usar \`__LINE__\` automáticamente incluye el número de línea del código fuente, lo que te permite saber exactamente dónde terminó la ejecución sin leer los logs línea a línea.
+
+\`\`\`c
+accept(SBUF("min_payment: OK"), __LINE__);    // Sabrás que pasó por aquí
+rollback(SBUF("min_payment: FAIL"), __LINE__); // Y que falló aquí
+\`\`\`
+
+**2. Prefijos descriptivos en los mensajes**
+
+Usa un prefijo con el nombre del Hook en cada mensaje. Con varios Hooks en la misma cuenta, es fácil confundir qué Hook emitió cada traza.
+
+\`\`\`c
+trace(SBUF("mi_hook:inicio hook()"), 0);
+trace(SBUF("mi_hook:tipo tx procesado"), 0);
+trace(SBUF("mi_hook:aceptando"), 0);
+\`\`\`
+
+**3. Traza el valor de retorno de cada función crítica**
+
+Todas las funciones de la API de Hooks devuelven un valor negativo en caso de error. Comprueba siempre el retorno de operaciones importantes para no perder errores silenciosos.
+
+\`\`\`c
+int64_t r = state_set(SBUF(val), SBUF(key));
+trace_num(SBUF("state_set: "), r);  // Si r < 0, algo falló
+
+int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
+trace_num(SBUF("emit resultado: "), r2);
+\`\`\`
+
+**4. Traza buffers binarios como hex**
+
+Las cuentas, los hashes y los buffers de transacciones son datos binarios de 20-32 bytes. Mostrarlos como hex te permite compararlos con las direcciones y hashes que ves en los exploradores de bloques.
+
+\`\`\`c
+uint8_t hook_acc[20];
+hook_account(SBUF(hook_acc));
+trace(SBUF(hook_acc), 1);  // Verás el account ID en hex (40 caracteres)
+\`\`\`
+
+**5. Marca las ramas de ejecución**
+
+Añade una traza al inicio de cada rama \`if/else\` para seguir el flujo de ejecución. Cuando el Hook termina inesperadamente, verás hasta qué traza llegó antes de que parara.
+
+\`\`\`c
+if (tt == 0) {
+    trace(SBUF("rama: es un pago"), 0);
+    // ...
+} else {
+    trace(SBUF("rama: no es un pago, saliendo"), 0);
+    accept(SBUF("ok"), __LINE__);
+}
+\`\`\`
+
+**6. Traza en cbak() para depurar emisiones**
+
+Cuando una transacción emitida falla silenciosamente, es difícil saberlo sin instrumentar \`cbak()\`.
+
+\`\`\`c
+int64_t cbak(uint32_t reserved) {
+    _g(1, 1);
+    uint8_t txtype[4];
+    int64_t t = otxn_type();
+    trace_num(SBUF("cbak: tipo de tx emitida: "), t);
+    // Leer el resultado de la tx emitida
+    int64_t result = otxn_field(...);
+    trace_num(SBUF("cbak: resultado emission: "), result);
+    return 0;
+}
+\`\`\`
+
+**7. Elimina las trazas antes de ir a producción**
+
+Las trazas tienen un coste en fees de ejecución y aumentan el tamaño del WASM. Una vez que el Hook funciona correctamente en testnet, elimina o comenta las llamadas a \`trace*\` antes de desplegarlo en Mainnet.`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Hook instrumentado con todas las funciones de traza",
+            en: "",
+            jp: "",
+          },
+          language: "c",
+          code: `#include "hookapi.h"
+
+/**
+ * Hook: debug_demo.c
+ * Demuestra el uso de trace(), trace_num() y trace_float()
+ * para inspeccionar la ejecución del Hook en tiempo real.
+ * Solo acepta pagos en XAH y traza cada paso del proceso.
+ */
+
+int64_t hook(uint32_t reserved) {
+    _g(1, 1);
+
+    // ── 1. Traza de inicio ──────────────────────────────────────────────────
+    trace(SBUF("debug_demo:hook() iniciado"), 0);
+
+    // ── 2. Trazar la cuenta que tiene el Hook instalado ─────────────────────
+    uint8_t hook_acc[20];
+    hook_account(SBUF(hook_acc));
+    trace(SBUF(hook_acc), 1);  // Imprime como hex: account ID de 20 bytes
+
+    // ── 3. Tipo de transacción ───────────────────────────────────────────────
+    int64_t tt = otxn_type();
+    trace_num(SBUF("debug_demo:tipo de tx (0=Payment): "), tt);
+
+    if (tt != 0) {
+        trace(SBUF("debug_demo:no es un pago — saliendo"), 0);
+        accept(SBUF("debug_demo:ok (no payment)"), __LINE__);
+    }
+
+    trace(SBUF("debug_demo:rama pago alcanzada"), 0);
+
+    // ── 4. Obtener el monto del pago ─────────────────────────────────────────
+    unsigned char amount_buf[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
+    trace_num(SBUF("debug_demo:bytes leidos del Amount: "), amount_len);
+
+    if (amount_len != 8) {
+        trace(SBUF("debug_demo:Amount no es XAH (8 bytes) — rechazando"), 0);
+        rollback(SBUF("debug_demo:solo XAH nativo"), __LINE__);
+    }
+
+    // ── 5. Trazar el valor en drops ──────────────────────────────────────────
+    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+    trace_num(SBUF("debug_demo:drops recibidos: "), drops);
+
+    // ── 6. Trazar como XFL (formato de coma flotante de Xahau) ───────────────
+    int64_t slot_no = slot_set(SBUF(amount_buf), 0);
+    if (slot_no >= 0) {
+        int64_t xfl_val = slot_float(slot_no);
+        trace_float(SBUF("debug_demo:monto como XFL: "), xfl_val);
+    } else {
+        trace_num(SBUF("debug_demo:slot_set fallo con: "), slot_no);
+    }
+
+    // ── 7. Trazar resultado de escribir estado ───────────────────────────────
+    uint8_t state_key[32] = { 0 };
+    state_key[0] = 'L'; // 'L' de LastAmount
+
+    int64_t write_result = state_set(SBUF(amount_buf), SBUF(state_key));
+    trace_num(SBUF("debug_demo:state_set resultado (>= 0 ok): "), write_result);
+
+    if (write_result < 0) {
+        // Error al guardar — traza el código de error exacto
+        trace_num(SBUF("debug_demo:ERROR en state_set, codigo: "), write_result);
+        rollback(SBUF("debug_demo:fallo al guardar estado"), __LINE__);
+    }
+
+    // ── 8. Trazar el hash de la transacción entrante ─────────────────────────
+    uint8_t txhash[32];
+    int64_t hash_len = otxn_field(SBUF(txhash), sfTransactionHash);
+    trace_num(SBUF("debug_demo:bytes del hash: "), hash_len);
+    if (hash_len == 32) {
+        trace(SBUF(txhash), 1);  // Hash en hex — puedes buscarlo en el explorador
+    }
+
+    // ── 9. Aceptar — __LINE__ te dice la línea exacta de salida ─────────────
+    trace(SBUF("debug_demo:pago aceptado, saliendo"), 0);
+    accept(SBUF("debug_demo:ok"), __LINE__);
+
+    return 0;
+}
+
+int64_t cbak(uint32_t reserved) {
+    _g(1, 1);
+
+    // Trazar resultados de transacciones emitidas
+    trace(SBUF("debug_demo:cbak() ejecutado"), 0);
+
+    int64_t tt = otxn_type();
+    trace_num(SBUF("debug_demo:cbak tipo tx emitida: "), tt);
+
+    return 0;
+}`,
+        },
+        {
+          title: {
+            es: "Suscribirse al Debug Stream de xahaud desde Node.js",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `// debug-stream.js
+// Suscríbete al stream de debug de un nodo xahaud para recibir
+// las trazas de los Hooks en tiempo real desde Node.js.
+// Solo disponible en nodos con modo debug activo (testnet / nodo local).
+
+const WebSocket = require("ws");
+
+const NODE_URL  = "wss://xahau-test.net";
+const ACCOUNT   = "rTuDireccionConHookAqui"; // La cuenta con el Hook
+
+const ws = new WebSocket(NODE_URL);
+
+ws.on("open", () => {
+  console.log("Conectado al nodo xahaud");
+
+  // Suscribirse a las transacciones de la cuenta
+  ws.send(JSON.stringify({
+    command: "subscribe",
+    accounts: [ACCOUNT],
+  }));
+
+  console.log(\`Escuchando transacciones de \${ACCOUNT}...\`);
+  console.log("Las trazas del Hook aparecerán en el campo 'debug_info'");
+  console.log("(Solo visible en nodos con debug habilitado)\\n");
+});
+
+ws.on("message", (data) => {
+  const msg = JSON.parse(data.toString());
+
+  // Filtrar solo eventos de transacción validada
+  if (msg.type !== "transaction") return;
+  if (msg.status !== "closed")   return;
+
+  const tx   = msg.transaction;
+  const meta = msg.meta;
+
+  console.log("─".repeat(60));
+  console.log("TX tipo:    ", tx.TransactionType);
+  console.log("TX hash:    ", tx.hash);
+  console.log("Resultado:  ", meta?.TransactionResult);
+
+  // Las trazas del Hook aparecen en debug_info si el nodo lo expone
+  if (msg.debug_info) {
+    console.log("\\n=== TRAZAS DEL HOOK ===");
+    for (const entry of msg.debug_info) {
+      if (entry.trace) {
+        console.log("[trace]      ", entry.trace);
+      }
+      if (entry.trace_num !== undefined) {
+        console.log("[trace_num]  ", entry.label, "=", entry.trace_num);
+      }
+      if (entry.trace_float !== undefined) {
+        console.log("[trace_float]", entry.label, "=", entry.trace_float);
+      }
+    }
+    console.log("=".repeat(60));
+  }
+
+  // Ver HookExecutions en la metadata para saber si el Hook ejecutó
+  if (meta?.HookExecutions) {
+    console.log("\\n=== HOOK EXECUTIONS ===");
+    for (const he of meta.HookExecutions) {
+      const exec = he.HookExecution;
+      console.log("Hook cuenta:  ", exec.HookAccount);
+      console.log("Hook hash:    ", exec.HookHash);
+      console.log("Return code:  ", exec.HookReturnCode);
+      console.log("Return string:", Buffer.from(exec.HookReturnString, "hex").toString());
+      console.log("Emit count:   ", exec.HookEmitCount);
+    }
+  }
+});
+
+ws.on("error", (err) => console.error("Error WebSocket:", err.message));
+ws.on("close", ()  => console.log("Conexión cerrada"));`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "Las tres funciones trace*", en: "", jp: "" },
+          content: {
+            es: "Instrumentar el Hook para ver su ejecución:\n\ntrace(SBUF(\"mensaje\"), 0);\n→ Texto plano en el Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Contenido del buffer como hex\n\ntrace_num(SBUF(\"label: \"), valor);\n→ Etiqueta + número entero (drops, retornos...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Etiqueta + XFL (coma flotante de Xahau)",
+            en: "",
+            jp: "",
+          },
+          visual: "🔍",
+        },
+        {
+          title: { es: "Donde ver las trazas", en: "", jp: "" },
+          content: {
+            es: "Tres formas de leer la salida:\n\n1. Hooks Builder → Debug Stream\n   Selecciona la cuenta en el desplegable\n\n2. Logs del nodo xahaud\n   En modo debug (desarrollo local)\n\n3. WebSocket desde Node.js\n   Suscríbete a la cuenta y lee debug_info\n   + HookExecutions en la metadata de la tx",
+            en: "",
+            jp: "",
+          },
+          visual: "📡",
+        },
+        {
+          title: { es: "Trucos clave de debugging", en: "", jp: "" },
+          content: {
+            es: "• __LINE__ en accept/rollback → linea exacta de salida\n• Prefijo 'mi_hook:' en cada mensaje\n• trace_num del retorno de CADA funcion critica\n  (negativo = error silencioso)\n• trace con hex=1 para buffers binarios\n• Una traza al inicio de cada rama if/else\n• Instrumenta cbak() para debug de emit()\n• Elimina trazas antes de ir a Mainnet",
+            en: "",
+            jp: "",
+          },
+          visual: "🐛",
+        },
+      ],
+    },
+    {
+      id: "m8l7",
+      title: {
         es: "Hooks Builder: Desarrollo online",
         en: "",
         jp: "",
@@ -1357,7 +1645,7 @@ Una gran y consistente batería de pruebas es clave para asegurar que tu Hook se
       ],
     },
     {
-      id: "m8l7",
+      id: "m8l8",
       title: {
         es: "Desarrollo local de Hooks con hooks-cli",
         en: "",
