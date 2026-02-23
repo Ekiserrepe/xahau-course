@@ -511,28 +511,26 @@ async function checkHooks(address) {
   });
 
   const hooks = response.result.account_objects;
-  console.log(\`=== Hooks de ${address} ===\`);
-  console.log(\`Total instalados: ${hooks.length}\n\`);
-
-  
+  console.log(\`=== Hooks de \${address} ===\`);
+  console.log(\`Total instalados: \${hooks.length}\n\`);
 
   for (let i = 0; i < hooks.length; i++) {
-  const hook = hooks[i];
+    const hook = hooks[i];
 
-  console.log(\`Hook #${i + 1}:\`);
-  //console.log(JSON.stringify(hook, null, 2)); //Si quieres ver toda la info del hook, descomenta esta línea
+    console.log(\`Hook #\${i + 1}:\`);
+    //console.log(JSON.stringify(hook, null, 2)); //Si quieres ver toda la info del hook, descomenta esta línea
 
-  if (hook.Hooks && hook.Hooks.length > 0) {
-    const installedHook = hook.Hooks[0].Hook;
+    if (hook.Hooks && hook.Hooks.length > 0) {
+      const installedHook = hook.Hooks[0].Hook;
 
-    console.log(\`  HookHash: ${installedHook.HookHash}\`);
-    console.log(\`  HookOn: ${installedHook.HookOn}\`);
-    console.log(\`  Namespace: ${installedHook.HookNamespace}\`);
-    console.log(\`  HookCanEmit: ${installedHook.HookCanEmit}\`);
+      console.log(\`  HookHash: \${installedHook.HookHash}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+    }
+
+    console.log();
   }
-
-  console.log();
-}
 
   await client.disconnect();
 }
