@@ -892,69 +892,79 @@ int64_t hook(uint32_t reserved)
     {
       id: "m8l5",
       title: {
-        es: "Parámetros, funciones, namespaces y gestión de Hooks",
+        es: "Parámetros, funciones y gestión de Hooks",
         en: "",
         jp: "",
       },
       theory: {
-        es: `Los Hooks ofrecen varias herramientas para configuración, organización y gestión avanzada. En esta lección veremos **HookParameters**, **funciones**, **HookNamespace** en profundidad, y cómo gestionar múltiples Hooks en una cuenta.
+        es: `Los Hooks disponen de múltiples funciones con propósitos distintos y de gestión. En esta lección veremos algunos de ellos.
 
-### HookParameters: Introducir valores al Hook sin recompilar
+### otxn_param() Parámetros de la transacción que para el Hook
 
-Los **HookParameters** permiten pasar valores a un Hook **sin necesidad de recompilarlo**. Puedes incluirlos en cualquier transacción y un Hook podrá leer estos valores si los necesita para su lógica:
-
-- Cada parámetro tiene un **HookParameterName** (clave) y un **HookParameterValue** (valor)
-- Ambos son cadenas hexadecimales
-- Dentro del Hook, se leen con \`hook_param()\`
-
-**Casos de uso de parámetros**:
-- Umbrales configurables (monto mínimo, máximo)
-- Direcciones de destino configurables
-- Feature flags (activar/desactivar funcionalidades)
-- Cualquier valor que quieras leer o cambiar sin recompilar el WASM
-
-### hook_param() — Leer parámetros
-
-Dentro del Hook, usas \`hook_param()\` para leer un parámetro por su nombre:
+\`otxn_param()\` lee parámetros incluidos **en la transacción que está ejecutando el Hook** en ese preciso momento (la transacción originante). A diferencia de \`hook_param\`, estos valores los envía quien realiza la transacción y **cambian en cada llamada**.
 
 \`\`\`c
-uint8_t value[32];
-int64_t val_len = hook_param(SBUF(value), "MI_PARAM", 8);
+// Firma de la función
+int64_t otxn_param(
+    uint32_t write_ptr,  // buffer donde escribir el valor
+    uint32_t write_len,  // tamaño del buffer (≥ 32 bytes recomendado)
+    uint32_t read_ptr,   // buffer con el nombre del parámetro
+    uint32_t read_len    // longitud del nombre
+);
 \`\`\`
 
-Si el parámetro existe, \`hook_param()\` devuelve la longitud del valor. Si no existe, devuelve un número negativo.
+**¿Cuándo usar otxn_param?**
+- Datos dinámicos que el emisor quiere pasar al Hook en cada transacción
+- Instrucciones de acción: "modo de operación", "identificador de referencia", "código de autorización"
+- Cualquier valor que dependa de la transacción concreta, no de la configuración del Hook
 
-### HookNamespace en profundidad
+### Diferencia clave entre hook_param y otxn_param
 
-El **HookNamespace** es un identificador de 32 bytes (64 caracteres hex) que:
+| | \`hook_param()\` | \`otxn_param()\` |
+|---|---|---|
+| **Origen** | SetHook (instalación) | Transacción que activa el Hook |
+| **Quién lo pone** | El instalador del Hook | El emisor de cada tx |
+| **Cuándo cambia** | Solo al actualizar el Hook | En cada transacción |
+| **Uso típico** | Configuración estática | Instrucciones dinámicas |
 
-- **Aísla el estado** de cada Hook en la cuenta
-- Dos Hooks con **distinto namespace** no comparten estado
-- Dos Hooks con el **mismo namespace** comparten estado (útil para colaboración entre Hooks)
+### Cómo incluir HookParameters en una transacción desde JavaScript
 
-**Cómo elegir un namespace**:
-- Usa un hash del nombre de tu Hook para namespaces únicos
-- Usa un namespace compartido si necesitas que dos Hooks lean/escriban los mismos datos
-- El namespace \`"0".repeat(64)\` es el namespace por defecto
+Los parámetros de transacción se añaden en el campo \`HookParameters\` de cualquier tx que active el Hook. El nombre y el valor deben estar en hexadecimal:
+
+\`\`\`javascript
+// Nombre "ACCION" (hex: 414343494F4E) con valor "01" (hex)
+const tx = {
+  TransactionType: "Payment",
+  Account: wallet.address,
+  Destination: hookAccount,
+  Amount: "1000000",
+  HookParameters: [
+    {
+      HookParameter: {
+        HookParameterName: "414343494F4E",  // "ACCION"
+        HookParameterValue: "01",
+      },
+    },
+  ],
+};
+\`\`\`
 
 ### Recursos para hacer tu vida más sencilla usando Hooks
 
-Xahau permite **hasta 10 Hooks** por cuenta:
-
-A lo largo de tus primeros pasos desarrollando Hooks, te encontrarás con necesidades, como traducir parámetros a valores legibles para el entorno de desarrollo de Hooks. Aquí tienes algunas páginas web que te ayudarán:
+A lo largo de tus primeros pasos desarrollando Hooks, te encontrarás con necesidades como traducir parámetros a valores legibles. Aquí tienes algunas páginas útiles:
 - [Calculadora de HookOn](https://richardah.github.io/xrpl-hookon-calculator/): Calcula fácilmente el campo HookOn y HookCanEmit
-- [Visualizador HEX](https://transia-rnd.github.io/xrpl-hex-visualizer/): Introduce el string o hex que quieres traducir y esta página nte lo traducirá a distintos formatos.
-- [Visualizador de tiempo](https://transia-rnd.github.io/xrpl-time-visualizer/): Como ocurre en Unix, Xahau tiene su propio formato de tiempo basado en segundos desde el 1 de enero de 2000. Esta página te ayudará a traducir entre el formato de tiempo de Xahau y fechas legibles.
-- [Servicios Hooks](https://hooks.services/): Página que contiene diferentes traductores de valores y formatos relacionados con Hooks.
-- [Constructor de Transacciones](https://tx-builder.xahau.tools/): Construir en C transacciones que emitir puede resultar tedioso. Esta página te permite generar una traducción directamente en C para tus transacciones JSON.
-- [XRPLWin Hook tools](https://xahau-testnet.xrplwin.com/tools): Herramientas varias para Hooks, incluyendo distintas formas de instalar un Hook de manera visual.`,
+- [Visualizador HEX](https://transia-rnd.github.io/xrpl-hex-visualizer/): Traduce strings a hex y viceversa en múltiples formatos
+- [Visualizador de tiempo](https://transia-rnd.github.io/xrpl-time-visualizer/): Traduce entre el formato de tiempo de Xahau (Ripple Epoch) y fechas legibles
+- [Servicios Hooks](https://hooks.services/): Traductores de valores y formatos relacionados con Hooks
+- [Constructor de Transacciones](https://tx-builder.xahau.tools/): Genera código C para transacciones a emitir a partir de su JSON
+- [XRPLWin Hook tools](https://xahau-testnet.xrplwin.com/tools): Herramientas visuales para instalar y gestionar Hooks`,
         en: "",
         jp: "",
       },
       codeBlocks: [
         {
           title: {
-            es: "Hook que lee un monto mínimo desde un parámetro",
+            es: "Hook que lee un otxn_param y lo muestra con TRACE",
             en: "",
             jp: "",
           },
@@ -962,88 +972,178 @@ A lo largo de tus primeros pasos desarrollando Hooks, te encontrarás con necesi
           code: `#include "hookapi.h"
 
 /**
- * Hook: configurable_min.c
- * Rechaza pagos menores a un mínimo configurable.
- * El mínimo se pasa como HookParameter llamado "MIN"
- * (en hex: 4D494E).
- * El valor del parámetro son los drops en formato int64.
+ * Hook: otxn_param_demo.c
+ *
+ * Lee el parámetro "ACCION" de la transacción que activa el Hook
+ * y muestra su valor por el Debug Stream con trace().
+ *
+ * Para probarlo, envía una transacción con HookParameters:
+ *   HookParameterName:  "414343494F4E"  (= "ACCION" en hex)
+ *   HookParameterValue: "01"            (cualquier valor hex)
+ *
+ * Convierte strings a hex en: https://hooks.services/tools/string-to-hex
  */
 
-int64_t hook(uint32_t reserved) {
+int64_t hook(uint32_t reserved)
+{
     _g(1, 1);
 
-    // Solo filtrar pagos (tipo 0)
-    int64_t tt = otxn_type();
-    if (tt != 0) {
-        accept(SBUF("configurable_min: No es un pago."), __LINE__);
-    }
+    trace(SBUF("otxn_param_demo: hook() iniciado"), 0);
 
-    // Leer el parámetro "MIN" (3 bytes: 0x4D 0x49 0x4E)
-    uint8_t min_buf[8] = { 0 };
-    int64_t param_len = hook_param(
-        SBUF(min_buf),
-        "MIN", 3
+    // Nombre del parámetro que queremos leer: "ACCION" → hex 414343494F4E
+    uint8_t param_name[]  = { 0x41U, 0x43U, 0x43U, 0x49U, 0x4FU, 0x4EU };
+    uint8_t param_value[32] = { 0 };
+
+    // Leer el parámetro de la transacción originante
+    int64_t value_len = otxn_param(
+        SBUF(param_value),   // buffer de salida
+        SBUF(param_name)     // nombre del parámetro a buscar
     );
 
-    // Si el parámetro no existe, usar 1 XAH por defecto
-    int64_t min_drops = 1000000; // 1 XAH
-    if (param_len == 8) {
-        min_drops = *((int64_t*)min_buf);
+    trace_num(SBUF("otxn_param_demo: bytes leidos (neg=no existe): "), value_len);
+
+    if (value_len == DOESNT_EXIST)
+    {
+        // La transacción no incluye el parámetro "ACCION"
+        trace(SBUF("otxn_param_demo: parametro ACCION no encontrado"), 0);
+        accept(SBUF("otxn_param_demo: sin parametro, nada que hacer"), __LINE__);
     }
 
-    // Obtener el monto del pago
-    unsigned char amount_buf[48];
-    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
-
-    // Solo XAH nativo
-    if (amount_len != 8) {
-        accept(SBUF("configurable_min: No es XAH."), __LINE__);
+    if (value_len < 0)
+    {
+        // Otro error (TOO_BIG, OUT_OF_BOUNDS, etc.)
+        trace_num(SBUF("otxn_param_demo: error al leer otxn_param: "), value_len);
+        rollback(SBUF("otxn_param_demo: error leyendo parametro"), __LINE__);
     }
 
-    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+    // Parámetro encontrado — mostrarlo en el Debug Stream
 
-    if (drops < min_drops) {
-        rollback(
-            SBUF("configurable_min: Pago bajo el mínimo."),
-            __LINE__
-        );
+    // Como texto (si el valor es un string ASCII)
+    trace(SBUF("otxn_param_demo: valor del parametro ACCION (texto): "), 0);
+    trace(param_value, (uint32_t)value_len, 0);
+
+    // Como hexadecimal (siempre legible independientemente del tipo)
+    trace(SBUF("otxn_param_demo: valor del parametro ACCION (hex): "), 0);
+    trace(param_value, (uint32_t)value_len, 1);
+
+    // Si el valor es un entero de 1 byte podemos leerlo directamente
+    if (value_len == 1)
+    {
+        int64_t accion_num = (int64_t)param_value[0];
+        trace_num(SBUF("otxn_param_demo: accion como numero: "), accion_num);
+
+        if (accion_num == 1)
+            trace(SBUF("otxn_param_demo: accion 01 → modo activado"), 0);
+        else if (accion_num == 2)
+            trace(SBUF("otxn_param_demo: accion 02 → modo desactivado"), 0);
+        else
+            trace(SBUF("otxn_param_demo: accion desconocida"), 0);
     }
 
-    accept(SBUF("configurable_min: Pago aceptado."), __LINE__);
+    accept(SBUF("otxn_param_demo: parametro leido y trazado"), __LINE__);
     return 0;
 }
 
-int64_t cbak(uint32_t reserved) {
+int64_t cbak(uint32_t reserved)
+{
+    _g(1, 1);
     return 0;
 }`,
         },
         {
           title: {
-            es: "Script para instalar un Hook con parámetros personalizados",
+            es: "Enviar una transacción con HookParameters desde JavaScript",
             en: "",
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
-const fs = require("fs");
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function enviarConParametro() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // La cuenta que tiene el Hook instalado (puede ser la misma u otra)
+  const HOOK_ACCOUNT = "rDireccionConHookAqui";
+
+  // Convertir el nombre y valor del parámetro a hexadecimal
+  // "ACCION" → 414343494F4E  (usa https://hooks.services/tools/string-to-hex)
+  const paramName  = Buffer.from("ACCION").toString("hex").toUpperCase();
+  const paramValue = "01"; // Valor 01 = modo activado
+
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: HOOK_ACCOUNT,
+    Amount: "1000000", // 1 XAH en drops
+    HookParameters: [
+      {
+        HookParameter: {
+          HookParameterName:  paramName,   // "414343494F4E"
+          HookParameterValue: paramValue,  // "01"
+        },
+      },
+    ],
+  };
+
+  console.log("Enviando Payment con HookParameters...");
+  console.log("  Nombre param (hex): ", paramName, " = ACCION");
+  console.log("  Valor param  (hex): ", paramValue);
+
+  const prepared = await client.autofill(tx);
+  const signed   = wallet.sign(prepared);
+  const result   = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Resultado:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("TX enviada. Revisa el Debug Stream en Hooks Builder");
+    console.log("Deberías ver las trazas del Hook con el valor del parámetro.");
+  }
+
+  await client.disconnect();
+}
+
+// Enviar con acción 01
+enviarConParametro();`,
+        },
+        {
+          title: {
+            es: "Script para instalar el Hook con hook_param de configuración",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+const fs   = require("fs");
+const crypto = require("crypto");
 
 async function deployHookWithParams() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const wallet = Wallet.fromSeed("sEdVxxxTuSeedDeTestnet", {algorithm: 'secp256k1'});
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
 
-  // Leer el WASM compilado
-  const wasmBytes = fs.readFileSync("./build/configurable_min.wasm");
+  const wasmBytes  = fs.readFileSync("./build/otxn_param_demo.wasm");
   const hookBinary = wasmBytes.toString("hex").toUpperCase();
 
-  // Definir parámetros del Hook
-  // "MIN" en hex = 4D494E
-  // Valor: 5000000 drops (5 XAH) como int64 little-endian
-  const minDrops = BigInt(5000000);
-  const minBuffer = Buffer.alloc(8);
-  minBuffer.writeBigInt64LE(minDrops);
-  const minValueHex = minBuffer.toString("hex").toUpperCase();
+  // Namespace a partir del nombre del Hook (SHA-256)
+  const namespace = crypto
+    .createHash("sha256")
+    .update("otxn_param_demo")
+    .digest("hex")
+    .toUpperCase();
+
+  // HookParameters de configuración (hook_param, NO otxn_param):
+  // Estos se almacenan junto al Hook y se leen con hook_param() desde el C
+  // "CFG" en hex = 434647
+  const cfgName  = Buffer.from("CFG").toString("hex").toUpperCase();
+  const cfgValue = "FF"; // valor de configuración de ejemplo
 
   const setHook = {
     TransactionType: "SetHook",
@@ -1052,16 +1152,16 @@ async function deployHookWithParams() {
       {
         Hook: {
           CreateCode: hookBinary,
-          HookOn: "0000000000000000",
-          HookNamespace:
-            "AABBCCDD".repeat(8), // Namespace personalizado
+          HookOn: "0".repeat(64),
+          HookNamespace: namespace,
           HookApiVersion: 0,
           Flags: 1,
+          // Estos son los hook_param (config estática)
           HookParameters: [
             {
               HookParameter: {
-                HookParameterName: "4D494E", // "MIN"
-                HookParameterValue: minValueHex,
+                HookParameterName:  cfgName,   // "CFG"
+                HookParameterValue: cfgValue,
               },
             },
           ],
@@ -1071,15 +1171,15 @@ async function deployHookWithParams() {
   };
 
   const prepared = await client.autofill(setHook);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
+  const signed   = wallet.sign(prepared);
+  const result   = await client.submitAndWait(signed.tx_blob);
 
-  console.log("Resultado:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Hook desplegado con parámetro MIN =", Number(minDrops), "drops");
-    console.log("(equivalente a", Number(minDrops) / 1000000, "XAH)");
-  }
+  console.log("Resultado SetHook:", result.result.meta.TransactionResult);
+  console.log("Namespace:", namespace);
+  console.log("hook_param 'CFG' configurado con valor:", cfgValue);
+  console.log("");
+  console.log("Ahora puedes enviar transacciones con otxn_param 'ACCION'");
+  console.log("y el Hook los leerá con otxn_param() en tiempo de ejecucion.");
 
   await client.disconnect();
 }
@@ -1089,27 +1189,27 @@ deployHookWithParams();`,
       ],
       slides: [
         {
-          title: { es: "HookParameters", en: "", jp: "" },
+          title: { es: "hook_param vs otxn_param", en: "", jp: "" },
           content: {
-            es: "Configuracion sin recompilar el WASM\n\n• Se definen al instalar con SetHook\n• HookParameterName + HookParameterValue (hex)\n• Se leen con hook_param() dentro del Hook\n• Ideal para umbrales, direcciones, feature flags",
+            es: "Dos sistemas de parámetros distintos:\n\nhook_param() — configuración estática\n• Se define en SetHook al instalar\n• Almacenado junto al Hook en el ledger\n• Cambia solo al actualizar el Hook\n• Ideal para umbrales, direcciones fijas\n\notxn_param() — datos dinámicos\n• Viene en la transacción que activa el Hook\n• Lo envía el emisor de cada tx\n• Cambia en cada ejecución\n• Ideal para instrucciones, modos, referencias",
             en: "",
             jp: "",
           },
           visual: "🎛️",
         },
         {
-          title: { es: "Namespace y multiples Hooks", en: "", jp: "" },
+          title: { es: "otxn_param: firma y retornos", en: "", jp: "" },
           content: {
-            es: "HookNamespace:\n• Hash del nombre del Hook → namespace unico\n• Namespace compartido → colaboracion entre Hooks\n\nHasta 10 Hooks por cuenta:\n• Posiciones 0 a 9, ejecucion en orden\n• rollback() detiene los siguientes\n• Cada Hook con su propio HookOn",
+            es: "int64_t otxn_param(\n  write_ptr, write_len,  // buffer salida\n  read_ptr,  read_len    // nombre del param\n);\n\nRetornos:\n• > 0 → bytes escritos (encontrado)\n• DOESNT_EXIST → no está en la tx\n• TOO_SMALL → nombre vacío\n• TOO_BIG → nombre > 32 bytes\n• OUT_OF_BOUNDS → punteros inválidos\n\nNombre y valor en HEX en la transacción",
             en: "",
             jp: "",
           },
-          visual: "📚",
+          visual: "📨",
         },
         {
-          title: { es: "Recursos utiles para Hooks", en: "", jp: "" },
+          title: { es: "Namespace y recursos", en: "", jp: "" },
           content: {
-            es: "• Calculadora HookOn/HookCanEmit\n• Visualizador HEX (string ↔ hex)\n• Visualizador de tiempo (Ripple Epoch)\n• hooks.services (traductores de valores)\n• Constructor de transacciones C\n• XRPLWin Hook tools",
+            es: "HookNamespace (32 bytes hex):\n• Distinto namespace = estado aislado\n• Mismo namespace = estado compartido\n• SHA-256 del nombre → namespace único\n\nRecursos:\n• hooks.services → string ↔ hex\n• HookOn calculator\n• Visualizador tiempo (Ripple Epoch)\n• tx-builder.xahau.tools → C desde JSON",
             en: "",
             jp: "",
           },
