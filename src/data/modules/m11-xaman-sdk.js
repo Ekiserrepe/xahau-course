@@ -1508,5 +1508,419 @@ export default function App() {
         },
       ],
     },
+    {
+      id: "m11l5",
+      title: {
+        es: "Ejecutar los ejemplos en local (navegador)",
+        en: "Running the examples locally (browser)",
+        jp: "ローカルでサンプルを実行（ブラウザ）",
+      },
+      theory: {
+        es: `Todos los ejemplos de código de este módulo están diseñados para ejecutarse en el navegador o en Node.js. Esta lección explica paso a paso cómo levantar cada tipo de proyecto en tu máquina.
+
+### Requisitos previos
+
+- **Node.js 18+** instalado — comprueba con \`node -v\`
+- **npm 9+** — comprueba con \`npm -v\`
+- **Tu API Key de Xaman** — obtenida en [apps.xumm.dev](https://apps.xumm.dev)
+- **App Xaman** instalada en tu móvil (iOS / Android)
+
+---
+
+### Paso 1 — Añadir localhost a la whitelist del portal
+
+Antes de que el SDK funcione en local, debes autorizar el origen \`localhost\` en el portal de desarrolladores:
+
+1. Ve a **apps.xumm.dev** e inicia sesión
+2. Selecciona tu aplicación
+3. En la sección **"Origin/Redirect URIs"**, añade:
+   - \`http://localhost:5173\` (Vite dev server)
+   - \`http://localhost:3000\` (si usas otro puerto)
+4. Guarda los cambios
+
+Sin este paso el SDK rechazará las peticiones desde localhost con un error de CORS o de dominio no autorizado.
+
+---
+
+### Tipo A — Ejemplos frontend (m11l2 y m11l3): React + Vite
+
+Los ejemplos de login y pago del frontend son componentes React que se ejecutan en el navegador. Para probarlos:
+
+\`\`\`bash
+# 1. Crear un nuevo proyecto React con Vite
+npm create vite@latest xaman-demo -- --template react
+cd xaman-demo
+
+# 2. Instalar el SDK de Xaman
+npm install xumm
+
+# 3. Copiar el código de ejemplo al archivo src/App.jsx
+#    (sustituye TU_API_KEY_AQUI por tu API Key real)
+
+# 4. Arrancar el servidor de desarrollo
+npm run dev
+\`\`\`
+
+Vite arrancará en **http://localhost:5173**. Abre esa URL en el navegador y verás la app de demo.
+
+**Estructura final del proyecto:**
+\`\`\`
+xaman-demo/
+├── package.json
+├── vite.config.js      ← sin cambios
+├── index.html          ← sin cambios
+└── src/
+    └── App.jsx         ← pega aquí el código del ejemplo
+\`\`\`
+
+**Flujo de prueba:**
+1. El navegador muestra el botón "Conectar con Xaman"
+2. Haces clic → aparece un QR
+3. Abres Xaman en el móvil y escaneas el QR (o usas el deep link)
+4. Firmas en el móvil
+5. El navegador actualiza el estado automáticamente
+
+---
+
+### Tipo B — Ejemplos backend (m11l4): Express + React
+
+El backend requiere dos terminales abiertas en paralelo: una para el servidor Express y otra para el frontend React.
+
+**Terminal 1 — Backend Express:**
+\`\`\`bash
+# Crear el proyecto backend
+mkdir xaman-backend && cd xaman-backend
+npm init -y
+npm install express xumm dotenv cors
+npm pkg set type="module"
+
+# Crear el .env con tus credenciales
+echo "XUMM_API_KEY=tu-api-key-aqui" > .env
+echo "XUMM_API_SECRET=tu-api-secret-aqui" >> .env
+echo "PORT=3001" >> .env
+
+# Copiar el código de server.js del ejemplo
+# Arrancar el servidor
+node server.js
+\`\`\`
+
+El backend corre en **http://localhost:3001**.
+
+**Terminal 2 — Frontend React:**
+\`\`\`bash
+# En otro directorio, crear el frontend
+npm create vite@latest xaman-frontend -- --template react
+cd xaman-frontend
+npm install
+
+# Copiar el código del "Frontend que consume el backend"
+# en src/App.jsx (la URL del API ya apunta a localhost:3001)
+
+npm run dev
+\`\`\`
+
+El frontend corre en **http://localhost:5173** y hace peticiones al backend en el puerto 3001.
+
+---
+
+### Tipo C — Probar los webhooks con ngrok
+
+Los webhooks de Xaman requieren una URL pública. En local puedes usar **ngrok** para exponerla:
+
+\`\`\`bash
+# Instalar ngrok (una sola vez)
+npm install -g ngrok
+
+# Exponer el puerto del backend
+ngrok http 3001
+\`\`\`
+
+ngrok te dará una URL pública como \`https://abc123.ngrok-free.app\`. Copia esa URL y ponla como Webhook URL en apps.xumm.dev:
+\`\`\`
+https://abc123.ngrok-free.app/webhook/xaman
+\`\`\`
+
+> Nota: ngrok gratuito genera una URL diferente cada vez que lo reinicias. Para desarrollo es suficiente.
+
+---
+
+### Solución de problemas frecuentes
+
+| Problema | Causa probable | Solución |
+|---|---|---|
+| Error CORS o "domain not allowed" | localhost no está en la whitelist | Añadir localhost en apps.xumm.dev |
+| QR no aparece / \`undefined\` | API Key incorrecta o sin whitelist | Verificar la key y el dominio |
+| El móvil no escanea el QR | El QR es una URL externa | Asegúrate de mostrar la imagen de \`qrUrl\` |
+| El webhook no llega | URL no pública | Usar ngrok |
+| Error \`XUMM_API_SECRET is undefined\` | Falta el .env o no se carga dotenv | Verificar que \`.env\` existe y \`import "dotenv/config"\` está en el servidor |`,
+        en: `All code examples in this module are designed to run in the browser or in Node.js. This lesson walks through how to start each type of project on your machine.
+
+### Prerequisites
+
+- **Node.js 18+** installed — check with \`node -v\`
+- **npm 9+** — check with \`npm -v\`
+- **Your Xaman API Key** — obtained from [apps.xumm.dev](https://apps.xumm.dev)
+- **Xaman app** installed on your phone (iOS / Android)
+
+---
+
+### Step 1 — Add localhost to the portal whitelist
+
+Before the SDK works locally, you must authorize the \`localhost\` origin in the developer portal:
+
+1. Go to **apps.xumm.dev** and sign in
+2. Select your application
+3. In the **"Origin/Redirect URIs"** section, add:
+   - \`http://localhost:5173\` (Vite dev server)
+   - \`http://localhost:3000\` (if using a different port)
+4. Save changes
+
+Without this step the SDK will reject requests from localhost with a CORS or unauthorized domain error.
+
+---
+
+### Type A — Frontend examples (m11l2 and m11l3): React + Vite
+
+The frontend login and payment examples are React components that run in the browser:
+
+\`\`\`bash
+npm create vite@latest xaman-demo -- --template react
+cd xaman-demo
+npm install xumm
+# Paste the example code into src/App.jsx
+# Replace TU_API_KEY_AQUI with your real API Key
+npm run dev
+\`\`\`
+
+Vite starts at **http://localhost:5173**. Open that URL in the browser.
+
+---
+
+### Type B — Backend examples (m11l4): Express + React
+
+Requires two open terminals:
+
+**Terminal 1 — Express backend:**
+\`\`\`bash
+mkdir xaman-backend && cd xaman-backend
+npm init -y
+npm install express xumm dotenv cors
+npm pkg set type="module"
+# Create .env with your credentials
+# Paste server.js example code
+node server.js
+\`\`\`
+
+**Terminal 2 — React frontend:**
+\`\`\`bash
+npm create vite@latest xaman-frontend -- --template react
+cd xaman-frontend && npm install
+# Paste the "Frontend consuming the backend" code into src/App.jsx
+npm run dev
+\`\`\`
+
+---
+
+### Type C — Testing webhooks with ngrok
+
+\`\`\`bash
+npm install -g ngrok
+ngrok http 3001
+# Copy the public URL to apps.xumm.dev → Webhook URL
+\`\`\`
+
+---
+
+### Common issues
+
+| Problem | Likely cause | Solution |
+|---|---|---|
+| CORS error or "domain not allowed" | localhost not whitelisted | Add localhost in apps.xumm.dev |
+| QR doesn't appear | Wrong API Key | Check the key and domain |
+| Webhook not arriving | No public URL | Use ngrok |`,
+        jp: `このモジュールのすべてのコードサンプルは、ブラウザまたはNode.jsで実行するよう設計されています。このレッスンでは、各タイプのプロジェクトをローカルマシンで起動する方法を説明します。
+
+### 前提条件
+
+- **Node.js 18+** インストール済み — \`node -v\` で確認
+- **npm 9+** — \`npm -v\` で確認
+- **XamanのAPIキー** — [apps.xumm.dev](https://apps.xumm.dev)から取得
+- **Xamanアプリ** スマホにインストール済み（iOS/Android）
+
+---
+
+### ステップ1 — ポータルのホワイトリストにlocalhostを追加
+
+SDKがローカルで動作するには、開発者ポータルで\`localhost\`オリジンを承認する必要があります：
+
+1. **apps.xumm.dev**にアクセスしてサインイン
+2. アプリを選択
+3. **「Origin/Redirect URIs」**セクションに追加：
+   - \`http://localhost:5173\`
+4. 変更を保存`,
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Arrancar el ejemplo frontend (React + Vite) desde cero",
+            en: "Starting the frontend example (React + Vite) from scratch",
+            jp: "フロントエンドサンプルを最初から起動（React + Vite）",
+          },
+          language: "bash",
+          code: `# ── 1. Crear el proyecto ──────────────────────────────────────────
+npm create vite@latest xaman-demo -- --template react
+cd xaman-demo
+
+# ── 2. Instalar el SDK de Xaman ───────────────────────────────────
+npm install xumm
+
+# ── 3. Copiar el código del ejemplo en src/App.jsx ────────────────
+#    (el código completo está en la lección m11l2 o m11l3 de este módulo)
+#    Recuerda sustituir TU_API_KEY_AQUI por tu API Key real de apps.xumm.dev
+
+# ── 4. Opcional: borrar el CSS de ejemplo que no necesitas ─────────
+rm src/App.css src/index.css 2>/dev/null || true
+
+# ── 5. Arrancar el servidor de desarrollo ─────────────────────────
+npm run dev
+
+# La app estará disponible en:
+#   http://localhost:5173
+#
+# IMPORTANTE: asegúrate de haber añadido http://localhost:5173
+# como "Origin/Redirect URI" en apps.xumm.dev antes de probar`,
+        },
+        {
+          title: {
+            es: "Arrancar el backend Express + frontend React en paralelo",
+            en: "Starting Express backend + React frontend in parallel",
+            jp: "ExpressバックエンドとReactフロントエンドを並行起動",
+          },
+          language: "bash",
+          code: `# ════════════════════════════════════════════════════════════════
+# TERMINAL 1 — Backend Express (puerto 3001)
+# ════════════════════════════════════════════════════════════════
+
+mkdir xaman-backend && cd xaman-backend
+npm init -y
+npm install express xumm dotenv cors
+npm pkg set type="module"
+
+# Crear el archivo de variables de entorno
+cat > .env << 'EOF'
+XUMM_API_KEY=tu-api-key-aqui
+XUMM_API_SECRET=tu-api-secret-aqui
+PORT=3001
+EOF
+
+# Añadir .env al .gitignore (nunca subas tus credenciales a git)
+echo ".env" >> .gitignore
+echo "node_modules/" >> .gitignore
+
+# Copiar el código de server.js del ejemplo m11l4 en este módulo
+# y luego arrancar:
+node server.js
+
+# Deberías ver:
+#   Servidor corriendo en http://localhost:3001
+
+
+# ════════════════════════════════════════════════════════════════
+# TERMINAL 2 — Frontend React (puerto 5173)
+# ════════════════════════════════════════════════════════════════
+
+npm create vite@latest xaman-frontend -- --template react
+cd xaman-frontend
+npm install
+
+# Copiar el código "Frontend que consume el backend" del ejemplo
+# m11l4 en src/App.jsx (la URL del API ya apunta a http://localhost:3001)
+
+npm run dev
+
+# Abre el navegador en:
+#   http://localhost:5173`,
+        },
+        {
+          title: {
+            es: "Exponer el backend con ngrok para recibir webhooks de Xaman",
+            en: "Expose the backend with ngrok to receive Xaman webhooks",
+            jp: "ngrokでバックエンドを公開してXamanのWebhookを受信",
+          },
+          language: "bash",
+          code: `# ── Instalar ngrok (una sola vez) ────────────────────────────────
+npm install -g ngrok
+# o descarga desde https://ngrok.com/download
+
+# ── Exponer el puerto 3001 del backend ───────────────────────────
+ngrok http 3001
+
+# ngrok mostrará algo como:
+#
+#   Forwarding   https://abc123.ngrok-free.app -> http://localhost:3001
+#
+# ── Configurar el webhook en apps.xumm.dev ───────────────────────
+# 1. Copia la URL pública de ngrok (https://abc123...)
+# 2. Ve a apps.xumm.dev → tu app → Webhook URL
+# 3. Pega: https://abc123.ngrok-free.app/webhook/xaman
+# 4. Guarda
+
+# ── Verificar que llegan los webhooks ────────────────────────────
+# Cuando el usuario firme un payload, verás en la Terminal 1 del backend:
+#
+#   Webhook recibido: {
+#     "payloadResponse": {
+#       "signed": true,
+#       "txid": "ABC123...",
+#       "account": "rXXXXXXXX..."
+#     }
+#   }
+
+# ── Nota: ngrok gratuito cambia la URL en cada reinicio ──────────
+# Para desarrollo es suficiente, pero en producción usa un dominio propio.`,
+        },
+      ],
+      slides: [
+        {
+          title: {
+            es: "Antes de ejecutar: whitelist en apps.xumm.dev",
+            en: "Before running: whitelist in apps.xumm.dev",
+            jp: "実行前：apps.xumm.devのホワイトリスト",
+          },
+          content: {
+            es: "Paso obligatorio antes de probar en local:\n\n1. apps.xumm.dev → tu app\n2. Origin/Redirect URIs → añadir:\n   http://localhost:5173\n3. Guardar cambios\n\nSin este paso el SDK rechazará\nlas peticiones con error de dominio",
+            en: "Mandatory step before testing locally:\n\n1. apps.xumm.dev → your app\n2. Origin/Redirect URIs → add:\n   http://localhost:5173\n3. Save changes\n\nWithout this step the SDK rejects\nrequests with a domain error",
+            jp: "ローカルテスト前の必須ステップ：\n\n1. apps.xumm.dev → あなたのアプリ\n2. Origin/Redirect URIs → 追加：\n   http://localhost:5173\n3. 変更を保存\n\nこのステップがないとSDKが\nドメインエラーでリクエストを拒否",
+          },
+          visual: "⚙️",
+        },
+        {
+          title: {
+            es: "Frontend en el navegador (React + Vite)",
+            en: "Frontend in the browser (React + Vite)",
+            jp: "ブラウザでフロントエンド（React + Vite）",
+          },
+          content: {
+            es: "Para los ejemplos m11l2 y m11l3:\n\nnpm create vite@latest demo -- --template react\ncd demo\nnpm install xumm\n→ pega el código en src/App.jsx\n→ sustituye TU_API_KEY_AQUI\nnpm run dev\n\nAbre: http://localhost:5173",
+            en: "For examples m11l2 and m11l3:\n\nnpm create vite@latest demo -- --template react\ncd demo\nnpm install xumm\n→ paste code into src/App.jsx\n→ replace TU_API_KEY_AQUI\nnpm run dev\n\nOpen: http://localhost:5173",
+            jp: "m11l2・m11l3のサンプル用：\n\nnpm create vite@latest demo -- --template react\ncd demo\nnpm install xumm\n→ src/App.jsxにコードを貼り付け\n→ TU_API_KEY_AQUIを置き換え\nnpm run dev\n\n開く: http://localhost:5173",
+          },
+          visual: "🌐",
+        },
+        {
+          title: {
+            es: "Backend + Frontend + ngrok",
+            en: "Backend + Frontend + ngrok",
+            jp: "バックエンド + フロントエンド + ngrok",
+          },
+          content: {
+            es: "Para el ejemplo m11l4:\n\nTerminal 1 (backend Express):\n  node server.js → puerto 3001\n\nTerminal 2 (frontend React):\n  npm run dev → puerto 5173\n\nPara webhooks:\n  ngrok http 3001\n  → URL pública a apps.xumm.dev",
+            en: "For example m11l4:\n\nTerminal 1 (Express backend):\n  node server.js → port 3001\n\nTerminal 2 (React frontend):\n  npm run dev → port 5173\n\nFor webhooks:\n  ngrok http 3001\n  → public URL to apps.xumm.dev",
+            jp: "m11l4のサンプル用：\n\nターミナル1（Expressバックエンド）：\n  node server.js → ポート3001\n\nターミナル2（Reactフロントエンド）：\n  npm run dev → ポート5173\n\nWebhook用：\n  ngrok http 3001\n  → 公開URLをapps.xumm.devへ",
+          },
+          visual: "🖥️",
+        },
+      ],
+    },
   ],
 };
