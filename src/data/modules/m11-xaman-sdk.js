@@ -31,12 +31,12 @@ El paquete **xumm** (npm) es el SDK oficial que facilita la integración con la 
 
 Antes de escribir código necesitas acceder al **portal de desarrolladores**:
 
-1. Ve a **apps.xumm.dev** e inicia sesión con tu cuenta de Xaman
-2. Haz clic en **"Create a new app"**
-3. Rellena el nombre, descripción e icono de tu aplicación
+1. Ve a [apps.xumm.dev](https://apps.xumm.dev) e inicia sesión con tu cuenta de Xaman
+2. Haz clic en **"Create new application"**
+3. Rellena el nombre, descripción e icono de tu aplicación y pulsa **Create application**.
 4. Copia tu **API Key** (pública) y tu **API Secret** (privada)
 
-> **Importante**: El API Secret es como una contraseña. **Nunca lo incluyas en código frontend** que se entregue al navegador. Solo úsalo en tu servidor.
+**Importante**: El API Secret es como una contraseña. **Nunca lo incluyas en código frontend** que se entregue al navegador. Solo úsalo en tu servidor.
 
 ### Panel de control de desarrolladores
 
