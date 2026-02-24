@@ -3,7 +3,7 @@ export default {
   icon: "🔐",
   title: {
     es: "Otras transacciones disponibles",
-    en: "",
+    en: "Other Available Transactions",
     jp: "",
   },
   lessons: [
@@ -11,7 +11,7 @@ export default {
       id: "m10l1",
       title: {
         es: "Escrows: pagos condicionales",
-        en: "",
+        en: "Escrows: Conditional Payments",
         jp: "",
       },
       theory: {
@@ -62,14 +62,60 @@ Xahau soporta crypto-condiciones del protocolo **Interledger (ILP)**:
 - El creador genera un \`Condition\` (hash) y guarda el \`Fulfillment\` (preimagen)
 - Para completar el escrow, se debe proporcionar el \`Fulfillment\` que corresponda al \`Condition\`
 - Esto permite escrows que solo se liberan cuando alguien demuestra conocer un secreto`,
-        en: "",
+        en: `An **Escrow** is a conditional payment mechanism that locks funds until certain conditions are met. Like a sealed envelope with money that can only be opened under specific circumstances — a conditional safe.
+
+### Use cases
+
+- **Scheduled payments**: Release funds on a specific future date
+- **Atomic swaps**: Conditional exchanges between parties that don't trust each other
+- **Conditional release**: Funds only released when a cryptographic proof is provided
+- **Vesting**: Gradual token distribution over time
+
+### EscrowCreate: creating an escrow
+
+The \`EscrowCreate\` transaction type locks an amount of XAH with conditions:
+
+| Field | Description |
+|---|---|
+| \`Amount\` | Amount of XAH or other assets to lock (drops for XAH, Amount object for tokens) |
+| \`Destination\` | Account that will receive the funds |
+| \`FinishAfter\` | Minimum timestamp to complete the escrow |
+| \`CancelAfter\` | Timestamp from which it can be cancelled |
+| \`Condition\` | Optional crypto-condition for release |
+
+**Important rules**:
+- You must specify at least \`FinishAfter\` or \`Condition\` (or both)
+- If you use \`CancelAfter\`, it must be after \`FinishAfter\`
+- Timestamps use **Ripple Epoch** (seconds since 01/01/2000 00:00:00 UTC)
+
+### EscrowFinish: completing the escrow
+
+Any account can execute \`EscrowFinish\` to release the funds to the recipient:
+- Only works after \`FinishAfter\` (if specified)
+- If there is a \`Condition\`, the correct \`Fulfillment\` must be provided
+- The \`Owner\` and \`OfferSequence\` fields identify which escrow to complete
+
+### EscrowCancel: cancelling the escrow
+
+With \`EscrowCancel\` the funds are returned to the creator:
+- Only works after \`CancelAfter\`
+- Any account can execute the cancellation
+- Funds go back to the account that created the escrow
+
+### Crypto-conditions
+
+Xahau supports crypto-conditions from the **Interledger (ILP)** protocol:
+- Based on the **PREIMAGE-SHA-256** standard
+- The creator generates a \`Condition\` (hash) and saves the \`Fulfillment\` (preimage)
+- To complete the escrow, the \`Fulfillment\` matching the \`Condition\` must be provided
+- This allows escrows only released when someone proves they know a secret`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Crear un escrow con bloqueo temporal (FinishAfter = 5 minutos)",
-            en: "",
+            en: "Create an escrow with time lock (FinishAfter = 2 minutes)",
             jp: "",
           },
           language: "javascript",
@@ -134,7 +180,7 @@ createTimeLockedEscrow();`,
         {
           title: {
             es: "Completar (finish) un escrow después del tiempo de bloqueo",
-            en: "",
+            en: "Complete (finish) an escrow after the lock period",
             jp: "",
           },
           language: "javascript",
@@ -220,28 +266,28 @@ finishEscrow("rDireccionDelCreador", 12345);`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es un Escrow?", en: "", jp: "" },
+          title: { es: "¿Qué es un Escrow?", en: "What is an Escrow?", jp: "" },
           content: {
             es: "Pago condicional que bloquea fondos\n\n• Bloqueo temporal (FinishAfter)\n• Cancelación automática (CancelAfter)\n• Condición criptográfica (Condition)\n\nUsos: pagos programados, vesting, atomic swaps",
-            en: "",
+            en: "Conditional payment that locks funds\n\n• Time lock (FinishAfter)\n• Automatic cancellation (CancelAfter)\n• Cryptographic condition (Condition)\n\nUses: scheduled payments, vesting, atomic swaps",
             jp: "",
           },
           visual: "🔐",
         },
         {
-          title: { es: "Ciclo de vida del Escrow", en: "", jp: "" },
+          title: { es: "Ciclo de vida del Escrow", en: "Escrow lifecycle", jp: "" },
           content: {
             es: "1. EscrowCreate → Bloquea los fondos\n     ↓ (pasa el tiempo)\n2. EscrowFinish → Libera al destinatario\n     ó\n2. EscrowCancel → Devuelve al creador\n\n• FinishAfter debe pasar antes de Finish\n• CancelAfter debe pasar antes de Cancel",
-            en: "",
+            en: "1. EscrowCreate → Locks the funds\n     ↓ (time passes)\n2. EscrowFinish → Releases to recipient\n     or\n2. EscrowCancel → Returns to creator\n\n• FinishAfter must pass before Finish\n• CancelAfter must pass before Cancel",
             jp: "",
           },
           visual: "⏳",
         },
         {
-          title: { es: "Crypto-condiciones", en: "", jp: "" },
+          title: { es: "Crypto-condiciones", en: "Crypto-conditions", jp: "" },
           content: {
             es: "Escrows con prueba criptográfica:\n\n• Condition = hash SHA-256\n• Fulfillment = preimagen secreta\n• Solo quien conozca el secreto puede completar\n• Basado en Interledger Protocol\n\nIdeal para intercambios trustless entre partes",
-            en: "",
+            en: "Escrows with cryptographic proof:\n\n• Condition = SHA-256 hash\n• Fulfillment = secret preimage\n• Only those who know the secret can complete\n• Based on Interledger Protocol\n\nIdeal for trustless exchanges between parties",
             jp: "",
           },
           visual: "🔑",
@@ -252,7 +298,7 @@ finishEscrow("rDireccionDelCreador", 12345);`,
       id: "m10l2",
       title: {
         es: "Cheques: pagos diferidos",
-        en: "",
+        en: "Checks: Deferred Payments",
         jp: "",
       },
       theory: {
@@ -322,14 +368,79 @@ Cualquiera de las dos partes (emisor o receptor) puede cancelar un cheque. Tambi
 - \`tecNO_LINE\`: Para IOUs, el receptor no tiene TrustLine con el emisor del token
 - \`tecUNFUNDED\`: El emisor del cheque no tiene fondos suficientes al momento de cobrar
 - \`tecEXPIRED\`: El cheque ha expirado`,
-        en: "",
+        en: `A **Check** is similar to a traditional bank check: the sender creates a check for a certain amount, and the recipient can cash it whenever they wish. Unlike a direct payment, funds are **not transferred immediately** — the recipient must take action to cash the check.
+
+### Why use Checks instead of direct payments?
+
+- **The recipient controls when they cash it**: Useful when the recipient wants to decide the exact timing
+- **Does not require the recipient to be active**: The check stays in the ledger waiting to be cashed
+- **Allows partial payments**: The recipient can cash less than the total check amount
+- **Supports native XAH and IOUs**: You can create checks in both XAH and tokens
+
+### CheckCreate: creating a check
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | \`"CheckCreate"\` |
+| \`Account\` | Account issuing the check |
+| \`Destination\` | Account that can cash the check |
+| \`SendMax\` | Maximum amount that can be cashed |
+| \`Expiration\` | (Optional) Timestamp after which the check expires |
+| \`InvoiceID\` | (Optional) 256-bit hash to identify the purpose of the check |
+
+\`SendMax\` can be a string (XAH drops) or an Amount object for IOUs:
+\`\`\`
+// Check in native XAH
+"SendMax": "10000000"  // 10 XAH in drops
+
+// Check in IOU
+"SendMax": {
+  "currency": "USD",
+  "issuer": "rTokenIssuerAddress",
+  "value": "100"
+}
+\`\`\`
+
+### CheckCash: cashing a check
+
+The recipient cashes the check with \`CheckCash\`. It has two modes:
+
+1. **Amount**: Cash an exact amount (must be ≤ SendMax)
+2. **DeliverMin**: Cash at least this amount (useful with IOUs whose value may fluctuate)
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | \`"CheckCash"\` |
+| \`Account\` | Recipient account (the one cashing) |
+| \`CheckID\` | ID of the check in the ledger |
+| \`Amount\` | Exact amount to cash (option 1) |
+| \`DeliverMin\` | Minimum acceptable amount (option 2) |
+
+**Important**: You must use \`Amount\` **or** \`DeliverMin\`, never both.
+
+### CheckCancel: cancelling a check
+
+Either party (sender or recipient) can cancel a check. An expired check can also be cancelled.
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | \`"CheckCancel"\` |
+| \`Account\` | Account executing the cancellation |
+| \`CheckID\` | ID of the check to cancel |
+
+### Common errors
+
+- \`tecNO_ENTRY\`: The CheckID does not exist (already cashed or cancelled)
+- \`tecNO_LINE\`: For IOUs, the recipient has no TrustLine with the token issuer
+- \`tecUNFUNDED\`: The check issuer has insufficient funds at the time of cashing
+- \`tecEXPIRED\`: The check has expired`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Crear un cheque",
-            en: "",
+            en: "Create a check",
             jp: "",
           },
           language: "javascript",
@@ -383,7 +494,7 @@ checkExample();`,
         {
           title: {
             es: "Cobrar (cash) un cheque recibido",
-            en: "",
+            en: "Cash (collect) a received check",
             jp: "",
           },
           language: "javascript",
@@ -444,28 +555,28 @@ cashCheck("TU_CHECK_ID_AQUI");`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es un Check?", en: "", jp: "" },
+          title: { es: "¿Qué es un Check?", en: "What is a Check?", jp: "" },
           content: {
             es: "Similar a un cheque bancario tradicional\n\n• El emisor crea el cheque (CheckCreate)\n• El receptor lo cobra cuando quiera (CheckCash)\n• Los fondos NO se transfieren al crear\n• Soporta XAH nativo e IOUs\n• Puede tener fecha de expiración",
-            en: "",
+            en: "Similar to a traditional bank check\n\n• Sender creates the check (CheckCreate)\n• Recipient cashes it whenever (CheckCash)\n• Funds are NOT transferred at creation\n• Supports native XAH and IOUs\n• Can have an expiration date",
             jp: "",
           },
           visual: "📝",
         },
         {
-          title: { es: "Ciclo de vida del Check", en: "", jp: "" },
+          title: { es: "Ciclo de vida del Check", en: "Check lifecycle", jp: "" },
           content: {
             es: "1. CheckCreate → Emisor crea el cheque\n     ↓ (el receptor decide cuándo)\n2. CheckCash → Receptor cobra el cheque\n     ó\n2. CheckCancel → Cualquiera lo cancela\n\n• Amount = cobro exacto\n• DeliverMin = cobro mínimo aceptable\n• Cheques expirados se pueden cancelar",
-            en: "",
+            en: "1. CheckCreate → Sender creates the check\n     ↓ (recipient decides when)\n2. CheckCash → Recipient cashes the check\n     or\n2. CheckCancel → Either party cancels it\n\n• Amount = exact amount to cash\n• DeliverMin = minimum acceptable amount\n• Expired checks can be cancelled",
             jp: "",
           },
           visual: "🔄",
         },
         {
-          title: { es: "Check vs Payment vs Escrow", en: "", jp: "" },
+          title: { es: "Check vs Payment vs Escrow", en: "Check vs Payment vs Escrow", jp: "" },
           content: {
             es: "Payment → Transferencia inmediata\n\nEscrow → Fondos bloqueados con condiciones\n• Tiempo, crypto-condición o ambos\n• Fondos realmente bloqueados\n\nCheck → Promesa de pago diferido\n• Receptor decide cuándo cobrar\n• Fondos NO bloqueados (pueden gastarse)\n• Más flexible, menos garantías",
-            en: "",
+            en: "Payment → Immediate transfer\n\nEscrow → Funds locked with conditions\n• Time, crypto-condition or both\n• Funds actually locked\n\nCheck → Deferred payment promise\n• Recipient decides when to cash\n• Funds NOT locked (can be spent)\n• More flexible, fewer guarantees",
             jp: "",
           },
           visual: "⚖️",
@@ -476,7 +587,7 @@ cashCheck("TU_CHECK_ID_AQUI");`,
       id: "m10l3",
       title: {
         es: "Tickets: secuencias fuera de orden",
-        en: "",
+        en: "Tickets: Out-of-Order Sequences",
         jp: "",
       },
       theory: {
@@ -528,14 +639,61 @@ El Ticket se destruye automáticamente al usarse, liberando la reserva.
 ### Cancelar Tickets no usados
 
 Si ya no necesitas un Ticket, puedes cancelarlo para liberar la reserva. No existe una transacción específica para cancelar Tickets. En su lugar, puedes usar una transacción \`AccountSet\` vacía (sin cambios) que consuma el Ticket.`,
-        en: "",
+        en: `A **Ticket** is a mechanism that allows sending transactions **outside the normal sequential order**. Normally, each transaction on Xahau must use the next \`Sequence\` number of the account. Tickets eliminate this restriction by reserving sequence numbers in advance.
+
+### What is a Ticket?
+
+Each account on Xahau has a \`Sequence\` number that increments with each transaction. This means transactions must be processed in strict order. Tickets solve this problem:
+
+- A Ticket **reserves** a sequence number for future use
+- The transaction using a Ticket specifies \`TicketSequence\` instead of \`Sequence\`
+- Tickets can be used in **any order**, regardless of when they were created
+
+### What are Tickets for?
+
+- **Parallel transactions**: Prepare and sign multiple transactions without depending on order
+- **Pre-signed transactions**: Sign transactions in advance and send them when convenient
+- **Multi-signing**: Different signers can prepare independent transactions without blocking the sequence
+- **Contingencies**: Have backup transactions ready without consuming the normal sequence
+
+### TicketCreate: reserving Tickets
+
+The \`TicketCreate\` transaction reserves one or more sequence numbers:
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | \`"TicketCreate"\` |
+| \`Account\` | Account reserving the tickets |
+| \`TicketCount\` | Number of tickets to create (1-250) |
+
+### Reserve cost
+
+Each Ticket created consumes an **owner reserve** from the account, just like a TrustLine or a DEX offer. This means for each active Ticket you need additional XAH locked in your account. The Ticket is deleted (and the reserve released) when used or cancelled.
+
+### Limits
+
+- **Maximum per transaction**: You can create up to **250 Tickets** in a single \`TicketCreate\` transaction
+- **Maximum per account**: An account can have up to **250 Tickets** active simultaneously
+- Tickets **do not expire** — they remain in the ledger until used or cancelled
+
+### Using a Ticket in a transaction
+
+To use a Ticket, include these fields in your transaction:
+- \`Sequence: 0\` — indicates the normal sequence is not used
+- \`TicketSequence: N\` — the Ticket number to consume
+
+The Ticket is automatically destroyed when used, releasing the reserve.
+
+### Cancelling unused Tickets
+
+If you no longer need a Ticket, you can cancel it to release the reserve. There is no specific transaction to cancel Tickets. Instead, you can use an empty \`AccountSet\` transaction (no changes) that consumes the Ticket.`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Crear Tickets y usarlos para encadenar múltiples pagos",
-            en: "",
+            en: "Create Tickets and use them to chain multiple payments",
             jp: "",
           },
           language: "javascript",
@@ -623,28 +781,28 @@ paymentsWithTickets();`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es un Ticket?", en: "", jp: "" },
+          title: { es: "¿Qué es un Ticket?", en: "What is a Ticket?", jp: "" },
           content: {
             es: "Reserva números de secuencia por adelantado\n\n• Permite transacciones fuera de orden\n• Sequence: 0 + TicketSequence: N\n• Se destruye al usarse\n• Máximo 250 por cuenta\n\nCada Ticket consume reserva de propietario",
-            en: "",
+            en: "Reserves sequence numbers in advance\n\n• Allows out-of-order transactions\n• Sequence: 0 + TicketSequence: N\n• Destroyed when used\n• Maximum 250 per account\n\nEach Ticket consumes owner reserve",
             jp: "",
           },
           visual: "🎫",
         },
         {
-          title: { es: "Casos de uso", en: "", jp: "" },
+          title: { es: "Casos de uso", en: "Use cases", jp: "" },
           content: {
             es: "• Transacciones paralelas sin bloqueo\n• Pre-firmar txs para enviar después\n• Multi-signing independiente\n• Contingencias y respaldos\n\nTicketCreate → Reservar (1-250)\nUsar → Sequence: 0 + TicketSequence\nCancelar → AccountSet vacío con Ticket",
-            en: "",
+            en: "• Parallel transactions without blocking\n• Pre-sign txs to send later\n• Independent multi-signing\n• Contingencies and fallbacks\n\nTicketCreate → Reserve (1-250)\nUse → Sequence: 0 + TicketSequence\nCancel → Empty AccountSet with Ticket",
             jp: "",
           },
           visual: "🔀",
         },
         {
-          title: { es: "Tickets vs Secuencia normal", en: "", jp: "" },
+          title: { es: "Tickets vs Secuencia normal", en: "Tickets vs Normal Sequence", jp: "" },
           content: {
             es: "Secuencia normal:\n• Estricto orden: 1, 2, 3, 4...\n• Si falla la 2, la 3 se bloquea\n\nCon Tickets:\n• Cualquier orden: 3, 1, 2...\n• Independientes entre sí\n• Cada uno consume owner reserve\n• Se liberan al usarse o cancelarse",
-            en: "",
+            en: "Normal sequence:\n• Strict order: 1, 2, 3, 4...\n• If 2 fails, 3 is blocked\n\nWith Tickets:\n• Any order: 3, 1, 2...\n• Independent from each other\n• Each consumes owner reserve\n• Released when used or cancelled",
             jp: "",
           },
           visual: "⚖️",
@@ -655,7 +813,7 @@ paymentsWithTickets();`,
       id: "m10l4",
       title: {
         es: "ClaimReward: reclamar recompensas de la red",
-        en: "",
+        en: "ClaimReward: Claiming Network Rewards",
         jp: "",
       },
       theory: {
@@ -693,14 +851,47 @@ Si por algún motivo quieres dejar de participar en el sistema de recompensas, p
 - El fee de la transacción \`ClaimReward\` es estándar (como cualquier otra transacción)
 - Es compatible con cuentas que tengan Hooks instalados
 - La dirección de \`Issuer\` es específica de cada red (testnet vs mainnet)`,
-        en: "",
+        en: `Xahau has a **native rewards system** that distributes XAH to accounts that actively participate in the network. The \`ClaimReward\` transaction allows you to claim these accumulated rewards.
+
+### How do rewards work on Xahau?
+
+Unlike Proof of Stake blockchains where you need to stake, on Xahau rewards are distributed to accounts that maintain an active XAH balance. The mechanism works as follows:
+
+- Rewards accumulate automatically based on your XAH balance
+- To receive them, you must periodically send a \`ClaimReward\` transaction
+- When claiming, rewards are added directly to your account balance
+- You don't need to delegate, lock funds, or run a validator node
+
+### ClaimReward transaction
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | \`"ClaimReward"\` |
+| \`Account\` | Your account claiming the reward |
+| \`Issuer\` | The reward issuer address (network genesis account) |
+| \`Flags\` | \`1\` to stop receiving rewards |
+
+### Activating and claiming rewards
+
+The first time you send \`ClaimReward\`, you **activate** your account to receive rewards. Subsequent executions claim the rewards accumulated since the last time. It is recommended to claim periodically (for example, once a day or week) to keep your rewards up to date.
+
+### Deactivating rewards
+
+If for any reason you want to stop participating in the rewards system, you can send \`ClaimReward\` with \`Flags: 1\`. This deactivates your account from the rewards system.
+
+### Considerations
+
+- Rewards depend on the balance and time elapsed since the last claim
+- The \`ClaimReward\` transaction fee is standard (like any other transaction)
+- Compatible with accounts that have Hooks installed
+- The \`Issuer\` address is specific to each network (testnet vs mainnet)`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Reclamar recompensas de la red",
-            en: "",
+            en: "Claim network rewards",
             jp: "",
           },
           language: "javascript",
@@ -764,19 +955,19 @@ claimReward();`,
       ],
       slides: [
         {
-          title: { es: "ClaimReward", en: "", jp: "" },
+          title: { es: "ClaimReward", en: "ClaimReward", jp: "" },
           content: {
             es: "Recompensas nativas de Xahau\n\n• Se acumulan según tu balance de XAH\n• No requiere staking ni nodos\n• ClaimReward para reclamarlas\n• Se suman directamente a tu balance\n\nReclamar periódicamente (diario/semanal)",
-            en: "",
+            en: "Native Xahau rewards\n\n• Accumulated based on your XAH balance\n• No staking or nodes required\n• ClaimReward to collect them\n• Added directly to your balance\n\nClaim periodically (daily/weekly)",
             jp: "",
           },
           visual: "🎁",
         },
         {
-          title: { es: "Cómo reclamar", en: "", jp: "" },
+          title: { es: "Cómo reclamar", en: "How to claim", jp: "" },
           content: {
             es: "1ª vez → Activa tu cuenta para recompensas\nSiguientes → Reclama lo acumulado\n\nCampos:\n• Account: tu cuenta\n• Issuer: genesis account de la red\n• Flags: 0 (reclamar) / 1 (desactivar)\n\nFee estándar, compatible con Hooks",
-            en: "",
+            en: "1st time → Activates your account for rewards\nSubsequent → Claims accumulated amount\n\nFields:\n• Account: your account\n• Issuer: network genesis account\n• Flags: 0 (claim) / 1 (deactivate)\n\nStandard fee, compatible with Hooks",
             jp: "",
           },
           visual: "💰",
@@ -787,7 +978,7 @@ claimReward();`,
       id: "m10l5",
       title: {
         es: "Invoke: activar Hooks bajo demanda",
-        en: "",
+        en: "Invoke: Activating Hooks on Demand",
         jp: "",
       },
       theory: {
@@ -828,14 +1019,46 @@ Podemos usar Invoke por distintos motivos:
 - El Hook que queramos activar, deberá tener \`Invoke\` habilitado en su \`HookOn\` para reaccionar.
 - El fee es estándar, como cualquier otra transacción
 - Más adelante se implementó en Xahau la transacción \`CronSet\` para programar tareas de forma nativa, pero \`Invoke\` sigue siendo útil para casos personalizados o para activar Hooks de otras cuentas`,
-        en: "",
+        en: `The \`Invoke\` transaction is a transaction type exclusive to Xahau that allows **deliberately activating a Hook**, without needing to send a payment or any other transaction with economic effect. It is the way to "call" a Hook directly.
+
+### Why does Invoke exist?
+
+Hooks execute reactively when a transaction passes through the account. But there are situations where you need to activate a Hook **without any other action occurring**.
+
+### Invoke transaction
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | \`"Invoke"\` |
+| \`Account\` | Account sending the Invoke |
+| \`Destination\` | (Optional) Account whose Hook we want to activate. If not specified, activates the Hooks of the account itself |
+
+### Invoke as a mechanism
+
+We can use Invoke for different purposes:
+
+- A Hook emits an \`Invoke\` to activate a different Hook
+- Use \`Invoke\` as a manual trigger to activate a Hook's logic when needed
+- Add information to the \`Invoke\` transaction (for example, in \`Memos\` or \`HookParameters\`) to pass data to a Hook
+
+### Invoke to your own account vs another account
+
+- **Without Destination**: The \`Invoke\` activates the Hooks of your own account. Useful for maintenance or self-management Hooks
+- **With Destination**: The \`Invoke\` activates the Hooks of the destination account. The destination Hook can identify who sent the Invoke and act accordingly
+
+### Considerations
+
+- \`Invoke\` does not transfer funds, it is only a trigger
+- The Hook we want to activate must have \`Invoke\` enabled in its \`HookOn\` to react
+- The fee is standard, like any other transaction
+- Later, Xahau implemented the \`CronSet\` transaction for native task scheduling, but \`Invoke\` remains useful for custom cases or for activating Hooks on other accounts`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Invocar un Hook en otra cuenta",
-            en: "",
+            en: "Invoke a Hook on another account",
             jp: "",
           },
           language: "javascript",
@@ -877,166 +1100,290 @@ invokeHook();`,
       ],
       slides: [
         {
-          title: { es: "Invoke", en: "", jp: "" },
+          title: { es: "Invoke", en: "Invoke", jp: "" },
           content: {
             es: "Activar un Hook directamente\n\n• No transfiere fondos\n• Solo es un trigger para el Hook\n• Sin Destination → tus propios Hooks\n• Con Destination → Hooks de otra cuenta\n\nEl Hook debe tener Invoke en su HookOn",
-            en: "",
+            en: "Activate a Hook directly\n\n• Does not transfer funds\n• Just a trigger for the Hook\n• No Destination → your own Hooks\n• With Destination → another account's Hooks\n\nThe Hook must have Invoke enabled in HookOn",
             jp: "",
           },
           visual: "📡",
         },
         {
-          title: { es: "Invoke como Cron", en: "", jp: "" },
+          title: { es: "Casos de uso de Invoke", en: "Invoke use cases", jp: "" },
           content: {
-            es: "Patrón para tareas programadas:\n\n1. Hook comprueba si pasó el intervalo\n2. Si sí → ejecuta lógica (emit, state...)\n3. Servicio externo envía Invoke periódico\n\nUsos: pagos recurrentes, comprobaciones,\nactualizaciones de estado, mantenimiento",
-            en: "",
+            es: "• Hook emite un Invoke para activar\n  otro Hook distinto\n• Trigger manual: activar lógica de un\n  Hook cuando lo necesites\n• Pasar datos al Hook via Memos\n  o HookParameters en el Invoke\n\nPara scheduling nativo usa CronSet.\nInvoke sigue siendo útil para casos\npersonalizados o Hooks de otras cuentas",
+            en: "• A Hook emits an Invoke to activate\n  another Hook\n• Manual trigger: activate a Hook's logic\n  whenever you need it\n• Pass data to the Hook via Memos\n  or HookParameters in the Invoke\n\nFor native scheduling use CronSet.\nInvoke is still useful for custom cases\nor activating other accounts' Hooks",
             jp: "",
           },
-          visual: "⏰",
+          visual: "⚡",
         },
       ],
     },
     {
       id: "m10l6",
       title: {
-        es: "Remarks: datos arbitrarios en el ledger",
-        en: "",
+        es: "SetRemarks: metadata en objetos del ledger",
+        en: "SetRemarks: Metadata on Ledger Objects",
         jp: "",
       },
       theory: {
-        es: `La transacción \`Remark\` permite almacenar **datos arbitrarios** directamente en el ledger de Xahau. Es un mecanismo para registrar información on-chain sin que implique transferencia de fondos ni cambios de estado de la cuenta.
+        es: `La transacción \`SetRemarks\` permite adjuntar **pares clave-valor** a objetos existentes del ledger de Xahau. No es una forma de enviar mensajes ni de registrar datos en transacciones: es un mecanismo para **anotar objetos del ledger** (cuentas, ofertas, escrows, cheques, URITokens, TrustLines...) con metadata que queda asociada al propio objeto.
 
-### ¿Qué es una Remark?
+### ¿Qué tipos de objetos admiten Remarks?
 
-Una \`Remark\` es un tipo de transacción que sirve para escribir datos en la blockchain de forma permanente. No modifica balances, no crea objetos en el ledger y no altera el estado de la cuenta más allá del número de secuencia y el fee consumido.
+\`SetRemarks\` puede adjuntar metadata a los siguientes tipos de objetos del ledger:
 
-### ¿Para qué sirve?
+- **AccountRoot** — la cuenta en sí (dirección, balance, flags)
+- **Offer** — ofertas en el DEX
+- **Escrow** — pagos condicionales
+- **Ticket** — tickets de secuencia
+- **PayChannel** — canales de pago
+- **Check** — cheques
+- **DepositPreauth** — preautorizaciones de depósito
+- **URIToken** — tokens no fungibles
+- **RippleState** — TrustLines
 
-- **Registro inmutable**: Guardar un hash, un mensaje o cualquier dato que quieras que quede registrado de forma permanente en la blockchain
-- **Prueba de existencia**: Demostrar que un dato existía en un momento determinado (timestamping)
-- **Mensajes on-chain**: Enviar datos o mensajes a otra cuenta que se registran en el ledger
-- **Notarizaciones**: Registrar hashes de documentos, contratos o eventos para auditoría
-- **Metadata para Hooks**: Un Hook puede reaccionar a una \`Remark\` y procesar los datos incluidos en los Memos
+Solo el **propietario o emisor** del objeto puede modificar sus Remarks (excepto en URITokens y TrustLines, donde es el emisor del token quien tiene permiso).
 
-### Transacción Remark
+### Campos de SetRemarks
 
-| Campo | Descripción |
+| Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| \`TransactionType\` | String | Sí | \`"SetRemarks"\` |
+| \`Account\` | String | Sí | Cuenta que envía la transacción (debe ser propietario/emisor del objeto) |
+| \`ObjectID\` | Hash256 | Sí | ID del objeto del ledger al que se adjuntan las Remarks |
+| \`Remarks\` | Array | Sí | Array de objetos \`Remark\` a crear, modificar o eliminar |
+
+### Estructura de cada Remark
+
+Cada elemento del array contiene un objeto \`Remark\` con:
+
+| Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| \`RemarkName\` | Blob | Sí | Nombre/clave de la Remark (1–256 bytes). Debe ser único por objeto |
+| \`RemarkValue\` | Blob | No | Valor de la Remark (1–256 bytes). **Omitir para eliminar** la Remark |
+| \`Flags\` | UInt32 | No | \`1\` (\`tfImmutable\`) hace la Remark **permanente e inmodificable** |
+
+Los valores de \`RemarkName\` y \`RemarkValue\` se expresan en **hexadecimal**.
+
+### Obtener el ObjectID de una cuenta
+
+Para adjuntar Remarks a tu propia cuenta (AccountRoot), necesitas su \`ObjectID\`, que es el campo \`index\` del objeto en el ledger:
+
+\`\`\`javascript
+const info = await client.request({
+  command: "account_info",
+  account: wallet.address,
+  ledger_index: "validated",
+});
+const objectID = info.result.account_data.index;
+\`\`\`
+
+Para otros objetos (Escrow, Check, Offer...) el \`ObjectID\` es el \`LedgerIndex\` que aparece en los \`AffectedNodes\` al crear el objeto.
+
+### Eliminar una Remark
+
+Omite \`RemarkValue\` en el objeto \`Remark\` correspondiente. Xahau eliminará esa entrada del objeto.
+
+### Remarks inmutables
+
+Si añades \`Flags: 1\` (\`tfImmutable\`) al crear una Remark, **no podrá ser modificada ni eliminada** en el futuro. Útil para certificaciones o datos que deban quedar sellados permanentemente.
+
+### Límites y costes
+
+- **Máximo 32 Remarks** por objeto del ledger
+- **Fee adicional**: 1 drop por cada byte de \`RemarkName\` + \`RemarkValue\` en la transacción
+- Nombre y valor: entre 1 y 256 bytes cada uno
+- Los nombres deben ser únicos dentro del mismo objeto
+
+### Errores comunes
+
+| Error | Causa |
 |---|---|
-| \`TransactionType\` | \`"Remark"\` |
-| \`Account\` | Cuenta que envía la remark |
-| \`Destination\` | (Opcional) Cuenta de destino |
-| \`Memos\` | Array de memos con los datos a registrar |
-
-Los datos se incluyen en el campo \`Memos\`, que es un array de objetos \`Memo\` con tres campos opcionales:
-
-- \`MemoType\`: Tipo/categoría del dato (en hexadecimal)
-- \`MemoData\`: El dato en sí (en hexadecimal)
-- \`MemoFormat\`: Formato del dato, por ejemplo \`text/plain\` o \`application/json\` (en hexadecimal)
-
-### Remark vs Payment con Memos
-
-Podrías pensar en usar un \`Payment\` de 1 drop con Memos para lograr algo similar. Sin embargo, \`Remark\` tiene ventajas:
-
-- **No transfiere fondos**: No necesitas enviar ni 1 drop
-- **Intención clara**: Es semánticamente correcto — el propósito es registrar datos, no pagar
-- **Compatible con Hooks**: Los Hooks pueden filtrar específicamente transacciones \`Remark\` con \`HookOn\`
-- **Sin efectos secundarios**: No altera balances de ninguna cuenta
-
-### Consideraciones
-
-- El fee es estándar, como cualquier otra transacción
-- Los datos en los Memos están en hexadecimal — necesitas convertir strings a hex
-- El tamaño de los Memos tiene un límite según el protocolo
-- Los datos son **públicos** — cualquiera puede leerlos en el ledger`,
+| \`temDISABLED\` | La amendment Remarks no está activa en la red |
+| \`tecNO_PERMISSION\` | La cuenta no es propietaria/emisora del objeto |
+| \`tecIMMUTABLE\` | Se intenta modificar una Remark con \`tfImmutable\` |
+| \`tecTOO_MANY_REMARKS\` | El objeto ya tiene 32 Remarks (el máximo permitido) |`,
         en: "",
         jp: "",
       },
       codeBlocks: [
         {
           title: {
-            es: "Registrar datos en el ledger con Remark",
-            en: "",
+            es: "Añadir y actualizar Remarks en tu cuenta (AccountRoot)",
+            en: "Add and update Remarks on your account (AccountRoot)",
             jp: "",
           },
           language: "javascript",
           code: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
-// Función auxiliar para convertir strings a hexadecimal
-function stringToHex(str) {
+// Los RemarkName y RemarkValue se expresan en hexadecimal
+function toHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
 }
 
-async function sendRemark() {
+async function setAccountRemarks() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
 
-  // Ejemplo 1: Registrar un hash de documento (notarización)
-  const documentHash = "a1b2c3d4e5f6..."; // Hash SHA-256 de tu documento
+  // Obtener el ObjectID del AccountRoot (campo "index" de account_info)
+  const info = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+  const objectID = info.result.account_data.index;
 
-  const remark = {
-    TransactionType: "Remark",
+  console.log("=== SetRemarks en AccountRoot ===");
+  console.log("Cuenta:", wallet.address);
+  console.log("ObjectID:", objectID);
+
+  const setRemarks = {
+    TransactionType: "SetRemarks",
     Account: wallet.address,
-    Destination: "rCuentaDeDestinoOpcional",
-    Memos: [
+    ObjectID: objectID,
+    Remarks: [
       {
-        Memo: {
-          MemoType: stringToHex("document/hash"),
-          MemoData: stringToHex(documentHash),
-          MemoFormat: stringToHex("text/plain"),
+        Remark: {
+          RemarkName: toHex("nombre"),
+          RemarkValue: toHex("Xahau Academy Demo"),
         },
       },
       {
-        Memo: {
-          MemoType: stringToHex("document/name"),
-          MemoData: stringToHex("Contrato de servicio v2.1"),
-          MemoFormat: stringToHex("text/plain"),
+        Remark: {
+          RemarkName: toHex("web"),
+          RemarkValue: toHex("https://xahau.academy"),
+        },
+      },
+      {
+        // Remark inmutable: no se podrá modificar ni eliminar nunca
+        Remark: {
+          RemarkName: toHex("creado"),
+          RemarkValue: toHex(new Date().toISOString()),
+          Flags: 1, // tfImmutable
         },
       },
     ],
   };
 
-  const prepared = await client.autofill(remark);
+  const prepared = await client.autofill(setRemarks);
   const signed = wallet.sign(prepared);
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("=== Remark ===");
-  console.log("Resultado:", txResult);
-  console.log("Hash de la transacción:", signed.hash);
+  console.log("\\nResultado:", txResult);
+  console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nDatos registrados permanentemente en el ledger.");
-    console.log("Cualquiera puede verificar la existencia de este registro");
-    console.log("consultando la transacción:", signed.hash);
+    console.log("\\nRemarks adjuntadas al AccountRoot.");
+    console.log("Nota: la Remark 'creado' es inmutable y no se podrá cambiar.");
   }
 
   await client.disconnect();
 }
 
-sendRemark();`,
+setAccountRemarks();`,
+        },
+        {
+          title: {
+            es: "Eliminar una Remark (omitir RemarkValue)",
+            en: "Delete a Remark (omit RemarkValue)",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function deleteRemark() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Obtener el ObjectID del AccountRoot
+  const info = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+  const objectID = info.result.account_data.index;
+
+  // Para eliminar una Remark: incluir solo RemarkName, sin RemarkValue
+  const setRemarks = {
+    TransactionType: "SetRemarks",
+    Account: wallet.address,
+    ObjectID: objectID,
+    Remarks: [
+      {
+        Remark: {
+          RemarkName: toHex("web"), // Eliminar la Remark con nombre "web"
+          // Sin RemarkValue → se elimina la entrada
+        },
+      },
+      {
+        Remark: {
+          RemarkName: toHex("nombre"), // Actualizar el valor de "nombre"
+          RemarkValue: toHex("Cuenta actualizada"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setRemarks);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Eliminar/actualizar Remarks ===");
+  console.log("Resultado:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Remark 'web' eliminada.");
+    console.log("Remark 'nombre' actualizada.");
+  } else if (txResult === "tecIMMUTABLE") {
+    console.log("No se puede modificar: alguna Remark tiene el flag tfImmutable.");
+  }
+
+  await client.disconnect();
+}
+
+deleteRemark();`,
         },
       ],
       slides: [
         {
-          title: { es: "Remark", en: "", jp: "" },
+          title: { es: "SetRemarks", en: "SetRemarks", jp: "" },
           content: {
-            es: "Datos arbitrarios en el ledger\n\n• No transfiere fondos\n• Registra datos permanentes on-chain\n• Los datos van en Memos (hex)\n• Destination opcional\n\nUsos: notarización, timestamping,\nmensajes on-chain, metadata para Hooks",
-            en: "",
+            es: "Metadata clave-valor en objetos del ledger\n\n• Adjunta Remarks a: AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (en hex)\n• Solo el propietario/emisor puede modificar\n• Máximo 32 Remarks por objeto\n\nNo es un mensaje: es metadata del objeto",
+            en: "Key-value metadata on ledger objects\n\n• Attach Remarks to: AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (in hex)\n• Only the owner/issuer can modify\n• Maximum 32 Remarks per object\n\nNot a message: it is object metadata",
             jp: "",
           },
-          visual: "📋",
+          visual: "🏷️",
         },
         {
-          title: { es: "Remark vs Payment con Memos", en: "", jp: "" },
+          title: { es: "Crear, modificar y eliminar", en: "Create, modify and delete", jp: "" },
           content: {
-            es: "Payment + Memos:\n• Transfiere fondos (mínimo 1 drop)\n• Propósito: enviar dinero\n\nRemark:\n• No transfiere nada\n• Propósito: registrar datos\n• Intención semántica clara\n• Hooks pueden filtrar por tipo Remark\n• Sin efectos en balances",
-            en: "",
+            es: "Crear / actualizar:\n  → RemarkName + RemarkValue\n\nEliminar:\n  → Solo RemarkName, sin RemarkValue\n\nInmutable (tfImmutable = Flags: 1):\n  → No se puede modificar ni eliminar nunca\n\nFee extra: 1 drop por byte de nombre + valor",
+            en: "Create / update:\n  → RemarkName + RemarkValue\n\nDelete:\n  → RemarkName only, no RemarkValue\n\nImmutable (tfImmutable = Flags: 1):\n  → Cannot be modified or deleted ever\n\nExtra fee: 1 drop per byte of name + value",
             jp: "",
           },
-          visual: "⚖️",
+          visual: "✏️",
+        },
+        {
+          title: { es: "ObjectID: ¿qué objeto anotar?", en: "ObjectID: which object to annotate?", jp: "" },
+          content: {
+            es: "Cada objeto del ledger tiene un ID único:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  de los AffectedNodes al crear el objeto\n\nSetRemarks necesita ese ID para saber\na qué objeto adjuntar la metadata",
+            en: "Each ledger object has a unique ID:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  from AffectedNodes when creating the object\n\nSetRemarks needs that ID to know\nwhich object to attach the metadata to",
+            jp: "",
+          },
+          visual: "🔍",
         },
       ],
     },
@@ -1044,7 +1391,7 @@ sendRemark();`,
       id: "m10l7",
       title: {
         es: "Remit: transacción multi-función",
-        en: "",
+        en: "Remit: Multi-function Transaction",
         jp: "",
       },
       theory: {
@@ -1111,14 +1458,76 @@ Todos estos costes se deducen de la cuenta que envía la transacción (\`Account
 ### Más información
 
 Para una referencia completa de \`Remit\`, incluyendo todos los campos y errores posibles, consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
-        en: "",
+        en: `The \`Remit\` transaction is an operation exclusive to Xahau that combines multiple actions in a single transaction. It can **activate accounts**, **send payments** (XAH or IOUs) and perform **URIToken operations** (transfer or mint), all at once. It also **pays all fees** for account activation, TrustLines and URIToken reserves.
+
+### Why use Remit?
+
+Instead of sending several separate transactions (one to activate the account, one to pay, one to transfer a URIToken), \`Remit\` does it all in a single atomic transaction. This saves time, fees and ensures all operations happen together or not at all.
+
+### Remit fields
+
+| Field | Required | Description |
+|---|---|---|
+| \`Account\` | Yes | Account sending the transaction |
+| \`Destination\` | Yes | Destination account |
+| \`Amounts\` | No | Array of up to **32** \`AmountEntry\` objects with payments |
+| \`URITokenIDs\` | No | Array of up to **32** URIToken IDs to transfer |
+| \`MintURIToken\` | No | Object to mint a new URIToken directly at the destination |
+| \`DestinationTag\` | No | Numeric tag for the destination |
+| \`Inform\` | No | Account with Hook that will be notified of the transaction |
+| \`Blob\` | No | Arbitrary data in hex (up to 128 KB) for Hook use |
+| \`InvoiceID\` | No | 256-bit identifier for the reason of the transaction |
+
+### AmountEntry
+
+Each entry in the \`Amounts\` array contains an \`Amount\` field that can be native XAH (drops string) or an IOU (object with \`currency\`, \`issuer\`, \`value\`):
+
+\`\`\`
+"Amounts": [
+  { "AmountEntry": { "Amount": "50000000" } },              // 50 XAH
+  { "AmountEntry": { "Amount": {                             // 100 USD
+    "currency": "USD",
+    "issuer": "rTokenIssuer",
+    "value": "100"
+  }}}
+]
+\`\`\`
+
+Duplicate amounts in the same currency are not allowed in the array.
+
+### MintURIToken
+
+The \`MintURIToken\` field allows creating a new URIToken assigned directly to the destination account:
+
+| Field | Description |
+|---|---|
+| \`URI\` | Token URI (maximum 256 bytes, in hex) |
+| \`Digest\` | (Optional) Hash of the content pointed to by the URI |
+| \`Flags\` | (Optional) \`1\` (\`tfBurnable\`) allows the issuer to burn the token later |
+
+### Transferring URITokens
+
+With \`URITokenIDs\` you can transfer up to 32 existing URITokens to the destination in a single transaction. The URITokens must belong to the sending account and have the necessary permissions.
+
+### Fees and reserves
+
+Remit automatically pays the additional costs associated with each action:
+- **Account activation**: If the destination account does not exist, it is activated with the base reserve
+- **TrustLines**: If IOUs are sent and the destination account needs new TrustLines, they are created and the reserve is covered
+- **URIToken reserves**: Reserves for transferred or minted URITokens are covered automatically
+
+All these costs are deducted from the sending account (\`Account\`), plus the standard transaction fee.
+
+### More information
+
+For a complete reference to \`Remit\`, including all fields and possible errors, see the [official documentation](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Remit: pago + minteo de URIToken en una sola transacción",
-            en: "",
+            en: "Remit: payment + URIToken minting in a single transaction",
             jp: "",
           },
           language: "javascript",
@@ -1150,7 +1559,7 @@ async function sendRemit() {
     ],
     // Mintear un URIToken directamente en la cuenta de destino
     MintURIToken: {
-      URI: stringToHex("https://example.com/nft/metadata.json"),
+      URI: stringToHex("ipfs://bafybeieza5w4rkes55paw7jgpo4kzsbyywhw7ildltk3kjx2ttkmt7texa/106.json"),
       Digest: "A".repeat(64), // Hash SHA-256 del contenido (64 hex chars)
       Flags: 1, // tfBurnable: el emisor puede quemar el token
     },
@@ -1177,86 +1586,22 @@ async function sendRemit() {
 
 sendRemit();`,
         },
-        {
-          title: {
-            es: "Remit: enviar múltiples divisas + transferir URITokens",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function remitMultiple() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // Remit combinando: XAH + IOU + transferencia de URITokens
-  const remit = {
-    TransactionType: "Remit",
-    Account: wallet.address,
-    Destination: "rDireccionDelDestinatario",
-    // Enviar XAH + un IOU
-    Amounts: [
-      {
-        AmountEntry: {
-          Amount: xahToDrops(10), // 10 XAH
-        },
-      },
-      {
-        AmountEntry: {
-          Amount: {
-            currency: "USD",
-            issuer: "rEmisorDelToken",
-            value: "50", // 50 USD
-          },
-        },
-      },
-    ],
-    // Transferir URITokens existentes
-    URITokenIDs: [
-      "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2",
-    ],
-  };
-
-  const prepared = await client.autofill(remit);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== Remit múltiple ===");
-  console.log("Resultado:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("\\nTodo en una sola transacción atómica:");
-    console.log("- 10 XAH enviados");
-    console.log("- 50 USD enviados (TrustLine creada si no existía)");
-    console.log("- URIToken transferido al destino");
-  }
-
-  await client.disconnect();
-}
-
-remitMultiple();`,
-        },
       ],
       slides: [
         {
-          title: { es: "Remit — Transacción multi-función", en: "", jp: "" },
+          title: { es: "Remit — Transacción multi-función", en: "Remit — Multi-function Transaction", jp: "" },
           content: {
             es: "Una transacción para todo:\n\n• Activar cuentas nuevas\n• Enviar hasta 32 pagos (XAH + IOUs)\n• Transferir hasta 32 URITokens\n• Mintear un URIToken en el destino\n\nTodo atómico: ocurre junto o no ocurre",
-            en: "",
+            en: "One transaction for everything:\n\n• Activate new accounts\n• Send up to 32 payments (XAH + IOUs)\n• Transfer up to 32 URITokens\n• Mint a URIToken at the destination\n\nAll atomic: happens together or not at all",
             jp: "",
           },
           visual: "📦",
         },
         {
-          title: { es: "Remit paga las reservas", en: "", jp: "" },
+          title: { es: "Remit paga las reservas", en: "Remit pays the reserves", jp: "" },
           content: {
             es: "El emisor cubre todos los costes:\n\n• Activación de cuenta destino\n• Creación de TrustLines necesarias\n• Reservas de URITokens\n• Fee estándar de la transacción\n\nAhorra fees y garantiza atomicidad\nvs múltiples transacciones separadas",
-            en: "",
+            en: "The sender covers all costs:\n\n• Destination account activation\n• Creation of required TrustLines\n• URIToken reserves\n• Standard transaction fee\n\nSaves fees and guarantees atomicity\nvs multiple separate transactions",
             jp: "",
           },
           visual: "💸",
@@ -1267,7 +1612,7 @@ remitMultiple();`,
       id: "m10l8",
       title: {
         es: "CronSet: ejecución automática de Hooks",
-        en: "",
+        en: "CronSet: Automatic Hook Execution",
         jp: "",
       },
       theory: {
@@ -1281,7 +1626,7 @@ A diferencia del patrón \`Invoke\` periódico (donde un servicio externo envía
 
 ### Requisitos previos
 
-Antes de usar \`CronSet\` debes preparar tu cuenta en dos pasos:
+Antes de usar \`CronSet\` debes preparar la cuenta con tu Hook en dos pasos:
 
 1. **Instalar un Hook con el flag \`hsfCOLLECT\`**: Este flag indica que el Hook está diseñado para ser invocado automáticamente por el sistema de crons de la red.
 
@@ -1356,14 +1701,98 @@ const cronDelete = {
 | \`temMALFORMED\` | Combinación de campos inválida (p.ej. solo uno de \`DelaySeconds\`/\`RepeatCount\`) |
 | \`tecEXPIRED\` | \`StartTime\` en el pasado o más de 365 días en el futuro |
 | \`tefBAD_LEDGER\` | No existe el objeto Cron que se intenta eliminar |`,
-        en: "",
+        en: `The \`CronSet\` transaction allows scheduling the **automatic and periodic execution** of a Hook directly from the Xahau protocol, without depending on any external service. It is the network's native cron job mechanism.
+
+### What is CronSet?
+
+With \`CronSet\` you can instruct Xahau to execute your account's Hook recurrently: every X seconds, starting from a specific date, a certain number of times. Everything is recorded in the ledger and the network handles the execution.
+
+Unlike the periodic \`Invoke\` pattern (where an external service sends transactions), \`CronSet\` is **completely on-chain**: you don't need any external script running constantly.
+
+### Prerequisites
+
+Before using \`CronSet\` you must prepare the account with your Hook in two steps:
+
+1. **Install a Hook with the \`hsfCOLLECT\` flag**: This flag indicates the Hook is designed to be invoked automatically by the network's cron system.
+
+2. **Enable TSH Collect on your account** (\`asfTshCollect\`, \`SetFlag: 11\`): Allows the network to execute your Hook via the Transaction Signature Hook Collection mechanism.
+
+\`\`\`javascript
+// Enable TSH Collect
+const accountSet = {
+  TransactionType: "AccountSet",
+  Account: wallet.address,
+  SetFlag: 11, // asfTshCollect
+};
+\`\`\`
+
+### CronSet fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| \`TransactionType\` | String | Yes | \`"CronSet"\` |
+| \`Account\` | String | Yes | The account whose Hook will run periodically |
+| \`StartTime\` | Number | No | Ripple Epoch of the first trigger. Use \`0\` for immediate execution. Omit when deleting |
+| \`RepeatCount\` | Number | No | Number of times the Hook will execute (maximum 256 per transaction). Omit when deleting |
+| \`DelaySeconds\` | Number | No | Seconds between each execution. Omit when deleting |
+
+**Important rules**:
+- \`DelaySeconds\` and \`RepeatCount\` must both be present, or both absent
+- To delete an active cron: omit all scheduling fields and add \`Flags: 1\` (\`tfCronUnset\`)
+- You cannot combine \`tfCronUnset\` with scheduling fields
+
+### Time in Ripple Epoch
+
+Xahau uses the **Ripple Epoch** (seconds since January 1, 2000 UTC), not the Unix timestamp:
+
+\`\`\`javascript
+// Convert current date to Ripple Epoch
+const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
+
+// Schedule for 1 hour from now
+const startIn1Hour = rippleEpoch + 3600;
+\`\`\`
+
+Use \`0\` in \`StartTime\` for the cron to start executing from the next valid ledger.
+
+### Limits and restrictions
+
+| Parameter | Limit |
+|---|---|
+| Maximum \`RepeatCount\` per transaction | 256 |
+| Maximum \`DelaySeconds\` | 31,536,000 s (365 days) |
+| Maximum \`StartTime\` into the future | 365 days |
+| \`StartTime\` in the past | Not allowed (\`tecEXPIRED\`) |
+
+If you need more than 256 repetitions, send another \`CronSet\` before they run out to extend the counter.
+
+### Deleting a CronSet
+
+To cancel an active cron, send \`CronSet\` with \`Flags: 1\`:
+
+\`\`\`javascript
+const cronDelete = {
+  TransactionType: "CronSet",
+  Account: wallet.address,
+  Flags: 1, // tfCronUnset — deletes the active cron
+};
+\`\`\`
+
+### Common errors
+
+| Error | Cause |
+|---|---|
+| \`temDISABLED\` | The CronSet feature is not enabled on the network |
+| \`temMALFORMED\` | Invalid field combination (e.g. only one of \`DelaySeconds\`/\`RepeatCount\`) |
+| \`tecEXPIRED\` | \`StartTime\` in the past or more than 365 days into the future |
+| \`tefBAD_LEDGER\` | The Cron object being deleted does not exist |`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Activar TSH Collect y programar un CronSet",
-            en: "",
+            en: "Enable TSH Collect and schedule a CronSet",
             jp: "",
           },
           language: "javascript",
@@ -1437,7 +1866,7 @@ setupCron();`,
         {
           title: {
             es: "Eliminar un CronSet activo",
-            en: "",
+            en: "Delete an active CronSet",
             jp: "",
           },
           language: "javascript",
@@ -1483,28 +1912,28 @@ deleteCron();`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es CronSet?", en: "", jp: "" },
+          title: { es: "¿Qué es CronSet?", en: "What is CronSet?", jp: "" },
           content: {
             es: "Ejecución periódica de Hooks on-chain\n\n• Sin servicios externos\n• StartTime: cuándo empieza\n• DelaySeconds: cada cuánto\n• RepeatCount: cuántas veces (máx 256)\n\nRequiere Hook con hsfCOLLECT + TSH Collect activo",
-            en: "",
+            en: "Periodic on-chain Hook execution\n\n• No external services\n• StartTime: when it starts\n• DelaySeconds: how often\n• RepeatCount: how many times (max 256)\n\nRequires Hook with hsfCOLLECT + TSH Collect enabled",
             jp: "",
           },
           visual: "⏱️",
         },
         {
-          title: { es: "Configurar CronSet", en: "", jp: "" },
+          title: { es: "Configurar CronSet", en: "Setting up CronSet", jp: "" },
           content: {
             es: "Pasos:\n1. Instalar Hook con flag hsfCOLLECT\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Enviar CronSet con:\n   • StartTime: 0 (inmediato) o Ripple Epoch\n   • DelaySeconds: intervalo en segundos\n   • RepeatCount: nº de ejecuciones\n\nEliminar: CronSet con Flags: 1 (tfCronUnset)",
-            en: "",
+            en: "Steps:\n1. Install Hook with hsfCOLLECT flag\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Send CronSet with:\n   • StartTime: 0 (immediate) or Ripple Epoch\n   • DelaySeconds: interval in seconds\n   • RepeatCount: number of executions\n\nDelete: CronSet with Flags: 1 (tfCronUnset)",
             jp: "",
           },
           visual: "🔧",
         },
         {
-          title: { es: "Invoke vs CronSet", en: "", jp: "" },
+          title: { es: "Invoke vs CronSet", en: "Invoke vs CronSet", jp: "" },
           content: {
             es: "Invoke periódico:\n• Trigger externo (script, servidor)\n• Flexible, cualquier intervalo\n• Depende de un servicio activo\n\nCronSet:\n• Completamente on-chain\n• Sin infraestructura extra\n• Máx 256 repeticiones por tx\n• Límite: DelaySeconds ≤ 365 días\n\nCronSet = autonomía total del Hook",
-            en: "",
+            en: "Periodic Invoke:\n• External trigger (script, server)\n• Flexible, any interval\n• Depends on an active service\n\nCronSet:\n• Fully on-chain\n• No extra infrastructure\n• Max 256 repetitions per tx\n• Limit: DelaySeconds ≤ 365 days\n\nCronSet = full Hook autonomy",
             jp: "",
           },
           visual: "⚖️",
