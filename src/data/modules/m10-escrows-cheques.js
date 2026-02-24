@@ -341,7 +341,7 @@ async function checkExample() {
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rDireccionDelReceptor"; // Reemplaza con la dirección del receptor
+  const receiverAddress = "rDireccionDelReceptor"; // Reemplaza con la dirección del receptor y guarda la seed de esa cuenta en tu .env como CASH_SEED para el próximo ejemplo
 
   // === 1. Crear el cheque ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -677,7 +677,7 @@ A diferencia de blockchains Proof of Stake donde necesitas hacer staking, en Xah
 | \`TransactionType\` | \`"ClaimReward"\` |
 | \`Account\` | Tu cuenta que reclama la recompensa |
 | \`Issuer\` | La dirección del emisor de recompensas (genesis account de la red) |
-| \`Flags\` | \`0\` para activar/reclamar, \`1\` para optar por no recibir recompensas |
+| \`Flags\` |  \`1\` para cancelar el recibir recompensas |
 
 ### Activar y reclamar recompensas
 
@@ -809,15 +809,13 @@ Los Hooks se ejecutan reactivamente cuando una transacción pasa por la cuenta. 
 | \`Account\` | Cuenta que envía el Invoke |
 | \`Destination\` | (Opcional) Cuenta cuyo Hook queremos activar. Si no se especifica, activa los Hooks de la propia cuenta |
 
-### Invoke como mecanismo Cron
+### Invoke como mecanismo
 
-Uno de los usos más importantes de \`Invoke\` es crear un sistema de **tareas programadas (cron)**. El patrón es:
+Podemos usar Invoke por distintos motivos:
 
-1. Instalar un Hook que, al recibir un \`Invoke\`, compruebe si ha pasado cierto tiempo desde la última ejecución
-2. Si ha pasado el tiempo requerido, el Hook ejecuta su lógica (emitir pagos, actualizar estado, etc.)
-3. Un servicio externo o un usuario envía \`Invoke\` periódicamente para activar el Hook
-
-Este patrón permite tener lógica que se ejecuta cada hora, cada día o en cualquier intervalo, sin depender de un sistema centralizado más allá del trigger.
+- Que un Hook emita un \`Invoke\` para activar otro Hook distinto
+- Utilizar el \`Invoke\` como un trigger manual para activar la lógica de un Hook cuando lo necesitemos cada cierto tiempo
+- Añadir información en la transacción \`Invoke\` (por ejemplo, en \`Memos\` o \`HookParameters\`) para pasar información a un Hook
 
 ### Invoke a tu propia cuenta vs a otra cuenta
 
@@ -826,10 +824,10 @@ Este patrón permite tener lógica que se ejecuta cada hora, cada día o en cual
 
 ### Consideraciones
 
-- \`Invoke\` no transfiere fondos — es solo un trigger
-- El Hook activado puede emitir transacciones si su lógica lo requiere
+- \`Invoke\` no transfiere fondos, es solo un trigger
+- El Hook que queramos activar, deberá tener \`Invoke\` habilitado en su \`HookOn\` para reaccionar.
 - El fee es estándar, como cualquier otra transacción
-- El Hook debe tener \`Invoke\` habilitado en su \`HookOn\` para reaccionar a este tipo de transacción`,
+- Más adelante se implementó en Xahau la transacción \`CronSet\` para programar tareas de forma nativa, pero \`Invoke\` sigue siendo útil para casos personalizados o para activar Hooks de otras cuentas`,
         en: "",
         jp: "",
       },
@@ -867,8 +865,7 @@ async function invokeHook() {
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("Hook invocado correctamente.");
-    console.log("Revisa los logs del Hook para ver su respuesta.");
+    console.log("Si había un Hook instalado, comprueba si se ha invocado correctamente.");
   }
 
   await client.disconnect();
@@ -876,62 +873,7 @@ async function invokeHook() {
 
 invokeHook();`,
         },
-        {
-          title: {
-            es: "Invoke como cron: activar periódicamente tu propio Hook",
-            en: "",
-            jp: "",
-          },
-          language: "javascript",
-          code: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-/**
- * Script que invoca tu propio Hook periódicamente.
- * Útil para Hooks que necesitan ejecutarse cada cierto tiempo
- * (por ejemplo, comprobar condiciones, emitir pagos programados, etc.)
- */
-async function cronInvoke(intervalMinutes) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  console.log("=== Cron Invoke ===");
-  console.log("Cuenta:", wallet.address);
-  console.log(\`Intervalo: cada \${intervalMinutes} minutos\`);
-  console.log("Presiona Ctrl+C para detener\\n");
-
-  const executeInvoke = async () => {
-    try {
-      // Invoke sin Destination = activa los Hooks de tu propia cuenta
-      const invoke = {
-        TransactionType: "Invoke",
-        Account: wallet.address,
-      };
-
-      const prepared = await client.autofill(invoke);
-      const signed = wallet.sign(prepared);
-      const result = await client.submitAndWait(signed.tx_blob);
-
-      const txResult = result.result.meta.TransactionResult;
-      const timestamp = new Date().toISOString();
-      console.log(\`[\${timestamp}] Invoke: \${txResult} | Hash: \${signed.hash}\`);
-    } catch (error) {
-      console.error("Error en Invoke:", error.message);
-    }
-  };
-
-  // Ejecutar inmediatamente la primera vez
-  await executeInvoke();
-
-  // Programar ejecución periódica
-  setInterval(executeInvoke, intervalMinutes * 60 * 1000);
-}
-
-// Invocar cada 5 minutos
-cronInvoke(5);`,
-        },
+        
       ],
       slides: [
         {
@@ -1318,6 +1260,254 @@ remitMultiple();`,
             jp: "",
           },
           visual: "💸",
+        },
+      ],
+    },
+    {
+      id: "m10l8",
+      title: {
+        es: "CronSet: ejecución automática de Hooks",
+        en: "",
+        jp: "",
+      },
+      theory: {
+        es: `La transacción \`CronSet\` permite programar la **ejecución automática y periódica** de un Hook directamente desde el protocolo de Xahau, sin depender de ningún servicio externo. Es el mecanismo nativo de cron jobs de la red.
+
+### ¿Qué es CronSet?
+
+Con \`CronSet\` puedes indicar a Xahau que ejecute el Hook de tu cuenta de forma recurrente: cada X segundos, a partir de una fecha concreta, un número determinado de veces. Todo queda registrado en el ledger y la red se encarga de la ejecución.
+
+A diferencia del patrón \`Invoke\` periódico (donde un servicio externo envía transacciones), \`CronSet\` es **completamente on-chain**: no necesitas ningún script externo que esté corriendo constantemente.
+
+### Requisitos previos
+
+Antes de usar \`CronSet\` debes preparar tu cuenta en dos pasos:
+
+1. **Instalar un Hook con el flag \`hsfCOLLECT\`**: Este flag indica que el Hook está diseñado para ser invocado automáticamente por el sistema de crons de la red.
+
+2. **Activar TSH Collect en tu cuenta** (\`asfTshCollect\`, \`SetFlag: 11\`): Permite que la red ejecute tu Hook mediante el mecanismo de Transaction Signature Hook Collection.
+
+\`\`\`javascript
+// Activar TSH Collect
+const accountSet = {
+  TransactionType: "AccountSet",
+  Account: wallet.address,
+  SetFlag: 11, // asfTshCollect
+};
+\`\`\`
+
+### Campos de CronSet
+
+| Campo | Tipo | Requerido | Descripción |
+|---|---|---|---|
+| \`TransactionType\` | String | Sí | \`"CronSet"\` |
+| \`Account\` | String | Sí | La cuenta cuyo Hook se ejecutará periódicamente |
+| \`StartTime\` | Number | No | Ripple Epoch del primer disparo. Usa \`0\` para ejecución inmediata. Omitir al eliminar |
+| \`RepeatCount\` | Number | No | Número de veces que se ejecutará el Hook (máximo 256 por transacción). Omitir al eliminar |
+| \`DelaySeconds\` | Number | No | Segundos entre cada ejecución. Omitir al eliminar |
+
+**Reglas importantes**:
+- \`DelaySeconds\` y \`RepeatCount\` deben estar presentes los dos, o ausentes los dos
+- Para eliminar un cron activo: omite todos los campos de programación y añade \`Flags: 1\` (\`tfCronUnset\`)
+- No puedes combinar \`tfCronUnset\` con campos de programación
+
+### Tiempo en Ripple Epoch
+
+Xahau usa la **Ripple Epoch** (segundos desde el 1 de enero de 2000 UTC), no el Unix timestamp:
+
+\`\`\`javascript
+// Convertir fecha actual a Ripple Epoch
+const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
+
+// Programar para dentro de 1 hora
+const startIn1Hour = rippleEpoch + 3600;
+\`\`\`
+
+Usa \`0\` en \`StartTime\` para que el cron empiece a ejecutarse desde el próximo ledger válido.
+
+### Límites y restricciones
+
+| Parámetro | Límite |
+|---|---|
+| \`RepeatCount\` máximo por transacción | 256 |
+| \`DelaySeconds\` máximo | 31.536.000 s (365 días) |
+| \`StartTime\` máximo hacia el futuro | 365 días |
+| \`StartTime\` en el pasado | No permitido (\`tecEXPIRED\`) |
+
+Si necesitas más de 256 repeticiones, envía otro \`CronSet\` antes de que se agoten para ampliar el contador.
+
+### Eliminar un CronSet
+
+Para cancelar un cron activo, envía \`CronSet\` con \`Flags: 1\`:
+
+\`\`\`javascript
+const cronDelete = {
+  TransactionType: "CronSet",
+  Account: wallet.address,
+  Flags: 1, // tfCronUnset — elimina el cron activo
+};
+\`\`\`
+
+### Errores comunes
+
+| Error | Causa |
+|---|---|
+| \`temDISABLED\` | La feature CronSet no está activada en la red |
+| \`temMALFORMED\` | Combinación de campos inválida (p.ej. solo uno de \`DelaySeconds\`/\`RepeatCount\`) |
+| \`tecEXPIRED\` | \`StartTime\` en el pasado o más de 365 días en el futuro |
+| \`tefBAD_LEDGER\` | No existe el objeto Cron que se intenta eliminar |`,
+        en: "",
+        jp: "",
+      },
+      codeBlocks: [
+        {
+          title: {
+            es: "Activar TSH Collect y programar un CronSet",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function setupCron() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("Cuenta:", wallet.address);
+
+  // === PASO 1: Activar TSH Collect en la cuenta ===
+  // Necesario para que la red pueda ejecutar el Hook automáticamente
+  console.log("\\n=== Paso 1: Activar TSH Collect (asfTshCollect) ===");
+
+  const accountSet = {
+    TransactionType: "AccountSet",
+    Account: wallet.address,
+    SetFlag: 11, // asfTshCollect
+  };
+
+  const prepAccountSet = await client.autofill(accountSet);
+  const signedAccountSet = wallet.sign(prepAccountSet);
+  const resultAccountSet = await client.submitAndWait(signedAccountSet.tx_blob);
+
+  console.log("AccountSet resultado:", resultAccountSet.result.meta.TransactionResult);
+
+  if (resultAccountSet.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error activando TSH Collect.");
+    await client.disconnect();
+    return;
+  }
+
+  // === PASO 2: Crear el CronSet ===
+  // El Hook debe estar instalado con hsfCOLLECT antes de este paso
+  console.log("\\n=== Paso 2: Crear CronSet ===");
+
+  // Ripple Epoch: segundos desde 01/01/2000 00:00:00 UTC
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+
+  const cronSet = {
+    TransactionType: "CronSet",
+    Account: wallet.address,
+    StartTime: 0,       // 0 = comenzar desde el próximo ledger válido
+    DelaySeconds: 3600, // Ejecutar cada 1 hora (3600 segundos)
+    RepeatCount: 24,    // Ejecutar 24 veces en total (= 24 horas)
+  };
+
+  const prepCron = await client.autofill(cronSet);
+  const signedCron = wallet.sign(prepCron);
+  const resultCron = await client.submitAndWait(signedCron.tx_blob);
+
+  const txResult = resultCron.result.meta.TransactionResult;
+  console.log("CronSet resultado:", txResult);
+  console.log("Hash:", signedCron.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\n¡CronSet creado correctamente!");
+    console.log("El Hook se ejecutará automáticamente cada 1 hora durante 24 horas.");
+    console.log("Asegúrate de que el Hook está instalado con el flag hsfCOLLECT.");
+  }
+
+  await client.disconnect();
+}
+
+setupCron();`,
+        },
+        {
+          title: {
+            es: "Eliminar un CronSet activo",
+            en: "",
+            jp: "",
+          },
+          language: "javascript",
+          code: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function deleteCron() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("=== Eliminar CronSet activo ===");
+  console.log("Cuenta:", wallet.address);
+
+  // Para eliminar un cron: omitir todos los campos de programación
+  // y añadir Flags: 1 (tfCronUnset)
+  const cronDelete = {
+    TransactionType: "CronSet",
+    Account: wallet.address,
+    Flags: 1, // tfCronUnset — elimina el cron activo
+  };
+
+  const prepared = await client.autofill(cronDelete);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Resultado:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nCronSet eliminado. El Hook ya no se ejecutará automáticamente.");
+  } else if (txResult === "tefBAD_LEDGER") {
+    console.log("\\nNo existe un CronSet activo para esta cuenta.");
+  }
+
+  await client.disconnect();
+}
+
+deleteCron();`,
+        },
+      ],
+      slides: [
+        {
+          title: { es: "¿Qué es CronSet?", en: "", jp: "" },
+          content: {
+            es: "Ejecución periódica de Hooks on-chain\n\n• Sin servicios externos\n• StartTime: cuándo empieza\n• DelaySeconds: cada cuánto\n• RepeatCount: cuántas veces (máx 256)\n\nRequiere Hook con hsfCOLLECT + TSH Collect activo",
+            en: "",
+            jp: "",
+          },
+          visual: "⏱️",
+        },
+        {
+          title: { es: "Configurar CronSet", en: "", jp: "" },
+          content: {
+            es: "Pasos:\n1. Instalar Hook con flag hsfCOLLECT\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Enviar CronSet con:\n   • StartTime: 0 (inmediato) o Ripple Epoch\n   • DelaySeconds: intervalo en segundos\n   • RepeatCount: nº de ejecuciones\n\nEliminar: CronSet con Flags: 1 (tfCronUnset)",
+            en: "",
+            jp: "",
+          },
+          visual: "🔧",
+        },
+        {
+          title: { es: "Invoke vs CronSet", en: "", jp: "" },
+          content: {
+            es: "Invoke periódico:\n• Trigger externo (script, servidor)\n• Flexible, cualquier intervalo\n• Depende de un servicio activo\n\nCronSet:\n• Completamente on-chain\n• Sin infraestructura extra\n• Máx 256 repeticiones por tx\n• Límite: DelaySeconds ≤ 365 días\n\nCronSet = autonomía total del Hook",
+            en: "",
+            jp: "",
+          },
+          visual: "⚖️",
         },
       ],
     },
