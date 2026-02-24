@@ -283,7 +283,7 @@ Crearás un proyecto React con Vite que tiene:
 \`\`\`bash
 npm create vite@latest xaman-login -- --template react
 cd xaman-login
-npm install xumm
+npm install xumm xahau
 npm run dev
 \`\`\`
 
@@ -358,7 +358,7 @@ const result   = await resolved;      // espera firma o rechazo
 \`\`\`bash
 npm create vite@latest xaman-login -- --template react
 cd xaman-login
-npm install xumm
+npm install xumm xahau
 npm run dev
 \`\`\`
 
@@ -463,9 +463,32 @@ Viteがプロジェクトを自動生成します。変更が必要なファイ�
 
 import { useState } from "react";
 import { Xumm } from "xumm";
+import { Client } from "xahau";
 
-// Solo la API Key en frontend (nunca el secret)
 const xumm = new Xumm("TU_API_KEY_AQUI");
+
+// ── Obtiene balance y secuencia del ledger ────────────────────────────────────
+async function obtenerInfoCuenta(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  try {
+    const res = await client.request({
+      command: "account_info",
+      account: address,
+      ledger_index: "current",
+    });
+    const info = res.result.account_data;
+    return {
+      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
+      sequence: info.Sequence,
+    };
+  } catch (err) {
+    if (err.data?.error === "actNotFound") return { balance: "no activada", sequence: "—" };
+    throw err;
+  } finally {
+    await client.disconnect();
+  }
+}
 
 // ── Modal con el QR — aparece sobre la página sin reemplazarla ────────────────
 function QRModal({ qrUrl, deepLink, onCancel }) {
@@ -481,21 +504,13 @@ function QRModal({ qrUrl, deepLink, onCancel }) {
         textAlign: "center", maxWidth: 300, width: "90%",
       }}>
         <h2 style={{ marginTop: 0 }}>Escanea con Xaman</h2>
-        <img
-          src={qrUrl}
-          alt="QR Xaman"
-          width={220}
-          style={{ display: "block", margin: "0 auto" }}
-        />
+        <img src={qrUrl} alt="QR Xaman" width={220}
+          style={{ display: "block", margin: "0 auto" }} />
         <p style={{ fontSize: "0.9rem" }}>
           ¿En móvil?{" "}
-          <a href={deepLink} rel="noopener noreferrer">
-            Abre Xaman directamente
-          </a>
+          <a href={deepLink} rel="noopener noreferrer">Abre Xaman directamente</a>
         </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>
-          Cancelar
-        </button>
+        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancelar</button>
       </div>
     </div>
   );
@@ -504,6 +519,8 @@ function QRModal({ qrUrl, deepLink, onCancel }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function App() {
   const [account, setAccount]   = useState(null);
+  const [balance, setBalance]   = useState(null);
+  const [sequence, setSequence] = useState(null);
   const [qrUrl, setQrUrl]       = useState(null);
   const [deepLink, setDeepLink] = useState(null);
   const [loading, setLoading]   = useState(false);
@@ -512,30 +529,30 @@ export default function App() {
   async function conectarConXaman() {
     setLoading(true);
     setError(null);
-
     try {
-      // createAndSubscribe crea el payload y abre un WebSocket
-      // Funciona desde el browser porque http://localhost:5173 está en la whitelist
       const { created, resolved } = await xumm.payload.createAndSubscribe(
         { txjson: { TransactionType: "SignIn" } },
         (event) => {
-          // Resuelve la promesa cuando llega signed: true/false
           if (typeof event.data.signed !== "undefined") return event.data;
         }
       );
 
-      // Mostrar el QR en el modal (escritorio) y el deep link (móvil)
       setQrUrl(created.refs.qr_png);
       setDeepLink(created.next.always);
 
-      // Esperar a que el usuario firme o rechace en Xaman
       const result = await resolved;
       setQrUrl(null);
       setDeepLink(null);
 
       if (result.signed) {
         const payloadResult = await xumm.payload.get(created.uuid);
-        setAccount(payloadResult.response.account);
+        const userAccount = payloadResult.response.account;
+        setAccount(userAccount);
+
+        // Consultar balance y secuencia directamente en el ledger
+        const info = await obtenerInfoCuenta(userAccount);
+        setBalance(info.balance);
+        setSequence(info.sequence);
       } else {
         setError("Firma rechazada por el usuario");
       }
@@ -555,6 +572,8 @@ export default function App() {
 
   function desconectar() {
     setAccount(null);
+    setBalance(null);
+    setSequence(null);
   }
 
   // ── Renderizado ────────────────────────────────────────────────────────────
@@ -564,9 +583,23 @@ export default function App() {
 
       {account ? (
         <div>
-          <p>✅ Conectado:</p>
-          <code style={{ wordBreak: "break-all" }}>{account}</code>
-          <br /><br />
+          <p>✅ Conectado</p>
+          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Cuenta</td>
+                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
+              </tr>
+              <tr>
+                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
+                <td><strong>{balance} XAH</strong></td>
+              </tr>
+              <tr>
+                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Secuencia</td>
+                <td>{sequence}</td>
+              </tr>
+            </tbody>
+          </table>
           <button onClick={desconectar}>Desconectar</button>
         </div>
       ) : (
@@ -578,61 +611,10 @@ export default function App() {
         </div>
       )}
 
-      {/* El modal aparece con el QR cuando createAndSubscribe devuelve la URL */}
-      {qrUrl && (
-        <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelar} />
-      )}
+      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelar} />}
     </div>
   );
 }`,
-        },
-        {
-          title: {
-            es: "Verificar la cuenta en Xahau tras el login",
-            en: "Verify the account on Xahau after login",
-            jp: "ログイン後にXahauのアカウントを検証",
-          },
-          language: "javascript",
-          code: `import { Client } from "xahau";
-
-// Tras obtener la dirección del usuario con Xaman,
-// puedes verificar su cuenta directamente en el ledger
-async function verificarCuenta(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  try {
-    const response = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-
-    const info = response.result.account_data;
-    const balanceXAH = Number(info.Balance) / 1_000_000;
-
-    console.log("Cuenta:", info.Account);
-    console.log("Balance:", balanceXAH.toFixed(6), "XAH");
-    console.log("Secuencia:", info.Sequence);
-
-    return {
-      account: info.Account,
-      balance: balanceXAH,
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") {
-      console.log("Cuenta no activada (sin fondos)");
-      return null;
-    }
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// Uso: llama esto después de obtener el account de xumm.user.account
-// const info = await verificarCuenta("rXXX...");`,
         },
       ],
       slides: [
