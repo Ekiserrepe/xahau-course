@@ -117,7 +117,8 @@ We will cover each of these configurations in detail in the following sections o
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
@@ -153,6 +154,44 @@ async function createTrustLine() {
 }
 
 createTrustLine();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function createTrustLine() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Wallet of the recipient (who wants to receive the token)
+  const receiver = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Create TrustLine: "I trust the issuer for up to 1,000,000 USD"
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: receiver.address,
+    LimitAmount: {
+      currency: "YourTokenName",
+      issuer: "YourIssuerAddress",
+      value: "1000000", // Maximum limit I accept
+    },
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = receiver.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("TrustLine created successfully!");
+    console.log("You can now receive from the issuer at your account "+ receiver.address);
+  }
+
+  await client.disconnect();
+}
+
+createTrustLine();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -161,7 +200,8 @@ createTrustLine();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -197,6 +237,44 @@ async function issueTokens() {
 }
 
 issueTokens();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function issueTokens() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Token issuer wallet
+  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Send 100 USD to the recipient (who already has a TrustLine)
+  const payment = {
+    TransactionType: "Payment",
+    Account: issuer.address,
+    Destination: "rRecipientAddress",
+    Amount: {
+      currency: "USD",
+      issuer: issuer.address,
+      value: "100", // 100 USD
+    },
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = issuer.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Tokens issued successfully!");
+  }
+
+  await client.disconnect();
+}
+
+issueTokens();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -341,7 +419,8 @@ console.log(currencyToHex("EURZ"));
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // Necesitas dos wallets con fondos en testnet y definelas en tu .env:
@@ -472,6 +551,139 @@ async function createAndDistributeToken() {
 }
 
 createAndDistributeToken();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// You need two wallets with funds on testnet, define them in your .env:
+//   ISSUER_SEED  → Token issuer account
+//   RESERVE_SEED  → Reserve/distribution account
+// You can get funds from the faucet: https://xahau-test.net/accounts
+
+async function createAndDistributeToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // === ACCOUNTS ===
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
+  const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
+
+  const TOKEN_CURRENCY = "YourTokenName";          // Token name (3 chars) or 40-char hex for longer names
+  const TOTAL_SUPPLY = "1000000";        // Total supply to issue
+
+  console.log("=== Token creation ===");
+  console.log("Issuer:", issuer.address);
+  console.log("Reserve:", reserve.address);
+  console.log("Token:", TOKEN_CURRENCY);
+  console.log("Supply:", TOTAL_SUPPLY);
+
+  // === STEP 1: Configure the issuer account with DefaultRipple ===
+  console.log("\\n--- Step 1: Configure DefaultRipple on the issuer ---");
+  const accountSet = {
+    TransactionType: "AccountSet",
+    Account: issuer.address,
+    SetFlag: 8, // asfDefaultRipple
+  };
+
+  const prep1 = await client.autofill(accountSet);
+  const signed1 = issuer.sign(prep1);
+  const result1 = await client.submitAndWait(signed1.tx_blob);
+  console.log("DefaultRipple:", result1.result.meta.TransactionResult);
+
+  if (result1.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error configuring the issuer. Aborting.");
+    await client.disconnect();
+    return;
+  }
+
+  // === STEP 2: The reserve account creates a TrustLine toward the issuer ===
+  console.log("\\n--- Step 2: Create TrustLine (reserve → issuer) ---");
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: reserve.address,
+    LimitAmount: {
+      currency: TOKEN_CURRENCY,
+      issuer: issuer.address,
+      value: TOTAL_SUPPLY, // Accept up to the total supply
+    },
+  };
+
+  const prep2 = await client.autofill(trustSet);
+  const signed2 = reserve.sign(prep2);
+  const result2 = await client.submitAndWait(signed2.tx_blob);
+  console.log("TrustLine:", result2.result.meta.TransactionResult);
+
+  if (result2.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error creating TrustLine. Aborting.");
+    await client.disconnect();
+    return;
+  }
+
+  // === STEP 3: The issuer sends the entire supply to the reserve account ===
+  console.log("\\n--- Step 3: Issue tokens (issuer → reserve) ---");
+  const issuePayment = {
+    TransactionType: "Payment",
+    Account: issuer.address,
+    Destination: reserve.address,
+    Amount: {
+      currency: TOKEN_CURRENCY,
+      issuer: issuer.address,
+      value: TOTAL_SUPPLY,
+    },
+  };
+
+  const prep3 = await client.autofill(issuePayment);
+  const signed3 = issuer.sign(prep3);
+  const result3 = await client.submitAndWait(signed3.tx_blob);
+  console.log("Issuance:", result3.result.meta.TransactionResult);
+
+  if (result3.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error issuing tokens. Aborting.");
+    await client.disconnect();
+    return;
+  }
+
+  console.log("\\nToken created and distributed to the reserve account!");
+  console.log("Total supply:", TOTAL_SUPPLY, TOKEN_CURRENCY);
+
+  // === VERIFY: Query reserve account balance ===
+  console.log("\\n--- Verification ---");
+  const lines = await client.request({
+    command: "account_lines",
+    account: reserve.address,
+    ledger_index: "validated",
+  });
+
+  const tokenLine = lines.result.lines.find(
+    (l) => l.currency === TOKEN_CURRENCY && l.account === issuer.address
+  );
+
+  if (tokenLine) {
+    console.log("Reserve balance:", tokenLine.balance, TOKEN_CURRENCY);
+    console.log("Issuer:", tokenLine.account);
+    console.log("Limit:", tokenLine.limit, TOKEN_CURRENCY);
+  }
+
+  // === STEP 4 (example): Distribute tokens to an end user ===
+  // The end user must first create their TrustLine toward the issuer
+  // Then the reserve account sends them tokens:
+  //
+  // const distribution = {
+  //   TransactionType: "Payment",
+  //   Account: reserve.address,
+  //   Destination: "rEndUserAddress",
+  //   Amount: {
+  //     currency: TOKEN_CURRENCY,
+  //     issuer: issuer.address,
+  //     value: "100",
+  //   },
+  // };
+
+  await client.disconnect();
+}
+
+createAndDistributeToken();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -566,7 +778,8 @@ For token names longer than 3 characters, a 40-character hexadecimal code is use
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
 
 async function getTokenBalances(address) {
   const client = new Client("wss://xahau-test.net");
@@ -596,6 +809,38 @@ async function getTokenBalances(address) {
 }
 
 getTokenBalances("rTuDireccionAqui");`,
+            en: `const { Client } = require("xahau");
+
+async function getTokenBalances(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_lines",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  console.log("=== Account tokens ===");
+  console.log("Address:", address);
+
+  if (response.result.lines.length === 0) {
+    console.log("No TrustLines (tokens) found.");
+  }
+
+  for (const line of response.result.lines) {
+    console.log(\`\\nToken: \${line.currency}\`);
+    console.log(\`  Issuer: \${line.account}\`);
+    console.log(\`  Balance: \${line.balance}\`);
+    console.log(\`  Limit: \${line.limit}\`);
+  }
+
+  await client.disconnect();
+}
+
+getTokenBalances("rYourAddressHere");`,
+            jp: "",
+          },
         },
         
       ],
@@ -737,7 +982,8 @@ All in a single transaction, transparently. This significantly improves DEX liqu
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
 
 async function viewOrderBook() {
  //Nos conectamos a Xahau Mainnet para este ejemplo que habrá más posibilidadesde que el DEX esté activo. En testnet suele haber poca actividad en el DEX, pero puedes probar con ambos.
@@ -779,6 +1025,50 @@ async function viewOrderBook() {
 }
 
 viewOrderBook();`,
+            en: `const { Client } = require("xahau");
+
+async function viewOrderBook() {
+ //We connect to Xahau Mainnet for this example since the DEX is more likely to be active there. On testnet there is usually little DEX activity, but you can try both.
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const issuerAddress = "rEvernodee8dJLaFsujS6q1EiXvZYmHXr8";
+
+  // Query offers: who is selling EVR in exchange for XAH?
+  const response = await client.request({
+    command: "book_offers",
+    taker_pays: {
+      currency: "XAH",
+    },
+    taker_gets: {
+      currency: "EVR",
+      issuer: issuerAddress,
+    },
+    limit: 10,
+  });
+
+  console.log("=== Order book: EVR → XAH ===");
+  console.log(\`Offers found: \${response.result.offers.length}\\n\`);
+
+  for (const offer of response.result.offers) {
+    const getsUSD = offer.TakerGets.value || offer.TakerGets;
+    const paysXAH =
+      typeof offer.TakerPays === "string"
+        ? Number(offer.TakerPays) / 1_000_000
+        : offer.TakerPays.value;
+
+    console.log(\`Account: \${offer.Account}\`);
+    console.log(\`  Sells: \${getsUSD} EVR\`);
+    console.log(\`  Wants: \${paysXAH} XAH\`);
+    console.log(\`  Sequence: \${offer.Sequence}\\n\`);
+  }
+
+  await client.disconnect();
+}
+
+viewOrderBook();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -787,7 +1077,8 @@ viewOrderBook();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function createOffer() {
@@ -827,6 +1118,48 @@ async function createOffer() {
 }
 
 createOffer();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function createOffer() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuerAddress = "rTokenIssuerAddress";
+
+  // Sell 100 Tokens in exchange for 50 XAH
+  const offer = {
+    TransactionType: "OfferCreate",
+    Account: trader.address,
+    // What I want to receive: 50 XAH
+    TakerPays: xahToDrops(50),
+    // What I am willing to give: 100 Tokens
+    TakerGets: {
+      currency: "YourTokenName",
+      issuer: issuerAddress,
+      value: "100",
+    },
+  };
+
+  const prepared = await client.autofill(offer);
+  const signed = trader.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Offer created on the DEX!");
+    console.log(\`Selling 100 Tokens for 50 XAH (0.5 XAH/Token)\`);
+    console.log(\`Offer Sequence: \${prepared.Sequence}\`);
+  }
+
+  await client.disconnect();
+}
+
+createOffer();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -835,7 +1168,8 @@ createOffer();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function cancelOffer() {
@@ -865,6 +1199,38 @@ async function cancelOffer() {
 }
 
 cancelOffer();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function cancelOffer() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Cancel an offer using its OfferSequence
+  const cancel = {
+    TransactionType: "OfferCancel",
+    Account: trader.address,
+    OfferSequence: 12345, // Sequence of the offer to cancel
+  };
+
+  const prepared = await client.autofill(cancel);
+  const signed = trader.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Offer cancelled successfully!");
+  }
+
+  await client.disconnect();
+}
+
+cancelOffer();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -995,7 +1361,8 @@ The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the is
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 // Este código crea una TrustLine desde una cuenta (holder)
@@ -1038,6 +1405,51 @@ async function createHolderTrustLine() {
 }
 
 createHolderTrustLine();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// This code creates a TrustLine from an account (holder)
+// toward a token issuer. This is required so the issuer
+// can later freeze that TrustLine if needed.
+
+async function createHolderTrustLine() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // The holder who wants to receive the token; their TrustLine can be frozen later if needed
+  const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
+  const issuerAddress = "rIssuerAddress";
+
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: holder.address,
+    LimitAmount: {
+      currency: "YourTokenName",
+      issuer: issuerAddress,
+      value: "1000000", // Maximum limit I accept
+    },
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = holder.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("TrustLine created!");
+    console.log("Holder:", holder.address);
+    console.log("Issuer:", issuerAddress);
+    console.log("\\nThe issuer can now send the token to this account.");
+    console.log("They can also freeze this TrustLine if needed.");
+  }
+
+  await client.disconnect();
+}
+
+createHolderTrustLine();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1046,7 +1458,8 @@ createHolderTrustLine();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function freezeTrustLine() {
@@ -1083,6 +1496,45 @@ async function freezeTrustLine() {
 }
 
 freezeTrustLine();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function freezeTrustLine() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
+  const holderAddress = "rHolderAddress";
+
+  // Freeze the token TrustLine with this holder
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: issuer.address,
+    LimitAmount: {
+      currency: "TokenName",
+      issuer: holderAddress,
+      value: "0", // Value does not matter for freeze
+    },
+    Flags: 1048576, // tfSetFreeze
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = issuer.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log(\`Token TrustLine frozen for \${holderAddress}\`);
+    console.log("The holder cannot send or receive this token");
+  }
+
+  await client.disconnect();
+}
+
+freezeTrustLine();`,
+            jp: "",
+          },
         },
       ],
       slides: [
