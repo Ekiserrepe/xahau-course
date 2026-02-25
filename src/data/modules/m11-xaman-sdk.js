@@ -1267,32 +1267,69 @@ Add \`.env\` to your \`.gitignore\` so credentials never go to GitHub.`,
       codeBlocks: [
         {
           title: {
-            es: "Configuración del servidor Express",
-            en: "Express server setup",
-            jp: "Expressサーバーの設定",
+            es: "Comandos de instalación",
+            en: "Installation commands",
+            jp: "インストールコマンド",
           },
           language: "bash",
-          code: `# Crear e inicializar el proyecto backend
-mkdir xaman-backend && cd xaman-backend
-npm init -y
+          code: `# 1. Crear el directorio del proyecto
+mkdir xaman-backend
+cd xaman-backend
 
-# Instalar dependencias
+# 2. Crear la carpeta para el frontend estático
+mkdir public
+
+# 3. Instalar dependencias
+npm init -y
 npm install express xumm dotenv cors
 npm install --save-dev nodemon
 
-# Crear el archivo .env
-cat > .env << 'EOF'
+# 4. Crear el .gitignore
+printf ".env\\nnode_modules/\\n" > .gitignore
+
+# 5. Arrancar en modo desarrollo (una vez que tengas package.json, server.js y public/index.html)
+npm run dev
+# Abre http://localhost:3001 en el navegador`,
+        },
+        {
+          title: {
+            es: "package.json — copia y pega este archivo completo",
+            en: "package.json — copy and paste this complete file",
+            jp: "package.json — このファイルをそのままコピー",
+          },
+          language: "json",
+          code: `{
+  "name": "xaman-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "xumm": "^1.8.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}`,
+        },
+        {
+          title: {
+            es: ".env — credenciales (nunca subir a git)",
+            en: ".env — credentials (never push to git)",
+            jp: ".env — 認証情報（gitにpushしない）",
+          },
+          language: "bash",
+          code: `# Crea el archivo .env en la raíz del proyecto xaman-backend/
+# Sustituye los valores por los de tu app en apps.xumm.dev
+
 XUMM_API_KEY=tu-api-key-aqui
 XUMM_API_SECRET=tu-api-secret-aqui
-PORT=3001
-EOF
-
-# Añadir .env al .gitignore
-echo ".env" >> .gitignore
-echo "node_modules/" >> .gitignore
-
-# Añadir script de desarrollo al package.json
-# "dev": "nodemon server.js"`,
+PORT=3001`,
         },
         {
           title: {
@@ -1311,8 +1348,9 @@ const app  = express();
 const PORT = process.env.PORT || 3001;
 
 // ── Middlewares ───────────────────────────────────────────────────────────────
-app.use(cors({ origin: "http://localhost:5173" })); // URL de tu React dev server
+app.use(cors());               // permite llamadas desde el mismo origen (public/)
 app.use(express.json());
+app.use(express.static("public")); // sirve public/index.html en http://localhost:3001
 
 // ── SDK de Xaman (backend: API Key + API Secret) ──────────────────────────────
 const xumm = new Xumm(
@@ -1348,7 +1386,8 @@ app.get("/api/login/:uuid", async (req, res) => {
       return res.status(404).json({ error: "Payload no encontrado" });
     }
 
-    const { signed, account } = payload.meta;
+    const signed  = payload.meta.signed;
+    const account = payload.response?.account ?? null;
 
     if (signed) {
       res.json({ signed: true, account });
@@ -1409,7 +1448,8 @@ app.get("/api/pago/:uuid", async (req, res) => {
       return res.status(404).json({ error: "Payload no encontrado" });
     }
 
-    const { signed, txid } = payload.response;
+    const signed = payload.meta.signed;
+    const txid   = payload.response?.txid ?? null;
 
     if (signed) {
       res.json({ signed: true, txid });
@@ -1443,13 +1483,211 @@ app.post("/webhook/xaman", (req, res) => {
 // ── Arrancar servidor ─────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(\`Servidor corriendo en http://localhost:\${PORT}\`);
+  console.log(\`Abre en el navegador: http://localhost:\${PORT}\`);
 });`,
         },
         {
           title: {
-            es: "Frontend que consume el backend (polling de estado)",
-            en: "Frontend consuming the backend (status polling)",
-            jp: "バックエンドを使用するフロントエンド（ステータスポーリング）",
+            es: "public/index.html — Interfaz completa (pégala en xaman-backend/public/)",
+            en: "public/index.html — Full UI (paste into xaman-backend/public/)",
+            jp: "public/index.html — 完全なUI（xaman-backend/public/に貼り付け）",
+          },
+          language: "html",
+          code: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xaman Backend Demo</title>
+  <style>
+    body { font-family: sans-serif; background: #080818; color: #fff;
+           max-width: 480px; margin: 0 auto; padding: 2rem; }
+    h1   { color: #c8ff00; }
+    h2   { color: #aaa; font-size: 1.1rem; margin-top: 1.5rem; }
+    button { padding: 0.6rem 1.5rem; background: #6366f1; color: #fff;
+             border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+    button:disabled { background: #444; cursor: not-allowed; }
+    button.danger { background: #ef4444; }
+    input { display: block; width: 100%; padding: 0.5rem; margin-bottom: 0.75rem;
+            border-radius: 6px; border: 1px solid #333; background: #111;
+            color: #fff; font-size: 0.9rem; box-sizing: border-box; }
+    .card { background: #111; border: 1px solid #444;
+            border-radius: 8px; padding: 1rem; margin-top: 1rem; }
+    .card.ok  { border-color: #4caf50; }
+    .card.err { border-color: #e53935; }
+    .error-msg { color: #ff6b6b; margin: 0.5rem 0; }
+    code  { font-family: monospace; word-break: break-all;
+            font-size: 0.8rem; color: #c8ff00; }
+    a     { color: #66ccff; }
+    img   { border-radius: 8px; display: block; margin: 0.75rem auto; }
+    hr    { border-color: #333; margin: 1.5rem 0; }
+    #paymentSection { display: none; }
+  </style>
+</head>
+<body>
+  <h1>💸 Xaman Backend Demo</h1>
+
+  <!-- ── LOGIN ─────────────────────────────────────────── -->
+  <div id="loginSection">
+    <p>Conéctate con Xaman para continuar.</p>
+    <button id="btnLogin" onclick="handleLogin()">🔑 Conectar con Xaman</button>
+    <div id="loginQR" class="card" style="display:none">
+      <p>Escanea con Xaman:</p>
+      <img id="qrLoginImg" src="" alt="QR Login" width="220" />
+      <a id="deeplinkLogin" href="#" target="_blank">Abrir en Xaman (móvil)</a>
+    </div>
+    <p id="loginError" class="error-msg" style="display:none"></p>
+  </div>
+
+  <!-- ── PAGO ──────────────────────────────────────────── -->
+  <div id="paymentSection">
+    <div class="card ok">
+      <p style="color:#4caf50; margin:0 0 6px">✅ Conectado como:</p>
+      <code id="accountDisplay"></code>
+      <br /><br />
+      <button class="danger" onclick="logout()">Desconectar</button>
+    </div>
+    <hr />
+    <h2>Enviar XAH</h2>
+    <input id="inputDestino" placeholder="Dirección destino (r...)" />
+    <input id="inputCantidad" type="number" min="0.000001" step="0.000001"
+           placeholder="Cantidad en XAH" />
+    <p id="pagoError" class="error-msg" style="display:none"></p>
+    <button id="btnPago" onclick="handlePago()">📤 Enviar pago</button>
+
+    <div id="pagoQR" class="card" style="display:none">
+      <p>Escanea con Xaman para firmar:</p>
+      <img id="qrPagoImg" src="" alt="QR Pago" width="220" />
+      <a id="deeplinkPago" href="#" target="_blank">Abrir en Xaman (móvil)</a>
+    </div>
+
+    <div id="txResult" class="card ok" style="display:none">
+      <p style="color:#4caf50; margin:0 0 6px">✅ <strong>¡Pago confirmado!</strong></p>
+      <p style="color:#ccc; font-size:0.85rem; margin:0 0 4px">Hash de la transacción:</p>
+      <code id="txidDisplay"></code><br /><br />
+      <a id="explorerLink" href="#" target="_blank">🔍 Ver en Xaman Explorer</a>
+    </div>
+  </div>
+
+  <script>
+    const API = "/api";   // misma origin — no hace falta URL absoluta
+    let account = null;
+    let pollTimer = null;
+
+    function setBtn(id, loading, label) {
+      const b = document.getElementById(id);
+      b.disabled = loading;
+      if (label) b.textContent = loading ? "Esperando..." : label;
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.style.display = msg ? "block" : "none";
+      el.textContent = msg || "";
+    }
+
+    function startPoll(uuid, ruta, onDone) {
+      pollTimer = setInterval(async () => {
+        try {
+          const r = await fetch(API + "/" + ruta + "/" + uuid);
+          const data = await r.json();
+          if (data.signed || data.expired) {
+            clearInterval(pollTimer);
+            onDone(data);
+          }
+        } catch (e) { /* red temporalmente caída — reintenta */ }
+      }, 2000);
+    }
+
+    async function handleLogin() {
+      setBtn("btnLogin", true, "🔑 Conectar con Xaman");
+      showErr("loginError", "");
+      try {
+        const r = await fetch(API + "/login", { method: "POST" });
+        const { uuid, qrUrl, deepLink } = await r.json();
+
+        document.getElementById("qrLoginImg").src = qrUrl;
+        document.getElementById("deeplinkLogin").href = deepLink;
+        document.getElementById("loginQR").style.display = "block";
+
+        startPoll(uuid, "login", (data) => {
+          document.getElementById("loginQR").style.display = "none";
+          setBtn("btnLogin", false, "🔑 Conectar con Xaman");
+          if (data.signed) {
+            account = data.account;
+            document.getElementById("accountDisplay").textContent = account;
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("paymentSection").style.display = "block";
+          } else {
+            showErr("loginError", "Login expirado o rechazado");
+          }
+        });
+      } catch (err) {
+        showErr("loginError", "Error: " + err.message);
+        setBtn("btnLogin", false, "🔑 Conectar con Xaman");
+      }
+    }
+
+    async function handlePago() {
+      const destino  = document.getElementById("inputDestino").value.trim();
+      const cantidad = document.getElementById("inputCantidad").value;
+      showErr("pagoError", "");
+      document.getElementById("txResult").style.display = "none";
+      setBtn("btnPago", true, "📤 Enviar pago");
+
+      try {
+        const r = await fetch(API + "/pago", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ origen: account, destino, cantidadXAH: Number(cantidad) }),
+        });
+        const data = await r.json();
+        if (!r.ok) {
+          showErr("pagoError", data.error || "Error creando el pago");
+          setBtn("btnPago", false, "📤 Enviar pago");
+          return;
+        }
+
+        document.getElementById("qrPagoImg").src = data.qrUrl;
+        document.getElementById("deeplinkPago").href = data.deepLink;
+        document.getElementById("pagoQR").style.display = "block";
+
+        startPoll(data.uuid, "pago", (res) => {
+          document.getElementById("pagoQR").style.display = "none";
+          setBtn("btnPago", false, "📤 Enviar pago");
+          if (res.signed) {
+            document.getElementById("txidDisplay").textContent = res.txid;
+            document.getElementById("explorerLink").href =
+              "https://xaman.app/explorer/21338/" + res.txid;
+            document.getElementById("txResult").style.display = "block";
+          } else {
+            showErr("pagoError", "Pago rechazado o expirado");
+          }
+        });
+      } catch (err) {
+        showErr("pagoError", "Error: " + err.message);
+        setBtn("btnPago", false, "📤 Enviar pago");
+      }
+    }
+
+    function logout() {
+      clearInterval(pollTimer);
+      account = null;
+      document.getElementById("loginSection").style.display  = "block";
+      document.getElementById("paymentSection").style.display = "none";
+      document.getElementById("txResult").style.display       = "none";
+      document.getElementById("inputDestino").value  = "";
+      document.getElementById("inputCantidad").value = "";
+    }
+  </script>
+</body>
+</html>`,
+        },
+        {
+          title: {
+            es: "src/App.jsx — Frontend React que consume el backend",
+            en: "src/App.jsx — React frontend consuming the backend",
+            jp: "src/App.jsx — バックエンドを使用するReactフロントエンド（ステータスポーリング）",
           },
           language: "javascript",
           code: `// src/App.jsx — Frontend que usa el backend para crear payloads
