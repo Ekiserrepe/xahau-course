@@ -3,7 +3,7 @@ export default {
   icon: "🪝",
   title: {
     es: "Introducción a smart contracts en entornos No-EVM",
-    en: "",
+    en: "Introduction to smart contracts in Non-EVM environments",
     jp: "",
   },
   lessons: [
@@ -11,7 +11,7 @@ export default {
       id: "m8l1",
       title: {
         es: "¿Qué son los Hooks?",
-        en: "",
+        en: "What are Hooks?",
         jp: "",
       },
       theory: {
@@ -57,18 +57,60 @@ Todo Hook debe implementar dos funciones:
 ### Guard (\`_g\`)
 
 Cada Hook debe incluir una llamada a \`_g(id, maxiter)\` para evitar bucles infinitos. El guard define el máximo de iteraciones que puede ejecutar el Hook.`,
-        en: "",
+        en: `Hooks are Xahau's native smart contract system. Unlike Solidity in Ethereum, Hooks are written in **C** and compiled to **WebAssembly (WASM)**.
+
+### Hooks vs EVM Smart Contracts
+
+| Feature | EVM Smart Contracts | Hooks (Xahau) |
+|---|---|---|
+| Language | Solidity / Vyper | C |
+| Compilation | EVM Bytecode | WebAssembly (WASM) |
+| Execution | On the EVM | Directly on the node |
+| Model | Actively invoked | Reactively executed |
+| Gas/Fees | Variable gas | Fixed low fees |
+| Storage | Unlimited storage | State with namespace |
+| Deployment | Creation transaction | SetHook transaction |
+
+### Reactive model
+
+The most important difference is the **execution model**:
+
+- In Ethereum, **you call** the smart contract by sending a transaction to the contract
+- In Xahau, Hooks **execute automatically** when a transaction passes through an account that has a Hook installed
+
+Hooks are like **filters** or **interceptors** that react to transactions. Among many options, they can:
+- **Accept** the transaction (\`accept()\`)
+- **Reject** the transaction (\`rollback()\`)
+- **Emit** new transactions (\`emit()\`)
+- **Read and write** persistent state (\`state()\`, \`state_set()\`)
+
+### Some interesting facts
+
+- Maximum **10 Hooks** per account
+- Each Hook has its own **namespace** for storing information, but can use others that aren't its own if it has permissions
+- The first time a Hook is installed, the WASM code is stored in the ledger and assigned a hash. If another user wants to install the same Hook, they can use the identifier and don't need access to the source code to install it.
+
+### Mandatory functions
+
+Every Hook must implement two functions:
+- \`hook(uint32_t reserved)\` — Executes when a transaction reaches the account. Mandatory
+- \`cbak(uint32_t reserved)\` — Executes as a callback for transactions emitted by the Hook. Optional
+
+### Guard (\`_g\`)
+
+Every Hook must include a call to \`_g(id, maxiter)\` to prevent infinite loops. The guard defines the maximum number of iterations the Hook can execute.`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Hook mínimo — Acepta todas las transacciones",
-            en: "",
+            en: "Minimal Hook — Accepts all transactions",
             jp: "",
           },
           language: "c",
-          code: `#include "hookapi.h"
+          code: {
+            es: `#include "hookapi.h"
 
 /**
  * Hook: accept_all.c
@@ -89,15 +131,39 @@ int64_t cbak(uint32_t reserved) {
     // Callback vacío (Se puede omitir la declaracion cback si no se necesita)
     return 0;
 }`,
+            en: `#include "hookapi.h"
+
+/**
+ * Hook: accept_all.c
+ * The simplest possible Hook.
+ * Accepts all transactions without conditions.
+ */
+
+int64_t hook(uint32_t reserved) {
+    // Accept the transaction with a message
+    accept(SBUF("accept_all: Transaction accepted."), __LINE__);
+
+    // Guard: never reached here, but mandatory
+    _g(1, 1);
+    return 0;
+}
+
+int64_t cbak(uint32_t reserved) {
+    // Empty callback (cbak declaration can be omitted if not needed)
+    return 0;
+}`,
+            jp: "",
+          },
         },
         {
           title: {
             es: "Hook que rechaza pagos menores a un mínimo",
-            en: "",
+            en: "Hook that rejects payments below a minimum",
             jp: "",
           },
           language: "c",
-          code: `#include "hookapi.h"
+          code: {
+            es: `#include "hookapi.h"
 
 /**
  * Hook: min_payment.c
@@ -145,32 +211,84 @@ int64_t hook(uint32_t reserved) {
 int64_t cbak(uint32_t reserved) {
     return 0;
 }`,
+            en: `#include "hookapi.h"
+
+/**
+ * Hook: payment_counter.c
+ * Counts how many payments the account has processed.
+ * Stores the counter in the Hook state.
+ */
+
+int64_t hook(uint32_t reserved) {
+    _g(1, 1);
+
+    // Only count payments (type 0)
+    int64_t tt = otxn_type();
+    if (tt != 0) {
+        accept(SBUF("payment_counter: Not a payment."), __LINE__);
+    }
+
+    // State key for counter (32 bytes, padded with zeros)
+    uint8_t state_key[32] = { 0 };
+    state_key[0] = 'C'; // 'C' for Counter
+
+    // Read current counter from state
+    int64_t counter = 0;
+    uint8_t counter_buf[8] = { 0 };
+    int64_t bytes_read = state(SBUF(counter_buf), SBUF(state_key));
+
+    if (bytes_read == 8) {
+        // Counter already exists, read its value
+        counter = *((int64_t*)counter_buf);
+    }
+
+    // Increment counter
+    counter++;
+
+    // Write new value to state
+    *((int64_t*)counter_buf) = counter;
+    int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
+
+    if (result < 0) {
+        rollback(SBUF("payment_counter: Error saving state."), __LINE__);
+    }
+
+    // Accept transaction
+    accept(SBUF("payment_counter: Payment counted."), __LINE__);
+    return 0;
+}
+
+int64_t cbak(uint32_t reserved) {
+    return 0;
+}`,
+            jp: "",
+          },
         },
       ],
       slides: [
         {
-          title: { es: "Hooks vs Smart Contracts EVM", en: "", jp: "" },
+          title: { es: "Hooks vs Smart Contracts EVM", en: "Hooks vs EVM Smart Contracts", jp: "" },
           content: {
             es: "Smart contracts nativos de Xahau\n\n• Escritos en C, compilados a WebAssembly\n• Modelo reactivo (no se invocan, reaccionan)\n• Fees fijos y bajos (no gas variable)\n• Estado aislado con namespaces\n• Despliegue con transacción SetHook",
-            en: "",
+            en: "Xahau native smart contracts\n\n• Written in C, compiled to WebAssembly\n• Reactive model (not invoked, they react)\n• Fixed low fees (no variable gas)\n• Isolated state with namespaces\n• Deployment with SetHook transaction",
             jp: "",
           },
           visual: "🪝",
         },
         {
-          title: { es: "Modelo reactivo y funciones", en: "", jp: "" },
+          title: { es: "Modelo reactivo y funciones", en: "Reactive model and functions", jp: "" },
           content: {
             es: "EVM: Tú llamas al contrato\nHooks: Se ejecutan automáticamente\n\n• accept() → Aceptar transacción\n• rollback() → Rechazar transacción\n• emit() → Emitir nueva transacción\n• state() / state_set() → Estado persistente\n\nhook() obligatoria | cbak() opcional | _g() guard",
-            en: "",
+            en: "EVM: You call the contract\nHooks: Execute automatically\n\n• accept() → Accept transaction\n• rollback() → Reject transaction\n• emit() → Emit new transaction\n• state() / state_set() → Persistent state\n\nhook() mandatory | cbak() optional | _g() guard",
             jp: "",
           },
           visual: "⚡",
         },
         {
-          title: { es: "Datos clave sobre Hooks", en: "", jp: "" },
+          title: { es: "Datos clave sobre Hooks", en: "Key facts about Hooks", jp: "" },
           content: {
             es: "• Hasta 10 Hooks por cuenta\n• Cada Hook tiene su propio namespace\n• Puede acceder a namespaces ajenos con permisos\n• WASM deduplicado: mismo codigo = mismo hash\n• Instalar por HookHash sin acceso al codigo fuente",
-            en: "",
+            en: "• Up to 10 Hooks per account\n• Each Hook has its own namespace\n• Can access other namespaces with permissions\n• WASM deduplicated: same code = same hash\n• Install by HookHash without source code access",
             jp: "",
           },
           visual: "📐",
@@ -181,7 +299,7 @@ int64_t cbak(uint32_t reserved) {
       id: "m8l2",
       title: {
         es: "Despliegue de un Hook en Xahau",
-        en: "",
+        en: "Deploying a Hook on Xahau",
         jp: "",
       },
       theory: {
@@ -334,7 +452,155 @@ El campo \`HookCanEmit\` es un mecanismo de seguridad fundamental que limita qu�
 ### Más información
 
 Para una referencia completa de \`SetHook\`, incluyendo todos los campos, flags, reglas de validación y casos especiales, consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/sethook/).`,
-        en: "",
+        en: `Once you have your Hook written in C, you need to **compile it to WebAssembly** and **deploy it** to your Xahau account via a \`SetHook\` transaction.
+
+### Development options
+
+**1. Hooks Builder (Online)**
+The fastest way to get started. [builder.xahau.network](https://builder.xahau.network) lets you write, compile and deploy Hooks from the browser. It includes examples, documentation and an integrated development environment. Ideal for quick tests and learning. Only available for **Xahau Testnet**.
+
+**2. Local development**
+For local development (and later Xahau Mainnet) you need [xahau-toolkit](https://hooks-toolkit.com/), which includes a complete library to compile your hooks and deploy them with custom scripts.
+
+### Deploying a Hook
+
+Once you have a hook ready to deploy, the general process is to generate a \`SetHook\` transaction with the appropriate fields, sign it and send it to the network. The main field for the Hook code is \`CreateCode\`, where you must include the WASM binary in hexadecimal format if this is the first time this Hook will exist on the network.
+
+Testing environments like [Hooks Builder](https://builder.xahau.network) allow you to compile the code and upload it using a graphical interface. Other graphical environments exist for both Xahau Testnet and Mainnet, which require you to use your seed to sign the deployment transaction, such as [xahau-testnet.xrplwin.com/tools](https://xahau-testnet.xrplwin.com/tools). These are only recommended for test environments. As a common practice, it is recommended to learn how to use the \`SetHook\` transaction with custom scripts using the \`xahau js\` library, to later automate deployments, updates and Hook management in production.
+
+### SetHook transaction
+
+The \`SetHook\` transaction is the only transaction needed to manage Hooks. With it you can **install**, **update** and **delete** Hooks from your account. The main fields of the Hook object within the \`Hooks\` array are:
+
+| Field | Description |
+|---|---|
+| \`CreateCode\` | The Hook WASM binary (in hexadecimal) |
+| \`HookHash\` | Hash of an already existing Hook in the ledger (alternative to CreateCode) |
+| \`HookOn\` | String defining which transaction types activate the Hook |
+| \`HookNamespace\` | Name for the Hook state (32 bytes hex) |
+| \`HookApiVersion\` | Hooks API version (currently 0) |
+| \`HookParameters\` | Optional configuration parameters |
+| \`HookCanEmit\` | List of transactions the Hook can emit (security) |
+| \`Flags\` | Control flags (\`hsfOverride\`, \`hsfNSDelete\`, \`hsfCollect\`) |
+
+### Hook management phases
+
+### 1. Install a Hook for the first time (with CreateCode)
+
+When you deploy a new Hook that has never existed on the network, you use the \`CreateCode\` field with the full WASM binary. The node calculates the WASM hash and stores the code in the ledger. If another user already deployed the exact same code, Xahau reuses the existing definition (automatic deduplication).
+
+\`\`\`
+Hook: {
+  CreateCode: "0061736D...",     // WASM in hex
+  HookOn: "0000000000000000",    // All tx types
+  HookNamespace: "00...00",      // 64 chars hex
+  HookApiVersion: 0,
+  Flags: 1,                      // hsfOverride
+}
+\`\`\`
+
+### 2. Install an existing Hook by HookHash
+
+If a Hook was already deployed before (by you or another account), you can install it on your account **without sending the entire WASM again**. You only need the \`HookHash\` (the SHA-256 hash of the binary). This saves space and fees.
+
+\`\`\`
+Hook: {
+  HookHash: "A5B6C7D8...",      // Hash of existing Hook
+  HookOn: "0000000000000000",
+  HookNamespace: "00...00",
+  HookApiVersion: 0,
+  Flags: 1,                      // hsfOverride
+}
+\`\`\`
+
+You can get the \`HookHash\` by querying an account's Hooks with \`account_objects\` or from a block explorer like [xahau-testnet.xrplwin.com](https://xahau-testnet.xrplwin.com).
+
+### 3. Update a Hook (Update Operation)
+
+The update operation is triggered when the Hook already exists at the position, **no** \`HookHash\` or \`CreateCode\` is sent, and at least one of these fields is included: \`HookNamespace\`, \`HookParameters\` or \`HookGrants\`. This allows modifying the Hook configuration **without replacing the WASM code**.
+
+**What you can modify**:
+
+- **HookNamespace**: If you send a different \`HookNamespace\` than the current one, the Hook's namespace is updated. If you also include the \`hsfNSDelete\` flag (value 2), **all state entries from the previous namespace are deleted**.
+- **HookParameters**: For each entry in \`HookParameters\`:
+  - If you send a parameter with a name and **no value**, that parameter is **deleted** from the Hook
+  - If you send a parameter with a name **and value**, that parameter is **added or updated**
+- **HookGrants**: If you include \`HookGrants\`, the Hook's full grants array is **replaced** by the new array provided
+
+\`\`\`
+// Example: update only the parameters of an existing Hook
+Hook: {
+  HookParameters: [
+    {
+      HookParameter: {
+        HookParameterName: "4D494E",        // "MIN"
+        HookParameterValue: "00E1F505"      // New value
+      }
+    },
+    {
+      HookParameter: {
+        HookParameterName: "4D4158",        // "MAX" — delete
+        // No HookParameterValue = deleted
+      }
+    }
+  ]
+}
+\`\`\`
+
+**To completely replace a Hook** with different WASM code, send a new \`SetHook\` with \`CreateCode\` (or \`HookHash\`) at the same position and the \`hsfOverride\` flag (value 1). The previous Hook state is **maintained** if the namespace doesn't change.
+
+### 4. Delete a Hook (Delete Operation)
+
+To delete a Hook from a position, these conditions must be met: the Hook must exist at that position, the \`hsfOverride\` flag must be active, **no** \`HookHash\` is sent, and \`CreateCode\` must be present but **empty**:
+
+\`\`\`
+Hook: {
+  CreateCode: "",       // Empty = delete
+  Flags: 1,             // hsfOverride
+}
+\`\`\`
+
+Upon deletion:
+- The **reference counter** of the \`HookDefinition\` is decremented. If it reaches zero (no other account uses that code), the definition is removed from the ledger
+- The Hook object at that position is **deleted**, leaving the position empty
+
+If you also want to **clean all state** from that Hook's namespace, add the \`hsfNSDelete\` flag (value 2) combined with \`hsfOverride\`: \`Flags: 3\`. This will delete all \`HookState\` entries from the associated namespace.
+
+### SetHook Flags
+
+| Flag | Value | Description |
+|---|---|---|
+| \`hsfOverride\` | 1 | Allows replacing or deleting an existing Hook at that position |
+| \`hsfNSDelete\` | 2 | Deletes all namespace state upon uninstall |
+| \`hsfCollect\` | 4 | Collects grants from the previous Hook |
+
+### HookOn — Transaction filter
+
+The \`HookOn\` field controls which transaction types activate the Hook:
+- You can configure specific bits to enable or disable types using this [calculator](https://richardah.github.io/xrpl-hookon-calculator/)
+- If we mark only activation on payment transactions, the Hook will only execute when the account receives or sends a payment. The result in the calculator is \`0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbffffe\`. We must remove the \`0x\` part and convert the result to uppercase to use it in the HookOn field. For example: \`FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFE\`.
+- Multiple transactions can be marked at once. Caution is recommended when configuring HookOn to avoid activating the Hook on transaction types you don't need, as this can generate unnecessary fees and increase the risk of unexpected actions.
+
+### HookCanEmit — Transaction emission control
+
+The \`HookCanEmit\` field is a fundamental security mechanism that limits which transactions a Hook can emit. By default, a Hook has the ability to emit autonomous transactions (using the \`emit()\` function), which could represent a risk if the Hook has a bug or was installed without reviewing its code.
+
+\`HookCanEmit\` is an array that explicitly defines which transaction types the Hook can emit. If configured, the Hook **can only emit the listed transactions**, and any attempt to emit a type not included will be rejected by the network. It works just like \`HookOn\`, but instead of controlling Hook activation, it controls its emission capability.
+
+- You can configure specific bits to enable or disable types using this [calculator](https://richardah.github.io/xrpl-hookon-calculator/)
+- If we mark only emission of payment transactions, the calculator result is \`0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbffffe\`. We must remove the \`0x\` part and convert to uppercase to use it in the \`HookCanEmit\` field. For example: \`FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFE\`.
+- Although \`HookCanEmit\` is an optional field, it is recommended to use it to prevent a Hook from emitting unwanted transactions, as this can generate unwanted actions from a malicious Hook.
+
+**Why is it important for security?**
+
+- **Principle of least privilege**: A Hook should only have the permissions it needs. If your Hook only needs to send payments, it shouldn't be able to emit \`SetHook\`, \`AccountDelete\` or other sensitive transactions.
+- **Protection against bugs**: If a Hook has a vulnerability, \`HookCanEmit\` limits the potential damage by restricting the actions it can execute.
+- **Audit and transparency**: When reviewing a Hook installed on an account, \`HookCanEmit\` allows quickly verifying what operations it can perform autonomously.
+- **Best practice**: Always configure \`HookCanEmit\` with the minimum set of transactions necessary for your Hook's logic.
+
+### More information
+
+For a complete reference on \`SetHook\`, including all fields, flags, validation rules and special cases, see the [official documentation](https://xahau.network/docs/protocol-reference/transactions/transaction-types/sethook/).`,
         jp: "",
       },
       codeBlocks: [
@@ -342,11 +608,12 @@ Para una referencia completa de \`SetHook\`, incluyendo todos los campos, flags,
         {
           title: {
             es: "Desplegar un Hook desde fichero .wasm con xahau.js",
-            en: "",
+            en: "Deploy a Hook from a .wasm file with xahau.js",
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 const fs = require("fs");
 
@@ -393,14 +660,65 @@ async function deployHook() {
 }
 
 deployHook();`,
+            en: `#include "hookapi.h"
+
+/**
+ * Hook: min_payment.c
+ * Rejects XAH payments smaller than 10 XAH.
+ * Accepts all other transactions.
+ */
+
+int64_t hook(uint32_t reserved) {
+    // Get transaction type
+    int64_t tt = otxn_type();
+
+    // If not a payment (type 0), accept
+    if (tt != 0) {
+        accept(SBUF("min_payment: Not a payment."), __LINE__);
+    }
+
+    // Get payment amount
+    unsigned char amount_buf[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
+
+    // If not native XAH (8 bytes), accept
+    if (amount_len != 8) {
+        accept(SBUF("min_payment: Non-XAH payment."), __LINE__);
+    }
+
+    // Convert to drops and compare
+    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+    int64_t min_drops = 10000000; // 10 XAH = 10,000,000 drops
+
+    if (drops < min_drops) {
+        // Reject: payment too small
+        rollback(
+            SBUF("min_payment: Payment rejected. Minimum 10 XAH."),
+            __LINE__
+        );
+    }
+
+    // Accept: payment meets minimum
+    accept(SBUF("min_payment: Payment accepted."), __LINE__);
+
+    _g(1, 1);
+    return 0;
+}
+
+int64_t cbak(uint32_t reserved) {
+    return 0;
+}`,
+            jp: "",
+          },
         },{
           title: {
             es: "Borrar un Hook de una cuenta con xahau.js",
-            en: "",
+            en: "Delete a Hook from an account with xahau.js",
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 const fs = require("fs");
 
@@ -439,15 +757,103 @@ async function removeHook() {
 }
 
 removeHook();`,
+            en: `#include "hookapi.h"
+
+/**
+ * Hook: ten_percent_forwarder.c
+ *
+ * When the account receives an XAH payment, it automatically forwards
+ * 10% to the hardcoded address in forward_to[].
+ *
+ * ── How to configure the destination address ─────────────────────────────
+ * The address must be in Account ID format (20 bytes in hex),
+ * NOT in rAddress format. To convert use one of these tools:
+ *   https://hooks.services/tools/raddress-to-accountid
+ *   https://transia-rnd.github.io/xrpl-hex-visualizer/
+ *
+ * Example:
+ *   rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
+ *   → 4B50699E253C5098DEFE3A0872A79D129172F496
+ *   → { 0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U }
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
+int64_t hook(uint32_t reserved)
+{
+    // Our Hook iterations, in this case only 1, since we only emit one transaction and have no loops
+    _g(1, 1);
+
+    // Reserve space for 1 emission
+    etxn_reserve(1);
+
+    // Destination address for 10% — replace these bytes with your account's
+    // rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r - Get your translation at https://hooks.services/tools/raddress-to-accountid
+    uint8_t forward_to[20] = {
+        0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U
+    };
+
+    // Only process payments (type 0)
+    int64_t tt = otxn_type();
+    if (tt != 0)
+        accept(SBUF("forwarder: not a payment"), __LINE__);
+
+    // Get the destination of the incoming transaction
+    uint8_t account_field[20];
+    int32_t account_field_len = otxn_field(SBUF(account_field), sfDestination);
+    if (account_field_len != 20)
+        accept(SBUF("forwarder: could not read destination"), __LINE__);
+
+    // Get the Account ID of the account that has the Hook installed
+    unsigned char hook_accid[20];
+    hook_account(SBUF(hook_accid));
+
+    // Only act if the Hook is the payment recipient (incoming payment)
+    int equal = 0;
+    BUFFER_EQUAL(equal, hook_accid, account_field, 20);
+    if (!equal)
+        accept(SBUF("forwarder: outgoing payment, ignore"), __LINE__);
+
+    // Read the Amount — native XAH occupies exactly 8 bytes
+    unsigned char amount_buffer[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buffer), sfAmount);
+    if (amount_len != 8)
+        accept(SBUF("forwarder: not native XAH"), __LINE__);
+
+    int64_t otxn_drops = AMOUNT_TO_DROPS(amount_buffer);
+    TRACEVAR(otxn_drops);
+
+    // Calculate 10%
+    int64_t drops_to_forward = otxn_drops / 10;
+    TRACEVAR(drops_to_forward);
+
+    if (drops_to_forward < 1)
+        accept(SBUF("forwarder: amount too small"), __LINE__);
+
+    // Prepare and emit the 10% payment
+    unsigned char tx[PREPARE_PAYMENT_SIMPLE_SIZE];
+    PREPARE_PAYMENT_SIMPLE(tx, drops_to_forward, forward_to, 0, 0);
+
+    uint8_t emithash[32];
+    int64_t emit_result = emit(SBUF(emithash), SBUF(tx));
+
+    if (emit_result < 0)
+        rollback(SBUF("forwarder: error emitting payment"), __LINE__);
+
+    accept(SBUF("forwarder: 10% forwarded successfully"), __LINE__);
+    return 0;
+}`,
+            jp: "",
+          },
         },
         {
           title: {
             es: "Instalar un Hook con el HookHash con xahau.js",
-            en: "",
+            en: "Install a Hook by HookHash with xahau.js",
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 const fs = require("fs");
 
@@ -489,15 +895,65 @@ async function deployHook() {
 }
 
 deployHook();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+const fs = require("fs");
+
+async function deployHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Your testnet account
+  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Read the compiled Hook WASM
+  const wasmBytes = fs.readFileSync("base.wasm"); // Use the name of the .wasm file you want to deploy
+  const hookBinary = wasmBytes.toString("hex").toUpperCase();
+
+  // Build the SetHook transaction
+  const setHook = {
+    TransactionType: "SetHook",
+    Account: account.address,
+    Hooks: [
+      {
+        Hook: {
+          CreateCode: hookBinary,
+          HookOn: "0".repeat(64), // All tx types
+          HookCanEmit: "0".repeat(64), // All tx types
+          HookNamespace: "0".repeat(64), // Default namespace
+          HookApiVersion: 0,
+          Flags: 1, // hsfOVERRIDE flag so the new hook replaces any previous hook on the account
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setHook);
+  const signed = account.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Hook successfully deployed to account!", account.address);
+  }
+
+  await client.disconnect();
+}
+
+deployHook();`,
+            jp: "",
+          },
         },
         {
           title: {
             es: "Verificar los Hooks instalados en una cuenta",
-            en: "",
+            en: "Check installed Hooks on an account",
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
 
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
@@ -536,32 +992,104 @@ async function checkHooks(address) {
 }
 // Una dirección de ejemplo con un Hook en Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
 checkHooks("rTuDireccionAqui");`,
+            en: `#include "hookapi.h"
+
+/**
+ * Hook: otxn_param_demo.c
+ *
+ * Reads the "ACCION" parameter from the transaction that activates the Hook
+ * and displays its value in the Debug Stream with trace().
+ *
+ * To test it, send a transaction with HookParameters:
+ *   HookParameterName:  "414343494F4E"  (= "ACCION" in hex)
+ *   HookParameterValue: "01"            (any hex value)
+ *
+ * Convert strings to hex at: https://transia-rnd.github.io/xrpl-hex-visualizer/
+ */
+
+int64_t hook(uint32_t reserved)
+{
+    // Mandatory guard: (iteration_id, max_iterations)
+    // Since there are no loops in this Hook, _g(1, 1) is enough
+    _g(1, 1);
+
+    // Start trace with 4 arguments: (label_ptr, label_len, data_ptr, data_len, as_hex)
+    // When data_ptr and data_len are 0, only the label is printed
+    trace(SBUF("otxn_param_demo: hook() started"), 0, 0, 0);
+
+    // ── Define the parameter name to look for ────────────────────────────────
+    // "ACCION" in ASCII: A=41 C=43 C=43 I=49 O=4F N=4E
+    // Use https://transia-rnd.github.io/xrpl-hex-visualizer/ to convert your own names,
+    uint8_t param_name[]    = { 0x41U, 0x43U, 0x43U, 0x49U, 0x4FU, 0x4EU };
+
+    // Output buffer where otxn_param() will write the found value (max 32 bytes)
+    uint8_t param_value[32] = { 0 };
+
+    // ── Read the parameter from the originating transaction ───────────────────
+    // otxn_param() searches in the HookParameters of the tx that activated this Hook.
+    // Returns: bytes written (>0) if found | negative if error or not found
+    int64_t value_len = otxn_param(
+        SBUF(param_value),   // buffer where the parameter value is written
+        SBUF(param_name)     // name of the parameter we want to read
+    );
+
+    // ── Trace the searched parameter name ────────────────────────────────────
+    // TRACEVAR shows the variable name and its content as a numeric value
+    TRACEVAR(param_name);
+    // TRACEHEX shows the buffer content in hexadecimal format
+    // You'll see: 414343494F4E → which corresponds to "ACCION"
+    TRACEHEX(param_name);
+
+    // ── Trace the received value ──────────────────────────────────────────────
+    // TRACEVAR of the value — useful to see if the buffer has something or is at zeros
+    TRACEVAR(param_value);
+    // TRACEHEX of the value — shows the exact bytes the tx sender sent
+    TRACEHEX(param_value);
+
+    // ── Display the value in two formats with 5-argument trace() ─────────────
+    // trace(label_ptr, label_len, data_ptr, data_len, as_hex)
+    //   as_hex = 0 → interprets data as ASCII text (readable if value is text)
+    //   as_hex = 1 → shows data as hexadecimal string (always readable)
+
+    // As text: useful when the value is a string ("ON", "OFF", "MODE1", etc.)
+    trace(SBUF("otxn_param_demo: ACCION value (text): "), SBUF(param_value), 0);
+
+    // As hex: always shows exact bytes, ideal for binary values
+    trace(SBUF("otxn_param_demo: ACCION value (hex): "),   SBUF(param_value), 1);
+
+    // Accept the transaction. __LINE__ indicates the exact line number in the log,
+    // making it easy to know which path the Hook took in the Debug Stream
+    accept(SBUF("otxn_param_demo: parameter read and traced"), __LINE__);
+    return 0;
+}`,
+            jp: "",
+          },
         },
       ],
       slides: [
         {
-          title: { es: "SetHook: campos principales", en: "", jp: "" },
+          title: { es: "SetHook: campos principales", en: "SetHook: main fields", jp: "" },
           content: {
             es: "Transaccion unica para gestionar Hooks\n\n• CreateCode: WASM en hex\n• HookHash: instalar Hook existente por hash\n• HookOn: filtro de transacciones\n• HookNamespace: aislamiento de estado\n• HookParameters: configuracion sin recompilar\n• HookCanEmit: control de emisiones (seguridad)\n• Flags: hsfOverride | hsfNSDelete | hsfCollect",
-            en: "",
+            en: "Single transaction to manage Hooks\n\n• CreateCode: WASM in hex\n• HookHash: install existing Hook by hash\n• HookOn: transaction filter\n• HookNamespace: state isolation\n• HookParameters: configuration without recompiling\n• HookCanEmit: emission control (security)\n• Flags: hsfOverride | hsfNSDelete | hsfCollect",
             jp: "",
           },
           visual: "⚙️",
         },
         {
-          title: { es: "4 fases de gestion de un Hook", en: "", jp: "" },
+          title: { es: "4 fases de gestion de un Hook", en: "4 Hook management phases", jp: "" },
           content: {
             es: "1. Instalar (CreateCode) → WASM completo\n2. Instalar por HookHash → sin enviar WASM\n3. Actualizar (Update) → modificar namespace,\n   parametros o grants sin cambiar codigo\n4. Eliminar (Delete) → CreateCode vacio\n   + hsfOverride. hsfNSDelete limpia estado",
-            en: "",
+            en: "1. Install (CreateCode) → full WASM\n2. Install by HookHash → without sending WASM\n3. Update → modify namespace,\n   parameters or grants without changing code\n4. Delete → empty CreateCode\n   + hsfOverride. hsfNSDelete clears state",
             jp: "",
           },
           visual: "🔄",
         },
         {
-          title: { es: "HookOn y HookCanEmit", en: "", jp: "" },
+          title: { es: "HookOn y HookCanEmit", en: "HookOn and HookCanEmit", jp: "" },
           content: {
             es: "HookOn: que transacciones activan el Hook\nHookCanEmit: que transacciones puede emitir\n\n• Ambos usan la misma calculadora\n• Resultado hex sin 0x, en mayusculas\n• Principio de minimo privilegio\n• HookCanEmit opcional pero recomendado",
-            en: "",
+            en: "HookOn: which transactions activate the Hook\nHookCanEmit: which transactions it can emit\n\n• Both use the same calculator\n• Hex result without 0x, uppercase\n• Principle of least privilege\n• HookCanEmit optional but recommended",
             jp: "",
           },
           visual: "🎯",
@@ -572,7 +1100,7 @@ checkHooks("rTuDireccionAqui");`,
       id: "m8l3",
       title: {
         es: "Estado persistente en Hooks",
-        en: "",
+        en: "Persistent state in Hooks",
         jp: "",
       },
       theory: {
@@ -607,18 +1135,49 @@ Estas son algunas funciones que podemos utilizar para leer o escribir informaci�
 - **Configuración**: guardar parámetros que el Hook consulta en cada ejecución
 - **Tracking**: registrar la última transacción procesada, timestamps, etc.
 - **Acumuladores**: sumar montos, promediar valores, llevar balances internos`,
-        en: "",
+        en: `Hooks can store **persistent data** between executions using the state system (\`state\`). This allows a Hook to have information available to work with in one or more \`Namespace\`s.
+
+### State structure
+
+The Namespace is identified with 32 bytes (256 bits) in hexadecimal. State is organized as **key-value** pairs:
+
+- **Key**: 32 bytes (256 bits). If your key is shorter, it is padded with zeros
+- **Value**: up to 256 bytes per entry
+- Each state entry is identified by its key within a **Namespace**
+
+### Limitations
+
+- An account can store a maximum of 256 namespaces.
+- Key-value records will depend on your XAH reserves.
+
+### State functions
+
+Here are some functions we can use to read or write information in \`Namespace\`.
+
+- [state()](https://xahau.network/docs/hooks/functions/state/state/): Reads a value from state using a key
+- [state_set()](https://xahau.network/docs/hooks/functions/state/state_set/): Writes a value to state for a key
+- [state_foreign()](https://xahau.network/docs/hooks/functions/state/state_foreign/): Reads the state of a \`Namespace\` that is not its own.
+- [state_foreign_set()](https://xahau.network/docs/hooks/functions/state/state_foreign_set/): Writes a value to the state of a \`Namespace\` that is not its own.
+
+### Practical uses of state
+
+- **Counters**: count processed transactions, received payments, etc.
+- **Whitelists/blacklists**: store allowed or blocked addresses
+- **Configuration**: save parameters that the Hook queries on each execution
+- **Tracking**: record the last processed transaction, timestamps, etc.
+- **Accumulators**: sum amounts, average values, keep internal balances`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Hook que cuenta pagos procesados",
-            en: "",
+            en: "Hook that counts processed payments",
             jp: "",
           },
           language: "c",
-          code: `#include "hookapi.h"
+          code: {
+            es: `#include "hookapi.h"
 
 /**
  * Hook: payment_counter.c
@@ -668,32 +1227,73 @@ int64_t hook(uint32_t reserved) {
 int64_t cbak(uint32_t reserved) {
     return 0;
 }`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+const fs = require("fs");
+
+async function removeHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Your testnet account
+  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Build the SetHook transaction
+  const setHook = {
+    TransactionType: "SetHook",
+    Account: account.address,
+    Hooks: [
+      {
+        Hook: {
+          CreateCode: "", // If empty, it assumes you want to delete the hook at this array position.
+          Flags: 1, // hsfOVERRIDE flag so the new hook replaces any previous hook on the account
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setHook);
+  const signed = account.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Hook successfully removed from account!", account.address);
+  }
+
+  await client.disconnect();
+}
+
+removeHook();`,
+            jp: "",
+          },
         },
       ],
       slides: [
         {
-          title: { es: "Sistema de estado en Hooks", en: "", jp: "" },
+          title: { es: "Sistema de estado en Hooks", en: "Hook state system", jp: "" },
           content: {
             es: "Datos persistentes entre ejecuciones\n\n• state() → Leer valor por clave\n• state_set() → Escribir valor\n• state_foreign() → Leer estado de otra cuenta\n\nClave: 32 bytes | Valor: hasta 256 bytes\nCada entrada vive dentro de un namespace",
-            en: "",
+            en: "Persistent data between executions\n\n• state() → Read value by key\n• state_set() → Write value\n• state_foreign() → Read state of another account\n\nKey: 32 bytes | Value: up to 256 bytes\nEach entry lives within a namespace",
             jp: "",
           },
           visual: "💾",
         },
         {
-          title: { es: "Namespace y aislamiento", en: "", jp: "" },
+          title: { es: "Namespace y aislamiento", en: "Namespace and isolation", jp: "" },
           content: {
             es: "HookNamespace (32 bytes hex):\n\n• Aisla el estado de cada Hook\n• Distinto namespace = estado separado\n• Mismo namespace = estado compartido\n• Se define al instalar con SetHook\n\nstate_foreign() lee estado ajeno (solo lectura)",
-            en: "",
+            en: "HookNamespace (32 bytes hex):\n\n• Isolates state of each Hook\n• Different namespace = separate state\n• Same namespace = shared state\n• Defined at install time with SetHook\n\nstate_foreign() reads external state (read-only)",
             jp: "",
           },
           visual: "🔒",
         },
         {
-          title: { es: "Usos practicos del estado", en: "", jp: "" },
+          title: { es: "Usos practicos del estado", en: "Practical uses of state", jp: "" },
           content: {
             es: "• Contadores de transacciones\n• Listas blancas / negras de direcciones\n• Configuracion dinamica del Hook\n• Tracking: ultima tx, timestamps\n• Acumuladores y balances internos",
-            en: "",
+            en: "• Transaction counters\n• Address whitelists / blacklists\n• Dynamic Hook configuration\n• Tracking: last tx, timestamps\n• Accumulators and internal balances",
             jp: "",
           },
           visual: "📋",
@@ -704,7 +1304,7 @@ int64_t cbak(uint32_t reserved) {
       id: "m8l4",
       title: {
         es: "Emitir transacciones desde un Hook",
-        en: "",
+        en: "Emitting transactions from a Hook",
         jp: "",
       },
       theory: {
@@ -761,18 +1361,71 @@ Cuando una transacción emitida se **completa** (con éxito o fallo), Xahau llam
 - [Xahau Hook Tx Builder](https://tx-builder.xahau.tools/): Un traductor de transacciones JSON a lenguaje C para Hooks por [@_tequ_](https://x.com/_tequ_).
 
 `,
-        en: "",
+        en: `One of the most powerful capabilities of Hooks is the ability to **emit new transactions** autonomously. When a Hook emits a transaction, it executes as if the Hook's account had sent it.
+
+### The emit() function
+
+The \`emit()\` function allows a Hook to create and send an **emitted transaction (etxn)**. These transactions:
+- Are created by the Hook, not by a user
+- Execute autonomously on the ledger
+- Can be payments, offers, or any supported transaction type
+
+### Reserve space with etxn_reserve()
+
+Before emitting, you must **reserve** how many transactions you're going to emit in this execution:
+
+\`\`\`
+etxn_reserve(1);  // Reserve space for 1 emission
+\`\`\`
+
+This is mandatory. If you try to emit without reserving, the Hook will fail.
+
+### Step by step to emit
+
+1. **\`etxn_reserve(N)\`**: Reserve space for N emissions
+2. **Build the transaction**: Fill a buffer with the serialized transaction fields
+3. **\`etxn_details()\`**: Prepare emission details (generates the emission hash)
+4. **\`emit()\`**: Send the transaction to the ledger
+
+### The cbak() function
+
+When an emitted transaction **completes** (with success or failure), Xahau calls the \`cbak()\` function of the Hook that emitted it:
+
+- \`cbak()\` receives information about the emission result
+- You can use \`cbak()\` to update state, record results, or take additional actions
+- If you don't need to do anything, \`cbak()\` can simply return 0
+
+### Use cases
+
+- **Auto-forwarding**: automatically forward a percentage of each received payment
+- **Splitting**: split an incoming payment between multiple accounts
+- **Refunds**: return payments that don't meet certain conditions
+- **Scheduled actions**: emit transactions based on state conditions
+
+### Limitations
+
+- There is a **maximum number of emissions per Hook execution**
+- Emitted transactions have **their own fee requirements**
+- Emissions increase the Hook's computational load
+
+### Useful links
+
+- [Xahau Hooks 101](https://github.com/Handy4ndy/XahauHooks101): A collection of basic hooks for learning to program Hooks, including several emission examples by [@handy_andy](https://x.com/Handy_4ndy).
+- [Xahau Hook Tx Builder](https://tx-builder.xahau.tools/): A JSON transaction to C language translator for Hooks by [@_tequ_](https://x.com/_tequ_).
+
+`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Hook que reenvía el 10% de cada pago recibido",
-            en: "",
+            en: "Hook that forwards 10% of each received payment",
             jp: "",
           },
           language: "c",
-          code: `#include "hookapi.h"
+          code: {
+            es: `#include "hookapi.h"
 
 /**
  * Hook: ten_percent_forwarder.c
@@ -856,33 +1509,88 @@ int64_t hook(uint32_t reserved)
     accept(SBUF("forwarder: 10% reenviado correctamente"), __LINE__);
     return 0;
 }`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function sendWithParameter() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // The account that has the Hook installed (can be the same or another)
+  const HOOK_ACCOUNT = "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r";
+
+  // Convert parameter name and value to hexadecimal
+  // "ACCION" → 414343494F4E  (use https://hooks.services/tools/string-to-hex)
+  const paramName  = Buffer.from("ACCION").toString("hex").toUpperCase();
+  const paramValue = "D204"; // Value 1234 in Hex
+
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: HOOK_ACCOUNT,
+    Amount: "1000000", // 1 XAH in drops
+    HookParameters: [
+      {
+        HookParameter: {
+          HookParameterName:  paramName,   // "414343494F4E"
+          HookParameterValue: paramValue,  // "01"
+        },
+      },
+    ],
+  };
+
+  console.log("Sending Payment with HookParameters...");
+  console.log("  Param name (hex): ", paramName, " = ACCION");
+  console.log("  Param value (hex):", paramValue);
+
+  const prepared = await client.autofill(tx);
+  const signed   = wallet.sign(prepared);
+  const result   = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("TX sent. Check the Debug Stream in Hooks Builder");
+    console.log("You should see the Hook traces with the parameter value from your account. "+wallet.address);
+  }
+
+  await client.disconnect();
+}
+
+// Send with action 01
+sendWithParameter();`,
+            jp: "",
+          },
         },
         
       ],
       slides: [
         {
-          title: { es: "emit() — Transacciones autonomas", en: "", jp: "" },
+          title: { es: "emit() — Transacciones autonomas", en: "emit() — Autonomous transactions", jp: "" },
           content: {
             es: "Los Hooks pueden crear transacciones nuevas\n\n• emit() envia transacciones al ledger\n• Se ejecutan como si la cuenta las enviara\n• Pagos, ofertas, cualquier tipo soportado\n• etxn_reserve(N) obligatorio antes de emitir",
-            en: "",
+            en: "Hooks can create new transactions\n\n• emit() sends transactions to the ledger\n• Execute as if the account sent them\n• Payments, offers, any supported type\n• etxn_reserve(N) mandatory before emitting",
             jp: "",
           },
           visual: "📤",
         },
         {
-          title: { es: "Flujo de emision", en: "", jp: "" },
+          title: { es: "Flujo de emision", en: "Emission flow", jp: "" },
           content: {
             es: "1. etxn_reserve(N) → Reservar espacio\n2. Construir tx serializada en buffer\n3. etxn_details() → Preparar detalles\n4. emit() → Enviar al ledger\n\ncbak() se ejecuta cuando la emision\ncompleta (exito o fallo)",
-            en: "",
+            en: "1. etxn_reserve(N) → Reserve space\n2. Build serialized tx in buffer\n3. etxn_details() → Prepare details\n4. emit() → Send to ledger\n\ncbak() executes when emission\ncompletes (success or failure)",
             jp: "",
           },
           visual: "📝",
         },
         {
-          title: { es: "Casos de uso y limitaciones", en: "", jp: "" },
+          title: { es: "Casos de uso y limitaciones", en: "Use cases and limitations", jp: "" },
           content: {
             es: "Casos de uso:\n• Auto-forwarding de pagos\n• Splitting entre varias cuentas\n• Refunds automaticos\n• Acciones programadas\n\nLimitaciones:\n• Maximo de emisiones por ejecucion\n• Fees propios por emision\n• _g() previene emisiones infinitas",
-            en: "",
+            en: "Use cases:\n• Auto-forwarding of payments\n• Splitting between multiple accounts\n• Automatic refunds\n• Scheduled actions\n\nLimitations:\n• Maximum emissions per execution\n• Own fees per emission\n• _g() prevents infinite emissions",
             jp: "",
           },
           visual: "🔀",
@@ -893,7 +1601,7 @@ int64_t hook(uint32_t reserved)
       id: "m8l5",
       title: {
         es: "Parámetros, funciones y gestión de Hooks",
-        en: "",
+        en: "Parameters, functions and Hook management",
         jp: "",
       },
       theory: {
@@ -958,18 +1666,79 @@ A lo largo de tus primeros pasos desarrollando Hooks, te encontrarás con necesi
 - [Servicios Hooks](https://hooks.services/): Traductores de valores y formatos relacionados con Hooks
 - [Constructor de Transacciones](https://tx-builder.xahau.tools/): Genera código C para transacciones a emitir a partir de su JSON
 - [XRPLWin Hook tools](https://xahau-testnet.xrplwin.com/tools): Herramientas visuales para instalar y gestionar Hooks`,
-        en: "",
+        en: `Hooks have multiple functions for different purposes and management. In this lesson we will look at some of them.
+
+### otxn_param() Transaction parameters for the Hook
+
+\`otxn_param()\` reads parameters included **in the transaction that is executing the Hook** at that exact moment (the originating transaction). Unlike \`hook_param\`, these values are sent by whoever performs the transaction and **change with each call**.
+
+\`\`\`c
+// Function signature
+int64_t otxn_param(
+    uint32_t write_ptr,  // buffer to write the value to
+    uint32_t write_len,  // buffer size (≥ 32 bytes recommended)
+    uint32_t read_ptr,   // buffer with the parameter name
+    uint32_t read_len    // length of the name
+);
+\`\`\`
+
+**When to use otxn_param?**
+- Dynamic data that the sender wants to pass to the Hook with each transaction
+- Action instructions: "operation mode", "reference identifier", "authorization code"
+- Any value that depends on the specific transaction, not on the Hook configuration
+
+### Key difference between hook_param and otxn_param
+
+| | \`hook_param()\` | \`otxn_param()\` |
+|---|---|---|
+| **Source** | SetHook (installation) | Transaction that activates the Hook |
+| **Who sets it** | The Hook installer | The sender of each tx |
+| **When it changes** | Only when updating the Hook | With each transaction |
+| **Typical use** | Static configuration | Dynamic instructions |
+
+### How to include HookParameters in a transaction from JavaScript
+
+Transaction parameters are added in the \`HookParameters\` field of any tx that activates the Hook. The name and value must be in hexadecimal:
+
+\`\`\`javascript
+// Name "ACCION" (hex: 414343494F4E) with value "01" (hex)
+const tx = {
+  TransactionType: "Payment",
+  Account: wallet.address,
+  Destination: hookAccount,
+  Amount: "1000000",
+  HookParameters: [
+    {
+      HookParameter: {
+        HookParameterName: "414343494F4E",  // "ACCION"
+        HookParameterValue: "01",
+      },
+    },
+  ],
+};
+\`\`\`
+
+### Resources to make your life easier using Hooks
+
+Throughout your first steps developing Hooks, you'll encounter needs like translating parameters to readable values. Here are some useful pages:
+- [HookOn Calculator](https://richardah.github.io/xrpl-hookon-calculator/): Easily calculate the HookOn and HookCanEmit fields
+- [HEX Visualizer](https://transia-rnd.github.io/xrpl-hex-visualizer/): Translate strings to hex and vice versa in multiple formats
+- [Time Visualizer](https://transia-rnd.github.io/xrpl-time-visualizer/): Translate between Xahau's time format (Ripple Epoch) and readable dates
+- [Hooks Services](https://hooks.services/): Value and format translators related to Hooks
+- [Transaction Builder](https://tx-builder.xahau.tools/): Generate C code for transactions to emit from their JSON
+- [XRPLWin Hook tools](https://xahau-testnet.xrplwin.com/tools): Visual tools for installing and managing Hooks`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Hook que lee un otxn_param y lo muestra con TRACE",
-            en: "",
+            en: "Hook that reads an otxn_param and displays it with TRACE",
             jp: "",
           },
           language: "c",
-          code: `#include "hookapi.h"
+          code: {
+            es: `#include "hookapi.h"
 
 /**
  * Hook: otxn_param_demo.c
@@ -1039,15 +1808,60 @@ int64_t hook(uint32_t reserved)
     accept(SBUF("otxn_param_demo: parametro leido y trazado"), __LINE__);
     return 0;
 }`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+const fs = require("fs");
+
+async function deployHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Your testnet account
+  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Build the SetHook transaction
+  const setHook = {
+    TransactionType: "SetHook",
+    Account: account.address,
+    Hooks: [
+      {
+        Hook: {
+          HookHash: "66A4FC969ADB5998FD371B7B011F1BC3E506D2171F4729B52E57A6A8BC093227", // The hash of the hook to install. It must have been previously installed and be available on the network we're working on.
+          HookOn: "0".repeat(64), // All tx types
+          HookCanEmit: "0".repeat(64), // All tx types
+          HookNamespace: "0".repeat(64), // Default namespace
+          Flags: 1, // hsfOVERRIDE flag so the new hook replaces any previous hook on the account
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setHook);
+  const signed = account.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Hook successfully deployed to account!", account.address);
+  }
+
+  await client.disconnect();
+}
+
+deployHook();`,
+            jp: "",
+          },
         },
         {
           title: {
             es: "Enviar una transacción con HookParameters desde JavaScript",
-            en: "",
+            en: "Send a transaction with HookParameters from JavaScript",
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function enviarConParametro() {
@@ -1100,32 +1914,117 @@ async function enviarConParametro() {
 
 // Enviar con acción 01
 enviarConParametro();`,
+            en: `#include "hookapi.h"
+
+/**
+ * Hook: debug_demo.c
+ *
+ * Goal:
+ *  - Demonstrate the use of trace(), trace_num() and trace_float()
+ *    to inspect Hook execution in real time.
+ *  - Only accepts XAH payments (native amount in 8 bytes).
+ *
+ * Important (for your compilation error):
+ *  - In the current HookAPI, trace() requires 5 arguments:
+ *      trace(msg_ptr, msg_len, data_ptr, data_len, as_hex)
+ *
+ *    So this does NOT work:
+ *      trace(SBUF("hello"), 0);     // <- 3 args (2 + 1)
+ *
+ *    The correct way for "message only" is:
+ *      trace(SBUF("hello"), 0, 0, 0);
+ *
+ *    And for "message + buffer in hex":
+ *      trace(SBUF("label: "), SBUF(buffer), 1);
+ */
+
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+
+    // ── 1. Start trace (message only) ────────────────────────────────────────
+    trace(SBUF("debug_demo:hook() started"), 0, 0, 0);
+
+    // ── 2. Trace the account where the Hook is installed ──────────────────────
+    // hook_account() fills 20 bytes with the AccountID (raw)
+    uint8_t hook_acc[20];
+    hook_account(SBUF(hook_acc));
+
+    // Show as HEX. We put a "label" message and the buffer on the right.
+    trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+
+    // ── 3. Incoming transaction type ──────────────────────────────────────────
+    // otxn_type() returns the numeric type. In Hooks:
+    //  0 = Payment
+    int64_t tt = otxn_type();
+    trace_num(SBUF("debug_demo:tx type (0=Payment): "), tt);
+
+    // If not Payment, we do nothing "bad": simply accept and exit.
+    if (tt != 0)
+    {
+        trace(SBUF("debug_demo:not a payment — exiting"), 0, 0, 0);
+        accept(SBUF("debug_demo:ok (no payment)"), __LINE__);
+    }
+
+    trace(SBUF("debug_demo:payment branch reached"), 0, 0, 0);
+
+    // ── 4. Get Payment Amount ─────────────────────────────────────────────────
+    // In XRPL/Xahau, sfAmount:
+    //  - If native (XAH), otxn_field returns 8 bytes.
+    //  - If IOU/token, returns more (not 8).
+    unsigned char amount_buf[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
+    trace_num(SBUF("debug_demo:bytes read from Amount: "), amount_len);
+
+    // We only allow native XAH. If not 8 bytes, we reject.
+    if (amount_len != 8)
+    {
+        trace(SBUF("debug_demo:Amount is not XAH (8 bytes) — rejecting"), 0, 0, 0);
+        rollback(SBUF("debug_demo:native XAH only"), __LINE__);
+    }
+
+    // ── 5. Trace value in drops ───────────────────────────────────────────────
+    // amount_buf contains the encoded native Amount; AMOUNT_TO_DROPS converts it to int64 (drops)
+    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+    trace_num(SBUF("debug_demo:drops received: "), drops);
+
+    // ── 6. Accept and finish ──────────────────────────────────────────────────
+    // __LINE__ lets you track exactly which line you exited from
+    trace(SBUF("debug_demo:payment accepted, exiting"), 0, 0, 0);
+    accept(SBUF("debug_demo:ok"), __LINE__);
+
+    // Never reaches here because accept/rollback end the hook,
+    // but we leave it for good form.
+    return 0;
+}`,
+            jp: "",
+          },
         },
       ],
       slides: [
         {
-          title: { es: "hook_param vs otxn_param", en: "", jp: "" },
+          title: { es: "hook_param vs otxn_param", en: "hook_param vs otxn_param", jp: "" },
           content: {
             es: "Dos sistemas de parámetros distintos:\n\nhook_param() — configuración estática\n• Se define en SetHook al instalar\n• Almacenado junto al Hook en el ledger\n• Cambia solo al actualizar el Hook\n• Ideal para umbrales, direcciones fijas\n\notxn_param() — datos dinámicos\n• Viene en la transacción que activa el Hook\n• Lo envía el emisor de cada tx\n• Cambia en cada ejecución\n• Ideal para instrucciones, modos, referencias",
-            en: "",
+            en: "Two different parameter systems:\n\nhook_param() — static configuration\n• Defined in SetHook at installation\n• Stored alongside the Hook in the ledger\n• Changes only when updating the Hook\n• Ideal for thresholds, fixed addresses\n\notxn_param() — dynamic data\n• Comes in the transaction that activates the Hook\n• Sent by the sender of each tx\n• Changes with each execution\n• Ideal for instructions, modes, references",
             jp: "",
           },
           visual: "🎛️",
         },
         {
-          title: { es: "otxn_param: firma y retornos", en: "", jp: "" },
+          title: { es: "otxn_param: firma y retornos", en: "otxn_param: signature and return values", jp: "" },
           content: {
             es: "int64_t otxn_param(\n  write_ptr, write_len,  // buffer salida\n  read_ptr,  read_len    // nombre del param\n);\n\nRetornos:\n• > 0 → bytes escritos (encontrado)\n• DOESNT_EXIST → no está en la tx\n• TOO_SMALL → nombre vacío\n• TOO_BIG → nombre > 32 bytes\n• OUT_OF_BOUNDS → punteros inválidos\n\nNombre y valor en HEX en la transacción",
-            en: "",
+            en: "int64_t otxn_param(\n  write_ptr, write_len,  // output buffer\n  read_ptr,  read_len    // param name\n);\n\nReturn values:\n• > 0 → bytes written (found)\n• DOESNT_EXIST → not in the tx\n• TOO_SMALL → empty name\n• TOO_BIG → name > 32 bytes\n• OUT_OF_BOUNDS → invalid pointers\n\nName and value in HEX in the transaction",
             jp: "",
           },
           visual: "📨",
         },
         {
-          title: { es: "Namespace y recursos", en: "", jp: "" },
+          title: { es: "Namespace y recursos", en: "Namespace and resources", jp: "" },
           content: {
             es: "HookNamespace (32 bytes hex):\n• Distinto namespace = estado aislado\n• Mismo namespace = estado compartido\n• SHA-256 del nombre → namespace único\n\nRecursos:\n• hooks.services → string ↔ hex\n• HookOn calculator\n• Visualizador tiempo (Ripple Epoch)\n• tx-builder.xahau.tools → C desde JSON",
-            en: "",
+            en: "HookNamespace (32 bytes hex):\n• Different namespace = isolated state\n• Same namespace = shared state\n• SHA-256 of name → unique namespace\n\nResources:\n• hooks.services → string ↔ hex\n• HookOn calculator\n• Time visualizer (Ripple Epoch)\n• tx-builder.xahau.tools → C from JSON",
             jp: "",
           },
           visual: "🔧",
@@ -1136,7 +2035,7 @@ enviarConParametro();`,
       id: "m8l6",
       title: {
         es: "Trazabilidad y debugging de Hooks",
-        en: "",
+        en: "Hook tracing and debugging",
         jp: "",
       },
       theory: {
@@ -1321,18 +2220,199 @@ int64_t cbak(uint32_t reserved) {
 **7. Elimina las trazas antes de ir a producción**
 
 Las trazas tienen un coste en fees de ejecución y aumentan el tamaño del WASM. Una vez que el Hook funciona correctamente en testnet, elimina o comenta las llamadas a \`trace*\` antes de desplegarlo en Mainnet.`,
-        en: "",
+        en: `When a Hook fails or behaves unexpectedly, you need a way to **observe its internal execution**. The Hooks system provides three trace functions that emit messages visible in the **Debug Stream** of Hooks Builder and in the \`xahaud\` node logs.
+
+### trace() Text message or buffer in hexadecimal
+
+The most general function. Emits a string message or the contents of a buffer in hex format.
+
+\`\`\`c
+// Emit a plain text message
+trace(SBUF("hook started correctly"), 0);  // 0 = show as string
+
+// Emit the content of a buffer in hexadecimal
+uint8_t account_buf[20];
+otxn_field(SBUF(account_buf), sfAccount);
+trace(SBUF(account_buf), 1);                    // 1 = show as hex
+\`\`\`
+
+The third argument controls the output format:
+- \`0\` → prints the buffer as text (useful for messages)
+- \`1\` → prints the buffer as hexadecimal (useful for binary data: accounts, hashes, transaction buffers)
+
+### trace_num() Message + integer number
+
+Emits a descriptive label along with an integer numeric value. Ideal for inspecting amounts in drops, counters, function return values and error codes.
+
+\`\`\`c
+int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+trace_num(SBUF("drops received: "), drops);
+
+// See the return value of a function to detect errors
+int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
+trace_num(SBUF("state_set result: "), result);
+// Negative = error; positive or zero = success
+\`\`\`
+
+### trace_float() Message + floating point number (XFL)
+
+Hooks use the **XFL** (eXtended Float) format to represent non-integer amounts. \`trace_float()\` formats the XFL in a readable way in the Debug Stream.
+
+\`\`\`c
+// Get the amount as XFL from a slot
+int64_t slot_no = slot_set(SBUF(amount_buf), 0);
+int64_t xfl_amount = slot_float(slot_no);
+trace_float(SBUF("amount in XFL: "), xfl_amount);
+\`\`\`
+
+### macro.h — Debug macros available in Hooks Builder
+
+Hooks Builder includes the \`macro.h\` file with four convenience macros that wrap the \`trace*\` functions and only activate when the \`DEBUG\` constant is defined. This allows leaving traces in the code and removing them all at once in production simply by not defining \`DEBUG\`.
+
+\`\`\`c
+// Shows the variable name and its value as an integer (int64)
+#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+
+// Shows the variable name and buffer content in hexadecimal
+#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+
+// Shows the variable name and its value as XFL float (eXtended Float)
+#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+
+// Shows the variable name and buffer content as ASCII text
+#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
+\`\`\`
+
+**How they work internally:**
+
+All use the \`#v\` operator (C stringification) to convert the variable name into a literal string that acts as a label. So, \`TRACEVAR(drops)\` will print \`"drops = 5000000"\` without you having to write the label manually.
+
+| Macro | Internal function | When to use it |
+|---|---|---|
+| \`TRACEVAR(v)\` | \`trace_num()\` | Integers: drops, counters, return codes |
+| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | Binary buffers: account IDs, hashes, keys |
+| \`TRACEXFL(v)\` | \`trace_float()\` | XFL values (floating point amounts) |
+| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | Text buffers: parameters, ASCII memos |
+
+**Activating and deactivating debug mode:**
+
+\`\`\`c
+// At the beginning of the file, before including macro.h
+#define DEBUG 1       // Traces active — development mode
+// #define DEBUG 0    // Traces disabled — production mode
+
+#include "hookapi.h"
+// macro.h is available in Hooks Builder automatically
+\`\`\`
+
+When \`DEBUG\` is \`0\` or not defined, the compiler completely removes the macros from the generated WASM: no fee cost or size increase.
+
+**Usage example:**
+
+\`\`\`c
+uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
+int64_t drops        = 5000000;
+int64_t xfl_val      = float_set(0, drops);
+
+TRACEVAR(drops);       // → "drops = 5000000"
+TRACEHEX(param_name);  // → "param_name = 4143"
+TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
+TRACESTR(param_name);  // → "param_name = AC"
+\`\`\`
+
+### Where do traces appear?
+
+Traces are visible in **Hooks Builder → Debug Stream**: Select the account from the dropdown and you'll see all traces in real time for each processed transaction.
+
+### Tips for better debugging
+
+**1. Use \`__LINE__\` as error code in accept/rollback**
+
+The second argument of \`accept()\` and \`rollback()\` is a numeric code. Using \`__LINE__\` automatically includes the source code line number, allowing you to know exactly where execution ended without reading logs line by line.
+
+\`\`\`c
+accept(SBUF("min_payment: OK"), __LINE__);    // You'll know it passed through here
+rollback(SBUF("min_payment: FAIL"), __LINE__); // And that it failed here
+\`\`\`
+
+**2. Descriptive prefixes in messages**
+
+Use a prefix with the Hook name in each message. With multiple Hooks on the same account, it's easy to confuse which Hook emitted each trace.
+
+\`\`\`c
+trace(SBUF("my_hook:hook() start"), 0);
+trace(SBUF("my_hook:tx type processed"), 0);
+trace(SBUF("my_hook:accepting"), 0);
+\`\`\`
+
+**3. Trace the return value of each critical function**
+
+All Hooks API functions return a negative value on error. Always check the return of important operations to avoid silent errors.
+
+\`\`\`c
+int64_t r = state_set(SBUF(val), SBUF(key));
+trace_num(SBUF("state_set: "), r);  // If r < 0, something failed
+
+int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
+trace_num(SBUF("emit result: "), r2);
+\`\`\`
+
+**4. Trace binary buffers as hex**
+
+Accounts, hashes and transaction buffers are binary data of 20-32 bytes. Showing them as hex lets you compare them with the addresses and hashes you see in block explorers.
+
+\`\`\`c
+uint8_t hook_acc[20];
+hook_account(SBUF(hook_acc));
+trace(SBUF(hook_acc), 1);  // You'll see the account ID in hex (40 characters)
+\`\`\`
+
+**5. Mark execution branches**
+
+Add a trace at the start of each \`if/else\` branch to follow the execution flow. When the Hook ends unexpectedly, you'll see which trace it reached before stopping.
+
+\`\`\`c
+if (tt == 0) {
+    trace(SBUF("branch: is a payment"), 0);
+    // ...
+} else {
+    trace(SBUF("branch: not a payment, exiting"), 0);
+    accept(SBUF("ok"), __LINE__);
+}
+\`\`\`
+
+**6. Trace in cbak() to debug emissions**
+
+When an emitted transaction fails silently, it's difficult to know without instrumenting \`cbak()\`.
+
+\`\`\`c
+int64_t cbak(uint32_t reserved) {
+    _g(1, 1);
+    uint8_t txtype[4];
+    int64_t t = otxn_type();
+    trace_num(SBUF("cbak: emitted tx type: "), t);
+    // Read the result of the emitted tx
+    int64_t result = otxn_field(...);
+    trace_num(SBUF("cbak: emission result: "), result);
+    return 0;
+}
+\`\`\`
+
+**7. Remove traces before going to production**
+
+Traces have an execution fee cost and increase WASM size. Once the Hook works correctly on testnet, remove or comment out the \`trace*\` calls before deploying it to Mainnet.`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Hook instrumentado con todas las funciones de traza",
-            en: "",
+            en: "Hook instrumented with all trace functions",
             jp: "",
           },
           language: "c",
-          code: `#include "hookapi.h"
+          code: {
+            es: `#include "hookapi.h"
 
 /**
  * Hook: debug_demo.c
@@ -1415,32 +2495,73 @@ int64_t hook(uint32_t reserved)
     // pero lo dejamos por buena forma.
     return 0;
 }`,
+            en: `const { Client } = require("xahau");
+
+async function checkHooks(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_objects",
+    account: address,
+    type: "hook",
+    ledger_index: "validated",
+  });
+
+  const hooks = response.result.account_objects;
+  console.log(\`=== Hooks of \${address} ===\`);
+  console.log(\`Total installed: \${hooks.length}\n\`);
+
+  for (let i = 0; i < hooks.length; i++) {
+    const hook = hooks[i];
+
+    console.log(\`Hook #\${i + 1}:\`);
+    //console.log(JSON.stringify(hook, null, 2)); // If you want to see all hook info, uncomment this line
+
+    if (hook.Hooks && hook.Hooks.length > 0) {
+      const installedHook = hook.Hooks[0].Hook;
+
+      console.log(\`  HookHash: \${installedHook.HookHash}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+    }
+
+    console.log();
+  }
+
+  await client.disconnect();
+}
+// An example address with a Hook on Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
+checkHooks("rYourAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
         {
-          title: { es: "Las tres funciones trace*", en: "", jp: "" },
+          title: { es: "Las tres funciones trace*", en: "The three trace* functions", jp: "" },
           content: {
             es: "Instrumentar el Hook para ver su ejecución:\n\ntrace(SBUF(\"mensaje\"), 0);\n→ Texto plano en el Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Contenido del buffer como hex\n\ntrace_num(SBUF(\"label: \"), valor);\n→ Etiqueta + número entero (drops, retornos...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Etiqueta + XFL (coma flotante de Xahau)",
-            en: "",
+            en: "Instrument the Hook to see its execution:\n\ntrace(SBUF(\"message\"), 0);\n→ Plain text in Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Buffer content as hex\n\ntrace_num(SBUF(\"label: \"), value);\n→ Label + integer (drops, returns...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Label + XFL (Xahau floating point)",
             jp: "",
           },
           visual: "🔍",
         },
         {
-          title: { es: "Donde ver las trazas", en: "", jp: "" },
+          title: { es: "Donde ver las trazas", en: "Where to see traces", jp: "" },
           content: {
             es: "Tres formas de leer la salida:\n\n1. Hooks Builder → Debug Stream\n   Selecciona la cuenta en el desplegable\n\n2. Logs del nodo xahaud\n   En modo debug (desarrollo local)\n\n3. WebSocket desde Node.js\n   Suscríbete a la cuenta y lee debug_info\n   + HookExecutions en la metadata de la tx",
-            en: "",
+            en: "Three ways to read the output:\n\n1. Hooks Builder → Debug Stream\n   Select the account from the dropdown\n\n2. xahaud node logs\n   In debug mode (local development)\n\n3. WebSocket from Node.js\n   Subscribe to the account and read debug_info\n   + HookExecutions in tx metadata",
             jp: "",
           },
           visual: "📡",
         },
         {
-          title: { es: "Trucos clave de debugging", en: "", jp: "" },
+          title: { es: "Trucos clave de debugging", en: "Key debugging tips", jp: "" },
           content: {
             es: "• __LINE__ en accept/rollback → linea exacta de salida\n• Prefijo 'mi_hook:' en cada mensaje\n• trace_num del retorno de CADA funcion critica\n  (negativo = error silencioso)\n• trace con hex=1 para buffers binarios\n• Una traza al inicio de cada rama if/else\n• Instrumenta cbak() para debug de emit()\n• Elimina trazas antes de ir a Mainnet",
-            en: "",
+            en: "• __LINE__ in accept/rollback → exact exit line\n• Prefix 'my_hook:' in each message\n• trace_num the return of EVERY critical function\n  (negative = silent error)\n• trace with hex=1 for binary buffers\n• One trace at the start of each if/else branch\n• Instrument cbak() to debug emit()\n• Remove traces before going to Mainnet",
             jp: "",
           },
           visual: "🐛",
@@ -1451,7 +2572,7 @@ int64_t hook(uint32_t reserved)
       id: "m8l7",
       title: {
         es: "Hooks Builder: Desarrollo online",
-        en: "",
+        en: "Hooks Builder: Online development",
         jp: "",
       },
       theory: {
@@ -1543,34 +2664,121 @@ Una gran y consistente batería de pruebas es clave para asegurar que tu Hook se
 - Solo funciona con **Xahau Testnet**, no con Mainnet
 - Para desarrollo más avanzado o despliegue en producción, necesitarás un entorno local
 - El estado de tus cuentas y Hooks se mantiene entre sesiones si no limpias el navegador. No suele ocurrir lo mismo con los Hooks.`,
-        en: "",
+        en: `[Hooks Builder](https://builder.xahau.network) is the online development environment for Hooks on **Xahau Testnet**. It allows you to write, compile, deploy and test Hooks directly from the browser without needing to install anything on your machine. **Note:** Remember to save your progress and seeds before closing the browser, as they may not be saved once the session is closed.
+
+### Main tabs
+
+The Builder has three main tabs that cover the entire development workflow:
+
+- **Develop**: Write and compile Hooks in C
+- **Deploy**: Manage accounts and deploy Hooks
+- **Test**: Generate test transactions and view logs
+
+### Step 1: Manage accounts in Deploy
+
+Before developing, you need at least one testnet account. In the **Deploy** tab:
+
+**Create a new account**
+1. Click **"Generate Account"** or the create account button
+2. The Builder will automatically generate a key pair (address + seed) and fund the account with testnet XAH through the faucet
+3. Save the seed in a safe place, you'll need it if you close the browser
+
+**Import an existing account**
+1. Click **"Import Account"** or the import button
+2. Enter the **seed** (secret) of your testnet account
+3. The account will appear in the list with its balance and installed Hooks
+
+It is recommended to have at least **two accounts**: one to install the Hook and another to send test transactions to it. **Do not use seeds from Xahau Mainnet accounts in the Builder for security reasons**, if you need a new seed, generate it within the Builder or visit [xahau-test.net](https://xahau-test.net/).
+
+### Step 2: Develop and compile in Develop
+
+In the **Develop** tab:
+
+1. **Select an example** from the side menu or create a new file
+2. **Write your Hook in C**, the editor has syntax highlighting and basic autocomplete
+3. Click **"Compile To WASM"** to compile the C code to WebAssembly
+4. If there are errors, they will appear in the bottom console, check the line and error message
+5. If compilation is successful, you'll receive the message \`File xxxx.c compiled successfully. Ready to deploy.Go to deploy\`. The resulting WASM will be ready to deploy
+
+**Tips**:
+- Start with the included examples to familiarize yourself with the API
+- The most common compilation errors are: forgetting to include \`hookapi.h\`, not declaring the \`_g()\` guard, or type errors in API functions
+
+### Step 3: Deploy in Deploy
+
+Once your Hook is compiled, go back to the **Deploy** tab:
+
+1. **Select the account** where you want to install the Hook and click **Set Hook** to open the installation form
+2. **Configure the parameters**:
+   - **Account**: the account where the Hook will be installed (already selected)
+   - **Sequence**: let the Builder fill this in automatically
+   - **Invoke on transactions** (HookOn): choose the transaction types that will activate the Hook (you can choose multiple)
+   - **Hook Namespace Seed**: the string name you want to use as seed for the Namespace.
+   - **Hook Namespace (sha256)**: The sha256 generated from the Seed used in the previous field (do not modify).
+   - **Hook Parameters**: if your Hook uses parameters, configure them here (name and value in hex)
+   - **Fee**: click **Suggest** if the Hook gives a fee insufficient error, the Builder will calculate the recommended fee.
+3. Click **"Set Hook"** to send the \`SetHook\` transaction
+4. Confirm that the result is \`tesSUCCESS\` in the console
+
+### Step 4: Test in Test
+
+The **Test** tab is where you verify that your Hook works correctly:
+
+1. **Transaction type**: Choose the transaction type you want to send (Payment, OfferCreate, etc.).
+2. **Account**: The sender of the transaction.
+3. **Sequence**: Let the Builder fill this in automatically.
+4. **Flags**: Configure the necessary flags for the transaction.
+5. **Destination**: The destination address of the transaction.
+6. **Amount**: The amount to send and the type (XAH or IOU), if applicable for the transaction.
+7. **Fee**: Click **Suggest** for the Builder to calculate the recommended fee.
+8. **Hook parameters**: If your Hook uses parameters, configure them here (name and value in hex).
+9. **Memos**: If your transaction needs memos, add them here (optional).
+10. Click **Run Test**.
+
+You should watch the **Development Log** and **Debug Stream** screens. In **Debug Stream** you can choose which part of the scenario to review: selecting the account if multiple are involved.
+
+**Recommended test flow**:
+
+- **Positive cases**: send transactions that should be accepted and verify they pass.
+- **Negative cases**: send transactions that should not have an effect and verify they don't.
+- **Edge cases**: test with amounts exactly at the limit, unexpected transaction types, etc.
+- **Unexpected cases**: test transactions you don't expect in case the Hook handles them unexpectedly.
+- **Check state**: if your Hook uses \`state()\`, verify that values are saved correctly by querying \`account_objects\` or the state information in the Builder
+
+A large and consistent test suite is key to ensuring your Hook behaves correctly in all situations. If you can, ask other people to also test your Hook with cases you may not have considered.
+
+### Builder limitations
+
+- Only works with **Xahau Testnet**, not with Mainnet
+- For more advanced development or production deployment, you'll need a local environment
+- Your accounts and Hooks state persists between sessions if you don't clear the browser. The same does not usually apply to Hooks.`,
         jp: "",
       },
       codeBlocks: [],
       slides: [
         {
-          title: { es: "Hooks Builder — Entorno online", en: "", jp: "" },
+          title: { es: "Hooks Builder — Entorno online", en: "Hooks Builder — Online environment", jp: "" },
           content: {
             es: "builder.xahau.network (solo Testnet)\n\nTres pestanas:\n• Develop: escribir y compilar Hooks en C\n• Deploy: gestionar cuentas y desplegar\n• Test: probar con transacciones reales\n\nGuarda tus seeds antes de cerrar el navegador",
-            en: "",
+            en: "builder.xahau.network (Testnet only)\n\nThree tabs:\n• Develop: write and compile Hooks in C\n• Deploy: manage accounts and deploy\n• Test: test with real transactions\n\nSave your seeds before closing the browser",
             jp: "",
           },
           visual: "🌐",
         },
         {
-          title: { es: "Deploy: cuentas e instalacion", en: "", jp: "" },
+          title: { es: "Deploy: cuentas e instalacion", en: "Deploy: accounts and installation", jp: "" },
           content: {
             es: "Cuentas:\n• Generate Account → nueva con faucet\n• Import Account → seed existente de testnet\n• Minimo 2 cuentas (Hook + pruebas)\n\nInstalacion:\n• Seleccionar cuenta + Set Hook\n• Configurar HookOn, Namespace, Parameters\n• Fee → Suggest si hay error de fee",
-            en: "",
+            en: "Accounts:\n• Generate Account → new with faucet\n• Import Account → existing testnet seed\n• Minimum 2 accounts (Hook + testing)\n\nInstallation:\n• Select account + Set Hook\n• Configure HookOn, Namespace, Parameters\n• Fee → Suggest if fee error",
             jp: "",
           },
           visual: "🚀",
         },
         {
-          title: { es: "Test: verificar tu Hook", en: "", jp: "" },
+          title: { es: "Test: verificar tu Hook", en: "Test: verify your Hook", jp: "" },
           content: {
             es: "• Elegir tipo de tx, cuenta origen, destino\n• Configurar Amount, Flags, Memos\n• Run Test → revisar Development Log\n• Debug Stream: elegir cuenta a monitorear\n\nPruebas recomendadas:\n  Positivos | Negativos | Limites | No esperados",
-            en: "",
+            en: "• Choose tx type, sender account, destination\n• Configure Amount, Flags, Memos\n• Run Test → check Development Log\n• Debug Stream: choose account to monitor\n\nRecommended tests:\n  Positive | Negative | Edge cases | Unexpected",
             jp: "",
           },
           visual: "🧪",
@@ -1581,7 +2789,7 @@ Una gran y consistente batería de pruebas es clave para asegurar que tu Hook se
       id: "m8l8",
       title: {
         es: "Desarrollo local de Hooks con hooks-cli",
-        en: "",
+        en: "Local Hook development with hooks-cli",
         jp: "",
       },
       theory: {
@@ -1681,18 +2889,114 @@ Para información completa sobre hooks-cli, opciones avanzadas de compilación y
 
 - **hooks-cli**: [github.com/Xahau/hooks-cli](https://github.com/Xahau/hooks-cli) — Repositorio oficial con instrucciones de instalación y uso
 - **Hooks Toolkit**: [hooks-toolkit.com](https://hooks-toolkit.com/) — Documentación completa del toolkit, incluye guías, referencia de la API de Hooks (\`hookapi.h\`), ejemplos y herramientas adicionales para el desarrollo de Hooks`,
-        en: "",
+        en: `For professional development, deployment on **Xahau Mainnet** or projects that require greater control, you need a local development environment. The main tool is [hooks-cli](https://github.com/Xahau/hooks-cli), an official CLI that allows compiling Hooks in C to WebAssembly from your terminal.
+
+### What is hooks-cli?
+
+**hooks-cli** is a command-line tool that simplifies the entire Hook compilation process:
+
+- Compiles C code to WebAssembly (.wasm) ready to deploy
+- Includes all necessary dependencies (compiler, headers, hookapi.h)
+- No need to manually configure clang, wasm-ld or the Hooks API headers
+- Works on macOS, Linux and Windows
+
+### Installation
+
+\`\`\`bash
+# Install hooks-cli globally with npm
+npm install -g hooks-cli
+\`\`\`
+
+Once installed, the \`hooks-cli\` command will be available in your terminal.
+
+### Create your Hook project folder
+
+\`\`\`bash
+# Create a folder for your Hook project
+hooks-cli init c my-hook-project
+\`\`\`
+
+The command will generate a basic project structure with a Hook example in C, a .env file for configuration, and TypeScript and npm configuration files:
+
+\`\`\`bash
+my-hook-project/
+├── contracts/
+│   ├── base.c
+├── .env
+├── package.json
+├── tsconfig.json
+└── src/
+    └── index.ts
+\`\`\`
+
+### Install your project dependencies
+
+\`\`\`bash
+# Install your project dependencies
+cd my-hook-project
+yarn install
+\`\`\`
+
+Inside this folder, you can organize your source code, compiled files and deployment scripts as you prefer. A common structure is to have a \`src/\` folder for C code, a \`build/\` folder for compiled .wasm files, and a \`scripts/\` folder for deployment scripts.
+
+### Compile a Hook
+
+To compile a C file to WebAssembly (.wasm):
+
+\`\`\`bash
+# Compile a Hook
+yarn run build
+
+# Another option
+# hooks-cli compile-c contracts build/
+# The result will be my_hook.wasm in the /build of your project
+\`\`\`
+
+The resulting \`.wasm\` file is the binary you'll deploy to Xahau using a \`SetHook\` transaction.
+
+### Deploy the Hook on Xahau
+
+Once we have our Hook in .wasm format, we need to deploy it on Xahau. To automate this process, you can use the \`xahau\` library and generate a \`SetHook\` transaction that includes the Hook code in .wasm format:
+
+\`\`\`javascript
+const createHook = {
+      "TransactionType": "SetHook",
+      "Account": mywallet.address,
+      "Flags": 0,
+      "Hooks": [
+        {
+          "Hook": {
+            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
+            "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
+            "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
+            "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
+            "Flags": 1,
+            "HookApiVersion": 0
+          }
+        }
+      ],
+    };
+\`\`\`
+
+
+### Reference and documentation
+
+For complete information on hooks-cli, advanced compilation options and the full Hooks API, see:
+
+- **hooks-cli**: [github.com/Xahau/hooks-cli](https://github.com/Xahau/hooks-cli) — Official repository with installation and usage instructions
+- **Hooks Toolkit**: [hooks-toolkit.com](https://hooks-toolkit.com/) — Complete toolkit documentation, includes guides, Hooks API reference (\`hookapi.h\`), examples and additional tools for Hook development`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
             es: "Script de despliegue de un Hook en .wasm",
-            en: "",
+            en: "Hook deployment script in .wasm",
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function createHook() {
@@ -1733,32 +3037,75 @@ async function createHook() {
 }
 
 createHook();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function createHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const mywallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Deploy the Hook by sending a SetHook transaction
+      const createHook = {
+      "TransactionType": "SetHook",
+      "Account": mywallet.address,
+      "Flags": 0,
+      "Hooks": [
+        {
+          "Hook": {
+            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
+            "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
+            "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
+            "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
+            "Flags": 1,
+            "HookApiVersion": 0
+          }
+        }
+      ],
+    };
+
+  const prepared = await client.autofill(createHook);
+  const signed = mywallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Hook installation was successful! for ", mywallet.address);  }
+
+  await client.disconnect();
+}
+
+createHook();`,
+            jp: "",
+          },
         },
       ],
       slides: [
         {
-          title: { es: "hooks-cli — Desarrollo local", en: "", jp: "" },
+          title: { es: "hooks-cli — Desarrollo local", en: "hooks-cli — Local development", jp: "" },
           content: {
             es: "CLI oficial para compilar Hooks\n\nnpm install -g hooks-cli\nhooks-cli init c mi-proyecto\ncd mi-proyecto && yarn install\nyarn run build\n\nPara desarrollo profesional y Mainnet",
-            en: "",
+            en: "Official CLI to compile Hooks\n\nnpm install -g hooks-cli\nhooks-cli init c my-project\ncd my-project && yarn install\nyarn run build\n\nFor professional development and Mainnet",
             jp: "",
           },
           visual: "🔨",
         },
         {
-          title: { es: "Estructura del proyecto", en: "", jp: "" },
+          title: { es: "Estructura del proyecto", en: "Project structure", jp: "" },
           content: {
             es: "hooks-cli init c genera:\n\nmi-proyecto-hook/\n├── contracts/base.c\n├── .env\n├── package.json\n├── tsconfig.json\n└── src/index.ts\n\nCompilar: yarn run build\nAlternativa: hooks-cli compile-c contracts build/",
-            en: "",
+            en: "hooks-cli init c generates:\n\nmy-hook-project/\n├── contracts/base.c\n├── .env\n├── package.json\n├── tsconfig.json\n└── src/index.ts\n\nCompile: yarn run build\nAlternative: hooks-cli compile-c contracts build/",
             jp: "",
           },
           visual: "📁",
         },
         {
-          title: { es: "Despliegue y referencia", en: "", jp: "" },
+          title: { es: "Despliegue y referencia", en: "Deployment and reference", jp: "" },
           content: {
             es: "SetHook con xahau.js:\n• Leer .wasm → hex → CreateCode\n• Configurar HookOn, HookCanEmit, Namespace\n• crypto.createHash('sha256') para namespace\n\nReferencia:\n• github.com/Xahau/hooks-cli\n• hooks-toolkit.com",
-            en: "",
+            en: "SetHook with xahau.js:\n• Read .wasm → hex → CreateCode\n• Configure HookOn, HookCanEmit, Namespace\n• crypto.createHash('sha256') for namespace\n\nReference:\n• github.com/Xahau/hooks-cli\n• hooks-toolkit.com",
             jp: "",
           },
           visual: "📚",

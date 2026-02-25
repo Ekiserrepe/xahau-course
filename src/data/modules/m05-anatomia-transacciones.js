@@ -169,7 +169,8 @@ Unlike blockchains with probabilistic finality (Bitcoin, Ethereum), in Xahau the
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function flujoCompleto() {
@@ -232,6 +233,71 @@ async function flujoCompleto() {
 }
 
 flujoCompleto().catch(console.error);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function flujoCompleto() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // =============================================
+  // PHASE 1: Build the transaction
+  // =============================================
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rMXEZJecFdn1dVtE21pZ8duZz2E36KGaCp",
+    Amount: "5000000", // 5 XAH in drops
+  };
+
+  console.log("1. Transaction built:");
+  console.log("   Type:", tx.TransactionType);
+  console.log("   Fields defined:", Object.keys(tx).length);
+
+  // =============================================
+  // PHASE 2: Prepare (autofill)
+  // =============================================
+  const prepared = await client.autofill(tx);
+
+  console.log("\\n2. Transacción preparada (autofill):");
+  console.log("   Fee:", prepared.Fee, "drops");
+  console.log("   Sequence:", prepared.Sequence);
+  console.log("   LastLedgerSequence:", prepared.LastLedgerSequence);
+  console.log("   NetworkID:", prepared.NetworkID);
+  console.log("   Total fields:", Object.keys(prepared).length);
+
+  // =============================================
+  // PHASE 3: Sign
+  // =============================================
+  const signed = wallet.sign(prepared);
+
+  console.log("\\n3. Transacción firmada:");
+  console.log("   Hash:", signed.hash);
+  console.log("   tx_blob (first 60 chars):", signed.tx_blob.substring(0, 60) + "...");
+  console.log("   Blob length:", signed.tx_blob.length, "caracteres hex");
+
+  // =============================================
+  // PHASE 4: Submit
+  // =============================================
+  console.log("\\n4. Enviando al nodo...");
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  // =============================================
+  // PHASE 5: Validated result
+  // =============================================
+  console.log("\\n5. Resultado validado:");
+  console.log("   TransactionResult:", result.result.meta.TransactionResult);
+  console.log("   Ledger:", result.result.ledger_index);
+  console.log("   Affected nodes:", result.result.meta.AffectedNodes.length);
+
+  await client.disconnect();
+}
+
+flujoCompleto().catch(console.error);`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -444,7 +510,8 @@ You can attach data to any transaction using the **Memos** field:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: {
+            es: `const { Client, Wallet } = require("xahau");
 
 async function inspeccionarCampos() {
   const client = new Client("wss://xahau-test.net");
@@ -484,6 +551,48 @@ async function inspeccionarCampos() {
 }
 
 inspeccionarCampos().catch(console.error);`,
+            en: `const { Client, Wallet } = require("xahau");
+
+async function inspeccionarCampos() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Transaction with only the essential fields
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rDestinationHere",
+    Amount: "1000000", // 1 XAH
+  };
+
+  console.log("=== BEFORE autofill ===");
+  console.log("Defined fields:", Object.keys(tx));
+  console.log(JSON.stringify(tx, null, 2));
+
+  // Autofill fills in the technical fields
+  const prepared = await client.autofill(tx);
+
+  console.log("\\n=== DESPUÉS de autofill ===");
+  console.log("Total fields:", Object.keys(prepared));
+  console.log(JSON.stringify(prepared, null, 2));
+
+  // Show the fields that autofill added
+  const newFields = Object.keys(prepared).filter(
+    (k) => !Object.keys(tx).includes(k)
+  );
+  console.log("\\n=== Campos añadidos por autofill ===");
+  for (const field of newFields) {
+    console.log("  " + field + ":", prepared[field]);
+  }
+
+  await client.disconnect();
+}
+
+inspeccionarCampos().catch(console.error);`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -492,7 +601,8 @@ inspeccionarCampos().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `// Ejemplos de cómo se construyen distintos tipos de transacción.
+          code: {
+            es: `// Ejemplos de cómo se construyen distintos tipos de transacción.
 // Solo mostramos los campos esenciales — autofill() rellena el resto.
 
 // --- Payment: enviar XAH ---
@@ -551,6 +661,67 @@ const mint = {
 
 console.log("Cada tipo tiene sus campos específicos.");
 console.log("Todos comparten: TransactionType, Account, Fee, Sequence.");`,
+            en: `// Examples of how different transaction types are built.
+// We only show essential fields — autofill() fills in the rest.
+
+// --- Payment: send XAH ---
+const payment = {
+  TransactionType: "Payment",
+  Account: "rOrigin...",
+  Destination: "rDestination...",
+  Amount: "5000000", // 5 XAH in drops
+};
+
+// --- Payment: send token ---
+const tokenPayment = {
+  TransactionType: "Payment",
+  Account: "rOrigin...",
+  Destination: "rDestination...",
+  Amount: {
+    currency: "USD",
+    value: "100",
+    issuer: "rIssuer...",
+  },
+};
+
+// --- TrustSet: create trust line ---
+const trustSet = {
+  TransactionType: "TrustSet",
+  Account: "rReceiver...",
+  LimitAmount: {
+    currency: "USD",
+    value: "10000",
+    issuer: "rIssuer...",
+  },
+};
+
+// --- OfferCreate: create offer on the DEX ---
+const offer = {
+  TransactionType: "OfferCreate",
+  Account: "rTrader...",
+  TakerPays: { currency: "USD", value: "50", issuer: "rIssuer..." },
+  TakerGets: "100000000", // 100 XAH
+};
+
+// --- AccountSet: activate flag ---
+const accountSet = {
+  TransactionType: "AccountSet",
+  Account: "rMyAccount...",
+  SetFlag: 8, // asfDefaultRipple
+};
+
+// --- URITokenMint: create NFT ---
+const mint = {
+  TransactionType: "URITokenMint",
+  Account: "rCreator...",
+  URI: "68747470733A2F2F...", // URL in hexadecimal
+  Flags: 1, // tfBurnable
+};
+
+console.log("Each type has its specific fields.");
+console.log("All share: TransactionType, Account, Fee, Sequence.");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -751,7 +922,8 @@ Xahau supports **multi-signing**: a transaction that requires signatures from **
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function firmaDetallada() {
@@ -817,6 +989,74 @@ async function firmaDetallada() {
 }
 
 firmaDetallada().catch(console.error);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function firmaDetallada() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  console.log("=== WALLET INFORMATION ===");
+  console.log("Address:", wallet.address);
+  console.log("Public key:", wallet.publicKey);
+  console.log("Algorithm:", wallet.publicKey.startsWith("ED") ? "ed25519" : "secp256k1");
+
+  // Build and prepare
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: "1000000",
+  };
+
+  const prepared = await client.autofill(tx);
+
+  // Sign
+  const signed = wallet.sign(prepared);
+
+  console.log("\\n=== RESULTADO DE LA FIRMA ===");
+  console.log("Hash (tx ID):", signed.hash);
+  console.log("Full tx_blob:", signed.tx_blob);
+  console.log("Length:", signed.tx_blob.length, "hex characters");
+  console.log("Size:", signed.tx_blob.length / 2, "bytes");
+
+  // Verify that the transaction is valid
+  // (the node does this internally upon receiving the submit)
+  console.log("\\n=== VERIFICACIÓN ===");
+
+  // Decode the blob to inspect
+  const decoded = client.request({
+    command: "tx",
+    transaction: signed.hash,
+  }).catch(() => {
+    // The tx doesn't exist in the ledger yet, this is normal
+    console.log("The tx has not been submitted yet (only signed).");
+  });
+
+  // Submit
+  console.log("\\nEnviando tx_blob al nodo...");
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  // Now we can look it up by hash
+  const txInfo = await client.request({
+    command: "tx",
+    transaction: signed.hash,
+  });
+
+  console.log("\\n=== TX EN EL LEDGER ===");
+  console.log("Type:", txInfo.result.TransactionType);
+  console.log("SigningPubKey:", txInfo.result.SigningPubKey);
+  console.log("Ledger:", txInfo.result.ledger_index);
+
+  await client.disconnect();
+}
+
+firmaDetallada().catch(console.error);`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -825,7 +1065,8 @@ firmaDetallada().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 // =============================================
@@ -893,6 +1134,76 @@ async function demo() {
 }
 
 demo().catch(console.error);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// =============================================
+// STEP 1: On the CONNECTED device
+// Prepare the transaction (requires connection)
+// =============================================
+async function prepararOnline() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const tx = {
+    TransactionType: "Payment",
+    Account: "rYourAddressHere",
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: "10000000", // 10 XAH
+  };
+
+  const prepared = await client.autofill(tx);
+  await client.disconnect();
+
+  // Save as JSON to transfer to the offline device
+  const txParaFirmar = JSON.stringify(prepared, null, 2);
+  console.log("=== COPY THIS JSON TO THE OFFLINE DEVICE ===");
+  console.log(txParaFirmar);
+
+  return prepared;
+}
+
+// =============================================
+// STEP 2: On the OFFLINE device (no internet)
+// Sign the transaction
+// =============================================
+function firmarOffline(preparedJSON) {
+  // The private key ONLY exists on the offline device
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  const signed = wallet.sign(preparedJSON);
+
+  console.log("\\n=== COPIA ESTE tx_blob AL DISPOSITIVO CONECTADO ===");
+  console.log("tx_blob:", signed.tx_blob);
+  console.log("hash:", signed.hash);
+
+  return signed;
+}
+
+// =============================================
+// STEP 3: On the CONNECTED device
+// Submit the signed transaction
+// =============================================
+async function enviarOnline(txBlob) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const result = await client.submitAndWait(txBlob);
+  console.log("\\nResultado:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+// Demo of the complete flow (in a single script for simplicity)
+async function demo() {
+  const prepared = await prepararOnline();
+  const signed = firmarOffline(prepared);
+  await enviarOnline(signed.tx_blob);
+}
+
+demo().catch(console.error);`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1113,7 +1424,8 @@ result.result.hash                     → Unique transaction hash
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function enviarConManejo() {
@@ -1189,6 +1501,84 @@ async function enviarConManejo() {
 }
 
 enviarConManejo().catch(console.error);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function enviarConManejo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: "1000000",
+  };
+
+  try {
+    const prepared = await client.autofill(tx);
+    const signed = wallet.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    const codigo = result.result.meta.TransactionResult;
+
+    // Analyze the result by category
+    if (codigo === "tesSUCCESS") {
+      console.log("SUCCESS: Transaction processed correctly.");
+      console.log("Ledger:", result.result.ledger_index);
+      console.log("Hash:", signed.hash);
+
+    } else if (codigo.startsWith("tec")) {
+      // The tx was included in the ledger but the operation failed
+      // The fee WAS charged
+      console.log("FAILURE (tec):", codigo);
+      console.log("The operation did not execute but the fee was charged.");
+
+      // Specific diagnosis
+      switch (codigo) {
+        case "tecUNFUNDED_PAYMENT":
+          console.log("→ Insufficient balance.");
+          break;
+        case "tecNO_DST":
+          console.log("→ Destination account does not exist.");
+          break;
+        case "tecDST_TAG_NEEDED":
+          console.log("→ DestinationTag is missing.");
+          break;
+        case "tecINSUFFICIENT_RESERVE":
+          console.log("→ Insufficient XAH for the reserve.");
+          break;
+        default:
+          console.log("→ Check the documentation for:", codigo);
+      }
+
+    } else if (codigo.startsWith("tef")) {
+      console.log("REJECTED (tef):", codigo);
+      console.log("The transaction was rejected before processing.");
+      console.log("The fee was NOT charged.");
+
+    } else if (codigo.startsWith("tem")) {
+      console.log("MALFORMED (tem):", codigo);
+      console.log("The transaction has a format error.");
+      console.log("Check the fields and values.");
+
+    } else if (codigo.startsWith("ter")) {
+      console.log("TEMPORARY ERROR (ter):", codigo);
+      console.log("You can retry in a few seconds.");
+    }
+
+  } catch (error) {
+    console.error("Connection or submission error:", error.message);
+  }
+
+  await client.disconnect();
+}
+
+enviarConManejo().catch(console.error);`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1197,7 +1587,8 @@ enviarConManejo().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function comparar() {
@@ -1258,6 +1649,69 @@ async function comparar() {
 }
 
 comparar().catch(console.error);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function comparar() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // --- Method 1: submitAndWait (recommended) ---
+  console.log("=== submitAndWait ===");
+  const tx1 = await client.autofill({
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: "1000000",
+  });
+  const signed1 = wallet.sign(tx1);
+
+  console.log("Sending and waiting...");
+  const inicio1 = Date.now();
+  const result1 = await client.submitAndWait(signed1.tx_blob);
+  const tiempo1 = Date.now() - inicio1;
+
+  console.log("Result:", result1.result.meta.TransactionResult);
+  console.log("Time:", tiempo1, "ms");
+  console.log("Ledger:", result1.result.ledger_index);
+
+  // --- Method 2: submit (without waiting) ---
+  console.log("\\n=== submit (sin esperar) ===");
+  const tx2 = await client.autofill({
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: "1000000",
+  });
+  const signed2 = wallet.sign(tx2);
+
+  console.log("Sending...");
+  const inicio2 = Date.now();
+  const result2 = await client.submit(signed2.tx_blob);
+  const tiempo2 = Date.now() - inicio2;
+
+  console.log("Preliminary result:", result2.result.engine_result);
+  console.log("Time:", tiempo2, "ms (much faster)");
+  console.log("NOTE: This result is PRELIMINARY, not final.");
+
+  // To see the final result, query afterwards:
+  console.log("\\nEsperando 5 segundos para consultar el resultado final...");
+  await new Promise((r) => setTimeout(r, 5000));
+
+  const txInfo = await client.request({
+    command: "tx",
+    transaction: signed2.hash,
+  });
+  console.log("Final result:", txInfo.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+comparar().catch(console.error);`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1526,7 +1980,8 @@ If a validator computes a different hash from 80% of the UNL, its ledger is disc
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function analizarMetadata() {
@@ -1615,6 +2070,97 @@ async function analizarMetadata() {
 }
 
 analizarMetadata().catch(console.error);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function analizarMetadata() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Send a payment to analyze its metadata
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: "5000000", // 5 XAH
+  };
+
+  const prepared = await client.autofill(tx);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const meta = result.result.meta;
+  console.log("=== ANÁLISIS DE METADATA ===\\n");
+  console.log("Result:", meta.TransactionResult);
+  console.log("Affected nodes:", meta.AffectedNodes.length);
+
+  // Classify the affected nodes
+  const created = [];
+  const modified = [];
+  const deleted = [];
+
+  for (const node of meta.AffectedNodes) {
+    if (node.CreatedNode) {
+      created.push(node.CreatedNode);
+    } else if (node.ModifiedNode) {
+      modified.push(node.ModifiedNode);
+    } else if (node.DeletedNode) {
+      deleted.push(node.DeletedNode);
+    }
+  }
+
+  // Show created objects
+  if (created.length > 0) {
+    console.log("\\n--- OBJETOS CREADOS ---");
+    for (const n of created) {
+      console.log("  +", n.LedgerEntryType);
+      console.log("   Index:", n.LedgerIndex);
+    }
+  }
+
+  // Show modified objects
+  if (modified.length > 0) {
+    console.log("\\n--- OBJETOS MODIFICADOS ---");
+    for (const n of modified) {
+      console.log("  ~", n.LedgerEntryType);
+      if (n.PreviousFields && n.FinalFields) {
+        // Show balance changes (AccountRoot)
+        if (n.PreviousFields.Balance && n.FinalFields.Balance) {
+          const before = Number(n.PreviousFields.Balance) / 1000000;
+          const after = Number(n.FinalFields.Balance) / 1000000;
+          const diff = after - before;
+          console.log("   Balance:", before, "→", after, "XAH");
+          console.log("   Change:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+        }
+        // Show Sequence change
+        if (n.FinalFields.Sequence) {
+          console.log("   Sequence:", n.FinalFields.Sequence);
+        }
+      }
+    }
+  }
+
+  // Show deleted objects
+  if (deleted.length > 0) {
+    console.log("\\n--- OBJETOS ELIMINADOS ---");
+    for (const n of deleted) {
+      console.log("  -", n.LedgerEntryType);
+    }
+  }
+
+  // Balance summary
+  console.log("\\n--- RESUMEN ---");
+  console.log("Fee paid:", Number(result.result.Fee) / 1000000, "XAH");
+  console.log("The fee was burned (it didn't go to any account).");
+
+  await client.disconnect();
+}
+
+analizarMetadata().catch(console.error);`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1623,7 +2169,8 @@ analizarMetadata().catch(console.error);`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client } = require("xahau");
 
 async function consultarReserva(address) {
@@ -1684,6 +2231,69 @@ async function consultarReserva(address) {
 }
 //Puedes usar tu cuenta o rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
 consultarReserva("rTuCuentaAqui");`,
+            en: `require("dotenv").config();
+const { Client } = require("xahau");
+
+async function consultarReserva(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Get server info for current reserves
+  const serverInfo = await client.request({ command: "server_info" });
+  const ledgerInfo = serverInfo.result.info.validated_ledger;
+  const baseReserve = ledgerInfo.reserve_base_xrp; // In XAH
+  const ownerReserve = ledgerInfo.reserve_inc_xrp; // In XAH
+
+  console.log("=== NETWORK RESERVES ===");
+  console.log("Base reserve (per account):", baseReserve, "XAH");
+  console.log("Owner reserve (per object):", ownerReserve, "XAH");
+
+  // Get account info
+  const accountInfo = await client.request({
+    command: "account_info",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  const account = accountInfo.result.account_data;
+  const balance = Number(account.Balance) / 1000000;
+  const ownerCount = account.OwnerCount;
+  const totalReserve = baseReserve + (ownerCount * ownerReserve);
+  const available = balance - totalReserve;
+
+  console.log("\n=== YOUR ACCOUNT ===");
+  console.log("Address:", address);
+  console.log("Total balance:", balance, "XAH");
+  console.log("Objects in the ledger:", ownerCount);
+  console.log("Total reserve:", totalReserve, "XAH");
+  console.log("  →", baseReserve, "XAH (base)");
+  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH (objects)");
+  console.log("Available to spend:", available, "XAH");
+
+  // Show what objects you have
+  const objects = await client.request({
+    command: "account_objects",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  const byType = {};
+  for (const obj of objects.result.account_objects) {
+    const tipo = obj.LedgerEntryType;
+    byType[tipo] = (byType[tipo] || 0) + 1;
+  }
+
+  console.log("\n=== OBJECTS BY TYPE ===");
+  for (const [tipo, count] of Object.entries(byType)) {
+    console.log("  " + tipo + ":", count, "(reserve:", count * ownerReserve, "XAH)");
+  }
+
+  await client.disconnect();
+}
+//You can use your account or rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
+consultarReserva("rYourAccountHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
