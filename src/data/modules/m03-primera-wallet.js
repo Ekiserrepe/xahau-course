@@ -91,7 +91,7 @@ console.log("Seed:", wallet1.seed);
 
 // Generar wallet con el algoritmo ed25519
 const wallet2 = Wallet.generate();
-console.log("\n=== Wallet ed25519 ===");
+console.log("=== Wallet ed25519 ===");
 console.log("Dirección:", wallet2.address);
 console.log("Clave pública:", wallet2.publicKey);
 console.log("Seed:", wallet2.seed);`,
@@ -106,7 +106,7 @@ console.log("Seed:", wallet1.seed);
 
 // Generate wallet with ed25519 algorithm
 const wallet2 = Wallet.generate();
-console.log("\n=== Wallet ed25519 ===");
+console.log("=== Wallet ed25519 ===");
 console.log("Address:", wallet2.address);
 console.log("Public key:", wallet2.publicKey);
 console.log("Seed:", wallet2.seed);`,
@@ -257,7 +257,7 @@ async function createTestnetWallet() {
   console.log("  Seed:", wallet.seed);
 
   // Solicitar fondos del faucet de testnet
-  console.log("\\nSolicitando fondos del faucet...");
+  console.log("Solicitando fondos del faucet...");
   const fundResult = await client.fundWallet(wallet);
 
   console.log("¡Wallet financiada!");
@@ -271,7 +271,7 @@ async function createTestnetWallet() {
   });
 
   const account = response.result.account_data;
-  console.log("\\nDatos de la cuenta en el ledger:");
+  console.log("Datos de la cuenta en el ledger:");
   console.log("  Balance:", account.Balance, "drops");
   console.log("  Balance:", Number(account.Balance) / 1_000_000, "XAH");
   console.log("  Secuencia:", account.Sequence);
@@ -293,7 +293,7 @@ async function createTestnetWallet() {
   console.log("  Seed:", wallet.seed);
 
   // Request funds from the testnet faucet
-  console.log("\\nRequesting funds from faucet...");
+  console.log("Requesting funds from faucet...");
   const fundResult = await client.fundWallet(wallet);
 
   console.log("Wallet funded!");
@@ -307,7 +307,7 @@ async function createTestnetWallet() {
   });
 
   const account = response.result.account_data;
-  console.log("\\nAccount data on the ledger:");
+  console.log("Account data on the ledger:");
   console.log("  Balance:", account.Balance, "drops");
   console.log("  Balance:", Number(account.Balance) / 1_000_000, "XAH");
   console.log("  Sequence:", account.Sequence);
@@ -871,19 +871,6 @@ Multi-signing is ideal for:
 
 **EmailHash**: Hash MD5 de tu email, utilizado para mostrar un avatar (como Gravatar). No expone tu email directamente.
 
-### Account Delete: eliminar tu cuenta
-
-En Xahau es posible **eliminar una cuenta** del ledger para recuperar parte de la reserva:
-
-Requisitos:
-- El número de secuencia de la cuenta debe ser al menos 256
-- La cuenta no debe poseer objetos en el ledger (ofertas, trust lines, etc.)
-- Se debe especificar una cuenta de destino para los fondos restantes
-- Se cobra una tarifa especial de 2 XAH (que se destruye)
-- La reserva base se envía a la cuenta de destino
-
-Después de eliminarse, la dirección queda libre pero no se puede reutilizar con la misma seed (por seguridad).
-
 ### Flags como bits
 
 Los flags de cuenta se almacenan como un campo numérico donde cada bit representa un flag. Puedes activar flags con el campo \`SetFlag\` y desactivarlos con \`ClearFlag\` en la transacción AccountSet.
@@ -932,19 +919,6 @@ Los flags de cuenta se almacenan como un campo numérico donde cada bit represen
 
 **EmailHash**: MD5 hash of your email, used to display an avatar (like Gravatar). It does not expose your email directly.
 
-### Account Delete: deleting your account
-
-In Xahau it is possible to **delete an account** from the ledger to recover part of the reserve:
-
-Requirements:
-- The account's sequence number must be at least 256
-- The account must not own any objects on the ledger (offers, trust lines, etc.)
-- A destination account must be specified for the remaining funds
-- A special fee of 2 XAH is charged (which is destroyed)
-- The base reserve is sent to the destination account
-
-After deletion, the address becomes free but cannot be reused with the same seed (for security).
-
 ### Flags as bits
 
 Account flags are stored as a numeric field where each bit represents a flag. You can enable flags with the \`SetFlag\` field and disable them with \`ClearFlag\` in the AccountSet transaction.
@@ -989,7 +963,7 @@ async function setRequireDestTag() {
 
   const result = await client.submitAndWait(tx, { wallet });
 
-  console.log("\\nResultado:", result.result.meta.TransactionResult);
+  console.log("Resultado:", result.result.meta.TransactionResult);
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("¡Flag RequireDestTag activado con éxito!");
@@ -1003,7 +977,7 @@ async function setRequireDestTag() {
     });
 
     const flags = accountInfo.result.account_data.Flags;
-    console.log("\\nFlags de la cuenta (número):", flags);
+    console.log("Flags de la cuenta (número):", flags);
 
     // lsfRequireDestTag = 0x00020000 = 131072
     const requireDestTag = (flags & 0x00020000) !== 0;
@@ -1036,7 +1010,7 @@ async function setRequireDestTag() {
 
   const result = await client.submitAndWait(tx, { wallet });
 
-  console.log("\\nResult:", result.result.meta.TransactionResult);
+  console.log("Result:", result.result.meta.TransactionResult);
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("RequireDestTag flag enabled successfully!");
@@ -1050,7 +1024,7 @@ async function setRequireDestTag() {
     });
 
     const flags = accountInfo.result.account_data.Flags;
-    console.log("\\nAccount flags (number):", flags);
+    console.log("Account flags (number):", flags);
 
     // lsfRequireDestTag = 0x00020000 = 131072
     const requireDestTag = (flags & 0x00020000) !== 0;
@@ -1109,7 +1083,7 @@ async function readAccountFlags(address) {
     for (const flag of flagDefinitions) {
       const active = (flags & flag.mask) !== 0;
       if (active) {
-        console.log(\`  ✅ \${flag.name}: \${flag.desc}\`);
+        console.log(\` \${flag.name}: \${flag.desc}\`);
         anyActive = true;
       }
     }
@@ -1178,7 +1152,7 @@ async function readAccountFlags(address) {
     for (const flag of flagDefinitions) {
       const active = (flags & flag.mask) !== 0;
       if (active) {
-        console.log(\`  ✅ \${flag.name}: \${flag.desc}\`);
+        console.log(\` \${flag.name}: \${flag.desc}\`);
         anyActive = true;
       }
     }
@@ -1446,7 +1420,7 @@ async function prepareForXaman() {
 
   // Generar y financiar una wallet
   const wallet = Wallet.generate();
-  console.log("Generando wallet de testnet...\\n");
+  console.log("Generando wallet de testnet...");
   await client.fundWallet(wallet);
 
   // Verificar balance
@@ -1458,17 +1432,17 @@ async function prepareForXaman() {
 
   const balance = Number(response.result.account_data.Balance) / 1_000_000;
 
-  console.log("=== Datos para importar en Xaman ===\\n");
+  console.log("=== Datos para importar en Xaman ===");
   console.log("Dirección:", wallet.address);
   console.log("Seed:", wallet.seed);
   console.log("Balance:", balance, "XAH");
-  console.log("\\n=== Instrucciones ===");
+  console.log("=== Instrucciones ===");
   console.log("1. Abre Xaman en tu móvil");
   console.log("2. Toca 'Añadir cuenta' → 'Importar cuenta existente'");
   console.log("4. Selecciona Acceso Completo");
   console.log("5. Selecciona 'Family Seed (s...)'");
   console.log("6. Introduce el seed:", wallet.seed);
-  console.log("\\n⚠️  Recuerda: estamos en TESTNET.");
+  console.log("  Recuerda: estamos en TESTNET.");
   console.log("    Asegúrate de seleccionar la red Xahau Testnet en Xaman.");
 
   await client.disconnect();
@@ -1483,7 +1457,7 @@ async function prepareForXaman() {
 
   // Generate and fund a wallet
   const wallet = Wallet.generate();
-  console.log("Generating testnet wallet...\\n");
+  console.log("Generating testnet wallet...");
   await client.fundWallet(wallet);
 
   // Check balance
@@ -1495,17 +1469,17 @@ async function prepareForXaman() {
 
   const balance = Number(response.result.account_data.Balance) / 1_000_000;
 
-  console.log("=== Data for importing into Xaman ===\\n");
+  console.log("=== Data for importing into Xaman ===");
   console.log("Address:", wallet.address);
   console.log("Seed:", wallet.seed);
   console.log("Balance:", balance, "XAH");
-  console.log("\\n=== Instructions ===");
+  console.log("=== Instructions ===");
   console.log("1. Open Xaman on your phone");
   console.log("2. Tap 'Add account' → 'Import existing account'");
   console.log("4. Select Full Access");
   console.log("5. Select 'Family Seed (s...)'");
   console.log("6. Enter the seed:", wallet.seed);
-  console.log("\\n⚠️  Remember: we are on TESTNET.");
+  console.log("  Remember: we are on TESTNET.");
   console.log("    Make sure to select the Xahau Testnet network in Xaman.");
 
   await client.disconnect();
