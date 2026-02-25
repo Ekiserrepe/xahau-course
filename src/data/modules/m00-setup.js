@@ -159,7 +159,16 @@ It should display the installed version number.`,
             jp: "",
           },
           language: "bash",
-          code: `# Verify that VS Code is installed
+          code: {
+            es: `# Verificar que VS Code está instalado
+code --version
+
+# Abrir VS Code en el directorio actual
+code .
+
+# Abrir un archivo específico
+code mi-archivo.js`,
+            en: `# Verify that VS Code is installed
 code --version
 
 # Open VS Code in the current directory
@@ -167,6 +176,8 @@ code .
 
 # Open a specific file
 code mi-archivo.js`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -175,7 +186,22 @@ code mi-archivo.js`,
             jp: "",
           },
           language: "bash",
-          code: `# Install extensions from the terminal
+          code: {
+            es: `# Instalar extensiones desde la terminal
+# (también puedes buscarlas en la pestaña Extensiones de VS Code)
+
+# Soporte mejorado para JavaScript/TypeScript
+code --install-extension dbaeumer.vscode-eslint
+
+# Formateo automático de código
+code --install-extension esbenp.prettier-vscode
+
+# Colores para pares de corchetes
+code --install-extension CoenraadS.bracket-pair-colorizer-2
+
+# Iconos para el explorador de archivos
+code --install-extension vscode-icons-team.vscode-icons`,
+            en: `# Install extensions from the terminal
 # (you can also search for them in the VS Code Extensions tab)
 
 # Enhanced JavaScript/TypeScript support
@@ -189,6 +215,8 @@ code --install-extension CoenraadS.bracket-pair-colorizer-2
 
 # Icons for the file explorer
 code --install-extension vscode-icons-team.vscode-icons`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -382,7 +410,24 @@ This will create your project and download the \`xahau\` library so you can run 
             jp: "",
           },
           language: "bash",
-          code: `# 1. Verify that Node.js is installed
+          code: {
+            es: `# 1. Verificar que Node.js está instalado
+node --version
+# Esperado: v22.x.x (o v18+)
+
+npm --version
+# Esperado: 10.x.x
+
+# 2. Crear el directorio del proyecto del curso
+mkdir xahau-curso
+cd xahau-curso
+
+# 3. Inicializar un proyecto Node.js
+npm init -y
+
+# 4. Instalar la librería xahau
+npm install xahau`,
+            en: `# 1. Verify that Node.js is installed
 node --version
 # Expected: v22.x.x (or v18+)
 
@@ -398,6 +443,8 @@ npm init -y
 
 # 4. Install the xahau library
 npm install xahau`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -406,7 +453,34 @@ npm install xahau`,
             jp: "",
           },
           language: "javascript",
-          code: `// File: hola-xahau.js
+          code: {
+            es: `// Archivo: hola-xahau.js
+// Ejecutar con: node hola-xahau.js
+
+const { Client } = require("xahau");
+
+async function main() {
+  console.log("Conectando a Xahau...");
+
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("¡Conectado correctamente!");
+  console.log("Red:", info.network_id);
+  console.log("Versión:", info.build_version);
+  console.log("Ledger:", info.validated_ledger.seq);
+
+  await client.disconnect();
+  console.log("Desconectado. ¡Tu entorno está listo!");
+}
+
+main();`,
+            en: `// File: hola-xahau.js
 // Run with: node hola-xahau.js
 
 const { Client } = require("xahau");
@@ -432,6 +506,8 @@ async function main() {
 }
 
 main();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -634,16 +710,29 @@ Since free sandboxes are public, **never put mainnet seeds or private keys** in 
             jp: "",
           },
           language: "bash",
-          code: `# In the CodeSandbox terminal:
+          code: {
+            es: `# En la terminal de CodeSandbox:
+
+# 1. Instalar la librería xahau
+npm install xahau
+
+# 2. Crear un archivo de prueba
+touch hola-xahau.js
+
+# 3. Ejecutar el script (después de escribir el código)
+node hola-xahau.js`,
+            en: `# In the CodeSandbox terminal:
 
 # 1. Install the xahau library
 npm install xahau
 
 # 2. Create a test file
-touch hola-xahau.js
+touch hi-xahau.js
 
 # 3. Run the script (after writing the code)
-node hola-xahau.js`,
+node hi-xahau.js`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -652,18 +741,48 @@ node hola-xahau.js`,
             jp: "",
           },
           language: "javascript",
-          code: `// File: hola-xahau.js
-// Copy this code into your sandbox and run: node hola-xahau.js
+          code: {
+            es: `// Archivo: hola-xahau.js
+// Copia este código en tu sandbox y ejecuta: node hola-xahau.js
 
 const { Client } = require("xahau");
 
 async function main() {
-  console.log("=== Xahau Academy - Connection Test ===\\n");
+  console.log("=== Xahau Academy - Test de Conexión ===");
+
+  // Conectar al testnet de Xahau
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  console.log("Conectado a Xahau Testnet");
+
+  // Obtener información del servidor
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("ID de Red:", info.network_id);
+  console.log("Ledger:", info.validated_ledger.seq);
+  console.log("Versión:", info.build_version);
+
+  await client.disconnect();
+  console.log("¡Tu entorno de CodeSandbox está listo!");
+  console.log("Ya puedes seguir el curso de Xahau Academy.");
+}
+
+main().catch(console.error);`,
+            en: `// File: hi-xahau.js
+// Copy this code into your sandbox and run: node hi-xahau.js
+
+const { Client } = require("xahau");
+
+async function main() {
+  console.log("=== Xahau Academy - Connection Test ===");
 
   // Connect to the Xahau testnet
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  console.log("✅ Connected to Xahau Testnet");
+  console.log("Connected to Xahau Testnet");
 
   // Get server info
   const response = await client.request({
@@ -671,16 +790,18 @@ async function main() {
   });
 
   const info = response.result.info;
-  console.log("📡 Network ID:", info.network_id);
-  console.log("🔢 Ledger:", info.validated_ledger.seq);
-  console.log("🏗️  Version:", info.build_version);
+  console.log("Network ID:", info.network_id);
+  console.log("Ledger:", info.validated_ledger.seq);
+  console.log("Version:", info.build_version);
 
   await client.disconnect();
-  console.log("\\n🎉 Your CodeSandbox environment is ready!");
-  console.log("   You can now follow the Xahau Academy course.");
+  console.log("Your CodeSandbox environment is ready!");
+  console.log("You can now follow the Xahau Academy course.");
 }
 
 main().catch(console.error);`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -871,10 +992,10 @@ Each course script will be an independent \`.js\` file. We recommend this organi
 xahau-curso/
 ├── package.json
 ├── node_modules/
-├── 01-conexion.js
+├── 01-connection.js
 ├── 02-wallet.js
 ├── 03-balance.js
-├── 04-pago.js
+├── 04-payment.js
 └── utils.js          ← Shared functions (optional)
 \`\`\`
 
@@ -888,7 +1009,7 @@ When your code communicates with the blockchain, operations **take time** (conne
 - **await**: Pauses execution until the operation finishes and returns a result
 
 \`\`\`
-async function consultar() {
+async function get() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();        // Wait for it to connect
   const datos = await client.request({ command: "server_info" }); // Wait for the response
@@ -923,12 +1044,35 @@ try {
             jp: "",
           },
           language: "javascript",
-          code: `// File: package.json (created with npm init -y)
+          code: {
+            es: `// Archivo: package.json (creado con npm init -y)
+// NO necesitas editar este archivo manualmente.
+// npm lo actualiza cuando instalas librerías.
+
+{
+  "name": "xahau-curso",       // Nombre del proyecto
+  "version": "1.0.0",          // Versión del proyecto
+  "description": "",            // Descripción (puedes rellenarla)
+  "main": "index.js",          // Archivo principal (no lo usaremos)
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "xahau": "^1.0.0"          // <-- npm install xahau añadió esto
+  }
+}
+
+// NOTA: node_modules/ se crea automáticamente con npm install.
+// Nunca lo compartas. Se regenera con: npm install`,
+            en: `// File: package.json (created with npm init -y)
 // You do NOT need to edit this file manually.
 // npm updates it when you install libraries.
 
 {
-  "name": "xahau-curso",       // Project name
+  "name": "xahau-course",       // Project name
   "version": "1.0.0",          // Project version
   "description": "",            // Description (you can fill it in)
   "main": "index.js",          // Main file (we won't use it)
@@ -945,6 +1089,8 @@ try {
 
 // NOTE: node_modules/ is created automatically with npm install.
 // Never share it. It is regenerated with: npm install`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -953,15 +1099,59 @@ try {
             jp: "",
           },
           language: "javascript",
-          code: `// File: estructura-basica.js
-// Run with: node estructura-basica.js
+          code: {
+            es: `// Archivo: estructura-basica.js
+// Ejecutar con: node estructura-basica.js
+
+// 1. Importar la librería xahau desde node_modules/
+const { Client, Wallet } = require("xahau");
+
+// 2. Crear una función asíncrona (async)
+async function main() {
+  console.log("=== Estructura básica de un script Xahau ===");
+
+  // 3. Usar try/catch para manejar errores
+  try {
+    // 4. await espera a que cada operación termine
+    const client = new Client("wss://xahau-test.net");
+    console.log("Conectando al nodo...");
+    await client.connect();
+    console.log("Conectado correctamente.");
+
+    // 5. Consultar la blockchain
+    const response = await client.request({
+      command: "server_info"
+    });
+
+    const info = response.result.info;
+    console.log("Información del servidor:");
+    console.log("Red:", info.network_id);
+    console.log("Versión:", info.build_version);
+    console.log("Ledger:", info.validated_ledger.seq);
+
+    // 6. Desconectar limpiamente
+    await client.disconnect();
+    console.log("Desconectado correctamente.");
+
+  } catch (error) {
+    // 7. Si algo falla, mostramos el error sin romper el programa
+    console.error("¡Error encontrado!");
+    console.error("Tipo:", error.name);
+    console.error("Mensaje:", error.message);
+  }
+}
+
+// 8. Ejecutar la función principal
+main();`,
+            en: `// File:basic-structure.js
+// Run with: node basic-structure.js
 
 // 1. Import the xahau library from node_modules/
 const { Client, Wallet } = require("xahau");
 
 // 2. Create an asynchronous (async) function
 async function main() {
-  console.log("=== Basic structure of a Xahau script ===\\n");
+  console.log("=== Basic structure of a Xahau script ===");
 
   // 3. Use try/catch to handle errors
   try {
@@ -969,7 +1159,7 @@ async function main() {
     const client = new Client("wss://xahau-test.net");
     console.log("Connecting to the node...");
     await client.connect();
-    console.log("Connected successfully.\\n");
+    console.log("Connected successfully.");
 
     // 5. Query the blockchain
     const response = await client.request({
@@ -978,17 +1168,17 @@ async function main() {
 
     const info = response.result.info;
     console.log("Server information:");
-    console.log("  Network:", info.network_id);
-    console.log("  Version:", info.build_version);
-    console.log("  Ledger:", info.validated_ledger.seq);
+    console.log("Network:", info.network_id);
+    console.log("Version:", info.build_version);
+    console.log("Ledger:", info.validated_ledger.seq);
 
     // 6. Disconnect cleanly
     await client.disconnect();
-    console.log("\\nDisconnected correctly.");
+    console.log("Disconnected correctly.");
 
   } catch (error) {
     // 7. If something fails, we show the error without crashing the program
-    console.error("\\nError found!");
+    console.error("Error found!");
     console.error("Type:", error.name);
     console.error("Message:", error.message);
   }
@@ -996,6 +1186,8 @@ async function main() {
 
 // 8. Execute the main function
 main();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1148,9 +1340,9 @@ node filename.js
 
 For example:
 \`\`\`
-node hola-xahau.js
-node 01-conexion.js
-node mi-script.js
+node hi-xahau.js
+node 01-connection.js
+node my-script.js
 \`\`\`
 
 **Important**: You must be in the directory where the file is located, or use the full path. If the file is not found, you will see an error.
@@ -1246,14 +1438,77 @@ Solution: Verify that the address is correct. On testnet, use the faucet to acti
             jp: "",
           },
           language: "javascript",
-          code: `// File: depurar-errores.js
-// Run with: node depurar-errores.js
+          code: {
+            es: `// Archivo: depurar-errores.js
+// Ejecutar con: node depurar-errores.js
+// Este script muestra cómo manejar errores paso a paso.
+
+const { Client } = require("xahau");
+
+async function main() {
+  console.log("=== Depuración de Errores en Xahau ===");
+
+  // Paso 1: Verificar que la librería se importó correctamente
+  console.log("1. Librería xahau importada correctamente");
+  console.log("   Tipo de Client:", typeof Client);
+
+  // Paso 2: Crear el cliente
+  const client = new Client("wss://xahau-test.net");
+  console.log("2. Cliente creado para:", "wss://xahau-test.net");
+
+  // Paso 3: Intentar conectar con manejo de errores
+  try {
+    console.log("3. Intentando conectar...");
+    await client.connect();
+    console.log("   Conectado correctamente");
+  } catch (error) {
+    console.error("   ERROR al conectar:", error.message);
+    console.error("   Posibles causas:");
+    console.error("   - Sin conexión a internet");
+    console.error("   - El nodo está caído");
+    console.error("   - Firewall bloqueando WebSocket");
+    return; // Salir de la función si no podemos conectar
+  }
+
+  // Paso 4: Hacer una consulta
+  try {
+    console.log("4. Consultando server_info...");
+    const response = await client.request({
+      command: "server_info"
+    });
+
+    // Paso 5: Inspeccionar la respuesta
+    console.log("5. Respuesta recibida:");
+    console.log("   Tipo:", typeof response);
+    console.log("   Claves:", Object.keys(response.result));
+
+    const info = response.result.info;
+    console.log("   Red:", info.network_id);
+    console.log("   Ledger:", info.validated_ledger.seq);
+  } catch (error) {
+    console.error("   ERROR en la consulta:", error.message);
+  }
+
+  // Paso 6: Desconectar
+  try {
+    await client.disconnect();
+    console.log("6. Desconectado correctamente");
+  } catch (error) {
+    console.error("   ERROR al desconectar:", error.message);
+  }
+
+  console.log("=== Fin de la depuración ===");
+}
+
+main();`,
+            en: `// File: debug-errors.js
+// Run with: node debug-errors.js
 // This script shows how to handle errors step by step.
 
 const { Client } = require("xahau");
 
 async function main() {
-  console.log("=== Error Debugging in Xahau ===\\n");
+  console.log("=== Error Debugging in Xahau ===");
 
   // Step 1: Verify that the library was imported correctly
   console.log("1. xahau library imported correctly");
@@ -1304,10 +1559,12 @@ async function main() {
     console.error("   ERROR disconnecting:", error.message);
   }
 
-  console.log("\\n=== End of debugging ===");
+  console.log("=== End of debugging ===");
 }
 
 main();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1316,8 +1573,57 @@ main();`,
             jp: "",
           },
           language: "javascript",
-          code: `// File: test-conectividad.js
-// Run with: node test-conectividad.js
+          code: {
+            es: `// Archivo: test-conectividad.js
+// Ejecutar con: node test-conectividad.js
+// Prueba la conexión y muestra errores comunes.
+
+const { Client } = require("xahau");
+
+// Función auxiliar para probar una conexión
+async function testConexion(url, nombre) {
+  console.log("Probando:", nombre, "(" + url + ")");
+
+  const client = new Client(url);
+
+  try {
+    await client.connect();
+    const response = await client.request({ command: "server_info" });
+    const ledger = response.result.info.validated_ledger.seq;
+    console.log("Conectado - Ledger:", ledger);
+    await client.disconnect();
+    return true;
+  } catch (error) {
+    console.log("Error:", error.message);
+    return false;
+  }
+}
+
+async function main() {
+  console.log("=== Test de Conectividad de Xahau ===");
+
+  // Test 1: Conexión al testnet (debería funcionar)
+  await testConexion("wss://xahau-test.net", "Xahau Testnet");
+
+  console.log("");
+
+  // Test 2: Conexión al mainnet (debería funcionar)
+  await testConexion("wss://xahau.network", "Xahau Mainnet");
+
+  console.log("");
+
+  // Test 3: URL incorrecta (debería fallar - ejemplo de error)
+  await testConexion("wss://nodo-que-no-existe.example.com", "URL incorrecta");
+
+  console.log("=== Resumen ===");
+  console.log("Si testnet y mainnet conectan: tu entorno está listo.");
+  console.log("Si alguno falla: comprueba tu conexión a internet.");
+  console.log("La URL incorrecta DEBE fallar (es un test de error).");
+}
+
+main();`,
+            en: `// File: connectivity-test.js
+// Run with: node connectivity-test.js
 // Tests the connection and shows common errors.
 
 const { Client } = require("xahau");
@@ -1332,17 +1638,17 @@ async function testConexion(url, nombre) {
     await client.connect();
     const response = await client.request({ command: "server_info" });
     const ledger = response.result.info.validated_ledger.seq;
-    console.log("  ✅ Connected - Ledger:", ledger);
+    console.log("Connected - Ledger:", ledger);
     await client.disconnect();
     return true;
   } catch (error) {
-    console.log("  ❌ Error:", error.message);
+    console.log("Error:", error.message);
     return false;
   }
 }
 
 async function main() {
-  console.log("=== Xahau Connectivity Test ===\\n");
+  console.log("=== Xahau Connectivity Test ===");
 
   // Test 1: Connection to testnet (should work)
   await testConexion("wss://xahau-test.net", "Xahau Testnet");
@@ -1355,15 +1661,17 @@ async function main() {
   console.log("");
 
   // Test 3: Incorrect URL (should fail - error example)
-  await testConexion("wss://nodo-que-no-existe.example.com", "Incorrect URL");
+  await testConexion("wss://nodo-doesnt-exist.example.com", "Incorrect URL");
 
-  console.log("\\n=== Summary ===");
+  console.log("=== Summary ===");
   console.log("If testnet and mainnet connect: your environment is ready.");
   console.log("If any fails: check your internet connection.");
   console.log("The incorrect URL MUST fail (it's an error test).");
 }
 
 main();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1423,7 +1731,7 @@ Esto es **muy peligroso** por varias razones:
 
 ### ¿Qué es un archivo .env?
 
-Un archivo \`.env\` (de "environment", entorno) es un archivo de texto plano que almacena **variables de entorno** — configuraciones sensibles que tu código necesita pero que no deben estar en el código fuente:
+Un archivo \`.env\` (de "environment", entorno) es un archivo de texto plano que almacena **variables de entorno**, configuraciones sensibles que tu código necesita pero que no deben estar en el código fuente:
 
 \`\`\`
 WALLET_A_SEED=sEdVxxxTuSeedDeTestnet
@@ -1481,10 +1789,6 @@ Esto protege tanto tus claves (\`.env\`) como las librerías descargadas (\`node
 4. Accede a las claves con \`process.env.NOMBRE_VARIABLE\`
 5. Si compartes tu código, crea un archivo \`.env.example\` (sin valores reales) para que otros sepan qué variables necesitan
 
-### ¿Y en producción / mainnet?
-
-En un servidor o entorno de producción, las variables de entorno se configuran directamente en el sistema operativo o en el panel de tu proveedor de hosting (Vercel, Railway, AWS, etc.), **sin necesidad del archivo .env**. La librería \`dotenv\` solo se usa en desarrollo local.
-
 ### Implicaciones de seguridad
 
 - **Testnet**: Si se filtra un seed de testnet, no pierdes dinero real, pero alguien podría interferir con tus pruebas
@@ -1510,7 +1814,7 @@ This is **very dangerous** for several reasons:
 
 ### What is a .env file?
 
-A \`.env\` file (short for "environment") is a plain text file that stores **environment variables** — sensitive configurations your code needs but that should not be in the source code:
+A \`.env\` file (short for "environment") is a plain text file that stores **environment variables**, sensitive configurations your code needs but that should not be in the source code:
 
 \`\`\`
 WALLET_A_SEED=sEdVxxxYourTestnetSeed
@@ -1568,10 +1872,6 @@ This protects both your keys (\`.env\`) and the downloaded libraries (\`node_mod
 4. Access keys with \`process.env.VARIABLE_NAME\`
 5. If you share your code, create a \`.env.example\` file (without real values) so others know which variables they need
 
-### What about production / mainnet?
-
-On a server or production environment, environment variables are configured directly in the operating system or in your hosting provider's panel (Vercel, Railway, AWS, etc.), **without needing the .env file**. The \`dotenv\` library is only used in local development.
-
 ### Security implications
 
 - **Testnet**: If a testnet seed is leaked, you don't lose real money, but someone could interfere with your tests
@@ -1588,7 +1888,29 @@ On a server or production environment, environment variables are configured dire
             jp: "",
           },
           language: "bash",
-          code: `# 1. Install the dotenv library
+          code: {
+            es: `# 1. Instalar la librería dotenv
+npm install dotenv
+
+# 2. Crear el archivo .env (en la raíz del proyecto)
+# IMPORTANTE: Este archivo NO se sube a Git
+
+# Contenido del archivo .env:
+# WALLET_A_SEED=sEdVxxxTuSeedDeTestnet
+# WALLET_B_SEED=sEdYyyOtraSeedDeTestnet
+# XAHAU_NODE=wss://xahau-test.net
+
+# 3. Crear el archivo .gitignore
+# Contenido del archivo .gitignore:
+# .env
+# node_modules/
+
+# 4. (Opcional) Crear .env.example para documentar las variables
+# Contenido del archivo .env.example:
+# WALLET_A_SEED=tu_seed_aqui
+# WALLET_B_SEED=tu_seed_aqui
+# XAHAU_NODE=wss://xahau-test.net`,
+            en: `# 1. Install the dotenv library
 npm install dotenv
 
 # 2. Create the .env file (in the root of your project)
@@ -1609,6 +1931,8 @@ npm install dotenv
 # WALLET_A_SEED=your_seed_here
 # WALLET_B_SEED=your_seed_here
 # XAHAU_NODE=wss://xahau-test.net`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1617,7 +1941,65 @@ npm install dotenv
             jp: "",
           },
           language: "javascript",
-          code: `// File: pago-seguro.js
+          code: {
+            es: `// Archivo: safe-payment.js
+// Ejecutar con: node safe-payment.js
+// Requiere: archivo .env con WALLET_A_SEED, WALLET_B_SEED y XAHAU_NODE
+
+// 1. Cargar variables de entorno desde .env
+require("dotenv").config();
+
+const { Client, Wallet } = require("xahau");
+
+async function main() {
+  // 2. Leer claves de process.env (NO del código)
+  const seedA = process.env.WALLET_A_SEED;
+  const seedB = process.env.WALLET_B_SEED;
+  const node = process.env.XAHAU_NODE;
+
+  // 3. Verificar que las variables existen
+  if (!seedA || !seedB) {
+    console.error("Error: Faltan variables en el archivo .env");
+    console.error("Asegúrate de que WALLET_A_SEED y WALLET_B_SEED están definidas.");
+    console.error("Copia .env.example a .env y rellena los valores.");
+    return;
+  }
+
+  if (!node) {
+    console.error("Error: Falta XAHAU_NODE en .env");
+    return;
+  }
+
+  console.log("Variables cargadas correctamente desde .env");
+  console.log("Nodo:", node);
+  // NUNCA hacer console.log del seed — ni siquiera en testnet
+
+  const client = new Client(node);
+  await client.connect();
+
+  // 4. Crear wallets desde los seeds del .env
+  const walletA = Wallet.fromSeed(seedA, {algorithm: 'secp256k1'});
+  const walletB = Wallet.fromSeed(seedB, {algorithm: 'secp256k1'});
+
+  console.log("Wallet A:", walletA.address);
+  console.log("Wallet B:", walletB.address);
+
+  // 5. Enviar un pago de A a B
+  const payment = {
+    TransactionType: "Payment",
+    Account: walletA.address,
+    Destination: walletB.address,
+    Amount: "10000000", // 10 XAH
+  };
+
+  const result = await client.submitAndWait(payment, { wallet: walletA });
+  console.log("Resultado:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
+            en: `// File: pago-seguro.js
 // Run with: node pago-seguro.js
 // Requires: .env file with WALLET_A_SEED, WALLET_B_SEED, and XAHAU_NODE
 
@@ -1674,6 +2056,8 @@ async function main() {
 }
 
 main().catch(console.error);`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1682,7 +2066,18 @@ main().catch(console.error);`,
             jp: "",
           },
           language: "bash",
-          code: `# File: .env.example
+          code: {
+            es: `# Archivo: .env.example
+# Copia este archivo como .env y rellena con tus valores reales:
+#   cp .env.example .env
+#
+# NUNCA subas el archivo .env a Git.
+# Este archivo .env.example SÍ se puede subir porque no tiene claves reales.
+
+WALLET_A_SEED=tu_seed_de_testnet_aqui
+WALLET_B_SEED=tu_seed_de_testnet_aqui
+XAHAU_NODE=wss://xahau-test.net`,
+            en: `# File: .env.example
 # Copy this file as .env and fill in with your real values:
 #   cp .env.example .env
 #
@@ -1692,6 +2087,8 @@ main().catch(console.error);`,
 WALLET_A_SEED=your_testnet_seed_here
 WALLET_B_SEED=your_testnet_seed_here
 XAHAU_NODE=wss://xahau-test.net`,
+            jp: "",
+          },
         },
       ],
       slides: [
