@@ -10,8 +10,12 @@ const LANG_COLORS = {
 export default function CodeBlock({ block, lang, labels }) {
   const [copied, setCopied] = useState(false)
 
+  const code = typeof block.code === 'object'
+    ? (block.code[lang] ?? block.code.es ?? '')
+    : block.code
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(block.code).then(() => {
+    navigator.clipboard.writeText(code).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
@@ -48,7 +52,7 @@ export default function CodeBlock({ block, lang, labels }) {
         </button>
       </div>
       <pre className="p-4 overflow-x-auto text-sm leading-relaxed">
-        <code className="font-mono" style={{ color: 'var(--color-code-text)' }}>{block.code}</code>
+        <code className="font-mono" style={{ color: 'var(--color-code-text)' }}>{code}</code>
       </pre>
     </div>
   )
