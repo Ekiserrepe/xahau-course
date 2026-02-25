@@ -299,12 +299,12 @@ Vite genera el proyecto con varios archivos. Solo tienes que tocar **uno**:
 | \`src/App.css\` | Puedes borrarlo — el ejemplo usa estilos inline |
 | \`src/index.css\` | Puedes borrarlo o dejarlo — no afecta al ejemplo |
 
-### Paso previo obligatorio — whitelist en apps.xumm.dev
+### Paso previo obligatorio, whitelist en apps.xumm.dev
 
 Antes de ejecutar el código, debes registrar tu URL en el portal de Xaman:
 
 1. Ve a **apps.xumm.dev** → tu aplicación → **Origin/Redirect URLs**
-2. Añade exactamente: \`http://localhost:5173\`
+2. Añade tu localhost y port ejecutando tu proyecto web como: \`http://localhost:5173\`
 3. Guarda los cambios
 
 Sin este paso recibirás el error **"access_denied / Invalid client/redirect URL"**.
@@ -319,8 +319,6 @@ Una vez que el origen está permitido, el método:
 2. Devuelve \`created.refs.qr_png\` — la URL de la imagen QR que puedes mostrar en tu modal
 3. Abre un **WebSocket** y espera la respuesta del usuario
 4. Cuando el usuario firma, \`resolved\` se resuelve con el resultado
-
-> **¿Por qué colgaba antes?** La origin \`http://localhost:5173\` no estaba en la whitelist. El preflight CORS era rechazado silenciosamente y la promesa nunca resolvía. Ahora que la añadiste para \`authorize()\`, también habilita las llamadas a \`payload.createAndSubscribe()\`.
 
 \`\`\`javascript
 const { created, resolved } = await xumm.payload.createAndSubscribe(
@@ -459,7 +457,8 @@ Viteがプロジェクトを自動生成します。変更が必要なファイ�
           language: "javascript",
           code: `// src/App.jsx — sustituye TODO el contenido del archivo por este código
 // ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
+// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173 o la URL de tu web ejecutandose
+// Añade la API Key de tu app en la variable xumm = new Xumm("TU_API_KEY_AQUI");
 
 import { useState } from "react";
 import { Xumm } from "xumm";
@@ -616,6 +615,7 @@ export default function App() {
   );
 }`,
         },
+        
       ],
       slides: [
         {
@@ -718,12 +718,18 @@ Siempre valida en el cliente antes de crear el payload:
 - Que la cantidad sea un número positivo
 - Que no sea la misma cuenta que el origen
 
-### Mostrar el resultado al usuario
+### Verificar el estado de la transacción desde Xaman
 
-Tras la firma puedes:
-- Mostrar el **txid** (hash de transacción) con link al explorador
-- Verificar en el ledger con la librería \`xahau\` que la transacción se incluyó
-- Actualizar el balance del usuario`,
+Tras la firma no necesitas conectarte al ledger: puedes consultar el payload con **\`xumm.payload.get(uuid)\`**. La respuesta incluye \`response.dispatched_result\`, que contiene el código de resultado del ledger:
+
+- \`"tesSUCCESS"\` → transacción confirmada con éxito
+- Cualquier otro valor (p.ej. \`"tecINSUF_RESERVE_LINE"\`) → error en el ledger
+
+\`\`\`javascript
+const payloadResult = await xumm.payload.get(created.uuid);
+const status = payloadResult.response.dispatched_result; // "tesSUCCESS" o código error
+const txid   = resultado.txid;                           // hash de la transacción
+\`\`\``,
         en: `Once the user is authenticated with Xaman, you can ask them to sign any Xahau transaction. In this lesson you'll build a payment form where the user enters the **amount** and **destination address**, a payload is created, and the user scans the QR again to sign the Payment.
 
 ### How does the payment flow work?
@@ -772,75 +778,137 @@ Always validate on the client before creating the payload:
             jp: "完全なコンポーネント：ログイン＋支払いフォーム",
           },
           language: "javascript",
-          code: `// src/App.jsx — App completa con login y formulario de pago
-import { useState, useEffect } from "react";
+          code: `// src/App.jsx — sustituye TODO el contenido del archivo por este código
+// ANTES DE EJECUTAR:
+// 1. npm install xumm xahau
+// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173 o la URL de tu web ejecutandose
+// Añade la API Key de tu app en la variable xumm = new Xumm("TU_API_KEY_AQUI");
+
+import { useState } from "react";
 import { Xumm } from "xumm";
+import { Client } from "xahau";
 
 const xumm = new Xumm("TU_API_KEY_AQUI");
 
-// ── Utilidades ────────────────────────────────────────────────────────────────
+// ── Obtiene balance y secuencia del ledger ────────────────────────────────────
+async function obtenerInfoCuenta(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  try {
+    const res = await client.request({
+      command: "account_info",
+      account: address,
+      ledger_index: "current",
+    });
+    const info = res.result.account_data;
+    return {
+      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
+      sequence: info.Sequence,
+    };
+  } catch (err) {
+    if (err.data?.error === "actNotFound") return { balance: "no activada", sequence: "—" };
+    throw err;
+  } finally {
+    await client.disconnect();
+  }
+}
+
+// ── Convierte XAH a drops ─────────────────────────────────────────────────────
 function xahToDrops(xah) {
   return String(Math.floor(Number(xah) * 1_000_000));
 }
 
+// ── Valida dirección r... ─────────────────────────────────────────────────────
 function esRAddressValida(address) {
   return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
 }
 
+// ── Modal con el QR ────────────────────────────────────────────────────────────
+function QRModal({ qrUrl, deepLink, onCancel }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.75)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 1000,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, padding: "2rem",
+        textAlign: "center", maxWidth: 300, width: "90%",
+      }}>
+        <h2 style={{ marginTop: 0 }}>Escanea con Xaman</h2>
+        <img src={qrUrl} alt="QR Xaman" width={220}
+          style={{ display: "block", margin: "0 auto" }} />
+        <p style={{ fontSize: "0.9rem" }}>
+          ¿En móvil?{" "}
+          <a href={deepLink} rel="noopener noreferrer">Abre Xaman directamente</a>
+        </p>
+        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancelar</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function App() {
-  // Estado de sesión
-  const [account, setAccount] = useState(null);
-
-  // Estado del formulario de pago
-  const [destino, setDestino]   = useState("");
-  const [cantidad, setCantidad] = useState("");
-
-  // Estado del payload / QR
+  const [account, setAccount]   = useState(null);
+  const [balance, setBalance]   = useState(null);
+  const [sequence, setSequence] = useState(null);
   const [qrUrl, setQrUrl]       = useState(null);
   const [deepLink, setDeepLink] = useState(null);
-  const [txid, setTxid]         = useState(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
-  // ── Eventos de autenticación ────────────────────────────────────────────────
-  useEffect(() => {
-    xumm.on("success", async () => {
-      const addr = await xumm.user.account;
-      setAccount(addr);
-      setQrUrl(null);
-    });
+  const [destino, setDestino]   = useState("");
+  const [cantidad, setCantidad] = useState("");
+  const [txid, setTxid]         = useState(null);
+  const [txStatus, setTxStatus] = useState(null);
 
-    xumm.on("error", () => {
-      setError("Error conectando con Xaman");
-      setLoading(false);
-    });
-
-    xumm.on("logout", () => {
-      setAccount(null);
-      setTxid(null);
-    });
-  }, []);
-
-  // ── Login ───────────────────────────────────────────────────────────────────
-  async function handleLogin() {
+  // ── Login ────────────────────────────────────────────────────────────────────
+  async function conectarConXaman() {
     setLoading(true);
     setError(null);
-    const resp = await xumm.authorize();
-    if (resp) {
-      setQrUrl(resp.qrUrl);
-      setDeepLink(resp.deeplink);
+    try {
+      const { created, resolved } = await xumm.payload.createAndSubscribe(
+        { txjson: { TransactionType: "SignIn" } },
+        (event) => {
+          if (typeof event.data.signed !== "undefined") return event.data;
+        }
+      );
+
+      setQrUrl(created.refs.qr_png);
+      setDeepLink(created.next.always);
+
+      const result = await resolved;
+      setQrUrl(null);
+      setDeepLink(null);
+
+      if (result.signed) {
+        const payloadResult = await xumm.payload.get(created.uuid);
+        const userAccount = payloadResult.response.account;
+        setAccount(userAccount);
+
+        const info = await obtenerInfoCuenta(userAccount);
+        setBalance(info.balance);
+        setSequence(info.sequence);
+      } else {
+        setError("Firma rechazada por el usuario");
+      }
+    } catch (err) {
+      console.error("Error Xaman:", err);
+      setError(\`Error: \${err.message || "No se pudo conectar"}\`);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
-  // ── Crear payload de pago ───────────────────────────────────────────────────
-  async function handleEnviarPago(e) {
+  // ── Enviar pago ───────────────────────────────────────────────────────────────
+  async function enviarPago(e) {
     e.preventDefault();
     setError(null);
     setTxid(null);
+    setTxStatus(null);
 
-    // Validaciones del cliente
     if (!esRAddressValida(destino)) {
       setError("Dirección destino inválida (debe empezar por 'r')");
       return;
@@ -856,121 +924,111 @@ export default function App() {
     }
 
     setLoading(true);
-
     try {
-      const transaccion = {
-        TransactionType: "Payment",
-        Account: account,
-        Destination: destino,
-        Amount: xahToDrops(cantidadNum),  // drops = XAH * 1,000,000
-      };
-
-      // Crear el payload y suscribirse para recibir el resultado
       const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: transaccion },
+        {
+          txjson: {
+            TransactionType: "Payment",
+            Account: account,
+            Destination: destino,
+            Amount: xahToDrops(cantidadNum),
+          },
+        },
         (event) => {
-          // Resolver cuando el usuario firma o rechaza
-          if ("signed" in event.data) {
-            return event.data;
-          }
+          if (typeof event.data.signed !== "undefined") return event.data;
         }
       );
 
-      // Mostrar QR para que el usuario escanee y firme el pago
       setQrUrl(created.refs.qr_png);
       setDeepLink(created.next.always);
 
-      // Esperar a que el usuario firme o rechace
-      const resultado = await resolved;
+      const result = await resolved;
       setQrUrl(null);
       setDeepLink(null);
 
-      if (resultado?.signed === true) {
-        setTxid(resultado.txid);
-        console.log("Pago firmado. TXID:", resultado.txid);
+      if (result.signed) {
+        const payloadResult = await xumm.payload.get(created.uuid);
+        setTxid(result.txid);
+        setTxStatus(payloadResult.response.dispatched_result);
       } else {
         setError("El usuario rechazó la transacción");
       }
     } catch (err) {
-      console.error(err);
-      setError("Error al crear el pago");
+      console.error("Error pago:", err);
+      setError(\`Error: \${err.message || "No se pudo crear el pago"}\`);
     } finally {
       setLoading(false);
     }
   }
 
-  // ── Renderizado ─────────────────────────────────────────────────────────────
-
-  // Sin login
-  if (!account) {
-    return (
-      <div style={{ padding: 32, fontFamily: "sans-serif" }}>
-        <h1>💸 Xahau Payment Demo</h1>
-        {qrUrl ? (
-          <>
-            <p>Escanea el QR con Xaman para identificarte:</p>
-            <img src={qrUrl} alt="QR Login" width={220} />
-            <br />
-            <a href={deepLink}>Abrir en Xaman (móvil)</a>
-          </>
-        ) : (
-          <button onClick={handleLogin} disabled={loading}>
-            🔑 Conectar con Xaman
-          </button>
-        )}
-        {error && <p style={{ color: "red" }}>{error}</p>}
-      </div>
-    );
+  function cancelar() {
+    setQrUrl(null);
+    setDeepLink(null);
+    setLoading(false);
   }
 
-  // Con login — mostrar formulario de pago
+  function desconectar() {
+    setAccount(null);
+    setBalance(null);
+    setSequence(null);
+    setTxid(null);
+    setTxStatus(null);
+    setDestino("");
+    setCantidad("");
+  }
+
+  // ── Renderizado ───────────────────────────────────────────────────────────────
   return (
-    <div style={{ padding: 32, fontFamily: "sans-serif" }}>
+    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
       <h1>💸 Xahau Payment Demo</h1>
-      <p>
-        Conectado: <code>{account}</code>{" "}
-        <button onClick={() => xumm.logout()}>Salir</button>
-      </p>
 
-      <hr />
-
-      {/* QR del pago */}
-      {qrUrl && (
+      {/* Barra de sesión */}
+      {account ? (
         <div>
-          <p>Escanea este QR en Xaman para <strong>firmar el pago</strong>:</p>
-          <img src={qrUrl} alt="QR Pago" width={220} />
-          <br />
-          <a href={deepLink}>Abrir en Xaman (móvil)</a>
+          <p>✅ Conectado</p>
+          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Cuenta</td>
+                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
+              </tr>
+              <tr>
+                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
+                <td><strong>{balance} XAH</strong></td>
+              </tr>
+              <tr>
+                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Secuencia</td>
+                <td>{sequence}</td>
+              </tr>
+            </tbody>
+          </table>
+          <button onClick={desconectar}>Desconectar</button>
+        </div>
+      ) : (
+        <div>
+          {error && <p style={{ color: "red" }}>{error}</p>}
+          <button onClick={conectarConXaman} disabled={loading}>
+            {loading ? "Generando QR..." : "🔑 Conectar con Xaman"}
+          </button>
         </div>
       )}
 
-      {/* Resultado */}
-      {txid && (
-        <div style={{ background: "#e6ffe6", padding: 16, borderRadius: 8 }}>
-          <p>✅ ¡Pago enviado!</p>
-          <p>TXID: <code>{txid}</code></p>
-        </div>
-      )}
-
-      {/* Formulario */}
-      {!qrUrl && !txid && (
-        <form onSubmit={handleEnviarPago}>
-          <h2>Enviar XAH</h2>
-          <div>
-            <label>Dirección destino:</label>
-            <br />
+      {/* Formulario de pago — visible cuando hay sesión y no hay QR activo */}
+      {account && !qrUrl && (
+        <form onSubmit={enviarPago} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
+          <h2 style={{ marginTop: 0 }}>Enviar XAH</h2>
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: 4 }}>Dirección destino:</label>
             <input
               type="text"
               placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
               value={destino}
               onChange={(e) => setDestino(e.target.value)}
-              style={{ width: 340, padding: 8 }}
+              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
             />
           </div>
-          <br />
-          <div>
-            <label>Cantidad (XAH):</label>
-            <br />
+          <div style={{ marginBottom: "1rem" }}>
+            <label style={{ display: "block", marginBottom: 4 }}>Cantidad (XAH):</label>
             <input
               type="number"
               placeholder="0.01"
@@ -981,66 +1039,47 @@ export default function App() {
               style={{ width: 160, padding: 8 }}
             />
           </div>
-          <br />
           {error && <p style={{ color: "red" }}>{error}</p>}
           <button type="submit" disabled={loading}>
             {loading ? "Esperando firma..." : "📤 Enviar pago"}
           </button>
         </form>
       )}
+
+      {/* Resultado del pago */}
+      {txid && (
+        <div style={{
+          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
+          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
+          padding: 16, borderRadius: 8, marginTop: "1.5rem",
+          color: "#ffffff",
+        }}>
+          {txStatus === "tesSUCCESS" ? (
+            <>
+              <p style={{ margin: "0 0 8px", color: "#000000" }}>✅ <strong>¡Pago confirmado!</strong></p>
+              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#000000" }}>Hash de la transacción:</p>
+              <p style={{ margin: "0 0 8px" }}>
+                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#000000" }}>{txid}</code>
+              </p>
+              <a
+                href={\`https://xaman.app/explorer/21337/\${txid}\`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#66ccff" }}
+              >
+                🔍 Ver en Xaman Explorer
+              </a>
+            </>
+          ) : (
+            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Resultado: {txStatus}</strong></p>
+          )}
+        </div>
+      )}
+
+      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelar} />}
     </div>
   );
 }`,
-        },
-        {
-          title: {
-            es: "Verificar la transacción en el ledger tras la firma",
-            en: "Verify the transaction on the ledger after signing",
-            jp: "署名後にレジャーでトランザクションを検証",
-          },
-          language: "javascript",
-          code: `import { Client } from "xahau";
-
-// Tras recibir el txid de Xaman, verifica que la tx está en el ledger
-async function verificarTransaccion(txid) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  try {
-    const response = await client.request({
-      command: "tx",
-      transaction: txid,
-    });
-
-    const tx = response.result;
-    const resultado = tx.meta?.TransactionResult;
-    const exito = resultado === "tesSUCCESS";
-
-    console.log("Hash:", txid);
-    console.log("Tipo:", tx.TransactionType);
-    console.log("Estado:", resultado);
-    console.log("Éxito:", exito ? "✅ SÍ" : "❌ NO");
-
-    if (exito && tx.Amount) {
-      const xah = (Number(tx.Amount) / 1_000_000).toFixed(6);
-      console.log("Cantidad:", xah, "XAH");
-      console.log("Origen:", tx.Account);
-      console.log("Destino:", tx.Destination);
-    }
-
-    return { exito, resultado, tx };
-  } catch (err) {
-    if (err.message?.includes("txnNotFound")) {
-      console.log("Transacción aún no confirmada, espera unos segundos");
-    }
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// Llama esto tras recibir el txid del resolved del payload
-// const { exito } = await verificarTransaccion(resultado.txid);`,
         },
       ],
       slides: [
@@ -1613,419 +1652,6 @@ export default function App() {
         },
       ],
     },
-    {
-      id: "m11l5",
-      title: {
-        es: "Ejecutar los ejemplos en local (navegador)",
-        en: "Running the examples locally (browser)",
-        jp: "ローカルでサンプルを実行（ブラウザ）",
-      },
-      theory: {
-        es: `Todos los ejemplos de código de este módulo están diseñados para ejecutarse en el navegador o en Node.js. Esta lección explica paso a paso cómo levantar cada tipo de proyecto en tu máquina.
-
-### Requisitos previos
-
-- **Node.js 18+** instalado — comprueba con \`node -v\`
-- **npm 9+** — comprueba con \`npm -v\`
-- **Tu API Key de Xaman** — obtenida en [apps.xumm.dev](https://apps.xumm.dev)
-- **App Xaman** instalada en tu móvil (iOS / Android)
-
----
-
-### Paso 1 — Añadir localhost a la whitelist del portal
-
-Antes de que el SDK funcione en local, debes autorizar el origen \`localhost\` en el portal de desarrolladores:
-
-1. Ve a **apps.xumm.dev** e inicia sesión
-2. Selecciona tu aplicación
-3. En la sección **"Origin/Redirect URIs"**, añade:
-   - \`http://localhost:5173\` (Vite dev server)
-   - \`http://localhost:3000\` (si usas otro puerto)
-4. Guarda los cambios
-
-Sin este paso el SDK rechazará las peticiones desde localhost con un error de CORS o de dominio no autorizado.
-
----
-
-### Tipo A — Ejemplos frontend (m11l2 y m11l3): React + Vite
-
-Los ejemplos de login y pago del frontend son componentes React que se ejecutan en el navegador. Para probarlos:
-
-\`\`\`bash
-# 1. Crear un nuevo proyecto React con Vite
-npm create vite@latest xaman-demo -- --template react
-cd xaman-demo
-
-# 2. Instalar el SDK de Xaman
-npm install xumm
-
-# 3. Copiar el código de ejemplo al archivo src/App.jsx
-#    (sustituye TU_API_KEY_AQUI por tu API Key real)
-
-# 4. Arrancar el servidor de desarrollo
-npm run dev
-\`\`\`
-
-Vite arrancará en **http://localhost:5173**. Abre esa URL en el navegador y verás la app de demo.
-
-**Estructura final del proyecto:**
-\`\`\`
-xaman-demo/
-├── package.json
-├── vite.config.js      ← sin cambios
-├── index.html          ← sin cambios
-└── src/
-    └── App.jsx         ← pega aquí el código del ejemplo
-\`\`\`
-
-**Flujo de prueba:**
-1. El navegador muestra el botón "Conectar con Xaman"
-2. Haces clic → aparece un QR
-3. Abres Xaman en el móvil y escaneas el QR (o usas el deep link)
-4. Firmas en el móvil
-5. El navegador actualiza el estado automáticamente
-
----
-
-### Tipo B — Ejemplos backend (m11l4): Express + React
-
-El backend requiere dos terminales abiertas en paralelo: una para el servidor Express y otra para el frontend React.
-
-**Terminal 1 — Backend Express:**
-\`\`\`bash
-# Crear el proyecto backend
-mkdir xaman-backend && cd xaman-backend
-npm init -y
-npm install express xumm dotenv cors
-npm pkg set type="module"
-
-# Crear el .env con tus credenciales
-echo "XUMM_API_KEY=tu-api-key-aqui" > .env
-echo "XUMM_API_SECRET=tu-api-secret-aqui" >> .env
-echo "PORT=3001" >> .env
-
-# Copiar el código de server.js del ejemplo
-# Arrancar el servidor
-node server.js
-\`\`\`
-
-El backend corre en **http://localhost:3001**.
-
-**Terminal 2 — Frontend React:**
-\`\`\`bash
-# En otro directorio, crear el frontend
-npm create vite@latest xaman-frontend -- --template react
-cd xaman-frontend
-npm install
-
-# Copiar el código del "Frontend que consume el backend"
-# en src/App.jsx (la URL del API ya apunta a localhost:3001)
-
-npm run dev
-\`\`\`
-
-El frontend corre en **http://localhost:5173** y hace peticiones al backend en el puerto 3001.
-
----
-
-### Tipo C — Probar los webhooks con ngrok
-
-Los webhooks de Xaman requieren una URL pública. En local puedes usar **ngrok** para exponerla:
-
-\`\`\`bash
-# Instalar ngrok (una sola vez)
-npm install -g ngrok
-
-# Exponer el puerto del backend
-ngrok http 3001
-\`\`\`
-
-ngrok te dará una URL pública como \`https://abc123.ngrok-free.app\`. Copia esa URL y ponla como Webhook URL en apps.xumm.dev:
-\`\`\`
-https://abc123.ngrok-free.app/webhook/xaman
-\`\`\`
-
-> Nota: ngrok gratuito genera una URL diferente cada vez que lo reinicias. Para desarrollo es suficiente.
-
----
-
-### Solución de problemas frecuentes
-
-| Problema | Causa probable | Solución |
-|---|---|---|
-| Error CORS o "domain not allowed" | localhost no está en la whitelist | Añadir localhost en apps.xumm.dev |
-| QR no aparece / \`undefined\` | API Key incorrecta o sin whitelist | Verificar la key y el dominio |
-| El móvil no escanea el QR | El QR es una URL externa | Asegúrate de mostrar la imagen de \`qrUrl\` |
-| El webhook no llega | URL no pública | Usar ngrok |
-| Error \`XUMM_API_SECRET is undefined\` | Falta el .env o no se carga dotenv | Verificar que \`.env\` existe y \`import "dotenv/config"\` está en el servidor |`,
-        en: `All code examples in this module are designed to run in the browser or in Node.js. This lesson walks through how to start each type of project on your machine.
-
-### Prerequisites
-
-- **Node.js 18+** installed — check with \`node -v\`
-- **npm 9+** — check with \`npm -v\`
-- **Your Xaman API Key** — obtained from [apps.xumm.dev](https://apps.xumm.dev)
-- **Xaman app** installed on your phone (iOS / Android)
-
----
-
-### Step 1 — Add localhost to the portal whitelist
-
-Before the SDK works locally, you must authorize the \`localhost\` origin in the developer portal:
-
-1. Go to **apps.xumm.dev** and sign in
-2. Select your application
-3. In the **"Origin/Redirect URIs"** section, add:
-   - \`http://localhost:5173\` (Vite dev server)
-   - \`http://localhost:3000\` (if using a different port)
-4. Save changes
-
-Without this step the SDK will reject requests from localhost with a CORS or unauthorized domain error.
-
----
-
-### Type A — Frontend examples (m11l2 and m11l3): React + Vite
-
-The frontend login and payment examples are React components that run in the browser:
-
-\`\`\`bash
-npm create vite@latest xaman-demo -- --template react
-cd xaman-demo
-npm install xumm
-# Paste the example code into src/App.jsx
-# Replace TU_API_KEY_AQUI with your real API Key
-npm run dev
-\`\`\`
-
-Vite starts at **http://localhost:5173**. Open that URL in the browser.
-
----
-
-### Type B — Backend examples (m11l4): Express + React
-
-Requires two open terminals:
-
-**Terminal 1 — Express backend:**
-\`\`\`bash
-mkdir xaman-backend && cd xaman-backend
-npm init -y
-npm install express xumm dotenv cors
-npm pkg set type="module"
-# Create .env with your credentials
-# Paste server.js example code
-node server.js
-\`\`\`
-
-**Terminal 2 — React frontend:**
-\`\`\`bash
-npm create vite@latest xaman-frontend -- --template react
-cd xaman-frontend && npm install
-# Paste the "Frontend consuming the backend" code into src/App.jsx
-npm run dev
-\`\`\`
-
----
-
-### Type C — Testing webhooks with ngrok
-
-\`\`\`bash
-npm install -g ngrok
-ngrok http 3001
-# Copy the public URL to apps.xumm.dev → Webhook URL
-\`\`\`
-
----
-
-### Common issues
-
-| Problem | Likely cause | Solution |
-|---|---|---|
-| CORS error or "domain not allowed" | localhost not whitelisted | Add localhost in apps.xumm.dev |
-| QR doesn't appear | Wrong API Key | Check the key and domain |
-| Webhook not arriving | No public URL | Use ngrok |`,
-        jp: `このモジュールのすべてのコードサンプルは、ブラウザまたはNode.jsで実行するよう設計されています。このレッスンでは、各タイプのプロジェクトをローカルマシンで起動する方法を説明します。
-
-### 前提条件
-
-- **Node.js 18+** インストール済み — \`node -v\` で確認
-- **npm 9+** — \`npm -v\` で確認
-- **XamanのAPIキー** — [apps.xumm.dev](https://apps.xumm.dev)から取得
-- **Xamanアプリ** スマホにインストール済み（iOS/Android）
-
----
-
-### ステップ1 — ポータルのホワイトリストにlocalhostを追加
-
-SDKがローカルで動作するには、開発者ポータルで\`localhost\`オリジンを承認する必要があります：
-
-1. **apps.xumm.dev**にアクセスしてサインイン
-2. アプリを選択
-3. **「Origin/Redirect URIs」**セクションに追加：
-   - \`http://localhost:5173\`
-4. 変更を保存`,
-      },
-      codeBlocks: [
-        {
-          title: {
-            es: "Arrancar el ejemplo frontend (React + Vite) desde cero",
-            en: "Starting the frontend example (React + Vite) from scratch",
-            jp: "フロントエンドサンプルを最初から起動（React + Vite）",
-          },
-          language: "bash",
-          code: `# ── 1. Crear el proyecto ──────────────────────────────────────────
-npm create vite@latest xaman-demo -- --template react
-cd xaman-demo
-
-# ── 2. Instalar el SDK de Xaman ───────────────────────────────────
-npm install xumm
-
-# ── 3. Copiar el código del ejemplo en src/App.jsx ────────────────
-#    (el código completo está en la lección m11l2 o m11l3 de este módulo)
-#    Recuerda sustituir TU_API_KEY_AQUI por tu API Key real de apps.xumm.dev
-
-# ── 4. Opcional: borrar el CSS de ejemplo que no necesitas ─────────
-rm src/App.css src/index.css 2>/dev/null || true
-
-# ── 5. Arrancar el servidor de desarrollo ─────────────────────────
-npm run dev
-
-# La app estará disponible en:
-#   http://localhost:5173
-#
-# IMPORTANTE: asegúrate de haber añadido http://localhost:5173
-# como "Origin/Redirect URI" en apps.xumm.dev antes de probar`,
-        },
-        {
-          title: {
-            es: "Arrancar el backend Express + frontend React en paralelo",
-            en: "Starting Express backend + React frontend in parallel",
-            jp: "ExpressバックエンドとReactフロントエンドを並行起動",
-          },
-          language: "bash",
-          code: `# ════════════════════════════════════════════════════════════════
-# TERMINAL 1 — Backend Express (puerto 3001)
-# ════════════════════════════════════════════════════════════════
-
-mkdir xaman-backend && cd xaman-backend
-npm init -y
-npm install express xumm dotenv cors
-npm pkg set type="module"
-
-# Crear el archivo de variables de entorno
-cat > .env << 'EOF'
-XUMM_API_KEY=tu-api-key-aqui
-XUMM_API_SECRET=tu-api-secret-aqui
-PORT=3001
-EOF
-
-# Añadir .env al .gitignore (nunca subas tus credenciales a git)
-echo ".env" >> .gitignore
-echo "node_modules/" >> .gitignore
-
-# Copiar el código de server.js del ejemplo m11l4 en este módulo
-# y luego arrancar:
-node server.js
-
-# Deberías ver:
-#   Servidor corriendo en http://localhost:3001
-
-
-# ════════════════════════════════════════════════════════════════
-# TERMINAL 2 — Frontend React (puerto 5173)
-# ════════════════════════════════════════════════════════════════
-
-npm create vite@latest xaman-frontend -- --template react
-cd xaman-frontend
-npm install
-
-# Copiar el código "Frontend que consume el backend" del ejemplo
-# m11l4 en src/App.jsx (la URL del API ya apunta a http://localhost:3001)
-
-npm run dev
-
-# Abre el navegador en:
-#   http://localhost:5173`,
-        },
-        {
-          title: {
-            es: "Exponer el backend con ngrok para recibir webhooks de Xaman",
-            en: "Expose the backend with ngrok to receive Xaman webhooks",
-            jp: "ngrokでバックエンドを公開してXamanのWebhookを受信",
-          },
-          language: "bash",
-          code: `# ── Instalar ngrok (una sola vez) ────────────────────────────────
-npm install -g ngrok
-# o descarga desde https://ngrok.com/download
-
-# ── Exponer el puerto 3001 del backend ───────────────────────────
-ngrok http 3001
-
-# ngrok mostrará algo como:
-#
-#   Forwarding   https://abc123.ngrok-free.app -> http://localhost:3001
-#
-# ── Configurar el webhook en apps.xumm.dev ───────────────────────
-# 1. Copia la URL pública de ngrok (https://abc123...)
-# 2. Ve a apps.xumm.dev → tu app → Webhook URL
-# 3. Pega: https://abc123.ngrok-free.app/webhook/xaman
-# 4. Guarda
-
-# ── Verificar que llegan los webhooks ────────────────────────────
-# Cuando el usuario firme un payload, verás en la Terminal 1 del backend:
-#
-#   Webhook recibido: {
-#     "payloadResponse": {
-#       "signed": true,
-#       "txid": "ABC123...",
-#       "account": "rXXXXXXXX..."
-#     }
-#   }
-
-# ── Nota: ngrok gratuito cambia la URL en cada reinicio ──────────
-# Para desarrollo es suficiente, pero en producción usa un dominio propio.`,
-        },
-      ],
-      slides: [
-        {
-          title: {
-            es: "Antes de ejecutar: whitelist en apps.xumm.dev",
-            en: "Before running: whitelist in apps.xumm.dev",
-            jp: "実行前：apps.xumm.devのホワイトリスト",
-          },
-          content: {
-            es: "Paso obligatorio antes de probar en local:\n\n1. apps.xumm.dev → tu app\n2. Origin/Redirect URIs → añadir:\n   http://localhost:5173\n3. Guardar cambios\n\nSin este paso el SDK rechazará\nlas peticiones con error de dominio",
-            en: "Mandatory step before testing locally:\n\n1. apps.xumm.dev → your app\n2. Origin/Redirect URIs → add:\n   http://localhost:5173\n3. Save changes\n\nWithout this step the SDK rejects\nrequests with a domain error",
-            jp: "ローカルテスト前の必須ステップ：\n\n1. apps.xumm.dev → あなたのアプリ\n2. Origin/Redirect URIs → 追加：\n   http://localhost:5173\n3. 変更を保存\n\nこのステップがないとSDKが\nドメインエラーでリクエストを拒否",
-          },
-          visual: "⚙️",
-        },
-        {
-          title: {
-            es: "Frontend en el navegador (React + Vite)",
-            en: "Frontend in the browser (React + Vite)",
-            jp: "ブラウザでフロントエンド（React + Vite）",
-          },
-          content: {
-            es: "Para los ejemplos m11l2 y m11l3:\n\nnpm create vite@latest demo -- --template react\ncd demo\nnpm install xumm\n→ pega el código en src/App.jsx\n→ sustituye TU_API_KEY_AQUI\nnpm run dev\n\nAbre: http://localhost:5173",
-            en: "For examples m11l2 and m11l3:\n\nnpm create vite@latest demo -- --template react\ncd demo\nnpm install xumm\n→ paste code into src/App.jsx\n→ replace TU_API_KEY_AQUI\nnpm run dev\n\nOpen: http://localhost:5173",
-            jp: "m11l2・m11l3のサンプル用：\n\nnpm create vite@latest demo -- --template react\ncd demo\nnpm install xumm\n→ src/App.jsxにコードを貼り付け\n→ TU_API_KEY_AQUIを置き換え\nnpm run dev\n\n開く: http://localhost:5173",
-          },
-          visual: "🌐",
-        },
-        {
-          title: {
-            es: "Backend + Frontend + ngrok",
-            en: "Backend + Frontend + ngrok",
-            jp: "バックエンド + フロントエンド + ngrok",
-          },
-          content: {
-            es: "Para el ejemplo m11l4:\n\nTerminal 1 (backend Express):\n  node server.js → puerto 3001\n\nTerminal 2 (frontend React):\n  npm run dev → puerto 5173\n\nPara webhooks:\n  ngrok http 3001\n  → URL pública a apps.xumm.dev",
-            en: "For example m11l4:\n\nTerminal 1 (Express backend):\n  node server.js → port 3001\n\nTerminal 2 (React frontend):\n  npm run dev → port 5173\n\nFor webhooks:\n  ngrok http 3001\n  → public URL to apps.xumm.dev",
-            jp: "m11l4のサンプル用：\n\nターミナル1（Expressバックエンド）：\n  node server.js → ポート3001\n\nターミナル2（Reactフロントエンド）：\n  npm run dev → ポート5173\n\nWebhook用：\n  ngrok http 3001\n  → 公開URLをapps.xumm.devへ",
-          },
-          visual: "🖥️",
-        },
-      ],
-    },
+    
   ],
 };
