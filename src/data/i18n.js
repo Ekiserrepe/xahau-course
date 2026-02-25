@@ -1,6 +1,6 @@
 export const UI_LABELS = {
   es: {
-    title: "Xahau Academy",
+    title: "Learn Xahau",
     subtitle: "Curso de Iniciación a la Programación",
     progress: "Progreso",
     theory: "Teoría",
@@ -30,7 +30,7 @@ export const UI_LABELS = {
     slideMode: "Modo Presentación",
   },
   en: {
-    title: "Xahau Academy",
+    title: "Learn Xahau",
     subtitle: "Introduction to Programming Course",
     progress: "Progress",
     theory: "Theory",
@@ -60,7 +60,7 @@ export const UI_LABELS = {
     slideMode: "Presentation Mode",
   },
   jp: {
-    title: "Xahau Academy",
+    title: "Learn Xahau",
     subtitle: "プログラミング入門コース",
     progress: "進捗",
     theory: "理論",
