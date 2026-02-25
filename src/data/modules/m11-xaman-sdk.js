@@ -1134,12 +1134,43 @@ const txid   = resultado.txid;                           // hash de la transacci
 
 The amount is always expressed in **drops** (smallest XAH unit). To convert: \`drops = XAH * 1_000_000\`.
 
+### Creating the payload with the SDK
+
+\`\`\`javascript
+const { created, resolved } = await xumm.payload.createAndSubscribe(
+  { txjson: transaction },
+  (event) => {
+    // This callback is called on every update
+    if ("signed" in event.data) {
+      return event.data;  // resolves the promise with the result
+    }
+  }
+);
+\`\`\`
+
+- \`created\` contains \`created.refs.qr_png\` (QR URL) and \`created.next.always\` (deep link)
+- \`resolved\` is a Promise that resolves when the user signs or rejects
+- If \`resolved.signed === true\` → successful signature, \`resolved.txid\` is the hash
+
 ### Validation before sending
 
 Always validate on the client before creating the payload:
 - Destination address is valid (starts with \`r\`, ~25-34 chars)
 - Amount is a positive number
-- Not the same account as origin`,
+- Not the same account as origin
+
+### Check transaction status from Xaman
+
+After signing you don't need to connect to the ledger: you can query the payload with **\`xumm.payload.get(uuid)\`**. The response includes \`response.dispatched_result\`, which contains the ledger result code:
+
+- \`"tesSUCCESS"\` → transaction confirmed successfully
+- Any other value (e.g. \`"tecINSUF_RESERVE_LINE"\`) → error in the ledger
+
+\`\`\`javascript
+const payloadResult = await xumm.payload.get(created.uuid);
+const status = payloadResult.response.dispatched_result; // "tesSUCCESS" or error code
+const txid   = result.txid;                              // transaction hash
+\`\`\``,
         jp: `ユーザーがXamanで認証されると、あらゆるXahauトランザクションへの署名を求めることができます。このレッスンでは、ユーザーが**金額**と**宛先アドレス**を入力するペイメントフォームを構築し、ペイロードを作成して、ユーザーがQRを再スキャンしてPaymentに署名します。
 
 ### 支払いフローの仕組み
@@ -1153,9 +1184,57 @@ Always validate on the client before creating the payload:
 7. ユーザーが承認・署名（ネットワーク手数料が発生）
 8. アプリがトランザクションの\`txid\`付きの結果を受信
 
-### 金額はdropsで
+### XahauのPayment構造
 
-金額は常に**drops**（XAHの最小単位）で表します。変換：\`drops = XAH × 1,000,000\``,
+\`\`\`javascript
+{
+  TransactionType: "Payment",
+  NetworkID: 21338,              // Xahau Testnet — 他のネットワークで署名しないため
+  Account: "送信元アカウント",      // ログイン中のユーザーのアカウント
+  Destination: "宛先アカウント",
+  Amount: "1000000",             // drops単位（1 XAH = 1,000,000 drops）
+}
+\`\`\`
+
+金額は常に**drops**（XAHの最小単位）で表します。変換：\`drops = XAH × 1,000,000\`
+
+### SDKでペイロードを作成する
+
+\`\`\`javascript
+const { created, resolved } = await xumm.payload.createAndSubscribe(
+  { txjson: transaction },
+  (event) => {
+    // このコールバックは更新があるたびに呼ばれる
+    if ("signed" in event.data) {
+      return event.data;  // 結果でPromiseを解決
+    }
+  }
+);
+\`\`\`
+
+- \`created\` には \`created.refs.qr_png\`（QR URL）と \`created.next.always\`（ディープリンク）が含まれる
+- \`resolved\` はユーザーが署名または拒否したときに解決するPromise
+- \`resolved.signed === true\` → 署名成功、\`resolved.txid\` がハッシュ
+
+### 送信前のバリデーション
+
+ペイロード作成前に必ずクライアント側でバリデーション：
+- 宛先アドレスが有効（\`r\`で始まり、~25-34文字）
+- 金額が正の数
+- 送信元と同じアカウントではない
+
+### Xamanからトランザクション状態を確認する
+
+署名後にレジャーへ接続する必要はありません：**\`xumm.payload.get(uuid)\`**でペイロードを照会できます。レスポンスには\`response.dispatched_result\`が含まれ、レジャーの結果コードが入っています：
+
+- \`"tesSUCCESS"\` → トランザクションが正常に確認された
+- その他の値（例：\`"tecINSUF_RESERVE_LINE"\`）→ レジャーでエラー
+
+\`\`\`javascript
+const payloadResult = await xumm.payload.get(created.uuid);
+const status = payloadResult.response.dispatched_result; // "tesSUCCESS" またはエラーコード
+const txid   = result.txid;                              // トランザクションハッシュ
+\`\`\``,
       },
       codeBlocks: [
         {
@@ -2065,17 +2144,43 @@ xaman-backend/
 - **Webhooks**: receive Xaman notifications when the user signs
 - **Integration**: connect with other systems (email, CRM, accounting)
 
+### Backend project architecture
+
+\`\`\`
+Frontend (React)          Backend (Express)          Xaman API
+     │                          │                         │
+     │── POST /payment ────────▶ │                         │
+     │   { destination, amount } │── Create payload ───────▶│
+     │                          │◀── UUID + QR URL ─────────│
+     │◀── { qrUrl, uuid } ───── │                         │
+     │                          │                         │
+     │ (show QR to user)        │                         │
+     │                          │◀── Webhook: signed ──────│
+     │                          │   (user signed)          │
+     │                          │── Save to DB             │
+     │                          │── Verify ledger          │
+\`\`\`
+
 ### Webhooks vs WebSocket subscription
 
+You have two ways to receive the signing notification:
+
 **Webhook** (recommended for production):
-- Xaman sends HTTP POST to your server when user signs
+- Xaman sends an HTTP POST to your server when the user signs
 - Needs a public URL (doesn't work on localhost without a tunnel)
 - More robust — no need to keep a connection open
 
 **WebSocket subscription** (easier for development):
-- SDK maintains WebSocket connection with Xaman
+- The SDK maintains a WebSocket connection with Xaman
 - Real-time notification in your Node.js code
-- Works on localhost without extra config
+- Works on localhost without extra configuration
+
+### Configure the webhook in the dashboard
+
+1. In **apps.xumm.dev**, go to your app
+2. Under "Webhook", enter your server URL: \`https://your-server.com/webhook/xaman\`
+3. Save the changes
+4. Xaman will send a POST to that URL with the result of each payload
 
 ### Environment variables (never hardcode secrets)
 
@@ -2086,7 +2191,25 @@ XUMM_API_SECRET=your-api-secret-here
 PORT=3001
 \`\`\`
 
-Add \`.env\` to your \`.gitignore\` so credentials never go to GitHub.`,
+Add \`.env\` to your \`.gitignore\` so credentials never go to GitHub.
+
+If you suspect your API Secret has been compromised, rotate the credentials from the Xumm dashboard: generate a new API Key + API Secret pair, update your backend with the new credentials, and delete the old ones.
+
+### Backend project structure
+
+\`\`\`
+xaman-backend/
+├── .env              # Credentials (never to git)
+├── .gitignore        # Includes .env
+├── package.json
+├── server.js         # Main Express server
+└── src/
+    ├── xumm.js       # Shared SDK instance
+    ├── routes/
+    │   ├── auth.js   # Login routes
+    │   └── payment.js # Payment routes
+    └── webhook.js    # Xaman webhook handler
+\`\`\``,
         jp: `前のレッスンではフロントエンドがブラウザから直接ペイロードを作成しました（APIキーのみ使用）。**バックエンド**アプローチはセキュリティレイヤーとビジネスロジックを追加します：サーバーがAPIキーと**APIシークレット**を使ってペイロードを作成し、フロントエンドは表示するQRのみを受け取ります。
 
 ### なぜバックエンドを使うのか？
@@ -2097,7 +2220,26 @@ Add \`.env\` to your \`.gitignore\` so credentials never go to GitHub.`,
 - **Webhook**：ユーザーが署名した際にXamanから通知を受信
 - **統合**：他のシステムとの連携（メール、CRM、会計）
 
+### バックエンドプロジェクトのアーキテクチャ
+
+\`\`\`
+Frontend (React)          Backend (Express)          Xaman API
+     │                          │                         │
+     │── POST /payment ────────▶ │                         │
+     │   { destination, amount } │── ペイロード作成 ────────▶│
+     │                          │◀── UUID + QR URL ─────────│
+     │◀── { qrUrl, uuid } ───── │                         │
+     │                          │                         │
+     │ （ユーザーにQR表示）       │                         │
+     │                          │◀── Webhook: signed ──────│
+     │                          │   （ユーザーが署名）       │
+     │                          │── DBに保存               │
+     │                          │── レジャーで確認          │
+\`\`\`
+
 ### Webhookと WebSocketサブスクリプション
+
+署名通知を受け取る方法は2つあります：
 
 **Webhook**（本番環境推奨）：
 - ユーザーが署名するとXamanがサーバーにHTTP POSTを送信
@@ -2107,7 +2249,43 @@ Add \`.env\` to your \`.gitignore\` so credentials never go to GitHub.`,
 **WebSocketサブスクリプション**（開発に最適）：
 - SDKがXamanとWebSocket接続を維持
 - Node.jsコードでリアルタイム通知
-- 追加設定なしでlocalhostで動作`,
+- 追加設定なしでlocalhostで動作
+
+### ダッシュボードでWebhookを設定する
+
+1. **apps.xumm.dev**でアプリに移動
+2. 「Webhook」にサーバーURLを入力：\`https://your-server.com/webhook/xaman\`
+3. 変更を保存
+4. XamanがペイロードごとにそのURLへPOSTを送信する
+
+### 環境変数（シークレットをハードコードしない）
+
+\`\`\`bash
+# .env （このファイルはgitにコミットしない）
+XUMM_API_KEY=your-api-key-here
+XUMM_API_SECRET=your-api-secret-here
+PORT=3001
+\`\`\`
+
+\`.env\`を\`.gitignore\`に追加して認証情報がGitHubに上がらないようにしましょう。
+
+APIシークレットが漏洩した疑いがある場合は、Xummダッシュボードから認証情報をローテーションしてください：新しいAPIキー＋APIシークレットのペアを生成し、バックエンドを新しい認証情報で更新して、古いものを削除します。
+
+### バックエンドプロジェクトの構造
+
+\`\`\`
+xaman-backend/
+├── .env              # 認証情報（gitには含めない）
+├── .gitignore        # .envを含む
+├── package.json
+├── server.js         # メインExpressサーバー
+└── src/
+    ├── xumm.js       # 共有SDKインスタンス
+    ├── routes/
+    │   ├── auth.js   # ログインルート
+    │   └── payment.js # 支払いルート
+    └── webhook.js    # XamanのWebhookハンドラー
+\`\`\``,
       },
       codeBlocks: [
         {
@@ -2126,6 +2304,7 @@ cd xaman-backend
 mkdir public
 
 # 3. Instalar dependencias
+npm init -y
 npm install express xumm dotenv cors
 npm install --save-dev nodemon
 
@@ -2143,6 +2322,7 @@ cd xaman-backend
 mkdir public
 
 # 3. Install dependencies
+npm init -y
 npm install express xumm dotenv cors
 npm install --save-dev nodemon
 
@@ -2160,6 +2340,7 @@ cd xaman-backend
 mkdir public
 
 # 3. Install dependencies
+npm init -y
 npm install express xumm dotenv cors
 npm install --save-dev nodemon
 
