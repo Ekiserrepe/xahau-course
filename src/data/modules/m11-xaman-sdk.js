@@ -322,7 +322,7 @@ Una vez que el origen está permitido, el método:
 
 \`\`\`javascript
 const { created, resolved } = await xumm.payload.createAndSubscribe(
-  { txjson: { TransactionType: "SignIn" } },
+  { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
   (event) => {
     if (typeof event.data.signed !== "undefined") return event.data;
   }
@@ -397,7 +397,7 @@ Once the origin is allowed, the method:
 
 \`\`\`javascript
 const { created, resolved } = await xumm.payload.createAndSubscribe(
-  { txjson: { TransactionType: "SignIn" } },
+  { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
   (event) => {
     if (typeof event.data.signed !== "undefined") return event.data;
   }
@@ -530,7 +530,7 @@ export default function App() {
     setError(null);
     try {
       const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn" } },
+        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
         (event) => {
           if (typeof event.data.signed !== "undefined") return event.data;
         }
@@ -685,6 +685,7 @@ export default function App() {
 \`\`\`javascript
 {
   TransactionType: "Payment",
+  NetworkID: 21338,              // Xahau Testnet — evita firmar en otra red
   Account: "cuenta_origen",      // la del usuario logado
   Destination: "cuenta_destino",
   Amount: "1000000",             // en drops (1 XAH = 1,000,000 drops)
@@ -870,7 +871,7 @@ export default function App() {
     setError(null);
     try {
       const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn" } },
+        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
         (event) => {
           if (typeof event.data.signed !== "undefined") return event.data;
         }
@@ -929,6 +930,7 @@ export default function App() {
         {
           txjson: {
             TransactionType: "Payment",
+            NetworkID: 21338,
             Account: account,
             Destination: destino,
             Amount: xahToDrops(cantidadNum),
@@ -1062,7 +1064,7 @@ export default function App() {
                 <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#000000" }}>{txid}</code>
               </p>
               <a
-                href={\`https://xaman.app/explorer/21337/\${txid}\`}
+                href={\`https://xaman.app/explorer/21338/\${txid}\`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ color: "#66ccff" }}
@@ -1166,7 +1168,7 @@ Tienes dos formas de recibir la notificación de firma:
 **Webhook** (recomendado para producción):
 - Xaman hace un HTTP POST a tu servidor cuando el usuario firma
 - Necesitas una URL pública (no funciona en localhost sin un túnel)
-- Más robusto — no necesitas mantener conexión abierta
+- Más robusto, no necesitas mantener conexión abierta
 
 **Suscripción WebSocket** (más fácil para desarrollo):
 - El SDK mantiene una conexión WebSocket con Xaman
@@ -1190,6 +1192,8 @@ PORT=3001
 \`\`\`
 
 Añade \`.env\` a tu \`.gitignore\` para que las credenciales nunca se suban a GitHub.
+
+Si tienes sospechas de que tu API Secret ha sido comprometida, rota las credenciales desde el dashboard de Xumm: genera un nuevo par de API Key + API Secret, actualiza tu backend con las nuevas credenciales, y elimina las antiguas.
 
 ### Estructura del proyecto backend
 
@@ -1320,7 +1324,7 @@ const xumm = new Xumm(
 app.post("/api/login", async (req, res) => {
   try {
     const payload = await xumm.payload.create({
-      txjson: { TransactionType: "SignIn" },
+      txjson: { TransactionType: "SignIn", NetworkID: 21338 },
     });
 
     // Devolver al frontend el QR y el UUID para seguir el estado
@@ -1378,6 +1382,7 @@ app.post("/api/pago", async (req, res) => {
     const payload = await xumm.payload.create({
       txjson: {
         TransactionType: "Payment",
+        NetworkID: 21338,
         Account: origen,
         Destination: destino,
         Amount: drops,
