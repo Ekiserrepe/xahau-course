@@ -91,7 +91,8 @@ A URIToken is a **unique** object on the ledger that contains:
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 function toHex(str) {
@@ -136,6 +137,53 @@ async function mintURIToken() {
 }
 
 mintURIToken();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function mintURIToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const creator = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Create a URIToken with a URI pointing to the metadata
+  const mint = {
+    TransactionType: "URITokenMint",
+    Account: creator.address,
+    // Example URI (can be IPFS, HTTPS, etc.) - Example: ipfs://bafybeieza5w4rkes55paw7jgpo4kzsbyywhw7ildltk3kjx2ttkmt7texa/106.json
+    URI: toHex("https://example.com/nft/metadata.json"),
+    Flags: 1, // tfBurnable: the issuer can burn the token
+  };
+
+  const prepared = await client.autofill(mint);
+  const signed = creator.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("URIToken created successfully!");
+    console.log("Tx hash:", signed.hash);
+
+    // Find the created URIToken in the affected nodes
+    const created = result.result.meta.AffectedNodes.find(
+      (n) => n.CreatedNode?.LedgerEntryType === "URIToken"
+    );
+    if (created) {
+      console.log("URIToken ID:", created.CreatedNode.LedgerIndex);
+    }
+  }
+
+  await client.disconnect();
+}
+
+mintURIToken();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -144,7 +192,8 @@ mintURIToken();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
 
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
@@ -180,6 +229,44 @@ async function getURITokens(address) {
 }
 
 getURITokens("rTuDireccionAqui");`,
+            en: `const { Client } = require("xahau");
+
+async function getURITokens(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_objects",
+    account: address,
+    type: "uri_token",
+    ledger_index: "validated",
+  });
+
+  const tokens = response.result.account_objects;
+  console.log(\`=== URITokens of \${address} ===\`);
+  console.log(\`Total: \${tokens.length}\\n\`);
+
+  for (const token of tokens) {
+    const uri = Buffer.from(token.URI, "hex").toString("utf8");
+    console.log(\`URIToken ID: \${token.index}\`);
+    console.log(\`  URI: \${uri}\`);
+    console.log(\`  Issuer: \${token.Issuer}\`);
+    console.log(\`  Owner: \${token.Owner}\`);
+    if (token.Digest) {
+      console.log(\`  Digest: \${token.Digest}\`);
+    }
+    if (token.Amount) {
+      console.log(\`  For sale at: \${Number(token.Amount) / 1_000_000} XAH\`);
+    }
+    console.log();
+  }
+
+  await client.disconnect();
+}
+
+getURITokens("rYourAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -268,7 +355,8 @@ The current owner can always burn (destroy) their URIToken with \`URITokenBurn\`
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function sellURIToken() {
@@ -299,6 +387,39 @@ async function sellURIToken() {
 }
 
 sellURIToken();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function sellURIToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const owner = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Create a sell offer for 5 XAH
+  const sellOffer = {
+    TransactionType: "URITokenCreateSellOffer",
+    Account: owner.address,
+    URITokenID: "YOUR_URITOKEN_ID_HERE", // ID of the URIToken to sell
+    Amount: xahToDrops(5), // Price: 5 XAH
+  };
+
+  const prepared = await client.autofill(sellOffer);
+  const signed = owner.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("URIToken listed for sale at 5 XAH!");
+  }
+
+  await client.disconnect();
+}
+
+sellURIToken();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -307,7 +428,8 @@ sellURIToken();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function buyURIToken() {
@@ -339,6 +461,40 @@ async function buyURIToken() {
 }
 
 buyURIToken();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function buyURIToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const buyer = Wallet.fromSeed(process.env.BUYER_SEED, {algorithm: 'secp256k1'});
+
+  // Buy the URIToken by paying the sale price
+  const buy = {
+    TransactionType: "URITokenBuy",
+    Account: buyer.address,
+    URITokenID: "YOUR_URITOKEN_ID_HERE", // ID of the URIToken to buy
+    Amount: xahToDrops(5), // Must match the sale price
+  };
+
+  const prepared = await client.autofill(buy);
+  const signed = buyer.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("URIToken purchased successfully!");
+    console.log("The NFT is now yours.");
+  }
+
+  await client.disconnect();
+}
+
+buyURIToken();`,
+            jp: "",
+          },
         },
       ],
       slides: [
