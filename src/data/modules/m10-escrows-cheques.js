@@ -119,7 +119,8 @@ Xahau supports crypto-conditions from the **Interledger (ILP)** protocol:
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function createTimeLockedEscrow() {
@@ -176,6 +177,65 @@ async function createTimeLockedEscrow() {
 }
 
 createTimeLockedEscrow();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function createTimeLockedEscrow() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Ripple Epoch: seconds since 01/01/2000 00:00:00 UTC
+  // Difference from Unix Epoch: 946684800 seconds
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+  const now = Math.floor(Date.now() / 1000);
+
+  // FinishAfter: 2 minutes in the future
+  const finishAfter = now - RIPPLE_EPOCH_OFFSET + 2 * 60;
+  // CancelAfter: 24 hours in the future (if nobody finishes it, it can be cancelled)
+  const cancelAfter = now - RIPPLE_EPOCH_OFFSET + 24 * 60 * 60;
+
+  const escrowCreate = {
+    TransactionType: "EscrowCreate",
+    Account: sender.address,
+    Destination: "rDestinationAddress",
+    Amount: xahToDrops(100), // Lock 100 XAH
+    FinishAfter: finishAfter,
+    CancelAfter: cancelAfter,
+  };
+
+  const prepared = await client.autofill(escrowCreate);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== EscrowCreate ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Hash:", signed.hash);
+    console.log("Sequence:", prepared.Sequence);
+    console.log(
+      "FinishAfter:",
+      new Date((finishAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
+    );
+    console.log(
+      "CancelAfter:",
+      new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
+    );
+    console.log("\\nSave the Sequence! You need it for EscrowFinish.");
+    console.log(\`Escrow Sequence: \${prepared.Sequence}\`);
+    console.log(\`Your address: \${sender.address}\`);
+
+  }
+
+  await client.disconnect();
+}
+
+createTimeLockedEscrow();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -184,7 +244,8 @@ createTimeLockedEscrow();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function finishEscrow(ownerAddress, escrowSequence) {
@@ -262,6 +323,86 @@ async function finishEscrow(ownerAddress, escrowSequence) {
 
 // Usa la dirección del creador y el Sequence del EscrowCreate
 finishEscrow("rDireccionDelCreador", 12345);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function finishEscrow(ownerAddress, escrowSequence) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Any account can execute the EscrowFinish
+  const executor = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // First, verify the escrow exists by querying account_objects
+  const objects = await client.request({
+    command: "account_objects",
+    account: ownerAddress,
+    type: "escrow",
+    ledger_index: "validated",
+  });
+
+  const escrow = objects.result.account_objects.find(
+    (obj) => obj.PreviousTxnLgrSeq !== undefined
+  );
+
+  if (!escrow) {
+    console.log("Escrow not found. It may have already been completed or cancelled.");
+    await client.disconnect();
+    return;
+  }
+
+  console.log("=== Escrow found ===");
+  console.log("Amount:", Number(escrow.Amount) / 1_000_000, "XAH");
+  console.log("Destination:", escrow.Destination);
+
+  // Check whether FinishAfter has already passed
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+  const now = Math.floor(Date.now() / 1000);
+  const finishAfterUnix = escrow.FinishAfter + RIPPLE_EPOCH_OFFSET;
+
+  if (now < finishAfterUnix) {
+    const remaining = finishAfterUnix - now;
+    console.log(
+      \`\\nCannot finish this escrow yet. \${remaining} seconds remaining.\`
+    );
+    console.log(
+      \`Available from: \${new Date(finishAfterUnix * 1000).toISOString()}\`
+    );
+    await client.disconnect();
+    return;
+  }
+
+  console.log("\\nThe lock period has passed. Finishing escrow...");
+
+  const escrowFinish = {
+    TransactionType: "EscrowFinish",
+    Account: executor.address,
+    Owner: ownerAddress,
+    OfferSequence: escrowSequence,
+  };
+
+  const prepared = await client.autofill(escrowFinish);
+  const signed = executor.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("\\n=== EscrowFinish ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Escrow finished! Funds have been delivered.");
+    console.log("Hash:", signed.hash);
+  } else if (txResult === "tecNO_TARGET") {
+    console.log("Escrow not found. It may have been cancelled.");
+  }
+
+  await client.disconnect();
+}
+
+// Use the creator's address and the Sequence from EscrowCreate
+finishEscrow("rCreatorAddress", 12345);`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -444,7 +585,8 @@ Either party (sender or recipient) can cancel a check. An expired check can also
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function checkExample() {
@@ -490,6 +632,54 @@ async function checkExample() {
 }
 
 checkExample();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function checkExample() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const receiverAddress = "rReceiverAddress"; // Replace with the recipient's address and save that account's seed in your .env as CASH_SEED for the next example
+
+  // === 1. Create the check ===
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+  const expiration = Math.floor(Date.now() / 1000) - RIPPLE_EPOCH_OFFSET + 7 * 24 * 60 * 60; // Expires in 7 days
+
+  const checkCreate = {
+    TransactionType: "CheckCreate",
+    Account: sender.address,
+    Destination: receiverAddress,
+    SendMax: xahToDrops(50), // Up to 50 XAH
+    Expiration: expiration,
+  };
+
+  const prepared = await client.autofill(checkCreate);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== CheckCreate ===");
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    // Find the CheckID in the affected nodes
+    const createdNode = result.result.meta.AffectedNodes.find(
+      (node) => node.CreatedNode && node.CreatedNode.LedgerEntryType === "Check"
+    );
+
+    if (createdNode) {
+      const checkID = createdNode.CreatedNode.LedgerIndex;
+      console.log("CheckID:", checkID);
+      console.log("\\nSave this CheckID to cash the check from your account: " + sender.address);
+    }
+  }
+
+  await client.disconnect();
+}
+
+checkExample();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -498,7 +688,8 @@ checkExample();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function cashCheck(checkID) {
@@ -551,6 +742,61 @@ async function cashCheck(checkID) {
 
 // Usa el CheckID obtenido al crear el cheque
 cashCheck("TU_CHECK_ID_AQUI");`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function cashCheck(checkID) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // The recipient cashes the check
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'});
+
+  // Option 1: Cash an exact amount
+  const checkCash = {
+    TransactionType: "CheckCash",
+    Account: receiver.address,
+    CheckID: checkID,
+    Amount: xahToDrops(50), // Cash exactly 50 XAH
+  };
+
+  // Option 2 (alternative): Cash at least a minimum amount
+  // const checkCash = {
+  //   TransactionType: "CheckCash",
+  //   Account: receiver.address,
+  //   CheckID: checkID,
+  //   DeliverMin: xahToDrops(40), // At least 40 XAH
+  // };
+
+  const prepared = await client.autofill(checkCash);
+  const signed = receiver.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== CheckCash ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Check cashed successfully!");
+    const delivered = result.result.meta.delivered_amount;
+    if (typeof delivered === "string") {
+      console.log("Amount received:", Number(delivered) / 1_000_000, "XAH");
+    } else {
+      console.log("Amount received:", delivered.value, delivered.currency);
+    }
+  } else if (txResult === "tecNO_ENTRY") {
+    console.log("Check not found. It may have been cancelled or already cashed.");
+  } else if (txResult === "tecUNFUNDED") {
+    console.log("The check issuer has insufficient funds.");
+  }
+
+  await client.disconnect();
+}
+
+// Use the CheckID obtained when creating the check
+cashCheck("YOUR_CHECK_ID_HERE");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -697,7 +943,8 @@ If you no longer need a Ticket, you can cancel it to release the reserve. There 
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function paymentsWithTickets() {
@@ -777,6 +1024,88 @@ async function paymentsWithTickets() {
 }
 
 paymentsWithTickets();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function paymentsWithTickets() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // === STEP 1: Create 3 Tickets ===
+  console.log("=== Step 1: Create Tickets ===");
+  const ticketCreate = {
+    TransactionType: "TicketCreate",
+    Account: sender.address,
+    TicketCount: 3, // Reserve 3 tickets
+  };
+
+  const prepTicket = await client.autofill(ticketCreate);
+  const signedTicket = sender.sign(prepTicket);
+  const resultTicket = await client.submitAndWait(signedTicket.tx_blob);
+
+  console.log("TicketCreate:", resultTicket.result.meta.TransactionResult);
+
+  if (resultTicket.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error creating tickets.");
+    await client.disconnect();
+    return;
+  }
+
+  // Extract TicketSequence values from created nodes
+  const ticketSequences = resultTicket.result.meta.AffectedNodes
+    .filter((n) => n.CreatedNode?.LedgerEntryType === "Ticket")
+    .map((n) => n.CreatedNode.NewFields.TicketSequence)
+    .sort((a, b) => a - b);
+
+  console.log("Tickets created:", ticketSequences);
+
+  // === STEP 2: Use the Tickets to send payments (in any order) ===
+  console.log("\\n=== Step 2: Send payments with Tickets ===");
+
+  const destinations = [
+    { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Payment A" },
+    { address: "rDestination2XXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Payment B" },
+    { address: "rDestination3XXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Payment C" },
+  ];
+
+  // We can send them in any order, even in parallel
+  // Here we send them in reverse order to demonstrate the flexibility
+  for (let i = destinations.length - 1; i >= 0; i--) {
+    const dest = destinations[i];
+    const ticketSeq = ticketSequences[i];
+
+    const payment = {
+      TransactionType: "Payment",
+      Account: sender.address,
+      Destination: dest.address,
+      Amount: xahToDrops(dest.amount),
+      Sequence: 0,               // Do not use normal sequence
+      TicketSequence: ticketSeq,  // Use the reserved Ticket
+    };
+
+    const prepared = await client.autofill(payment);
+    // autofill may overwrite Sequence, so we force it
+    prepared.Sequence = 0;
+    prepared.TicketSequence = ticketSeq;
+
+    const signed = sender.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    const txResult = result.result.meta.TransactionResult;
+    console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
+  }
+
+  console.log("\\nAll payments sent with Tickets!");
+  console.log("Used Tickets have been destroyed and the reserve released.");
+
+  await client.disconnect();
+}
+
+paymentsWithTickets();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -895,7 +1224,8 @@ If for any reason you want to stop participating in the rewards system, you can 
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function claimReward() {
@@ -951,6 +1281,64 @@ async function claimReward() {
 }
 
 claimReward();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function claimReward() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Query account info before claiming
+  const accountInfo = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+
+  const balanceBefore = Number(accountInfo.result.account_data.Balance) / 1_000_000;
+  console.log("=== State before claiming ===");
+  console.log("Account:", wallet.address);
+  console.log("Current balance:", balanceBefore, "XAH");
+
+  // Send ClaimReward
+  // Issuer: network genesis account (varies between testnet and mainnet)
+  const claimReward = {
+    TransactionType: "ClaimReward",
+    Account: wallet.address,
+    Issuer: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh", // Genesis account testnet
+  };
+
+  const prepared = await client.autofill(claimReward);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("\\n=== ClaimReward ===");
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    // Query balance after
+    const accountAfter = await client.request({
+      command: "account_info",
+      account: wallet.address,
+      ledger_index: "validated",
+    });
+
+    const balanceAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
+    console.log("\\n=== State after claiming ===");
+    console.log("New balance:", balanceAfter, "XAH");
+    console.log("Reward received:", (balanceAfter - balanceBefore).toFixed(6), "XAH");
+  }
+
+  await client.disconnect();
+}
+
+claimReward();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1062,7 +1450,8 @@ We can use Invoke for different purposes:
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function invokeHook() {
@@ -1095,6 +1484,41 @@ async function invokeHook() {
 }
 
 invokeHook();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function invokeHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Invoke on another account that has a Hook installed
+  const invoke = {
+    TransactionType: "Invoke",
+    Account: wallet.address,
+    Destination: "rAccountWithHookInstalled", // Account whose Hook we want to activate
+  };
+
+  const prepared = await client.autofill(invoke);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Invoke ===");
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("If a Hook was installed, check whether it was invoked correctly.");
+  }
+
+  await client.disconnect();
+}
+
+invokeHook();`,
+            jp: "",
+          },
         },
         
       ],
@@ -1215,7 +1639,8 @@ Si añades \`Flags: 1\` (\`tfImmutable\`) al crear una Remark, **no podrá ser m
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 // Los RemarkName y RemarkValue se expresan en hexadecimal
@@ -1286,6 +1711,79 @@ async function setAccountRemarks() {
 }
 
 setAccountRemarks();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// RemarkName and RemarkValue are expressed in hexadecimal
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function setAccountRemarks() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Get the ObjectID of the AccountRoot (the "index" field from account_info)
+  const info = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+  const objectID = info.result.account_data.index;
+
+  console.log("=== SetRemarks on AccountRoot ===");
+  console.log("Account:", wallet.address);
+  console.log("ObjectID:", objectID);
+
+  const setRemarks = {
+    TransactionType: "SetRemarks",
+    Account: wallet.address,
+    ObjectID: objectID,
+    Remarks: [
+      {
+        Remark: {
+          RemarkName: toHex("name"),
+          RemarkValue: toHex("Xahau Academy Demo"),
+        },
+      },
+      {
+        Remark: {
+          RemarkName: toHex("web"),
+          RemarkValue: toHex("https://xahau.academy"),
+        },
+      },
+      {
+        // Immutable Remark: cannot be modified or deleted ever
+        Remark: {
+          RemarkName: toHex("created"),
+          RemarkValue: toHex(new Date().toISOString()),
+          Flags: 1, // tfImmutable
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setRemarks);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("\\nResult:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nRemarks attached to the AccountRoot.");
+    console.log("Note: the 'created' Remark is immutable and cannot be changed.");
+  }
+
+  await client.disconnect();
+}
+
+setAccountRemarks();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1294,7 +1792,8 @@ setAccountRemarks();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 function toHex(str) {
@@ -1355,6 +1854,69 @@ async function deleteRemark() {
 }
 
 deleteRemark();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function deleteRemark() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Get the ObjectID of the AccountRoot
+  const info = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+  const objectID = info.result.account_data.index;
+
+  // To delete a Remark: include only RemarkName, without RemarkValue
+  const setRemarks = {
+    TransactionType: "SetRemarks",
+    Account: wallet.address,
+    ObjectID: objectID,
+    Remarks: [
+      {
+        Remark: {
+          RemarkName: toHex("web"), // Delete the Remark named "web"
+          // No RemarkValue → the entry is deleted
+        },
+      },
+      {
+        Remark: {
+          RemarkName: toHex("name"), // Update the value of "name"
+          RemarkValue: toHex("Updated account"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setRemarks);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Delete/update Remarks ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Remark 'web' deleted.");
+    console.log("Remark 'name' updated.");
+  } else if (txResult === "tecIMMUTABLE") {
+    console.log("Cannot modify: one of the Remarks has the tfImmutable flag.");
+  }
+
+  await client.disconnect();
+}
+
+deleteRemark();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1531,7 +2093,8 @@ For a complete reference to \`Remit\`, including all fields and possible errors,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 function stringToHex(str) {
@@ -1585,6 +2148,62 @@ async function sendRemit() {
 }
 
 sendRemit();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+function stringToHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function sendRemit() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Remit: send 25 XAH + mint a URIToken for the destination
+  const remit = {
+    TransactionType: "Remit",
+    Account: wallet.address,
+    Destination: "rDestinationAddress",
+    // Send 25 XAH
+    Amounts: [
+      {
+        AmountEntry: {
+          Amount: xahToDrops(25),
+        },
+      },
+    ],
+    // Mint a URIToken directly in the destination account
+    MintURIToken: {
+      URI: stringToHex("ipfs://bafybeieza5w4rkes55paw7jgpo4kzsbyywhw7ildltk3kjx2ttkmt7texa/106.json"),
+      Digest: "A".repeat(64), // SHA-256 hash of the content (64 hex chars)
+      Flags: 1, // tfBurnable: the issuer can burn the token
+    },
+  };
+
+  const prepared = await client.autofill(remit);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Remit ===");
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nIn a single transaction:");
+    console.log("- 25 XAH sent to the destination");
+    console.log("- URIToken minted directly in the destination account");
+    console.log("- Reserve fees covered automatically");
+  }
+
+  await client.disconnect();
+}
+
+sendRemit();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1796,7 +2415,8 @@ const cronDelete = {
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function setupCron() {
@@ -1862,6 +2482,74 @@ async function setupCron() {
 }
 
 setupCron();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function setupCron() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("Account:", wallet.address);
+
+  // === STEP 1: Enable TSH Collect on the account ===
+  // Required so the network can execute the Hook automatically
+  console.log("\\n=== Step 1: Enable TSH Collect (asfTshCollect) ===");
+
+  const accountSet = {
+    TransactionType: "AccountSet",
+    Account: wallet.address,
+    SetFlag: 11, // asfTshCollect
+  };
+
+  const prepAccountSet = await client.autofill(accountSet);
+  const signedAccountSet = wallet.sign(prepAccountSet);
+  const resultAccountSet = await client.submitAndWait(signedAccountSet.tx_blob);
+
+  console.log("AccountSet result:", resultAccountSet.result.meta.TransactionResult);
+
+  if (resultAccountSet.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error enabling TSH Collect.");
+    await client.disconnect();
+    return;
+  }
+
+  // === STEP 2: Create the CronSet ===
+  // The Hook must be installed with hsfCOLLECT before this step
+  console.log("\\n=== Step 2: Create CronSet ===");
+
+  // Ripple Epoch: seconds since 01/01/2000 00:00:00 UTC
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+
+  const cronSet = {
+    TransactionType: "CronSet",
+    Account: wallet.address,
+    StartTime: 0,       // 0 = start from the next valid ledger
+    DelaySeconds: 3600, // Execute every 1 hour (3600 seconds)
+    RepeatCount: 24,    // Execute 24 times in total (= 24 hours)
+  };
+
+  const prepCron = await client.autofill(cronSet);
+  const signedCron = wallet.sign(prepCron);
+  const resultCron = await client.submitAndWait(signedCron.tx_blob);
+
+  const txResult = resultCron.result.meta.TransactionResult;
+  console.log("CronSet result:", txResult);
+  console.log("Hash:", signedCron.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nCronSet created successfully!");
+    console.log("The Hook will run automatically every 1 hour for 24 hours.");
+    console.log("Make sure the Hook is installed with the hsfCOLLECT flag.");
+  }
+
+  await client.disconnect();
+}
+
+setupCron();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -1870,7 +2558,8 @@ setupCron();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function deleteCron() {
@@ -1908,6 +2597,46 @@ async function deleteCron() {
 }
 
 deleteCron();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function deleteCron() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("=== Delete active CronSet ===");
+  console.log("Account:", wallet.address);
+
+  // To delete a cron: omit all scheduling fields
+  // and add Flags: 1 (tfCronUnset)
+  const cronDelete = {
+    TransactionType: "CronSet",
+    Account: wallet.address,
+    Flags: 1, // tfCronUnset — deletes the active cron
+  };
+
+  const prepared = await client.autofill(cronDelete);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("\\nCronSet deleted. The Hook will no longer run automatically.");
+  } else if (txResult === "tefBAD_LEDGER") {
+    console.log("\\nNo active CronSet found for this account.");
+  }
+
+  await client.disconnect();
+}
+
+deleteCron();`,
+            jp: "",
+          },
         },
       ],
       slides: [
