@@ -255,7 +255,28 @@ Unlike EVM networks, in Xahau:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function serverInfo() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("Red:", info.network_id);
+  console.log("Versión:", info.build_version);
+  console.log("Ledger actual:", info.validated_ledger.seq);
+  console.log("Tipo de red: No-EVM (blockchain Xahau)");
+
+  await client.disconnect();
+}
+
+serverInfo();`,
+            en: `const { Client } = require("xahau");
 
 async function serverInfo() {
   const client = new Client("wss://xahau.network");
@@ -275,6 +296,8 @@ async function serverInfo() {
 }
 
 serverInfo();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -326,7 +349,7 @@ Cada versión del ledger incluye:
 
 ### Tipos de objetos del Ledger
 
-Los objetos están **tipados** — cada tipo tiene campos específicos y predefinidos:
+Los objetos están **tipados**, cada tipo tiene campos específicos y predefinidos:
 
 - **AccountRoot**: Representa una cuenta con su balance, secuencia, flags y hooks instalados
 - **RippleState (TrustLine)**: Línea de confianza entre dos cuentas para un token
@@ -349,7 +372,7 @@ Each ledger version includes:
 
 ### Ledger Object Types
 
-Objects are **typed** — each type has specific, predefined fields:
+Objects are **typed**, each type has specific, predefined fields:
 
 - **AccountRoot**: Represents an account with its balance, sequence, flags, and installed hooks
 - **RippleState (TrustLine)**: Trust line between two accounts for a token
@@ -371,7 +394,28 @@ In Ethereum, the state is an **account tree** where each account has its own **s
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getLedgerInfo() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const response = await client.request({
+    command: "ledger",
+    ledger_index: "validated",
+  });
+
+  const ledger = response.result.ledger;
+  console.log("Seq del Ledger:", ledger.ledger_index);
+  console.log("Hash:", ledger.ledger_hash);
+  console.log("Cerrado:", ledger.close_time_human);
+
+  await client.disconnect();
+}
+
+getLedgerInfo();`,
+            en: `const { Client } = require("xahau");
 
 async function getLedgerInfo() {
   const client = new Client("wss://xahau.network");
@@ -391,6 +435,8 @@ async function getLedgerInfo() {
 }
 
 getLedgerInfo();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -480,7 +526,7 @@ Los problemas de Ethereum impulsaron una oleada de nuevas blockchains:
 - **Arbitrum / Optimism** (2021): Rollups que procesan transacciones fuera de Ethereum
 - **Cosmos / Polkadot**: Ecosistemas de blockchains interconectadas
 
-La mayoría de estas redes son **compatibles con EVM** — usan Solidity y herramientas de Ethereum.
+La mayoría de estas redes son **compatibles con EVM** usan Solidity y herramientas de Ethereum.
 
 ### 2023 — Xahau: XRPL + Smart Contracts
 
@@ -562,7 +608,7 @@ Ethereum's problems drove a wave of new blockchains:
 - **Arbitrum / Optimism** (2021): Rollups that process transactions off Ethereum
 - **Cosmos / Polkadot**: Ecosystems of interconnected blockchains
 
-Most of these networks are **EVM-compatible** — they use Solidity and Ethereum tools.
+Most of these networks are **EVM-compatible**, they use Solidity and Ethereum tools.
 
 ### 2023 — Xahau: XRPL + Smart Contracts
 
@@ -810,84 +856,6 @@ To obtain testnet XAH, use the **faucet**: a tool that sends free tokens to your
         jp: "",
       },
       codeBlocks: [
-        {
-          title: {
-            es: "Verificar conectividad con Xahau Mainnet y Testnet",
-            en: "Verify connectivity with Xahau Mainnet and Testnet",
-            jp: "",
-          },
-          language: "javascript",
-          code: `// File: test-ecosystem.js
-// Run with: node test-ecosystem.js
-// Verifies that you can connect to both Mainnet and Testnet.
-
-const { Client } = require("xahau");
-
-async function verifyNetwork(url, name) {
-  const client = new Client(url);
-
-  try {
-    await client.connect();
-
-    const response = await client.request({
-      command: "server_info"
-    });
-
-    const info = response.result.info;
-    console.log("✅", name);
-    console.log("   URL:", url);
-    console.log("   Network ID:", info.network_id);
-    console.log("   Version:", info.build_version);
-    console.log("   Ledger:", info.validated_ledger.seq);
-    console.log("   Status: Operational");
-
-    await client.disconnect();
-    return true;
-  } catch (error) {
-    console.log("❌", name);
-    console.log("   URL:", url);
-    console.log("   Error:", error.message);
-    return false;
-  }
-}
-
-async function main() {
-  console.log("=== Xahau Ecosystem Verification ===\\n");
-
-  // Verify Mainnet
-  const mainnetOk = await verifyNetwork(
-    "wss://xahau.network",
-    "Xahau Mainnet"
-  );
-
-  console.log("");
-
-  // Verify Testnet
-  const testnetOk = await verifyNetwork(
-    "wss://xahau-test.net",
-    "Xahau Testnet"
-  );
-
-  // Summary
-  console.log("\\n=== Summary ===");
-  console.log("Mainnet:", mainnetOk ? "Accessible" : "Not accessible");
-  console.log("Testnet:", testnetOk ? "Accessible" : "Not accessible");
-
-  if (mainnetOk && testnetOk) {
-    console.log("\\nBoth networks are accessible. All set!");
-  } else {
-    console.log("\\nSome network is not responding. Check your internet connection.");
-  }
-
-  console.log("\\n--- Ecosystem Resources ---");
-  console.log("Wallet:     https://xaman.app");
-  console.log("Explorer:   https://explorer.xahau.network");
-  console.log("Hooks IDE:  https://builder.xahau.network");
-  console.log("Docs:       https://xahau.network/docs");
-}
-
-main();`,
-        },
       ],
       slides: [
         {

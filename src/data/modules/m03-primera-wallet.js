@@ -79,7 +79,23 @@ Unlike Ethereum, in Xahau an account **does not exist on the ledger until it rec
             jp: "",
           },
           language: "javascript",
-          code: `const { ECDSA, Wallet } = require("xahau");
+          code: {
+            es: `const { ECDSA, Wallet } = require("xahau");
+
+// Generar wallet con el algoritmo por defecto (secp256k1)
+const wallet1 = Wallet.generate(ECDSA.secp256k1);
+console.log("=== Wallet secp256k1 ===");
+console.log("Dirección:", wallet1.address);
+console.log("Clave pública:", wallet1.publicKey);
+console.log("Seed:", wallet1.seed);
+
+// Generar wallet con el algoritmo ed25519
+const wallet2 = Wallet.generate();
+console.log("\n=== Wallet ed25519 ===");
+console.log("Dirección:", wallet2.address);
+console.log("Clave pública:", wallet2.publicKey);
+console.log("Seed:", wallet2.seed);`,
+            en: `const { ECDSA, Wallet } = require("xahau");
 
 // Generate wallet with default algorithm (secp256k1)
 const wallet1 = Wallet.generate(ECDSA.secp256k1);
@@ -94,6 +110,8 @@ console.log("\n=== Wallet ed25519 ===");
 console.log("Address:", wallet2.address);
 console.log("Public key:", wallet2.publicKey);
 console.log("Seed:", wallet2.seed);`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -102,7 +120,22 @@ console.log("Seed:", wallet2.seed);`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Wallet } = require("xahau");
+          code: {
+            es: `const { Wallet } = require("xahau");
+
+// Restaurar wallet desde un seed existente
+// (usa tu propio seed de testnet)
+const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// Si prefieres derivarla en ed25519, elimina {algorithm: 'secp256k1'} ya que usará ed25519 por defecto
+const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
+
+console.log("Dirección:", wallet.address);
+console.log("Clave pública:", wallet.publicKey);
+console.log("Seed:", wallet.seed);
+
+// El mismo seed siempre genera la misma dirección
+// ¡Nunca compartas tu seed!`,
+            en: `const { Wallet } = require("xahau");
 
 // Restore wallet from an existing seed
 // (use your own testnet seed)
@@ -116,6 +149,8 @@ console.log("Seed:", wallet.seed);
 
 // The same seed always generates the same address
 // Never share your seed!`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -208,7 +243,44 @@ Once your account is activated, you can verify its existence by querying the \`a
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: {
+            es: `const { Client, Wallet } = require("xahau");
+
+async function createTestnetWallet() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Generar una nueva wallet
+  const wallet = Wallet.generate();
+  console.log("Wallet generada:");
+  console.log("  Dirección:", wallet.address);
+  console.log("  Seed:", wallet.seed);
+
+  // Solicitar fondos del faucet de testnet
+  console.log("\\nSolicitando fondos del faucet...");
+  const fundResult = await client.fundWallet(wallet);
+
+  console.log("¡Wallet financiada!");
+  console.log("  Balance:", fundResult.balance, "XAH");
+
+  // Verificar la cuenta en el ledger
+  const response = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+
+  const account = response.result.account_data;
+  console.log("\\nDatos de la cuenta en el ledger:");
+  console.log("  Balance:", account.Balance, "drops");
+  console.log("  Balance:", Number(account.Balance) / 1_000_000, "XAH");
+  console.log("  Secuencia:", account.Sequence);
+
+  await client.disconnect();
+}
+
+createTestnetWallet();`,
+            en: `const { Client, Wallet } = require("xahau");
 
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
@@ -244,6 +316,8 @@ async function createTestnetWallet() {
 }
 
 createTestnetWallet();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -252,7 +326,40 @@ createTestnetWallet();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function checkBalance(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  try {
+    const response = await client.request({
+      command: "account_info",
+      account: address,
+      ledger_index: "validated",
+    });
+
+    const account = response.result.account_data;
+    console.log("Cuenta:", account.Account);
+    console.log("Balance:", Number(account.Balance) / 1_000_000, "XAH");
+    console.log("Secuencia:", account.Sequence);
+    console.log("Objetos del propietario:", account.OwnerCount);
+  } catch (error) {
+    if (error.data?.error === "actNotFound") {
+      console.log("La cuenta no existe en el ledger.");
+      console.log("Necesita recibir al menos 1 XAH para activarse.");
+    } else {
+      console.error("Error:", error.message);
+    }
+  }
+
+  await client.disconnect();
+}
+
+// Reemplaza con tu dirección de testnet
+checkBalance("rYourXahauAddressHere");`,
+            en: `const { Client } = require("xahau");
 
 async function checkBalance(address) {
   const client = new Client("wss://xahau-test.net");
@@ -284,6 +391,8 @@ async function checkBalance(address) {
 
 // Replace with your testnet address
 checkBalance("rYourXahauAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -857,7 +966,55 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: {
+            es: `const { Client, Wallet } = require("xahau");
+
+async function setRequireDestTag() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Usa tu wallet de testnet (reemplaza con tu seed)
+  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+
+  // AccountSet con SetFlag para activar RequireDestTag
+  const tx = {
+    TransactionType: "AccountSet",
+    Account: wallet.address,
+    // asfRequireDest = 1
+    SetFlag: 1,
+  };
+  console.log("Cuenta: ",wallet.address);
+  console.log("Enviando transacción AccountSet...");
+  console.log("  Activando flag: RequireDestTag (asfRequireDest = 1)");
+
+  const result = await client.submitAndWait(tx, { wallet });
+
+  console.log("\\nResultado:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("¡Flag RequireDestTag activado con éxito!");
+    console.log("Ahora todos los pagos entrantes deben incluir un DestinationTag.");
+
+    // Verificar que el flag fue activado
+    const accountInfo = await client.request({
+      command: "account_info",
+      account: wallet.address,
+      ledger_index: "validated",
+    });
+
+    const flags = accountInfo.result.account_data.Flags;
+    console.log("\\nFlags de la cuenta (número):", flags);
+
+    // lsfRequireDestTag = 0x00020000 = 131072
+    const requireDestTag = (flags & 0x00020000) !== 0;
+    console.log("RequireDestTag activo:", requireDestTag);
+  }
+
+  await client.disconnect();
+}
+
+setRequireDestTag();`,
+            en: `const { Client, Wallet } = require("xahau");
 
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
@@ -904,6 +1061,8 @@ async function setRequireDestTag() {
 }
 
 setRequireDestTag();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -912,7 +1071,77 @@ setRequireDestTag();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function readAccountFlags(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  try {
+    const response = await client.request({
+      command: "account_info",
+      account: address,
+      ledger_index: "validated",
+    });
+
+    const account = response.result.account_data;
+    const flags = account.Flags;
+
+    console.log("=== Información de la cuenta ===");
+    console.log("Dirección:", account.Account);
+    console.log("Balance:", Number(account.Balance) / 1_000_000, "XAH");
+    console.log("Flags (valor numérico):", flags);
+    console.log("");
+
+    // Interpretar cada flag individual
+    // Los flags del ledger (lsf) tienen valores distintos a los de AccountSet (asf)
+    const flagDefinitions = [
+      { name: "lsfRequireDestTag", mask: 0x00020000, desc: "Requiere Destination Tag" },
+      { name: "lsfRequireAuth", mask: 0x00040000, desc: "Requiere autorización de trust line" },
+      { name: "lsfDisallowXRP", mask: 0x00080000, desc: "No desea recibir XAH" },
+      { name: "lsfDisableMaster", mask: 0x00100000, desc: "Clave maestra desactivada" },
+      { name: "lsfDefaultRipple", mask: 0x00800000, desc: "Rippling por defecto activado" },
+    ];
+
+    console.log("=== Flags activos ===");
+    let anyActive = false;
+    for (const flag of flagDefinitions) {
+      const active = (flags & flag.mask) !== 0;
+      if (active) {
+        console.log(\`  ✅ \${flag.name}: \${flag.desc}\`);
+        anyActive = true;
+      }
+    }
+
+    if (!anyActive) {
+      console.log("  Sin flags especiales activos (configuración por defecto)");
+    }
+
+    console.log("");
+    console.log("=== Otros campos ===");
+    console.log("Dominio:", account.Domain
+      ? Buffer.from(account.Domain, "hex").toString("utf-8")
+      : "(no configurado)");
+    console.log("EmailHash:", account.EmailHash || "(no configurado)");
+    console.log("RegularKey:", account.RegularKey || "(no configurado)");
+    console.log("Secuencia:", account.Sequence);
+    console.log("Objetos propios:", account.OwnerCount);
+
+  } catch (error) {
+    if (error.data?.error === "actNotFound") {
+      console.log("La cuenta no existe en el ledger.");
+    } else {
+      console.error("Error:", error.message);
+    }
+  }
+
+  await client.disconnect();
+}
+
+// Reemplaza con una dirección de testnet
+readAccountFlags("rYourXahauAddressHere");`,
+            en: `const { Client } = require("xahau");
 
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
@@ -981,6 +1210,8 @@ async function readAccountFlags(address) {
 
 // Replace with a testnet address
 readAccountFlags("rYourXahauAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -1206,7 +1437,45 @@ This is useful for:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client, Wallet } = require("xahau");
+          code: {
+            es: `const { Client, Wallet } = require("xahau");
+
+async function prepareForXaman() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Generar y financiar una wallet
+  const wallet = Wallet.generate();
+  console.log("Generando wallet de testnet...\\n");
+  await client.fundWallet(wallet);
+
+  // Verificar balance
+  const response = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+
+  const balance = Number(response.result.account_data.Balance) / 1_000_000;
+
+  console.log("=== Datos para importar en Xaman ===\\n");
+  console.log("Dirección:", wallet.address);
+  console.log("Seed:", wallet.seed);
+  console.log("Balance:", balance, "XAH");
+  console.log("\\n=== Instrucciones ===");
+  console.log("1. Abre Xaman en tu móvil");
+  console.log("2. Toca 'Añadir cuenta' → 'Importar cuenta existente'");
+  console.log("4. Selecciona Acceso Completo");
+  console.log("5. Selecciona 'Family Seed (s...)'");
+  console.log("6. Introduce el seed:", wallet.seed);
+  console.log("\\n⚠️  Recuerda: estamos en TESTNET.");
+  console.log("    Asegúrate de seleccionar la red Xahau Testnet en Xaman.");
+
+  await client.disconnect();
+}
+
+prepareForXaman();`,
+            en: `const { Client, Wallet } = require("xahau");
 
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
@@ -1243,6 +1512,8 @@ async function prepareForXaman() {
 }
 
 prepareForXaman();`,
+            jp: "",
+          },
         },
       ],
       slides: [

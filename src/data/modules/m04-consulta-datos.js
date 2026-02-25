@@ -81,7 +81,31 @@ The Xahau API provides commands to query:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getServerInfo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("=== Información del servidor ===");
+  console.log("Versión:", info.build_version);
+  console.log("ID de red:", info.network_id);
+  console.log("Estado:", info.server_state);
+  console.log("Peers conectados:", info.peers);
+  console.log("Ledger validado:", info.validated_ledger.seq);
+  console.log("Quorum de validación:", info.validation_quorum);
+
+  await client.disconnect();
+}
+
+getServerInfo();`,
+            en: `const { Client } = require("xahau");
 
 async function getServerInfo() {
   const client = new Client("wss://xahau-test.net");
@@ -104,6 +128,8 @@ async function getServerInfo() {
 }
 
 getServerInfo();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -112,7 +138,40 @@ getServerInfo();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getAccountInfo(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_info",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  const data = response.result.account_data;
+  console.log("=== Datos de la cuenta ===");
+  console.log("Dirección:", data.Account);
+  console.log("Balance:", Number(data.Balance) / 1_000_000, "XAH");
+  console.log("Secuencia:", data.Sequence);
+  console.log("Objetos del propietario:", data.OwnerCount);
+  console.log("Flags:", data.Flags);
+
+  // Comprobar si tiene Hooks instalados
+  if (data.HookNamespaces) {
+    console.log("Hooks instalados: Sí");
+    console.log("Namespaces:", data.HookNamespaces);
+  } else {
+    console.log("Hooks instalados: No");
+  }
+
+  await client.disconnect();
+}
+
+getAccountInfo("rYourAddressHere");`,
+            en: `const { Client } = require("xahau");
 
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
@@ -144,6 +203,8 @@ async function getAccountInfo(address) {
 }
 
 getAccountInfo("rYourAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -244,7 +305,41 @@ You can query the details of a specific transaction using its **hash** with the 
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getAccountTransactions(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_tx",
+    account: address,
+    ledger_index_min: -1,
+    ledger_index_max: -1,
+    limit: 10,
+  });
+
+  console.log("=== Últimas transacciones ===");
+  for (const item of response.result.transactions) {
+    const tx = item.tx;
+    console.log(\`\\nTipo: \${tx.TransactionType}\`);
+    console.log(\`  Hash: \${item.tx.hash}\`);
+    console.log(\`  Fecha: \${new Date((tx.date + 946684800) * 1000).toISOString()}\`);
+    console.log(\`  Resultado: \${item.meta.TransactionResult}\`);
+
+    if (tx.TransactionType === "Payment") {
+      console.log(\`  De: \${tx.Account}\`);
+      console.log(\`  A: \${tx.Destination}\`);
+      console.log(\`  Cantidad: \${Number(tx.Amount) / 1_000_000} XAH\`);
+    }
+  }
+
+  await client.disconnect();
+}
+//Ejemplo de dirección: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
+getAccountTransactions("rYourAddressHere");`,
+            en: `const { Client } = require("xahau");
 
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
@@ -277,6 +372,8 @@ async function getAccountTransactions(address) {
 }
 //Example address: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
 getAccountTransactions("rYourAddressHere");`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -285,7 +382,51 @@ getAccountTransactions("rYourAddressHere");`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getAccountObjects(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Consultar todos los objetos de la cuenta
+  const response = await client.request({
+    command: "account_objects",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  console.log("=== Objetos de la cuenta ===");
+  for (const obj of response.result.account_objects) {
+    console.log(\`\\nTipo: \${obj.LedgerEntryType}\`);
+
+    if (obj.LedgerEntryType === "RippleState") {
+      console.log(\`  Token: \${obj.Balance.currency}\`);
+      console.log(\`  Balance: \${obj.Balance.value}\`);
+    } else if (obj.LedgerEntryType === "URIToken") {
+      console.log(\`  URI: \${obj.URI}\`);
+    }
+  }
+
+  // Suscribirse a las transacciones de esta cuenta
+  console.log("\\nSuscrito a las transacciones de la cuenta...");
+  await client.request({
+    command: "subscribe",
+    accounts: [address]
+  });
+
+  client.on("transaction", (tx) => {
+    console.log("\\n¡Nueva transacción detectada!");
+    console.log("Tipo:", tx.transaction.TransactionType);
+    console.log("Resultado:", tx.meta.TransactionResult);
+  });
+
+  // Mantener conexión abierta 60 segundos
+  setTimeout(() => client.disconnect(), 60000);
+}
+//Ejemplo de dirección: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
+getAccountObjects("rYourAddressHere");`,
+            en: `const { Client } = require("xahau");
 
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -328,6 +469,8 @@ async function getAccountObjects(address) {
 }
 //Example address: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
 getAccountObjects("rYourAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -438,7 +581,67 @@ Many API commands return paginated results. When there is more data than fits in
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getAllAccountObjects(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  let allObjects = [];
+  let marker = undefined;
+  let page = 1;
+
+  console.log("=== Obteniendo todos los objetos de", address, "===\\n");
+
+  do {
+    const request = {
+      command: "account_objects",
+      account: address,
+      ledger_index: "validated",
+      limit: 100,
+    };
+
+    // Incluir marker solo si existe (no en la primera petición)
+    if (marker) {
+      request.marker = marker;
+    }
+
+    const response = await client.request(request);
+    const objects = response.result.account_objects;
+    allObjects = allObjects.concat(objects);
+
+    console.log(\`Página \${page}: \${objects.length} objetos recibidos\`);
+
+    // Actualizar marker para la siguiente página
+    marker = response.result.marker;
+    page++;
+
+    // Pequeña pausa para no saturar el nodo
+    if (marker) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  } while (marker);
+
+  console.log(\`\\nTotal de objetos obtenidos: \${allObjects.length}\`);
+
+  // Agrupar por tipo
+  const byType = {};
+  for (const obj of allObjects) {
+    const type = obj.LedgerEntryType;
+    byType[type] = (byType[type] || 0) + 1;
+  }
+
+  console.log("\\nResumen por tipo:");
+  for (const [type, count] of Object.entries(byType)) {
+    console.log(\`  \${type}: \${count}\`);
+  }
+
+  await client.disconnect();
+}
+//Ejemplo de cuenta: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
+getAllAccountObjects("rYourAddressHere");`,
+            en: `const { Client } = require("xahau");
 
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -497,6 +700,8 @@ async function getAllAccountObjects(address) {
 }
 //Example account: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
 getAllAccountObjects("rYourAddressHere");`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -612,7 +817,79 @@ These indexes are deterministic: you can always recalculate them if you know the
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getObjectsByType(address, type) {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  let allObjects = [];
+  let marker = undefined;
+
+  do {
+    const request = {
+      command: "account_objects",
+      account: address,
+      type: type,
+      ledger_index: "validated",
+      limit: 100,
+    };
+    if (marker) request.marker = marker;
+
+    const response = await client.request(request);
+    allObjects = allObjects.concat(response.result.account_objects);
+    marker = response.result.marker;
+  } while (marker);
+
+  console.log(\`=== \${type.toUpperCase()} para \${address} ===\`);
+  console.log(\`Total encontrados: \${allObjects.length}\\n\`);
+
+  for (const obj of allObjects) {
+    switch (type) {
+      case "state": // RippleState (trust lines)
+        const currency = obj.Balance.currency;
+        const balance = obj.Balance.value;
+        const peer = obj.HighLimit.issuer === address
+          ? obj.LowLimit.issuer
+          : obj.HighLimit.issuer;
+        console.log(\`  \${currency}: balance \${balance} (peer: \${peer})\`);
+        break;
+
+      case "offer":
+        const pays = typeof obj.TakerPays === "string"
+          ? \`\${Number(obj.TakerPays) / 1_000_000} XAH\`
+          : \`\${obj.TakerPays.value} \${obj.TakerPays.currency}\`;
+        const gets = typeof obj.TakerGets === "string"
+          ? \`\${Number(obj.TakerGets) / 1_000_000} XAH\`
+          : \`\${obj.TakerGets.value} \${obj.TakerGets.currency}\`;
+        console.log(\`  Offer: paga \${pays} → recibe \${gets}\`);
+        break;
+
+      case "uri_token":
+        const uri = Buffer.from(obj.URI || "", "hex").toString("utf8");
+        console.log(\`  URIToken: \${uri}\`);
+        console.log(\`    Index: \${obj.index}\`);
+        break;
+
+      default:
+        console.log(\`  \${obj.LedgerEntryType}: \${obj.index}\`);
+    }
+  }
+
+  await client.disconnect();
+}
+
+// Ejemplos de uso:
+// Ver trust lines
+getObjectsByType("rDk1xiArDMjDqnrR2yWypwQAKg4mKnQYvs", "state");
+
+// Ver órdenes DEX
+// getObjectsByType("rfmPQz4eSmisCVnWJkKj82hHKQdrUPv3Px", "offer");
+
+// Ver URITokens
+// getObjectsByType("rfPMnDQEzb5StPXj3Dkd34oKY4BVAJCwsn", "uri_token");`,
+            en: `const { Client } = require("xahau");
 
 async function getObjectsByType(address, type) {
   const client = new Client("wss://xahau.network");
@@ -683,6 +960,8 @@ getObjectsByType("rDk1xiArDMjDqnrR2yWypwQAKg4mKnQYvs", "state");
 
 // View URITokens
 // getObjectsByType("rfPMnDQEzb5StPXj3Dkd34oKY4BVAJCwsn", "uri_token");`,
+            jp: "",
+          },
         },
       ],
       slides: [

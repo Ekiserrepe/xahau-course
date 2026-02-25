@@ -143,7 +143,8 @@ There you will find:
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function sendPayment() {
@@ -183,6 +184,48 @@ async function sendPayment() {
 }
 
 sendPayment();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function sendPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Sender wallet (use your testnet seed), if you have a seed that is not secp256k1, remove the part ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Build the payment transaction
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: xahToDrops(10), // 10 XAH
+  };
+
+  // Autofill adds Fee, Sequence, NetworkID automatically
+  const prepared = await client.autofill(payment);
+  console.log("Prepared transaction:", prepared);
+
+  // Sign the transaction
+  const signed = sender.sign(prepared);
+  console.log("Tx hash:", signed.hash);
+
+  // Submit and wait for validation
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Payment sent successfully!");
+  } else {
+    console.log("Payment error");
+  }
+
+  await client.disconnect();
+}
+
+sendPayment();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -191,7 +234,8 @@ sendPayment();`,
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 // El código no va a funcionar a no ser que tengas saldo del IOU y el destino tenga TrustLine activa. Modifica los campos según tu configuración de testnet.
@@ -237,6 +281,54 @@ async function sendIOUPayment() {
 }
 
 sendIOUPayment();`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// This code will not work unless you have an IOU balance and the destination has an active TrustLine. Modify the fields according to your testnet configuration.
+async function sendIOUPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Sender wallet (use your testnet seed), if you have a seed that is not secp256k1, remove the part ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // To send an IOU, Amount is an object with currency, issuer and value
+  // Requirements:
+  //   1. The sender must have a balance of this IOU
+  //   2. The destination must have a TrustLine for this IOU
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rRecipientAddress",
+    //Here you would modify currency, issuer and value according to the token you want to send
+    Amount: {
+      currency: "USD",
+      issuer: "rTokenIssuerAddress",
+      value: "50", // 50 USD
+    },
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("IOU payment sent successfully!");
+  } else if (txResult === "tecPATH_DRY") {
+    console.log("Error: No payment path. Does the destination have a TrustLine?");
+  } else if (txResult === "tecUNFUNDED_PAYMENT") {
+    console.log("Error: Insufficient IOU balance.");
+  }
+
+  await client.disconnect();
+}
+
+sendIOUPayment();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -345,7 +437,8 @@ Each transaction returns a result code:
             jp: "",
           },
           language: "javascript",
-          code: `require("dotenv").config();
+          code: {
+            es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // Función auxiliar para convertir texto a hexadecimal
@@ -419,6 +512,82 @@ async function sendPaymentWithMemo() {
 }
 
 sendPaymentWithMemo();`,
+            en: `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// Helper function to convert text to hexadecimal
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+function hexToString(hex) {
+  if (!hex) return null;
+  return Buffer.from(hex, "hex").toString("utf8");
+}
+
+async function sendPaymentWithMemo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Sender wallet (use your testnet seed), if you have a seed that is not secp256k1, remove the part ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {
+    algorithm: "secp256k1",
+  });
+
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: xahToDrops(5), // 5 XAH
+    SourceTag: 1, // Sender tag to identify the payment
+    DestinationTag: 12345, // Destination tag to identify the payment
+    Memos: [
+      {
+        Memo: {
+          MemoType: toHex("text/plain"),
+          MemoData: toHex("Xahau course payment"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Payment with memo sent!");
+    console.log("Hash:", signed.hash);
+    const lookup = await client.request({
+      command: "tx",
+      transaction: signed.hash,
+    });
+
+    const tx = lookup.result.tx_json ?? lookup.result;
+    console.log("Source Tag:", tx.SourceTag);
+    console.log("Destination Tag:", tx.DestinationTag);
+
+    if (tx.Memos) {
+      tx.Memos.forEach((memoWrapper, index) => {
+        const memo = memoWrapper.Memo;
+
+        const memoType = hexToString(memo.MemoType);
+        const memoData = hexToString(memo.MemoData);
+
+        console.log("MemoType:", memoType);
+        console.log("MemoData:", memoData);
+      });
+    }
+  }
+
+  await client.disconnect();
+}
+
+sendPaymentWithMemo();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -427,7 +596,8 @@ sendPaymentWithMemo();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
 
 async function verifyPayment(txHash) {
   const client = new Client("wss://xahau-test.net");
@@ -464,6 +634,45 @@ async function verifyPayment(txHash) {
 }
 // Ejemplo de hash de transacción: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
 verifyPayment("TU_HASH_DE_TRANSACCION_AQUI");`,
+            en: `const { Client } = require("xahau");
+
+async function verifyPayment(txHash) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "tx",
+    transaction: txHash,
+  });
+
+  const tx = response.result;
+  console.log("=== Payment details ===");
+  console.log("Type:", tx.TransactionType);
+  console.log("From:", tx.Account);
+  console.log("To:", tx.Destination);
+  console.log("Amount:", Number(tx.Amount) / 1_000_000, "XAH");
+  console.log("Fee:", Number(tx.Fee) / 1_000_000, "XAH");
+  console.log("Result:", tx.meta.TransactionResult);
+  console.log("Ledger:", tx.ledger_index);
+
+  if (tx.DestinationTag !== undefined) {
+    console.log("Destination Tag:", tx.DestinationTag);
+  }
+
+  if (tx.Memos) {
+    for (const memo of tx.Memos) {
+      const type = Buffer.from(memo.Memo.MemoType, "hex").toString("utf8");
+      const data = Buffer.from(memo.Memo.MemoData, "hex").toString("utf8");
+      console.log(\`Memo [\${type}]: \${data}\`);
+    }
+  }
+
+  await client.disconnect();
+}
+// Example transaction hash: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
+verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
+            jp: "",
+          },
         },
       ],
       slides: [

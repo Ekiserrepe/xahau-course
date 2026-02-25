@@ -76,7 +76,7 @@ In a decentralized network, there is no central authority to decide which transa
 
 **Double spending** is the fundamental problem that every digital money system must solve: how do you prevent someone from spending the same money twice?
 
-With physical money this is not possible — if you give a bill to someone, you no longer have it. But digital data can be copied. Without a consensus mechanism, Alice could send her 10 XAH to Bob and simultaneously send those same 10 XAH to Carol. Both transactions would appear valid separately.
+With physical money this is not possible, if you give a bill to someone, you no longer have it. But digital data can be copied. Without a consensus mechanism, Alice could send her 10 XAH to Bob and simultaneously send those same 10 XAH to Carol. Both transactions would appear valid separately.
 
 Consensus solves this: all nodes in the network agree on **a single order** of transactions. If the transaction to Bob is processed first, the transaction to Carol is rejected because Alice no longer has those funds.
 
@@ -127,7 +127,29 @@ Xahau is not based on competition (like PoW) or locked capital (like PoS), but o
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function getValidators() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  // Consultar información del servidor incluyendo validadores
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("Estado del consenso:");
+  console.log("  Ledger validado:", info.validated_ledger.seq);
+  console.log("  Hash:", info.validated_ledger.hash);
+  console.log("  Quorum:", info.validation_quorum);
+
+  await client.disconnect();
+}
+
+getValidators();`,
+            en: `const { Client } = require("xahau");
 
 async function getValidators() {
   const client = new Client("wss://xahau.network");
@@ -148,6 +170,8 @@ async function getValidators() {
 }
 
 getValidators();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -248,14 +272,45 @@ In PoS, security is backed by economic capital (staked tokens). In Xahau's conse
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function monitorLedgers() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  console.log("Monitorizando el cierre de ledgers...");
+  console.log("(Cada cierre = una ronda de consenso completada)");
+
+  // Suscribirse a eventos de ledger
+  await client.request({
+    command: "subscribe",
+    streams: ["ledger"]
+  });
+
+  client.on("ledgerClosed", (ledger) => {
+    console.log(\`Ledger #\${ledger.ledger_index} cerrado\`);
+    console.log(\`  Hash: \${ledger.ledger_hash}\`);
+    console.log(\`  Transacciones: \${ledger.txn_count}\`);
+    console.log(\`  Hora: \${new Date().toISOString()}\`);
+  });
+
+  // Detener después de 30 segundos
+  setTimeout(async () => {
+    console.log("Deteniendo monitorización...");
+    await client.disconnect();
+  }, 30000);
+}
+
+monitorLedgers();`,
+            en: `const { Client } = require("xahau");
 
 async function monitorLedgers() {
   const client = new Client("wss://xahau.network");
   await client.connect();
 
   console.log("Monitoring ledger closing...");
-  console.log("(Each close = a completed consensus round)\\n");
+  console.log("(Each close = a completed consensus round)");
 
   // Subscribe to ledger events
   await client.request({
@@ -267,7 +322,7 @@ async function monitorLedgers() {
     console.log(\`Ledger #\${ledger.ledger_index} closed\`);
     console.log(\`  Hash: \${ledger.ledger_hash}\`);
     console.log(\`  Transactions: \${ledger.txn_count}\`);
-    console.log(\`  Time: \${new Date().toISOString()}\\n\`);
+    console.log(\`  Time: \${new Date().toISOString()}\`);
   });
 
   // Stop after 30 seconds
@@ -278,6 +333,8 @@ async function monitorLedgers() {
 }
 
 monitorLedgers();`,
+            jp: "",
+          },
         },
       ],
       slides: [
@@ -544,7 +601,43 @@ How do you measure if a network is truly decentralized? Some key metrics:
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function inspectValidatorInfo() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+
+  console.log("=== Información del servidor ===");
+  console.log("Versión del servidor:", info.build_version);
+  console.log("Estado:", info.server_state);
+  console.log("");
+
+  console.log("=== Estado del consenso ===");
+  console.log("Quorum de validación:", info.validation_quorum);
+  console.log("Ledger validado:", info.validated_ledger.seq);
+  console.log("Hash del ledger:", info.validated_ledger.hash);
+  console.log("Antigüedad del ledger:", info.validated_ledger.age, "segundos");
+  console.log("Reserva base:", info.validated_ledger.reserve_base_xrp, "XAH");
+  console.log("Reserva por objeto:", info.validated_ledger.reserve_inc_xrp, "XAH");
+  console.log("");
+
+  console.log("=== Métricas de red ===");
+  console.log("Peers conectados:", info.peers);
+  console.log("Tiempo en línea:", info.uptime, "segundos");
+  console.log("Carga del servidor:", info.load_factor);
+
+  await client.disconnect();
+}
+
+inspectValidatorInfo();`,
+            en: `const { Client } = require("xahau");
 
 async function inspectValidatorInfo() {
   const client = new Client("wss://xahau.network");
@@ -579,6 +672,8 @@ async function inspectValidatorInfo() {
 }
 
 inspectValidatorInfo();`,
+            jp: "",
+          },
         },
         {
           title: {
@@ -587,7 +682,43 @@ inspectValidatorInfo();`,
             jp: "",
           },
           language: "javascript",
-          code: `const { Client } = require("xahau");
+          code: {
+            es: `const { Client } = require("xahau");
+
+async function checkNetworkFees() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  // Comando fee: muestra las tarifas actuales de la red
+  const feeResponse = await client.request({
+    command: "fee"
+  });
+
+  const fee = feeResponse.result;
+  console.log("=== Tarifas actuales de la red ===");
+  console.log("Tarifa base (drops):", fee.drops.base_fee);
+  console.log("Tarifa mediana (drops):", fee.drops.median_fee);
+  console.log("Tarifa mínima (drops):", fee.drops.minimum_fee);
+  console.log("Tarifa ledger abierto (drops):", fee.drops.open_ledger_fee);
+  console.log("");
+
+  // Convertir drops a XAH (1 XAH = 1,000,000 drops)
+  const baseFeeXAH = Number(fee.drops.base_fee) / 1_000_000;
+  const medianFeeXAH = Number(fee.drops.median_fee) / 1_000_000;
+  console.log("=== En XAH ===");
+  console.log("Tarifa base:", baseFeeXAH, "XAH");
+  console.log("Tarifa mediana:", medianFeeXAH, "XAH");
+  console.log("");
+
+  console.log("=== Estado del ledger ===");
+  console.log("Ledger actual:", fee.ledger_current_index);
+  console.log("Niveles de carga esperados:", fee.levels.median_level);
+
+  await client.disconnect();
+}
+
+checkNetworkFees();`,
+            en: `const { Client } = require("xahau");
 
 async function checkNetworkFees() {
   const client = new Client("wss://xahau.network");
@@ -622,6 +753,8 @@ async function checkNetworkFees() {
 }
 
 checkNetworkFees();`,
+            jp: "",
+          },
         },
       ],
       slides: [
