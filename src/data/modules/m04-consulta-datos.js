@@ -159,12 +159,12 @@ async function getAccountInfo(address) {
   console.log("Objetos del propietario:", data.OwnerCount);
   console.log("Flags:", data.Flags);
 
-  // Comprobar si tiene Hooks instalados
+  // Comprobar si tiene Namespaces instalados
   if (data.HookNamespaces) {
-    console.log("Hooks instalados: Sí");
+    console.log("Namespaces instalados: Sí");
     console.log("Namespaces:", data.HookNamespaces);
   } else {
-    console.log("Hooks instalados: No");
+    console.log("Namespaces instalados: No");
   }
 
   await client.disconnect();
@@ -191,12 +191,12 @@ async function getAccountInfo(address) {
   console.log("Owner Count:", data.OwnerCount);
   console.log("Flags:", data.Flags);
 
-  // Check if Hooks are installed
+  // Check if Namespaces are installed
   if (data.HookNamespaces) {
-    console.log("Hooks installed: Yes");
+    console.log("Namespaces installed: Yes");
     console.log("Namespaces:", data.HookNamespaces);
   } else {
-    console.log("Hooks installed: No");
+    console.log("Namespaces installed: No");
   }
 
   await client.disconnect();
@@ -323,7 +323,7 @@ async function getAccountTransactions(address) {
   console.log("=== Últimas transacciones ===");
   for (const item of response.result.transactions) {
     const tx = item.tx;
-    console.log(\`\\nTipo: \${tx.TransactionType}\`);
+    console.log(\`Tipo: \${tx.TransactionType}\`);
     console.log(\`  Hash: \${item.tx.hash}\`);
     console.log(\`  Fecha: \${new Date((tx.date + 946684800) * 1000).toISOString()}\`);
     console.log(\`  Resultado: \${item.meta.TransactionResult}\`);
@@ -356,7 +356,7 @@ async function getAccountTransactions(address) {
   console.log("=== Latest transactions ===");
   for (const item of response.result.transactions) {
     const tx = item.tx;
-    console.log(\`\\nType: \${tx.TransactionType}\`);
+    console.log(\`Type: \${tx.TransactionType}\`);
     console.log(\`  Hash: \${item.tx.hash}\`);
     console.log(\`  Date: \${new Date((tx.date + 946684800) * 1000).toISOString()}\`);
     console.log(\`  Result: \${item.meta.TransactionResult}\`);
@@ -398,7 +398,7 @@ async function getAccountObjects(address) {
 
   console.log("=== Objetos de la cuenta ===");
   for (const obj of response.result.account_objects) {
-    console.log(\`\\nTipo: \${obj.LedgerEntryType}\`);
+    console.log(\`Tipo: \${obj.LedgerEntryType}\`);
 
     if (obj.LedgerEntryType === "RippleState") {
       console.log(\`  Token: \${obj.Balance.currency}\`);
@@ -409,14 +409,14 @@ async function getAccountObjects(address) {
   }
 
   // Suscribirse a las transacciones de esta cuenta
-  console.log("\\nSuscrito a las transacciones de la cuenta...");
+  console.log("Suscrito a las transacciones de la cuenta...");
   await client.request({
     command: "subscribe",
     accounts: [address]
   });
 
   client.on("transaction", (tx) => {
-    console.log("\\n¡Nueva transacción detectada!");
+    console.log("¡Nueva transacción detectada!");
     console.log("Tipo:", tx.transaction.TransactionType);
     console.log("Resultado:", tx.meta.TransactionResult);
   });
@@ -441,7 +441,7 @@ async function getAccountObjects(address) {
 
   console.log("=== Account objects ===");
   for (const obj of response.result.account_objects) {
-    console.log(\`\\nType: \${obj.LedgerEntryType}\`);
+    console.log(\`Type: \${obj.LedgerEntryType}\`);
 
     if (obj.LedgerEntryType === "RippleState") {
       console.log(\`  Token: \${obj.Balance.currency}\`);
@@ -452,14 +452,14 @@ async function getAccountObjects(address) {
   }
 
   // Subscribe to transactions for this account
-  console.log("\\nSubscribed to account transactions...");
+  console.log("\Subscribed to account transactions...");
   await client.request({
     command: "subscribe",
     accounts: [address]
   });
 
   client.on("transaction", (tx) => {
-    console.log("\\nNew transaction detected!");
+    console.log("New transaction detected!");
     console.log("Type:", tx.transaction.TransactionType);
     console.log("Result:", tx.meta.TransactionResult);
   });
@@ -592,7 +592,7 @@ async function getAllAccountObjects(address) {
   let marker = undefined;
   let page = 1;
 
-  console.log("=== Obteniendo todos los objetos de", address, "===\\n");
+  console.log("=== Obteniendo todos los objetos de", address, "===");
 
   do {
     const request = {
@@ -623,7 +623,7 @@ async function getAllAccountObjects(address) {
     }
   } while (marker);
 
-  console.log(\`\\nTotal de objetos obtenidos: \${allObjects.length}\`);
+  console.log(\`nTotal de objetos obtenidos: \${allObjects.length}\`);
 
   // Agrupar por tipo
   const byType = {};
@@ -632,7 +632,7 @@ async function getAllAccountObjects(address) {
     byType[type] = (byType[type] || 0) + 1;
   }
 
-  console.log("\\nResumen por tipo:");
+  console.log("Resumen por tipo:");
   for (const [type, count] of Object.entries(byType)) {
     console.log(\`  \${type}: \${count}\`);
   }
@@ -651,7 +651,7 @@ async function getAllAccountObjects(address) {
   let marker = undefined;
   let page = 1;
 
-  console.log("=== Getting all objects for", address, "===\\n");
+  console.log("=== Getting all objects for", address, "===");
 
   do {
     const request = {
@@ -682,7 +682,7 @@ async function getAllAccountObjects(address) {
     }
   } while (marker);
 
-  console.log(\`\\nTotal objects retrieved: \${allObjects.length}\`);
+  console.log(\`Total objects retrieved: \${allObjects.length}\`);
 
   // Group by type
   const byType = {};
@@ -691,7 +691,7 @@ async function getAllAccountObjects(address) {
     byType[type] = (byType[type] || 0) + 1;
   }
 
-  console.log("\\nSummary by type:");
+  console.log("Summary by type:");
   for (const [type, count] of Object.entries(byType)) {
     console.log(\`  \${type}: \${count}\`);
   }
@@ -843,7 +843,7 @@ async function getObjectsByType(address, type) {
   } while (marker);
 
   console.log(\`=== \${type.toUpperCase()} para \${address} ===\`);
-  console.log(\`Total encontrados: \${allObjects.length}\\n\`);
+  console.log(\`Total encontrados: \${allObjects.length}\`);
 
   for (const obj of allObjects) {
     switch (type) {
@@ -914,7 +914,7 @@ async function getObjectsByType(address, type) {
   } while (marker);
 
   console.log(\`=== \${type.toUpperCase()} for \${address} ===\`);
-  console.log(\`Total found: \${allObjects.length}\\n\`);
+  console.log(\`Total found: \${allObjects.length}\`);
 
   for (const obj of allObjects) {
     switch (type) {

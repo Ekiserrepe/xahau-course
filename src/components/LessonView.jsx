@@ -21,6 +21,7 @@ export default function LessonView({
   theme,
   onToggleTheme,
   totalModules,
+  setLang,
 }) {
   const [activeTab, setActiveTab] = useState('theory')
 
@@ -46,6 +47,22 @@ export default function LessonView({
               ← {labels.allModules}
             </button>
             <div className="flex items-center gap-3">
+              {/* Language selector */}
+              <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
+                {['es', 'en', 'jp'].map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className="px-3 py-1.5 text-sm font-bold uppercase transition-all"
+                    style={{
+                      background: lang === l ? 'var(--color-accent)' : 'transparent',
+                      color: lang === l ? '#000' : 'var(--color-text-dim)',
+                    }}
+                  >
+                    {l === 'jp' ? '日本語' : l.toUpperCase()}
+                  </button>
+                ))}
+              </div>
               {/* Theme toggle */}
               <button
                 onClick={onToggleTheme}

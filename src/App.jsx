@@ -125,6 +125,7 @@ export default function App() {
       theme={theme}
       onToggleTheme={toggleTheme}
       totalModules={COURSE_DATA.length}
+      setLang={setLang}
     />
   )
 }
