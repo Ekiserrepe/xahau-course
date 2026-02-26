@@ -130,6 +130,8 @@ async function mintURIToken() {
     );
     if (created) {
       console.log("URIToken ID:", created.CreatedNode.LedgerIndex);
+      console.log("Address:", creator.address);
+
     }
   }
 
@@ -175,6 +177,7 @@ async function mintURIToken() {
     );
     if (created) {
       console.log("URIToken ID:", created.CreatedNode.LedgerIndex);
+            console.log("Address:", creator.address);
     }
   }
 
@@ -227,7 +230,7 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-
+// Reemplaza con la dirección que quieres consultar, por ejemplo r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
 getURITokens("rTuDireccionAqui");`,
             en: `const { Client } = require("xahau");
 
@@ -263,7 +266,7 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-
+// Insert the address you want to query, for example r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
 getURITokens("rYourAddressHere");`,
             jp: "",
           },
@@ -455,6 +458,7 @@ async function buyURIToken() {
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("¡URIToken comprado con éxito!");
     console.log("El NFT ahora es tuyo.");
+        console.log("Dirección del comprador:", buyer.address);
   }
 
   await client.disconnect();
@@ -487,6 +491,7 @@ async function buyURIToken() {
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("URIToken purchased successfully!");
     console.log("The NFT is now yours.");
+    console.log("Buyer Address:", buyer.address);
   }
 
   await client.disconnect();

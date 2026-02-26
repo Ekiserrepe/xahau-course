@@ -49,7 +49,7 @@ export default function LessonView({
             <div className="flex items-center gap-3">
               {/* Language selector */}
               <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
-                {['es', 'en', 'jp'].map((l) => (
+                {['es', 'en'].map((l) => (
                   <button
                     key={l}
                     onClick={() => setLang(l)}

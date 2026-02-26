@@ -201,7 +201,8 @@ createTrustLine();`,
           },
           language: "javascript",
           code: {
-            es: `require("dotenv").config();
+            es: `//Este código fallará si no dispones de los tokens que quieres enviar.
+require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -237,7 +238,8 @@ async function issueTokens() {
 }
 
 issueTokens();`,
-            en: `require("dotenv").config();
+            en: `//This code is going to fail if you dont own those tokens
+require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -426,7 +428,28 @@ const { Client, Wallet, xahToDrops } = require("xahau");
 // Necesitas dos wallets con fondos en testnet y definelas en tu .env:
 //   ISSUER_SEED  → Cuenta emisora del token
 //   RESERVE_SEED  → Cuenta de reserva/distribución
-// Puedes obtener fondos del faucet: https://xahau-test.net/accounts
+// Puedes obtener fondos del faucet: https://xahau-test.net
+
+// Si token_currency > 3 chars, convertir a hex de 40 (relleno con 0)
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 o menos: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convertir a hex y pad a 40 (20 bytes) con 0 a la derecha
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency demasiado largo: "\${cur}" -> hex \${hex.length} (>40). Máx ~20 bytes en UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
 
 async function createAndDistributeToken() {
   const client = new Client("wss://xahau-test.net");
@@ -436,8 +459,11 @@ async function createAndDistributeToken() {
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
   const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
 
-  const TOKEN_CURRENCY = "YourTokenName";          // Nombre del token (3 chars) o hex de 40 chars para nombres largos
+  const TOKEN_CURRENCY_INPUT = "YourTokenName";          // Nombre del token (3 chars) o hex de 40 chars para nombres largos
   const TOTAL_SUPPLY = "1000000";        // Supply total a emitir
+  
+  const TOKEN_CURRENCY = normalizeCurrency(TOKEN_CURRENCY_INPUT);
+
 
   console.log("=== Creación de token ===");
   console.log("Emisor:", issuer.address);
@@ -446,7 +472,7 @@ async function createAndDistributeToken() {
   console.log("Supply:", TOTAL_SUPPLY);
 
   // === PASO 1: Configurar la cuenta emisora con DefaultRipple ===
-  console.log("\\n--- Paso 1: Configurar DefaultRipple en el emisor ---");
+  console.log("--- Paso 1: Configurar DefaultRipple en el emisor ---");
   const accountSet = {
     TransactionType: "AccountSet",
     Account: issuer.address,
@@ -465,7 +491,7 @@ async function createAndDistributeToken() {
   }
 
   // === PASO 2: La cuenta de reserva crea TrustLine hacia el emisor ===
-  console.log("\\n--- Paso 2: Crear TrustLine (reserva → emisor) ---");
+  console.log("--- Paso 2: Crear TrustLine (reserva → emisor) ---");
   const trustSet = {
     TransactionType: "TrustSet",
     Account: reserve.address,
@@ -488,7 +514,7 @@ async function createAndDistributeToken() {
   }
 
   // === PASO 3: El emisor envía todo el supply a la cuenta de reserva ===
-  console.log("\\n--- Paso 3: Emitir tokens (emisor → reserva) ---");
+  console.log("--- Paso 3: Emitir tokens (emisor → reserva) ---");
   const issuePayment = {
     TransactionType: "Payment",
     Account: issuer.address,
@@ -511,11 +537,11 @@ async function createAndDistributeToken() {
     return;
   }
 
-  console.log("\\n¡Token creado y distribuido a la cuenta de reserva!");
+  console.log("¡Token creado y distribuido a la cuenta de reserva!");
   console.log("Supply total:", TOTAL_SUPPLY, TOKEN_CURRENCY);
 
   // === VERIFICAR: Consultar balance de la cuenta de reserva ===
-  console.log("\\n--- Verificación ---");
+  console.log("--- Verificación ---");
   const lines = await client.request({
     command: "account_lines",
     account: reserve.address,
@@ -557,7 +583,28 @@ const { Client, Wallet, xahToDrops } = require("xahau");
 // You need two wallets with funds on testnet, define them in your .env:
 //   ISSUER_SEED  → Token issuer account
 //   RESERVE_SEED  → Reserve/distribution account
-// You can get funds from the faucet: https://xahau-test.net/accounts
+// You can get funds from the faucet: https://xahau-test.net
+
+// Si token_currency > 3 chars, convertir a hex de 40 (relleno con 0)
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 o menos: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convertir a hex y pad a 40 (20 bytes) con 0 a la derecha
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency demasiado largo: "\${cur}" -> hex \${hex.length} (>40). Máx ~20 bytes en UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
 
 async function createAndDistributeToken() {
   const client = new Client("wss://xahau-test.net");
@@ -567,8 +614,11 @@ async function createAndDistributeToken() {
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
   const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
 
-  const TOKEN_CURRENCY = "YourTokenName";          // Token name (3 chars) or 40-char hex for longer names
+  const TOKEN_CURRENCY_INPUT = "YourTokenName";          // Token name (3 chars) or 40-char hex for longer names
   const TOTAL_SUPPLY = "1000000";        // Total supply to issue
+
+  const TOKEN_CURRENCY = normalizeCurrency(TOKEN_CURRENCY_INPUT);
+
 
   console.log("=== Token creation ===");
   console.log("Issuer:", issuer.address);
@@ -577,7 +627,7 @@ async function createAndDistributeToken() {
   console.log("Supply:", TOTAL_SUPPLY);
 
   // === STEP 1: Configure the issuer account with DefaultRipple ===
-  console.log("\\n--- Step 1: Configure DefaultRipple on the issuer ---");
+  console.log("--- Step 1: Configure DefaultRipple on the issuer ---");
   const accountSet = {
     TransactionType: "AccountSet",
     Account: issuer.address,
@@ -596,7 +646,7 @@ async function createAndDistributeToken() {
   }
 
   // === STEP 2: The reserve account creates a TrustLine toward the issuer ===
-  console.log("\\n--- Step 2: Create TrustLine (reserve → issuer) ---");
+  console.log("--- Step 2: Create TrustLine (reserve → issuer) ---");
   const trustSet = {
     TransactionType: "TrustSet",
     Account: reserve.address,
@@ -619,7 +669,7 @@ async function createAndDistributeToken() {
   }
 
   // === STEP 3: The issuer sends the entire supply to the reserve account ===
-  console.log("\\n--- Step 3: Issue tokens (issuer → reserve) ---");
+  console.log("--- Step 3: Issue tokens (issuer → reserve) ---");
   const issuePayment = {
     TransactionType: "Payment",
     Account: issuer.address,
@@ -642,11 +692,11 @@ async function createAndDistributeToken() {
     return;
   }
 
-  console.log("\\nToken created and distributed to the reserve account!");
+  console.log("Token created and distributed to the reserve account!");
   console.log("Total supply:", TOTAL_SUPPLY, TOKEN_CURRENCY);
 
   // === VERIFY: Query reserve account balance ===
-  console.log("\\n--- Verification ---");
+  console.log("--- Verification ---");
   const lines = await client.request({
     command: "account_lines",
     account: reserve.address,
@@ -745,7 +795,7 @@ Sin el flag **DefaultRipple**, los tokens solo se pueden transferir de vuelta al
 
 Para nombres de token de más de 3 caracteres, se usa un código hexadecimal de 40 caracteres:
 - Formato: el nombre convertido a hex, rellenado con ceros
-- Ejemplo: "XAHAU" → hex → relleno a 40 chars`,
+- Ejemplo: "EURZ" → hex → relleno a 40 chars`,
         en: `Once your token is created, you can manage various aspects: query balances, configure the issuing account, and transfer tokens between users.
 
 ### Querying TrustLines and balances
@@ -767,7 +817,7 @@ Without the **DefaultRipple** flag, tokens can only be transferred back to the i
 
 For token names longer than 3 characters, a 40-character hexadecimal code is used:
 - Format: the name converted to hex, padded with zeros
-- Example: "XAHAU" -> hex -> padded to 40 chars`,
+- Example: "EURZ" -> hex -> padded to 40 chars`,
         jp: "",
       },
       codeBlocks: [
@@ -799,7 +849,7 @@ async function getTokenBalances(address) {
   }
 
   for (const line of response.result.lines) {
-    console.log(\`\\nToken: \${line.currency}\`);
+    console.log(\`Token: \${line.currency}\`);
     console.log(\`  Emisor: \${line.account}\`);
     console.log(\`  Balance: \${line.balance}\`);
     console.log(\`  Límite: \${line.limit}\`);
@@ -829,7 +879,7 @@ async function getTokenBalances(address) {
   }
 
   for (const line of response.result.lines) {
-    console.log(\`\\nToken: \${line.currency}\`);
+    console.log(\`Token: \${line.currency}\`);
     console.log(\`  Issuer: \${line.account}\`);
     console.log(\`  Balance: \${line.balance}\`);
     console.log(\`  Limit: \${line.limit}\`);
@@ -927,7 +977,7 @@ El DEX de Xahau puede enrutar operaciones multi-salto automáticamente a través
 2. Comprar EUR con XAH
 
 Todo en una sola transacción, de forma transparente. Esto mejora la liquidez del DEX significativamente.`,
-        en: `Xahau includes a **native decentralized exchange (DEX)** directly in the protocol. You don't need smart contracts or external platforms to exchange tokens — everything is done with native transactions.
+        en: `Xahau includes a **native decentralized exchange (DEX)** directly in the protocol. You don't need smart contracts or external platforms to exchange tokens, everything is done with native transactions.
 
 ### OfferCreate: placing orders on the DEX
 
@@ -1006,7 +1056,7 @@ async function viewOrderBook() {
   });
 
   console.log("=== Libro de órdenes: EVR → XAH ===");
-  console.log(\`Ofertas encontradas: \${response.result.offers.length}\\n\`);
+  console.log(\`Ofertas encontradas: \${response.result.offers.length}\`);
 
   for (const offer of response.result.offers) {
     const getsUSD = offer.TakerGets.value || offer.TakerGets;
@@ -1018,7 +1068,7 @@ async function viewOrderBook() {
     console.log(\`Cuenta: \${offer.Account}\`);
     console.log(\`  Vende: \${getsUSD} EVR\`);
     console.log(\`  Pide:  \${paysXAH} XAH\`);
-    console.log(\`  Sequence: \${offer.Sequence}\\n\`);
+    console.log(\`  Sequence: \${offer.Sequence}\`);
   }
 
   await client.disconnect();
@@ -1048,7 +1098,7 @@ async function viewOrderBook() {
   });
 
   console.log("=== Order book: EVR → XAH ===");
-  console.log(\`Offers found: \${response.result.offers.length}\\n\`);
+  console.log(\`Offers found: \${response.result.offers.length}\`);
 
   for (const offer of response.result.offers) {
     const getsUSD = offer.TakerGets.value || offer.TakerGets;
@@ -1060,7 +1110,7 @@ async function viewOrderBook() {
     console.log(\`Account: \${offer.Account}\`);
     console.log(\`  Sells: \${getsUSD} EVR\`);
     console.log(\`  Wants: \${paysXAH} XAH\`);
-    console.log(\`  Sequence: \${offer.Sequence}\\n\`);
+    console.log(\`  Sequence: \${offer.Sequence}\`);
   }
 
   await client.disconnect();
@@ -1081,12 +1131,38 @@ viewOrderBook();`,
             es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
+// Si token_currency > 3 chars, convertir a hex de 40 (relleno con 0)
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 o menos: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convertir a hex y pad a 40 (20 bytes) con 0 a la derecha
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency demasiado largo: "\${cur}" -> hex \${hex.length} (>40). Máx ~20 bytes en UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
 async function createOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
+
   const issuerAddress = "rDireccionDelEmisorToken";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
+
 
   // Vender 100 Token a cambio de 50 XAH
   const offer = {
@@ -1096,7 +1172,7 @@ async function createOffer() {
     TakerPays: xahToDrops(50),
     // Lo que estoy dispuesto a dar: 100 Tokens
     TakerGets: {
-      currency: "YourTokenName",
+      currency: token_currency,
       issuer: issuerAddress,
       value: "100",
     },
@@ -1121,12 +1197,37 @@ createOffer();`,
             en: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
 
+// If token_currency > 3 chars, convert to 40 hex
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 or less: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convert to hex and pad to 40 (20 bytes) with 0 on the right
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+
 async function createOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
   const issuerAddress = "rTokenIssuerAddress";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
 
   // Sell 100 Tokens in exchange for 50 XAH
   const offer = {
@@ -1136,7 +1237,7 @@ async function createOffer() {
     TakerPays: xahToDrops(50),
     // What I am willing to give: 100 Tokens
     TakerGets: {
-      currency: "YourTokenName",
+      currency: token_currency,
       issuer: issuerAddress,
       value: "100",
     },
@@ -1176,7 +1277,7 @@ async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
 
   // Cancelar una oferta usando su OfferSequence
   const cancel = {
@@ -1193,6 +1294,7 @@ async function cancelOffer() {
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("¡Oferta cancelada con éxito!");
+    console.log("Dirección del trader:", trader.address);
   }
 
   await client.disconnect();
@@ -1206,7 +1308,7 @@ async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  const trader = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
 
   // Cancel an offer using its OfferSequence
   const cancel = {
@@ -1223,6 +1325,8 @@ async function cancelOffer() {
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("Offer cancelled successfully!");
+    console.log("Address of the trader:", trader.address);
+
   }
 
   await client.disconnect();
@@ -1369,6 +1473,27 @@ const { Client, Wallet } = require("xahau");
 // hacia un emisor de token. Es necesario para que luego
 // el emisor pueda congelar esa TrustLine si lo necesita.
 
+// If token_currency > 3 chars, convert to 40 hex
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 or less: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convert to hex and pad to 40 (20 bytes) with 0 on the right
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
 async function createHolderTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -1376,12 +1501,15 @@ async function createHolderTrustLine() {
   // El holder que quiere recibir el token y luego congelaremos su TrustLine si es necesario
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
   const issuerAddress = "rDireccionDelEmisor";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
 
   const trustSet = {
     TransactionType: "TrustSet",
     Account: holder.address,
     LimitAmount: {
-      currency: "YourTokenName",
+      currency: token_currency,
       issuer: issuerAddress,
       value: "1000000", // Límite máximo que acepto
     },
@@ -1412,6 +1540,27 @@ const { Client, Wallet } = require("xahau");
 // toward a token issuer. This is required so the issuer
 // can later freeze that TrustLine if needed.
 
+// If token_currency > 3 chars, convert to 40 hex
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 or less: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convert to hex and pad to 40 (20 bytes) with 0 on the right
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
 async function createHolderTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -1419,12 +1568,15 @@ async function createHolderTrustLine() {
   // The holder who wants to receive the token; their TrustLine can be frozen later if needed
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
   const issuerAddress = "rIssuerAddress";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
 
   const trustSet = {
     TransactionType: "TrustSet",
     Account: holder.address,
     LimitAmount: {
-      currency: "YourTokenName",
+      currency: token_currency,
       issuer: issuerAddress,
       value: "1000000", // Maximum limit I accept
     },
@@ -1462,19 +1614,43 @@ createHolderTrustLine();`,
             es: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
+// If token_currency > 3 chars, convert to 40 hex
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 or less: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convert to hex and pad to 40 (20 bytes) with 0 on the right
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
 async function freezeTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
   const holderAddress = "rDireccionDelHolder";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
 
   // Congelar la TrustLine de USD con este holder
   const trustSet = {
     TransactionType: "TrustSet",
     Account: issuer.address,
     LimitAmount: {
-      currency: "NombreDelToken",
+      currency: token_currency,
       issuer: holderAddress,
       value: "0", // No importa el valor para freeze
     },
@@ -1499,19 +1675,43 @@ freezeTrustLine();`,
             en: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
+// If token_currency > 3 chars, convert to 40 hex
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 or less: standard currency code
+  if (cur.length <= 3) return cur;
+
+  // >3: convert to hex and pad to 40 (20 bytes) with 0 on the right
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
 async function freezeTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
   const holderAddress = "rHolderAddress";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
 
   // Freeze the token TrustLine with this holder
   const trustSet = {
     TransactionType: "TrustSet",
     Account: issuer.address,
     LimitAmount: {
-      currency: "TokenName",
+      currency: token_currency,
       issuer: holderAddress,
       value: "0", // Value does not matter for freeze
     },
