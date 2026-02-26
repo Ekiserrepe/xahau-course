@@ -104,8 +104,8 @@ Every Hook must include a call to \`_g(id, maxiter)\` to prevent infinite loops.
       codeBlocks: [
         {
           title: {
-            es: "Hook mínimo — Acepta todas las transacciones",
-            en: "Minimal Hook — Accepts all transactions",
+            es: "Hook mínimo. Acepta todas las transacciones",
+            en: "Minimal Hook. Accepts all transactions",
             jp: "",
           },
           language: "c",
@@ -125,11 +125,6 @@ int64_t hook(uint32_t reserved) {
     // Guard: nunca se llega aquí, pero es obligatorio
     _g(1, 1);
     return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
-    // Callback vacío (Se puede omitir la declaracion cback si no se necesita)
-    return 0;
 }`,
             en: `#include "hookapi.h"
 
@@ -145,11 +140,6 @@ int64_t hook(uint32_t reserved) {
 
     // Guard: never reached here, but mandatory
     _g(1, 1);
-    return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
-    // Empty callback (cbak declaration can be omitted if not needed)
     return 0;
 }`,
             jp: "",
@@ -206,59 +196,49 @@ int64_t hook(uint32_t reserved) {
 
     _g(1, 1);
     return 0;
-}
-
-int64_t cbak(uint32_t reserved) {
-    return 0;
 }`,
             en: `#include "hookapi.h"
 
 /**
- * Hook: payment_counter.c
- * Counts how many payments the account has processed.
- * Stores the counter in the Hook state.
+ * Hook: min_payment.c
+ * Reject payments of XAH below 10 XAH.
+ * Accepts all other transactions.
  */
 
 int64_t hook(uint32_t reserved) {
-    _g(1, 1);
-
-    // Only count payments (type 0)
+    // Obtain the transaction type
     int64_t tt = otxn_type();
+
+    // If not a payment (type 0), accept
     if (tt != 0) {
-        accept(SBUF("payment_counter: Not a payment."), __LINE__);
+        accept(SBUF("min_payment: Not a payment."), __LINE__);
     }
 
-    // State key for counter (32 bytes, padded with zeros)
-    uint8_t state_key[32] = { 0 };
-    state_key[0] = 'C'; // 'C' for Counter
+    // Obtain the payment amount
+    unsigned char amount_buf[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
 
-    // Read current counter from state
-    int64_t counter = 0;
-    uint8_t counter_buf[8] = { 0 };
-    int64_t bytes_read = state(SBUF(counter_buf), SBUF(state_key));
-
-    if (bytes_read == 8) {
-        // Counter already exists, read its value
-        counter = *((int64_t*)counter_buf);
+    // If not native XAH (8 bytes), accept
+    if (amount_len != 8) {
+        accept(SBUF("min_payment: Not native XAH."), __LINE__);
     }
 
-    // Increment counter
-    counter++;
+    // Convert to drops and compare
+    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+    int64_t min_drops = 10000000; // 10 XAH = 10,000,000 drops
 
-    // Write new value to state
-    *((int64_t*)counter_buf) = counter;
-    int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-
-    if (result < 0) {
-        rollback(SBUF("payment_counter: Error saving state."), __LINE__);
+    if (drops < min_drops) {
+        // Reject: the payment is too small
+        rollback(
+            SBUF("min_payment: Payment rejected. Minimum 10 XAH."),
+            __LINE__
+        );
     }
 
-    // Accept transaction
-    accept(SBUF("payment_counter: Payment counted."), __LINE__);
-    return 0;
-}
+    // Accept: the payment meets the minimum
+    accept(SBUF("min_payment: Payment accepted."), __LINE__);
 
-int64_t cbak(uint32_t reserved) {
+    _g(1, 1);
     return 0;
 }`,
             jp: "",
@@ -359,7 +339,6 @@ Hook: {
   HookHash: "A5B6C7D8...",      // Hash del Hook existente
   HookOn: "0000000000000000",
   HookNamespace: "00...00",
-  HookApiVersion: 0,
   Flags: 1,                      // hsfOverride
 }
 \`\`\`
@@ -425,14 +404,14 @@ Si además quieres **limpiar todo el estado** del namespace de ese Hook, añade 
 | \`hsfNSDelete\` | 2 | Elimina todo el estado del namespace al desinstalar |
 | \`hsfCollect\` | 4 | Recolecta los grants del Hook anterior |
 
-### HookOn — Filtro de transacciones
+### HookOn: Filtro de transacciones
 
 El campo \`HookOn\` controla en qué tipos de transacción se activa el Hook:
 - Puedes configurar bits específicos para activar o desactivar tipos usando esta [calculadora](https://richardah.github.io/xrpl-hookon-calculator/)
 - Si marcamos solo que se active en transacciones de pago, el Hook solo se ejecutará cuando la cuenta reciba o envíe un pago. El resultado en la calculadora es \`0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbffffe\`. Debemos eliminar la parte de \`0x\`y pasar el resultado a mayúsculas para usarlo en el campo HookOn. Por ejemplo: \`FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFE\`.
 - Se pueden marcar varias transacciones a la vez. Se recomienda precaución al configurar HookOn para no activar el Hook en tipos de transacción que no necesitas, ya que esto puede generar fees innecesarios y aumentar el riesgo de acciones que no esperemos.
 
-### HookCanEmit — Control de emisión de transacciones
+### HookCanEmit: Control de emisión de transacciones
 
 El campo \`HookCanEmit\` es un mecanismo de seguridad fundamental que limita qué transacciones puede emitir un Hook. Por defecto, un Hook tiene la capacidad de emitir transacciones autónomas (usando la función \`emit()\`), lo que podría representar un riesgo si el Hook tiene un bug o ha sido instalado sin revisar su código.
 
@@ -508,7 +487,6 @@ Hook: {
   HookHash: "A5B6C7D8...",      // Hash of existing Hook
   HookOn: "0000000000000000",
   HookNamespace: "00...00",
-  HookApiVersion: 0,
   Flags: 1,                      // hsfOverride
 }
 \`\`\`
@@ -574,14 +552,14 @@ If you also want to **clean all state** from that Hook's namespace, add the \`hs
 | \`hsfNSDelete\` | 2 | Deletes all namespace state upon uninstall |
 | \`hsfCollect\` | 4 | Collects grants from the previous Hook |
 
-### HookOn — Transaction filter
+### HookOn: Transaction filter
 
 The \`HookOn\` field controls which transaction types activate the Hook:
 - You can configure specific bits to enable or disable types using this [calculator](https://richardah.github.io/xrpl-hookon-calculator/)
 - If we mark only activation on payment transactions, the Hook will only execute when the account receives or sends a payment. The result in the calculator is \`0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbffffe\`. We must remove the \`0x\` part and convert the result to uppercase to use it in the HookOn field. For example: \`FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFE\`.
 - Multiple transactions can be marked at once. Caution is recommended when configuring HookOn to avoid activating the Hook on transaction types you don't need, as this can generate unnecessary fees and increase the risk of unexpected actions.
 
-### HookCanEmit — Transaction emission control
+### HookCanEmit: Transaction emission control
 
 The \`HookCanEmit\` field is a fundamental security mechanism that limits which transactions a Hook can emit. By default, a Hook has the ability to emit autonomous transactions (using the \`emit()\` function), which could represent a risk if the Hook has a bug or was installed without reviewing its code.
 
@@ -625,7 +603,7 @@ async function deployHook() {
   const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   // Leer el WASM compilado del Hook
-  const wasmBytes = fs.readFileSync("base.wasm"); // Utiliza el nombre del fichero .wasm que quieres desplegar
+  const wasmBytes = fs.readFileSync("base.wasm"); // Utiliza el nombre del fichero .wasm que quieres desplegar, https://bqsoczh.dlvr.cloud/base.wasm
   const hookBinary = wasmBytes.toString("hex").toUpperCase();
 
   // Construir la transacción SetHook
@@ -660,54 +638,53 @@ async function deployHook() {
 }
 
 deployHook();`,
-            en: `#include "hookapi.h"
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+const fs = require("fs");
 
-/**
- * Hook: min_payment.c
- * Rejects XAH payments smaller than 10 XAH.
- * Accepts all other transactions.
- */
+async function deployHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
 
-int64_t hook(uint32_t reserved) {
-    // Get transaction type
-    int64_t tt = otxn_type();
+  // Tu cuenta de testnet
+  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
-    // If not a payment (type 0), accept
-    if (tt != 0) {
-        accept(SBUF("min_payment: Not a payment."), __LINE__);
-    }
+  // Read the compiled WASM file for the Hook
+  const wasmBytes = fs.readFileSync("base.wasm"); // Use the name of the .wasm file you want to deploy, e.g., https://bqsoczh.dlvr.cloud/base.wasm
+  const hookBinary = wasmBytes.toString("hex").toUpperCase();
 
-    // Get payment amount
-    unsigned char amount_buf[48];
-    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
+  // Build the SetHook transaction
+  const setHook = {
+    TransactionType: "SetHook",
+    Account: account.address,
+    Hooks: [
+      {
+        Hook: {
+          CreateCode: hookBinary,
+          HookOn: "0".repeat(64), // All the types of transactions
+          HookCanEmit: "0".repeat(64), // All the types of tx
+          HookNamespace: "0".repeat(64), // Namespace by default
+          HookApiVersion: 0,
+          Flags: 1, // Flag hsfOVERRIDE so the new hook replaces any previous hook on the account
+        },
+      },
+    ],
+  };
 
-    // If not native XAH (8 bytes), accept
-    if (amount_len != 8) {
-        accept(SBUF("min_payment: Non-XAH payment."), __LINE__);
-    }
+  const prepared = await client.autofill(setHook);
+  const signed = account.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
 
-    // Convert to drops and compare
-    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-    int64_t min_drops = 10000000; // 10 XAH = 10,000,000 drops
+  console.log("Result:", result.result.meta.TransactionResult);
 
-    if (drops < min_drops) {
-        // Reject: payment too small
-        rollback(
-            SBUF("min_payment: Payment rejected. Minimum 10 XAH."),
-            __LINE__
-        );
-    }
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Hook deployed successfully on account:", account.address);
+  }
 
-    // Accept: payment meets minimum
-    accept(SBUF("min_payment: Payment accepted."), __LINE__);
-
-    _g(1, 1);
-    return 0;
+  await client.disconnect();
 }
 
-int64_t cbak(uint32_t reserved) {
-    return 0;
-}`,
+deployHook();`,
             jp: "",
           },
         },{
@@ -757,91 +734,45 @@ async function removeHook() {
 }
 
 removeHook();`,
-            en: `#include "hookapi.h"
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+const fs = require("fs");
 
-/**
- * Hook: ten_percent_forwarder.c
- *
- * When the account receives an XAH payment, it automatically forwards
- * 10% to the hardcoded address in forward_to[].
- *
- * ── How to configure the destination address ─────────────────────────────
- * The address must be in Account ID format (20 bytes in hex),
- * NOT in rAddress format. To convert use one of these tools:
- *   https://hooks.services/tools/raddress-to-accountid
- *   https://transia-rnd.github.io/xrpl-hex-visualizer/
- *
- * Example:
- *   rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
- *   → 4B50699E253C5098DEFE3A0872A79D129172F496
- *   → { 0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U }
- * ─────────────────────────────────────────────────────────────────────────
- */
+async function removeHook() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
 
-int64_t hook(uint32_t reserved)
-{
-    // Our Hook iterations, in this case only 1, since we only emit one transaction and have no loops
-    _g(1, 1);
+  // Your account on Testnet
+  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
-    // Reserve space for 1 emission
-    etxn_reserve(1);
+  // Build the SetHook transaction
+  const setHook = {
+    TransactionType: "SetHook",
+    Account: account.address,
+    Hooks: [
+      {
+        Hook: {
+          CreateCode: "", // If it's empty, it assumes you want to remove the hook in this position of the array.
+          Flags: 1, // Flag hsfOVERRIDE so the new hook replaces any previous hook on the account
+        },
+      },
+    ],
+  };
 
-    // Destination address for 10% — replace these bytes with your account's
-    // rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r - Get your translation at https://hooks.services/tools/raddress-to-accountid
-    uint8_t forward_to[20] = {
-        0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U
-    };
+  const prepared = await client.autofill(setHook);
+  const signed = account.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
 
-    // Only process payments (type 0)
-    int64_t tt = otxn_type();
-    if (tt != 0)
-        accept(SBUF("forwarder: not a payment"), __LINE__);
+  console.log("Result:", result.result.meta.TransactionResult);
 
-    // Get the destination of the incoming transaction
-    uint8_t account_field[20];
-    int32_t account_field_len = otxn_field(SBUF(account_field), sfDestination);
-    if (account_field_len != 20)
-        accept(SBUF("forwarder: could not read destination"), __LINE__);
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("Hook succesfully removed from the account!", account.address);
+  }
 
-    // Get the Account ID of the account that has the Hook installed
-    unsigned char hook_accid[20];
-    hook_account(SBUF(hook_accid));
+  await client.disconnect();
+}
 
-    // Only act if the Hook is the payment recipient (incoming payment)
-    int equal = 0;
-    BUFFER_EQUAL(equal, hook_accid, account_field, 20);
-    if (!equal)
-        accept(SBUF("forwarder: outgoing payment, ignore"), __LINE__);
-
-    // Read the Amount — native XAH occupies exactly 8 bytes
-    unsigned char amount_buffer[48];
-    int64_t amount_len = otxn_field(SBUF(amount_buffer), sfAmount);
-    if (amount_len != 8)
-        accept(SBUF("forwarder: not native XAH"), __LINE__);
-
-    int64_t otxn_drops = AMOUNT_TO_DROPS(amount_buffer);
-    TRACEVAR(otxn_drops);
-
-    // Calculate 10%
-    int64_t drops_to_forward = otxn_drops / 10;
-    TRACEVAR(drops_to_forward);
-
-    if (drops_to_forward < 1)
-        accept(SBUF("forwarder: amount too small"), __LINE__);
-
-    // Prepare and emit the 10% payment
-    unsigned char tx[PREPARE_PAYMENT_SIMPLE_SIZE];
-    PREPARE_PAYMENT_SIMPLE(tx, drops_to_forward, forward_to, 0, 0);
-
-    uint8_t emithash[32];
-    int64_t emit_result = emit(SBUF(emithash), SBUF(tx));
-
-    if (emit_result < 0)
-        rollback(SBUF("forwarder: error emitting payment"), __LINE__);
-
-    accept(SBUF("forwarder: 10% forwarded successfully"), __LINE__);
-    return 0;
-}`,
+removeHook();`,
             jp: "",
           },
         },
@@ -903,26 +834,21 @@ async function deployHook() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // Your testnet account
+  // Your Testnet account
   const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
-  // Read the compiled Hook WASM
-  const wasmBytes = fs.readFileSync("base.wasm"); // Use the name of the .wasm file you want to deploy
-  const hookBinary = wasmBytes.toString("hex").toUpperCase();
-
-  // Build the SetHook transaction
+  // Build your SetHook transaction
   const setHook = {
     TransactionType: "SetHook",
     Account: account.address,
     Hooks: [
       {
         Hook: {
-          CreateCode: hookBinary,
-          HookOn: "0".repeat(64), // All tx types
-          HookCanEmit: "0".repeat(64), // All tx types
+          HookHash: "66A4FC969ADB5998FD371B7B011F1BC3E506D2171F4729B52E57A6A8BC093227", // The hook's hash. It must be installed previously and available in the network we are working on.
+          HookOn: "0".repeat(64), // All transaction types
+          HookCanEmit: "0".repeat(64), // All transaction types
           HookNamespace: "0".repeat(64), // Default namespace
-          HookApiVersion: 0,
-          Flags: 1, // hsfOVERRIDE flag so the new hook replaces any previous hook on the account
+          Flags: 1, // Flag hsfOVERRIDE to replace any previous hook in the account
         },
       },
     ],
@@ -935,7 +861,7 @@ async function deployHook() {
   console.log("Result:", result.result.meta.TransactionResult);
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Hook successfully deployed to account!", account.address);
+    console.log("Hook installed successfully on account:", account.address);
   }
 
   await client.disconnect();
@@ -992,76 +918,45 @@ async function checkHooks(address) {
 }
 // Una dirección de ejemplo con un Hook en Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
 checkHooks("rTuDireccionAqui");`,
-            en: `#include "hookapi.h"
+            en: `const { Client } = require("xahau");
 
-/**
- * Hook: otxn_param_demo.c
- *
- * Reads the "ACCION" parameter from the transaction that activates the Hook
- * and displays its value in the Debug Stream with trace().
- *
- * To test it, send a transaction with HookParameters:
- *   HookParameterName:  "414343494F4E"  (= "ACCION" in hex)
- *   HookParameterValue: "01"            (any hex value)
- *
- * Convert strings to hex at: https://transia-rnd.github.io/xrpl-hex-visualizer/
- */
+async function checkHooks(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
 
-int64_t hook(uint32_t reserved)
-{
-    // Mandatory guard: (iteration_id, max_iterations)
-    // Since there are no loops in this Hook, _g(1, 1) is enough
-    _g(1, 1);
+  const response = await client.request({
+    command: "account_objects",
+    account: address,
+    type: "hook",
+    ledger_index: "validated",
+  });
 
-    // Start trace with 4 arguments: (label_ptr, label_len, data_ptr, data_len, as_hex)
-    // When data_ptr and data_len are 0, only the label is printed
-    trace(SBUF("otxn_param_demo: hook() started"), 0, 0, 0);
+  const hooks = response.result.account_objects;
+  console.log(\`=== Hooks of \${address} ===\`);
+  console.log(\`Total installed: \${hooks.length}\n\`);
 
-    // ── Define the parameter name to look for ────────────────────────────────
-    // "ACCION" in ASCII: A=41 C=43 C=43 I=49 O=4F N=4E
-    // Use https://transia-rnd.github.io/xrpl-hex-visualizer/ to convert your own names,
-    uint8_t param_name[]    = { 0x41U, 0x43U, 0x43U, 0x49U, 0x4FU, 0x4EU };
+  for (let i = 0; i < hooks.length; i++) {
+    const hook = hooks[i];
 
-    // Output buffer where otxn_param() will write the found value (max 32 bytes)
-    uint8_t param_value[32] = { 0 };
+    console.log(\`Hook #\${i + 1}:\`);
+    //console.log(JSON.stringify(hook, null, 2)); //If you want to see all hook info, uncomment this line
 
-    // ── Read the parameter from the originating transaction ───────────────────
-    // otxn_param() searches in the HookParameters of the tx that activated this Hook.
-    // Returns: bytes written (>0) if found | negative if error or not found
-    int64_t value_len = otxn_param(
-        SBUF(param_value),   // buffer where the parameter value is written
-        SBUF(param_name)     // name of the parameter we want to read
-    );
+    if (hook.Hooks && hook.Hooks.length > 0) {
+      const installedHook = hook.Hooks[0].Hook;
 
-    // ── Trace the searched parameter name ────────────────────────────────────
-    // TRACEVAR shows the variable name and its content as a numeric value
-    TRACEVAR(param_name);
-    // TRACEHEX shows the buffer content in hexadecimal format
-    // You'll see: 414343494F4E → which corresponds to "ACCION"
-    TRACEHEX(param_name);
+      console.log(\`  HookHash: \${installedHook.HookHash}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+    }
 
-    // ── Trace the received value ──────────────────────────────────────────────
-    // TRACEVAR of the value — useful to see if the buffer has something or is at zeros
-    TRACEVAR(param_value);
-    // TRACEHEX of the value — shows the exact bytes the tx sender sent
-    TRACEHEX(param_value);
+    console.log();
+  }
 
-    // ── Display the value in two formats with 5-argument trace() ─────────────
-    // trace(label_ptr, label_len, data_ptr, data_len, as_hex)
-    //   as_hex = 0 → interprets data as ASCII text (readable if value is text)
-    //   as_hex = 1 → shows data as hexadecimal string (always readable)
-
-    // As text: useful when the value is a string ("ON", "OFF", "MODE1", etc.)
-    trace(SBUF("otxn_param_demo: ACCION value (text): "), SBUF(param_value), 0);
-
-    // As hex: always shows exact bytes, ideal for binary values
-    trace(SBUF("otxn_param_demo: ACCION value (hex): "),   SBUF(param_value), 1);
-
-    // Accept the transaction. __LINE__ indicates the exact line number in the log,
-    // making it easy to know which path the Hook took in the Debug Stream
-    accept(SBUF("otxn_param_demo: parameter read and traced"), __LINE__);
-    return 0;
-}`,
+  await client.disconnect();
+}
+// Example addres with a Hook in Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
+checkHooks("rTuDireccionAqui");`,
             jp: "",
           },
         },
@@ -1123,7 +1018,7 @@ El Namespace se identifica con 32 bytes (256 bits) en hexadecimal. El estado se 
 
 Estas son algunas funciones que podemos utilizar para leer o escribir información en \`Namespace\`.
 
-- [state_set()](https://xahau.network/docs/hooks/functions/state/state/): Lee un valor del estado usando una clave
+- [state()](https://xahau.network/docs/hooks/functions/state/state/): Lee un valor del estado usando una clave
 - [state_set()](https://xahau.network/docs/hooks/functions/state/state_set/): Escribe un valor en el estado para una clave
 - [state_foreign()](https://xahau.network/docs/hooks/functions/state/state_foreign/): Lee el estado de un \`Namespace\`que no es el propio.
 - [state_foreign_set()](https://xahau.network/docs/hooks/functions/state/state_foreign_set/): Escribe un valor en el estado de un \`Namespace\`que no es el propio.
@@ -1222,50 +1117,53 @@ int64_t hook(uint32_t reserved) {
     // Aceptar la transacción
     accept(SBUF("payment_counter: Pago contado."), __LINE__);
     return 0;
-}
+}`,
+            en: `#include "hookapi.h"
 
-int64_t cbak(uint32_t reserved) {
+/**
+ * Hook: payment_counter.c
+ * Counts how many payments have been processed by the account.
+ * Stores the counter in the Hook's state.
+ */
+
+int64_t hook(uint32_t reserved) {
+    _g(1, 1);
+
+    // Only count payments (type 0)
+    int64_t tt = otxn_type();
+    if (tt != 0) {
+        accept(SBUF("payment_counter: It's not a payment."), __LINE__);
+    }
+
+    // Key for the counter state (32 bytes, filled with zeros)
+    uint8_t state_key[32] = { 0 };
+    state_key[0] = 'C'; // 'C' of Counter
+
+    // Read the current counter value from state
+    int64_t counter = 0;
+    uint8_t counter_buf[8] = { 0 };
+    int64_t bytes_read = state(SBUF(counter_buf), SBUF(state_key));
+
+    if (bytes_read == 8) {
+        // The counter already exists, read its value
+        counter = *((int64_t*)counter_buf);
+    }
+
+    // Increment the counter
+    counter++;
+
+    // Write the new value to state
+    *((int64_t*)counter_buf) = counter;
+    int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
+
+    if (result < 0) {
+        rollback(SBUF("payment_counter: Error al guardar estado."), __LINE__);
+    }
+
+    // Accept the transaction
+    accept(SBUF("payment_counter: Payment counted."), __LINE__);
     return 0;
 }`,
-            en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-const fs = require("fs");
-
-async function removeHook() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Your testnet account
-  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Build the SetHook transaction
-  const setHook = {
-    TransactionType: "SetHook",
-    Account: account.address,
-    Hooks: [
-      {
-        Hook: {
-          CreateCode: "", // If empty, it assumes you want to delete the hook at this array position.
-          Flags: 1, // hsfOVERRIDE flag so the new hook replaces any previous hook on the account
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(setHook);
-  const signed = account.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("Result:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Hook successfully removed from account!", account.address);
-  }
-
-  await client.disconnect();
-}
-
-removeHook();`,
             jp: "",
           },
         },
@@ -1509,59 +1407,90 @@ int64_t hook(uint32_t reserved)
     accept(SBUF("forwarder: 10% reenviado correctamente"), __LINE__);
     return 0;
 }`,
-            en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+            en: `#include "hookapi.h"
 
-async function sendWithParameter() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
+/**
+ * Hook: ten_percent_forwarder.c
+ *
+ * When the account receives a payment in XAH, it automatically forwards 10%
+ * to the hardcoded address in forward_to[].
+ *
+ * ── How to configurate the destination address ─────────────────────────────────
+ * The address must be in Account ID format (20 bytes in hex),
+ * NOT in rAddress format. To convert, use one of these tools:
+ *   https://hooks.services/tools/raddress-to-accountid
+ *   https://transia-rnd.github.io/xrpl-hex-visualizer/
+ *
+ * Example:
+ *   rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
+ *   → 4B50699E253C5098DEFE3A0872A79D129172F496
+ *   → { 0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U }
+ * ─────────────────────────────────────────────────────────────────────────
+ */
 
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+int64_t hook(uint32_t reserved)
+{
+    //The hook's iterations, in this case it's 1, because there are no loops and we will only emit one transaction
+    _g(1, 1);
+    // Reserve 1 space for the emission
+    etxn_reserve(1);
 
-  // The account that has the Hook installed (can be the same or another)
-  const HOOK_ACCOUNT = "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r";
+    // Destination address for 10% — Replace these bytes with yours account
+    // rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r - You can get your translation here: https://hooks.services/tools/raddress-to-accountid
+    uint8_t forward_to[20] = {
+        0x4BU, 0x50U, 0x69U, 0x9EU, 0x25U, 0x3CU, 0x50U, 0x98U, 0xDEU, 0xFEU, 0x3AU, 0x08U, 0x72U, 0xA7U, 0x9DU, 0x12U, 0x91U, 0x72U, 0xF4U, 0x96U
+    };
 
-  // Convert parameter name and value to hexadecimal
-  // "ACCION" → 414343494F4E  (use https://hooks.services/tools/string-to-hex)
-  const paramName  = Buffer.from("ACCION").toString("hex").toUpperCase();
-  const paramValue = "D204"; // Value 1234 in Hex
+    // Only proceed with payment transactions (tipo 0)
+    int64_t tt = otxn_type();
+    if (tt != 0)
+        accept(SBUF("forwarder: no es un pago"), __LINE__);
 
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: HOOK_ACCOUNT,
-    Amount: "1000000", // 1 XAH in drops
-    HookParameters: [
-      {
-        HookParameter: {
-          HookParameterName:  paramName,   // "414343494F4E"
-          HookParameterValue: paramValue,  // "01"
-        },
-      },
-    ],
-  };
+    // Obtain the destination of the incoming transaction
+    uint8_t account_field[20];
+    int32_t account_field_len = otxn_field(SBUF(account_field), sfDestination);
+    if (account_field_len != 20)
+        accept(SBUF("forwarder: not able to find the destination"), __LINE__);
 
-  console.log("Sending Payment with HookParameters...");
-  console.log("  Param name (hex): ", paramName, " = ACCION");
-  console.log("  Param value (hex):", paramValue);
+    // Obtain the Account ID of the account that has the Hook installed
+    unsigned char hook_accid[20];
+    hook_account(SBUF(hook_accid));
 
-  const prepared = await client.autofill(tx);
-  const signed   = wallet.sign(prepared);
-  const result   = await client.submitAndWait(signed.tx_blob);
+    // Only proceed if the Hook is the destination of the payment (incoming payment)
+    int equal = 0;
+    BUFFER_EQUAL(equal, hook_accid, account_field, 20);
+    if (!equal)
+        accept(SBUF("forwarder: outgoing payment, ignore"), __LINE__);
 
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Result:", txResult);
+    // Read the Amount — Native XAH is 8 bytes long
+    unsigned char amount_buffer[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buffer), sfAmount);
+    if (amount_len != 8)
+        accept(SBUF("forwarder: It's no XAH native"), __LINE__);
 
-  if (txResult === "tesSUCCESS") {
-    console.log("TX sent. Check the Debug Stream in Hooks Builder");
-    console.log("You should see the Hook traces with the parameter value from your account. "+wallet.address);
-  }
+    int64_t otxn_drops = AMOUNT_TO_DROPS(amount_buffer);
+    TRACEVAR(otxn_drops);
 
-  await client.disconnect();
-}
+    // Calcular el 10%
+    int64_t drops_to_forward = otxn_drops / 10;
+    TRACEVAR(drops_to_forward);
 
-// Send with action 01
-sendWithParameter();`,
+    if (drops_to_forward < 1)
+        accept(SBUF("forwarder: Amount too small"), __LINE__);
+
+    // Preparar y emitir el pago del 10%
+    unsigned char tx[PREPARE_PAYMENT_SIMPLE_SIZE];
+    PREPARE_PAYMENT_SIMPLE(tx, drops_to_forward, forward_to, 0, 0);
+
+    uint8_t emithash[32];
+    int64_t emit_result = emit(SBUF(emithash), SBUF(tx));
+
+    if (emit_result < 0)
+        rollback(SBUF("forwarder: error emitting the payment"), __LINE__);
+
+    accept(SBUF("forwarder: 10% resent correctly"), __LINE__);
+    return 0;
+}`,
             jp: "",
           },
         },
@@ -1808,48 +1737,76 @@ int64_t hook(uint32_t reserved)
     accept(SBUF("otxn_param_demo: parametro leido y trazado"), __LINE__);
     return 0;
 }`,
-            en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-const fs = require("fs");
+            en: `#include "hookapi.h"
 
-async function deployHook() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
+/**
+ * Hook: otxn_param_demo.c
+ *
+ * Read the "ACTION" parameter from the transaction that triggered the Hook
+ * and display its value in the Debug Stream using trace().
+ *
+ * Para probarlo, envía una transacción con HookParameters:
+ *   HookParameterName:  "414354494F4E"  (= "ACTION" en hex)
+ *   HookParameterValue: "01"            (any hex value)
+ *
+ * Convert strings to hex: https://transia-rnd.github.io/xrpl-hex-visualizer/
+ */
 
-  // Your testnet account
-  const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+int64_t hook(uint32_t reserved)
+{
+    // Mandatory Guard : (id_iteration, max_iterations)
+    // There are no loops, so _g(1, 1)
+    _g(1, 1);
 
-  // Build the SetHook transaction
-  const setHook = {
-    TransactionType: "SetHook",
-    Account: account.address,
-    Hooks: [
-      {
-        Hook: {
-          HookHash: "66A4FC969ADB5998FD371B7B011F1BC3E506D2171F4729B52E57A6A8BC093227", // The hash of the hook to install. It must have been previously installed and be available on the network we're working on.
-          HookOn: "0".repeat(64), // All tx types
-          HookCanEmit: "0".repeat(64), // All tx types
-          HookNamespace: "0".repeat(64), // Default namespace
-          Flags: 1, // hsfOVERRIDE flag so the new hook replaces any previous hook on the account
-        },
-      },
-    ],
-  };
+    // Initial trace with 4 arguments:: (label_ptr, label_len, data_ptr, data_len, as_hex)
+    // When data_ptr and data_len are 0, only the label is printed
+    trace(SBUF("otxn_param_demo: hook() initiated"), 0, 0, 0);
 
-  const prepared = await client.autofill(setHook);
-  const signed = account.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
+    // ── Define the name of the parameter to look for ──────────────────────────────
+    // "ACTION" to ASCII: A=41 C=43 T=54 I=49 O=4F N=4E
+    // Use https://transia-rnd.github.io/xrpl-hex-visualizer/ to convert your own names,
+    uint8_t param_name[]    = { 0x41U, 0x43U, 0x54U, 0x49U, 0x4FU, 0x4EU };
 
-  console.log("Result:", result.result.meta.TransactionResult);
+    // Outgoing buffer where otxn_param() will write the found value (max. 32 bytes)
+    uint8_t param_value[32] = { 0 };
 
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Hook successfully deployed to account!", account.address);
-  }
+    // ── Read the originating transaction parameter ────────────────────────
+    // otxn_param() looks in the HookParameters of the transaction that activated this Hook.
+    // Returns: bytes written (>0) if found | negative if error or does not exist
+    int64_t value_len = otxn_param(
+        SBUF(param_value),   // buffer where the parameter value is written
+        SBUF(param_name)     // name of the parameter we want to read
+    );
 
-  await client.disconnect();
-}
+    // ── Trace the name of the parameter being searched for ────────────────────────────────
+    // TRACEVAR displays the variable name and its content as a numeric value
+    TRACEVAR(param_name);
+    // TRACEHEX displays the buffer contents in hexadecimal format
+    // 414354494F4E → matchs "ACTION"
+    TRACEHEX(param_name);
 
-deployHook();`,
+    // ── Trace the value received ──────────────────────────────────────────────
+    // TRACEVAR of the value — useful for seeing if the buffer has anything in it or is at zero
+    TRACEVAR(param_value);
+    // TRACEHEX of value — shows the exact bytes sent by the sender of the tx
+    TRACEHEX(param_value);
+
+    // ── Display the value in two formats using a 5-argument trace() ─────────
+    // trace(label_ptr, label_len, data_ptr, data_len, as_hex)
+    //   as_hex = 0 → interprets data as ASCII text (readable if the value is text)
+    //   as_hex = 1 → displays data as a hexadecimal string (always readable)
+
+    // As text: useful when the value is a string ("ON", "OFF", "MODE1", etc.)
+    trace(SBUF("otxn_param_demo: ACTION value (text): "), SBUF(param_value), 0);
+
+    // As hex: always displays the exact bytes, ideal for binary values
+    trace(SBUF("otxn_param_demo: ACTION value (hex): "),   SBUF(param_value), 1);
+
+    // Accept the transaction. __LINE__ indicates the exact line number in the log.
+    // This makes it easier to know which path the Hook took in the Debug Stream
+    accept(SBUF("otxn_param_demo: parameter read and plotted"), __LINE__);
+    return 0;
+}`,
             jp: "",
           },
         },
@@ -1871,7 +1828,7 @@ async function enviarConParametro() {
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
 
   // La cuenta que tiene el Hook instalado (puede ser la misma u otra)
-  const HOOK_ACCOUNT = "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r";
+  const HOOK_ACCOUNT = "rAddressOfHookAccount"; // Reemplaza con la cuenta que tiene el Hook instalado
 
   // Convertir el nombre y valor del parámetro a hexadecimal
   // "ACCION" → 414343494F4E  (usa https://hooks.services/tools/string-to-hex)
@@ -1914,89 +1871,59 @@ async function enviarConParametro() {
 
 // Enviar con acción 01
 enviarConParametro();`,
-            en: `#include "hookapi.h"
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
-/**
- * Hook: debug_demo.c
- *
- * Goal:
- *  - Demonstrate the use of trace(), trace_num() and trace_float()
- *    to inspect Hook execution in real time.
- *  - Only accepts XAH payments (native amount in 8 bytes).
- *
- * Important (for your compilation error):
- *  - In the current HookAPI, trace() requires 5 arguments:
- *      trace(msg_ptr, msg_len, data_ptr, data_len, as_hex)
- *
- *    So this does NOT work:
- *      trace(SBUF("hello"), 0);     // <- 3 args (2 + 1)
- *
- *    The correct way for "message only" is:
- *      trace(SBUF("hello"), 0, 0, 0);
- *
- *    And for "message + buffer in hex":
- *      trace(SBUF("label: "), SBUF(buffer), 1);
- */
+async function sendParameters() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
 
-int64_t hook(uint32_t reserved)
-{
-    _g(1, 1);
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
 
-    // ── 1. Start trace (message only) ────────────────────────────────────────
-    trace(SBUF("debug_demo:hook() started"), 0, 0, 0);
+  // The Hook installed address
+  const HOOK_ACCOUNT = "rAddressOfHookAccount";
 
-    // ── 2. Trace the account where the Hook is installed ──────────────────────
-    // hook_account() fills 20 bytes with the AccountID (raw)
-    uint8_t hook_acc[20];
-    hook_account(SBUF(hook_acc));
+  // Translate the name and value to hex
+  // "ACTION" → 414354494F4E  (use https://hooks.services/tools/string-to-hex)
+  const paramName  = Buffer.from("ACTION").toString("hex").toUpperCase();
+  const paramValue = "68656C6C6F"; // hello value in Hex 
 
-    // Show as HEX. We put a "label" message and the buffer on the right.
-    trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: HOOK_ACCOUNT,
+    Amount: "1000000", // 1 XAH en drops
+    HookParameters: [
+      {
+        HookParameter: {
+          HookParameterName:  paramName,   // "414354494F4E"
+          HookParameterValue: paramValue,  // "68656C6C6F"
+        },
+      },
+    ],
+  };
 
-    // ── 3. Incoming transaction type ──────────────────────────────────────────
-    // otxn_type() returns the numeric type. In Hooks:
-    //  0 = Payment
-    int64_t tt = otxn_type();
-    trace_num(SBUF("debug_demo:tx type (0=Payment): "), tt);
+  console.log("Sending Payment with HookParameters...");
+  console.log("  Nombre param (hex): ", paramName, " = ACTION");
+  console.log("  Valor param  (hex): ", paramValue);
 
-    // If not Payment, we do nothing "bad": simply accept and exit.
-    if (tt != 0)
-    {
-        trace(SBUF("debug_demo:not a payment — exiting"), 0, 0, 0);
-        accept(SBUF("debug_demo:ok (no payment)"), __LINE__);
-    }
+  const prepared = await client.autofill(tx);
+  const signed   = wallet.sign(prepared);
+  const result   = await client.submitAndWait(signed.tx_blob);
 
-    trace(SBUF("debug_demo:payment branch reached"), 0, 0, 0);
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
 
-    // ── 4. Get Payment Amount ─────────────────────────────────────────────────
-    // In XRPL/Xahau, sfAmount:
-    //  - If native (XAH), otxn_field returns 8 bytes.
-    //  - If IOU/token, returns more (not 8).
-    unsigned char amount_buf[48];
-    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
-    trace_num(SBUF("debug_demo:bytes read from Amount: "), amount_len);
+  if (txResult === "tesSUCCESS") {
+    console.log("TX sent. Check the Debug Stream in Hooks Builder");
+    console.log("You should see Hook traces with the parameter value from your account: "+wallet.address);
+  }
 
-    // We only allow native XAH. If not 8 bytes, we reject.
-    if (amount_len != 8)
-    {
-        trace(SBUF("debug_demo:Amount is not XAH (8 bytes) — rejecting"), 0, 0, 0);
-        rollback(SBUF("debug_demo:native XAH only"), __LINE__);
-    }
+  await client.disconnect();
+}
 
-    // ── 5. Trace value in drops ───────────────────────────────────────────────
-    // amount_buf contains the encoded native Amount; AMOUNT_TO_DROPS converts it to int64 (drops)
-    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-    trace_num(SBUF("debug_demo:drops received: "), drops);
 
-    // ── 6. Accept and finish ──────────────────────────────────────────────────
-    // __LINE__ lets you track exactly which line you exited from
-    trace(SBUF("debug_demo:payment accepted, exiting"), 0, 0, 0);
-    accept(SBUF("debug_demo:ok"), __LINE__);
-
-    // Never reaches here because accept/rollback end the hook,
-    // but we leave it for good form.
-    return 0;
-}`,
+sendParameters();`,
             jp: "",
           },
         },
@@ -2084,7 +2011,7 @@ int64_t xfl_amount = slot_float(slot_no);
 trace_float(SBUF("importe en XFL: "), xfl_amount);
 \`\`\`
 
-### macro.h — Macros de debug disponibles en Hooks Builder
+### macro.h: Macros de debug disponibles en Hooks Builder
 
 Hooks Builder incluye el archivo \`macro.h\` con cuatro macros de conveniencia que envuelven las funciones \`trace*\` y solo se activan cuando la constante \`DEBUG\` está definida. Esto permite dejar las trazas en el código y eliminarlas de un solo golpe en producción simplemente sin definiendo \`DEBUG\`.
 
@@ -2265,7 +2192,7 @@ int64_t xfl_amount = slot_float(slot_no);
 trace_float(SBUF("amount in XFL: "), xfl_amount);
 \`\`\`
 
-### macro.h — Debug macros available in Hooks Builder
+### macro.h: Debug macros available in Hooks Builder
 
 Hooks Builder includes the \`macro.h\` file with four convenience macros that wrap the \`trace*\` functions and only activate when the \`DEBUG\` constant is defined. This allows leaving traces in the code and removing them all at once in production simply by not defining \`DEBUG\`.
 
@@ -2467,7 +2394,7 @@ int64_t hook(uint32_t reserved)
     trace(SBUF("debug_demo:rama pago alcanzada"), 0, 0, 0);
 
     // ── 4. Obtener el Amount del Payment ────────────────────────────────────
-    // En XRPL/Xahau, sfAmount:
+    // En Xahau, sfAmount:
     //  - Si es nativo (XAH), otxn_field devuelve 8 bytes.
     //  - Si es IOU/token, devuelve más (no 8).
     unsigned char amount_buf[48];
@@ -2495,45 +2422,74 @@ int64_t hook(uint32_t reserved)
     // pero lo dejamos por buena forma.
     return 0;
 }`,
-            en: `const { Client } = require("xahau");
+            en: `#include "hookapi.h"
 
-async function checkHooks(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
+/**
+ * Hook: debug_demo.c
+ *
+ * Goal:
+ *  - How to use trace(), trace_num() and trace_float() to inspect the Hook execution in real time.
+ *  - Only accepts payments in XAH (native amount in 8 bytes).
+ */
 
-  const response = await client.request({
-    command: "account_objects",
-    account: address,
-    type: "hook",
-    ledger_index: "validated",
-  });
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
 
-  const hooks = response.result.account_objects;
-  console.log(\`=== Hooks of \${address} ===\`);
-  console.log(\`Total installed: \${hooks.length}\n\`);
+    // ── 1. Initial trace (message only) ───────────────────────────────────
+    trace(SBUF("debug_demo:hook() initiated"), 0, 0, 0);
 
-  for (let i = 0; i < hooks.length; i++) {
-    const hook = hooks[i];
+    // ── 2. Trace the account where the Hook is installed ────────────────────
+    // hook_account() fills  20 bytes with the AccountID (raw)
+    uint8_t hook_acc[20];
+    hook_account(SBUF(hook_acc));
 
-    console.log(\`Hook #\${i + 1}:\`);
-    //console.log(JSON.stringify(hook, null, 2)); // If you want to see all hook info, uncomment this line
+    // Show it as HEX. Put "label" and the buffer to the right.
+    trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
 
-    if (hook.Hooks && hook.Hooks.length > 0) {
-      const installedHook = hook.Hooks[0].Hook;
+    // ── 3. Type of transaction ─────────────────────────────────────
+    // otxn_type() returns a number type. In Hooks:
+    //  0 = Payment
+    int64_t tt = otxn_type();
+    trace_num(SBUF("debug_demo:tx type (0=Payment): "), tt);
 
-      console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+    // If it's not Payment, we leave.
+    if (tt != 0)
+    {
+        trace(SBUF("debug_demo:not a payment — exiting"), 0, 0, 0);
+        accept(SBUF("debug_demo:ok (no payment)"), __LINE__);
     }
 
-    console.log();
-  }
+    trace(SBUF("debug_demo:payment branch reached"), 0, 0, 0);
 
-  await client.disconnect();
-}
-// An example address with a Hook on Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rYourAddressHere");`,
+    // ── 4. Obtain Amount of Payment ────────────────────────────────────
+    // In Xahau, sfAmount:
+    //  - If its (XAH), otxn_field returns 8 bytes.
+    //  - If its an IOU/token, returns more (no 8).
+    unsigned char amount_buf[48];
+    int64_t amount_len = otxn_field(SBUF(amount_buf), sfAmount);
+    trace_num(SBUF("debug_demo:bytes read from Amount: "), amount_len);
+
+    // Only XAH allowed. If not, we deny.
+    if (amount_len != 8)
+    {
+        trace(SBUF("debug_demo:Amount not XAH (8 bytes) — rejecting"), 0, 0, 0);
+        rollback(SBUF("debug_demo:only XAH native"), __LINE__);
+    }
+
+    // ── 5. Trace the value in drops ─────────────────────────────────────────
+    // amount_buf contains the Amount coded; AMOUNT_TO_DROPS translates to int64 (drops)
+    int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+    trace_num(SBUF("debug_demo:drops received: "), drops);
+
+    // ── 6. Accept and finish ───────────────────────────────────────────────
+    // __LINE__ allows you to track exactly from which line you exited
+    trace(SBUF("debug_demo:payment accepted, exiting"), 0, 0, 0);
+    accept(SBUF("debug_demo:ok"), __LINE__);
+
+    // Never reaches here because accept/rollback finish the  hook,
+    return 0;
+}`,
             jp: "",
           },
         },
@@ -2870,7 +2826,7 @@ const createHook = {
       "Hooks": [
         {
           "Hook": {
-            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
+            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(), //https://bqsoczh.dlvr.cloud/base.wasm
             "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
             "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
             "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
@@ -2966,7 +2922,7 @@ const createHook = {
       "Hooks": [
         {
           "Hook": {
-            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
+            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(), //https://bqsoczh.dlvr.cloud/base.wasm
             "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
             "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
             "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
@@ -2988,99 +2944,7 @@ For complete information on hooks-cli, advanced compilation options and the full
         jp: "",
       },
       codeBlocks: [
-        {
-          title: {
-            es: "Script de despliegue de un Hook en .wasm",
-            en: "Hook deployment script in .wasm",
-            jp: "",
-          },
-          language: "javascript",
-          code: {
-            es: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function createHook() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const mywallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Comprar el URIToken pagando el precio de venta
-      const createHook = {
-      "TransactionType": "SetHook",
-      "Account": mywallet.address,
-      "Flags": 0,
-      "Hooks": [
-        {
-          "Hook": {
-            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
-            "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
-            "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
-            "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
-            "Flags": 1,
-            "HookApiVersion": 0
-          }
-        }
-      ],
-    };
-
-  const prepared = await client.autofill(createHook);
-  const signed = mywallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("Resultado:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡La instalación del Hook fue exitosa! para ", mywallet.address);  }
-
-  await client.disconnect();
-}
-
-createHook();`,
-            en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function createHook() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const mywallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Deploy the Hook by sending a SetHook transaction
-      const createHook = {
-      "TransactionType": "SetHook",
-      "Account": mywallet.address,
-      "Flags": 0,
-      "Hooks": [
-        {
-          "Hook": {
-            "CreateCode": fs.readFileSync('base.wasm').toString('hex').toUpperCase(),
-            "HookOn": 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF', //https://richardah.github.io/xrpl-hookon-calculator/
-            "HookCanEmit": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFFFFFFFFFFFFFFFFFFFBFFFFF", //Can emit ClaimReward
-            "HookNamespace": crypto.createHash('sha256').update('base').digest('hex').toUpperCase(),
-            "Flags": 1,
-            "HookApiVersion": 0
-          }
-        }
-      ],
-    };
-
-  const prepared = await client.autofill(createHook);
-  const signed = mywallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("Result:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Hook installation was successful! for ", mywallet.address);  }
-
-  await client.disconnect();
-}
-
-createHook();`,
-            jp: "",
-          },
-        },
+        
       ],
       slides: [
         {
