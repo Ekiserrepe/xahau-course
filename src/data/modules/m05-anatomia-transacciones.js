@@ -21,11 +21,11 @@ export default {
 
 Una transacción en Xahau pasa por **5 fases** desde que la creas hasta que queda registrada permanentemente en el ledger:
 
-1. **Construir** — Defines los campos de la transacción (tipo, origen, destino, cantidad, etc.)
-2. **Preparar (autofill)** — El cliente rellena automáticamente campos técnicos (Fee, Sequence, LastLedgerSequence, NetworkID)
-3. **Firmar** — Tu clave privada genera una firma criptográfica que demuestra que autorizas la transacción
-4. **Enviar** — La transacción firmada se envía a un nodo de la red
-5. **Validar** — Los validadores la incluyen en un ledger mediante consenso y el resultado es final
+1. **Construir**: Defines los campos de la transacción (tipo, origen, destino, cantidad, etc.)
+2. **Preparar (autofill)**: El cliente rellena automáticamente campos técnicos (Fee, Sequence, LastLedgerSequence, NetworkID)
+3. **Firmar**: Tu clave privada genera una firma criptográfica que demuestra que autorizas la transacción
+4. **Enviar**: La transacción firmada se envía a un nodo de la red
+5. **Validar**: Los validadores la incluyen en un ledger mediante consenso y el resultado es final
 
 ### Fase 1: Construir
 
@@ -93,11 +93,11 @@ A diferencia de blockchains con finalidad probabilística (Bitcoin, Ethereum), e
 
 A transaction in Xahau goes through **5 phases** from the moment you create it until it is permanently recorded in the ledger:
 
-1. **Build** — You define the transaction fields (type, source, destination, amount, etc.)
-2. **Prepare (autofill)** — The client automatically fills in technical fields (Fee, Sequence, LastLedgerSequence, NetworkID)
-3. **Sign** — Your private key generates a cryptographic signature proving you authorize the transaction
-4. **Submit** — The signed transaction is sent to a network node
-5. **Validate** — Validators include it in a ledger through consensus and the result is final
+1. **Build**: You define the transaction fields (type, source, destination, amount, etc.)
+2. **Prepare (autofill)**: The client automatically fills in technical fields (Fee, Sequence, LastLedgerSequence, NetworkID)
+3. **Sign**: Your private key generates a cryptographic signature proving you authorize the transaction
+4. **Submit**: The signed transaction is sent to a network node
+5. **Validate**: Validators include it in a ledger through consensus and the result is final
 
 ### Phase 1: Build
 
@@ -164,6 +164,23 @@ Unlike blockchains with probabilistic finality (Bitcoin, Ethereum), in Xahau the
       codeBlocks: [
         {
           title: {
+            es: "Crear .env con la semilla de tu wallet",
+            en: "Create .env with your wallet seed",
+            jp: "",
+          },
+          language: "bash",
+          code: {
+            es: `#Visita https://xahau-test.net/wallet para crear una wallet de testnet y obtener su seed
+#Crea un fichero ".env" en tu carpeta
+WALLET_SEED=sTuSeed`,
+            en: `#Visit https://xahau-test.net/wallet to create a wallet on testnet y obtain your seed
+#Create a ".env" file in your project folder
+WALLET_SEED=sYourSeed`,
+            jp: "",
+          },
+        },
+        {
+          title: {
             es: "El flujo completo paso a paso",
             en: "The complete flow step by step",
             jp: "",
@@ -198,7 +215,7 @@ async function flujoCompleto() {
   // =============================================
   const prepared = await client.autofill(tx);
 
-  console.log("\\n2. Transacción preparada (autofill):");
+  console.log("2. Transacción preparada (autofill):");
   console.log("   Fee:", prepared.Fee, "drops");
   console.log("   Sequence:", prepared.Sequence);
   console.log("   LastLedgerSequence:", prepared.LastLedgerSequence);
@@ -210,7 +227,7 @@ async function flujoCompleto() {
   // =============================================
   const signed = wallet.sign(prepared);
 
-  console.log("\\n3. Transacción firmada:");
+  console.log("3. Transacción firmada:");
   console.log("   Hash:", signed.hash);
   console.log("   tx_blob (primeros 60 chars):", signed.tx_blob.substring(0, 60) + "...");
   console.log("   Longitud del blob:", signed.tx_blob.length, "caracteres hex");
@@ -218,13 +235,13 @@ async function flujoCompleto() {
   // =============================================
   // FASE 4: Enviar
   // =============================================
-  console.log("\\n4. Enviando al nodo...");
+  console.log("4. Enviando al nodo...");
   const result = await client.submitAndWait(signed.tx_blob);
 
   // =============================================
   // FASE 5: Resultado validado
   // =============================================
-  console.log("\\n5. Resultado validado:");
+  console.log("5. Resultado validado:");
   console.log("   TransactionResult:", result.result.meta.TransactionResult);
   console.log("   Ledger:", result.result.ledger_index);
   console.log("   Nodos afectados:", result.result.meta.AffectedNodes.length);
@@ -261,7 +278,7 @@ async function flujoCompleto() {
   // =============================================
   const prepared = await client.autofill(tx);
 
-  console.log("\\n2. Transacción preparada (autofill):");
+  console.log("2. Transacción preparada (autofill):");
   console.log("   Fee:", prepared.Fee, "drops");
   console.log("   Sequence:", prepared.Sequence);
   console.log("   LastLedgerSequence:", prepared.LastLedgerSequence);
@@ -273,7 +290,7 @@ async function flujoCompleto() {
   // =============================================
   const signed = wallet.sign(prepared);
 
-  console.log("\\n3. Transacción firmada:");
+  console.log("3. Transacción firmada:");
   console.log("   Hash:", signed.hash);
   console.log("   tx_blob (first 60 chars):", signed.tx_blob.substring(0, 60) + "...");
   console.log("   Blob length:", signed.tx_blob.length, "caracteres hex");
@@ -281,13 +298,13 @@ async function flujoCompleto() {
   // =============================================
   // PHASE 4: Submit
   // =============================================
-  console.log("\\n4. Enviando al nodo...");
+  console.log("4. Enviando al nodo...");
   const result = await client.submitAndWait(signed.tx_blob);
 
   // =============================================
   // PHASE 5: Validated result
   // =============================================
-  console.log("\\n5. Resultado validado:");
+  console.log("5. Resultado validado:");
   console.log("   TransactionResult:", result.result.meta.TransactionResult);
   console.log("   Ledger:", result.result.ledger_index);
   console.log("   Affected nodes:", result.result.meta.AffectedNodes.length);
@@ -355,7 +372,7 @@ Estos campos existen en **todo tipo de transacción**:
 | **SigningPubKey** | Auto (firma) | Tu clave pública (se añade al firmar) |
 | **TxnSignature** | Auto (firma) | La firma digital (se añade al firmar) |
 
-### TransactionType — Tipos de transacción
+### TransactionType: Tipos de transacción
 
 Xahau soporta muchos tipos de transacción. Los más comunes:
 
@@ -372,7 +389,7 @@ Xahau soporta muchos tipos de transacción. Los más comunes:
 - [EscrowFinish](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowfinish/) — Completar un escrow
 - [EscrowCancel](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowcancel/) — Cancelar un escrow
 
-### Fee — El coste de la transacción
+### Fee: El coste de la transacción
 
 El Fee en Xahau funciona diferente a otras blockchains:
 
@@ -382,7 +399,7 @@ El Fee en Xahau funciona diferente a otras blockchains:
 - Cuando la red está congestionada, el fee puede subir temporalmente (**fee escalation**)
 - \`autofill()\` calcula el fee óptimo según la carga actual de la red
 
-### Sequence — Orden de transacciones
+### Sequence: Orden de transacciones
 
 El Sequence es un **contador incremental** de tu cuenta:
 
@@ -392,7 +409,7 @@ El Sequence es un **contador incremental** de tu cuenta:
 - Si envías dos transacciones con el mismo Sequence, solo una se procesará
 - Si falta un Sequence intermedio (ej: envías 5, 6, 8 sin 7), las transacciones 8+ quedan en cola hasta que la 7 se resuelva
 
-### LastLedgerSequence — Protección contra fantasmas
+### LastLedgerSequence: Protección contra fantasmas
 
 El campo LastLedgerSequence es una **fecha de caducidad** para tu transacción:
 
@@ -401,7 +418,7 @@ El campo LastLedgerSequence es una **fecha de caducidad** para tu transacción:
 - Evita que transacciones "perdidas" se ejecuten minutos u horas después
 - \`autofill()\` lo establece automáticamente (normalmente ledger actual + 20)
 
-### Flags — Modificadores de comportamiento
+### Flags: Modificadores de comportamiento
 
 Muchos tipos de transacción aceptan un campo **Flags** que modifica su comportamiento:
 
@@ -410,7 +427,7 @@ Muchos tipos de transacción aceptan un campo **Flags** que modifica su comporta
 - Ejemplo: \`Flags: 131072\` en OfferCreate activa \`tfImmediateOrCancel\`
 - Puedes combinar flags sumando sus valores
 
-### Memos — Datos adjuntos
+### Memos: Datos adjuntos
 
 Puedes adjuntar datos a cualquier transacción usando el campo **Memos**:
 
@@ -436,7 +453,7 @@ These fields exist in **every transaction type**:
 | **SigningPubKey** | Auto (sign) | Your public key (added when signing) |
 | **TxnSignature** | Auto (sign) | The digital signature (added when signing) |
 
-### TransactionType — Transaction types
+### TransactionType: Transaction types
 
 Xahau supports many transaction types. The most common:
 
@@ -453,7 +470,7 @@ Xahau supports many transaction types. The most common:
 - [EscrowFinish](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowfinish/) — Complete an escrow
 - [EscrowCancel](https://xahau.network/docs/protocol-reference/transactions/transaction-types/escrowcancel/) — Cancel an escrow
 
-### Fee — The transaction cost
+### Fee: The transaction cost
 
 The Fee in Xahau works differently from other blockchains:
 
@@ -463,7 +480,7 @@ The Fee in Xahau works differently from other blockchains:
 - When the network is congested, the fee can temporarily increase (**fee escalation**)
 - \`autofill()\` calculates the optimal fee based on the current network load
 
-### Sequence — Transaction ordering
+### Sequence: Transaction ordering
 
 The Sequence is an **incremental counter** for your account:
 
@@ -473,7 +490,7 @@ The Sequence is an **incremental counter** for your account:
 - If you send two transactions with the same Sequence, only one will be processed
 - If an intermediate Sequence is missing (e.g., you send 5, 6, 8 without 7), transactions 8+ are queued until 7 is resolved
 
-### LastLedgerSequence — Protection against ghost transactions
+### LastLedgerSequence: Protection against ghost transactions
 
 The LastLedgerSequence field is an **expiration date** for your transaction:
 
@@ -482,7 +499,7 @@ The LastLedgerSequence field is an **expiration date** for your transaction:
 - It prevents "lost" transactions from executing minutes or hours later
 - \`autofill()\` sets it automatically (typically current ledger + 20)
 
-### Flags — Behavior modifiers
+### Flags: Behavior modifiers
 
 Many transaction types accept a **Flags** field that modifies their behavior:
 
@@ -491,7 +508,7 @@ Many transaction types accept a **Flags** field that modifies their behavior:
 - Example: \`Flags: 131072\` in OfferCreate enables \`tfImmediateOrCancel\`
 - You can combine flags by adding their values
 
-### Memos — Attached data
+### Memos: Attached data
 
 You can attach data to any transaction using the **Memos** field:
 
@@ -511,7 +528,8 @@ You can attach data to any transaction using the **Memos** field:
           },
           language: "javascript",
           code: {
-            es: `const { Client, Wallet } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function inspeccionarCampos() {
   const client = new Client("wss://xahau-test.net");
@@ -523,7 +541,7 @@ async function inspeccionarCampos() {
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinoAqui",
+    Destination: "rPTkQoZDeKMbwhs8QsRA1wL6gGA9Ee4C4",
     Amount: "1000000", // 1 XAH
   };
 
@@ -534,7 +552,7 @@ async function inspeccionarCampos() {
   // Autofill rellena los campos técnicos
   const prepared = await client.autofill(tx);
 
-  console.log("\\n=== DESPUÉS de autofill ===");
+  console.log("=== DESPUÉS de autofill ===");
   console.log("Campos totales:", Object.keys(prepared));
   console.log(JSON.stringify(prepared, null, 2));
 
@@ -542,7 +560,7 @@ async function inspeccionarCampos() {
   const camposNuevos = Object.keys(prepared).filter(
     (k) => !Object.keys(tx).includes(k)
   );
-  console.log("\\n=== Campos añadidos por autofill ===");
+  console.log("=== Campos añadidos por autofill ===");
   for (const campo of camposNuevos) {
     console.log("  " + campo + ":", prepared[campo]);
   }
@@ -551,9 +569,10 @@ async function inspeccionarCampos() {
 }
 
 inspeccionarCampos().catch(console.error);`,
-            en: `const { Client, Wallet } = require("xahau");
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
-async function inspeccionarCampos() {
+async function checkFields() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
@@ -563,7 +582,7 @@ async function inspeccionarCampos() {
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
-    Destination: "rDestinationHere",
+    Destination: "rPTkQoZDeKMbwhs8QsRA1wL6gGA9Ee4C4",
     Amount: "1000000", // 1 XAH
   };
 
@@ -574,7 +593,7 @@ async function inspeccionarCampos() {
   // Autofill fills in the technical fields
   const prepared = await client.autofill(tx);
 
-  console.log("\\n=== DESPUÉS de autofill ===");
+  console.log("=== AFTER autofill ===");
   console.log("Total fields:", Object.keys(prepared));
   console.log(JSON.stringify(prepared, null, 2));
 
@@ -582,7 +601,7 @@ async function inspeccionarCampos() {
   const newFields = Object.keys(prepared).filter(
     (k) => !Object.keys(tx).includes(k)
   );
-  console.log("\\n=== Campos añadidos por autofill ===");
+  console.log("=== Fields added by autofill ===");
   for (const field of newFields) {
     console.log("  " + field + ":", prepared[field]);
   }
@@ -590,7 +609,7 @@ async function inspeccionarCampos() {
   await client.disconnect();
 }
 
-inspeccionarCampos().catch(console.error);`,
+checkFields().catch(console.error);`,
             jp: "",
           },
         },
@@ -950,7 +969,7 @@ async function firmaDetallada() {
   // Firmar
   const signed = wallet.sign(prepared);
 
-  console.log("\\n=== RESULTADO DE LA FIRMA ===");
+  console.log("=== RESULTADO DE LA FIRMA ===");
   console.log("Hash (ID de la tx):", signed.hash);
   console.log("tx_blob completo:", signed.tx_blob);
   console.log("Longitud:", signed.tx_blob.length, "caracteres hex");
@@ -958,7 +977,7 @@ async function firmaDetallada() {
 
   // Verificar que la transacción es válida
   // (el nodo hace esto internamente al recibir el submit)
-  console.log("\\n=== VERIFICACIÓN ===");
+  console.log("=== VERIFICACIÓN ===");
 
   // Decodificar el blob para inspeccionar
   const decoded = client.request({
@@ -970,7 +989,7 @@ async function firmaDetallada() {
   });
 
   // Enviar
-  console.log("\\nEnviando tx_blob al nodo...");
+  console.log("Enviando tx_blob al nodo...");
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
 
@@ -980,7 +999,7 @@ async function firmaDetallada() {
     transaction: signed.hash,
   });
 
-  console.log("\\n=== TX EN EL LEDGER ===");
+  console.log("=== TX EN EL LEDGER ===");
   console.log("Tipo:", txInfo.result.TransactionType);
   console.log("SigningPubKey:", txInfo.result.SigningPubKey);
   console.log("Ledger:", txInfo.result.ledger_index);
@@ -1016,7 +1035,7 @@ async function firmaDetallada() {
   // Sign
   const signed = wallet.sign(prepared);
 
-  console.log("\\n=== RESULTADO DE LA FIRMA ===");
+  console.log("=== SIGNATURE RESULT ===");
   console.log("Hash (tx ID):", signed.hash);
   console.log("Full tx_blob:", signed.tx_blob);
   console.log("Length:", signed.tx_blob.length, "hex characters");
@@ -1024,7 +1043,7 @@ async function firmaDetallada() {
 
   // Verify that the transaction is valid
   // (the node does this internally upon receiving the submit)
-  console.log("\\n=== VERIFICACIÓN ===");
+  console.log("=== VERIFICATION ===");
 
   // Decode the blob to inspect
   const decoded = client.request({
@@ -1036,7 +1055,7 @@ async function firmaDetallada() {
   });
 
   // Submit
-  console.log("\\nEnviando tx_blob al nodo...");
+  console.log("Sending tx_blob to the node...");
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Result:", result.result.meta.TransactionResult);
 
@@ -1046,7 +1065,7 @@ async function firmaDetallada() {
     transaction: signed.hash,
   });
 
-  console.log("\\n=== TX EN EL LEDGER ===");
+  console.log("=== TX IN THE LEDGER ===");
   console.log("Type:", txInfo.result.TransactionType);
   console.log("SigningPubKey:", txInfo.result.SigningPubKey);
   console.log("Ledger:", txInfo.result.ledger_index);
@@ -1105,7 +1124,7 @@ function firmarOffline(preparedJSON) {
 
   const signed = wallet.sign(preparedJSON);
 
-  console.log("\\n=== COPIA ESTE tx_blob AL DISPOSITIVO CONECTADO ===");
+  console.log("=== COPIA ESTE tx_blob AL DISPOSITIVO CONECTADO ===");
   console.log("tx_blob:", signed.tx_blob);
   console.log("hash:", signed.hash);
 
@@ -1121,7 +1140,7 @@ async function enviarOnline(txBlob) {
   await client.connect();
 
   const result = await client.submitAndWait(txBlob);
-  console.log("\\nResultado:", result.result.meta.TransactionResult);
+  console.log("Resultado:", result.result.meta.TransactionResult);
 
   await client.disconnect();
 }
@@ -1141,7 +1160,7 @@ const { Client, Wallet } = require("xahau");
 // STEP 1: On the CONNECTED device
 // Prepare the transaction (requires connection)
 // =============================================
-async function prepararOnline() {
+async function prepareOnline() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
@@ -1167,13 +1186,13 @@ async function prepararOnline() {
 // STEP 2: On the OFFLINE device (no internet)
 // Sign the transaction
 // =============================================
-function firmarOffline(preparedJSON) {
+function signOffline(preparedJSON) {
   // The private key ONLY exists on the offline device
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
 
   const signed = wallet.sign(preparedJSON);
 
-  console.log("\\n=== COPIA ESTE tx_blob AL DISPOSITIVO CONECTADO ===");
+  console.log("=== COPY THIS tx_blob TO THE CONNECTED DEVICE ===");
   console.log("tx_blob:", signed.tx_blob);
   console.log("hash:", signed.hash);
 
@@ -1184,21 +1203,21 @@ function firmarOffline(preparedJSON) {
 // STEP 3: On the CONNECTED device
 // Submit the signed transaction
 // =============================================
-async function enviarOnline(txBlob) {
+async function sendOnline(txBlob) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const result = await client.submitAndWait(txBlob);
-  console.log("\\nResultado:", result.result.meta.TransactionResult);
+  console.log("Result:", result.result.meta.TransactionResult);
 
   await client.disconnect();
 }
 
 // Demo of the complete flow (in a single script for simplicity)
 async function demo() {
-  const prepared = await prepararOnline();
-  const signed = firmarOffline(prepared);
-  await enviarOnline(signed.tx_blob);
+  const prepared = await prepareOnline();
+  const signed = signOffline(prepared);
+  await sendOnline(signed.tx_blob);
 }
 
 demo().catch(console.error);`,
@@ -1266,11 +1285,11 @@ La librería \`xahau\` ofrece dos métodos para enviar transacciones:
 
 Los resultados de una transacción se dividen en categorías según su **prefijo**:
 
-### tes — Éxito
+### tes: Éxito
 
 \`tesSUCCESS\` es el único código de éxito. Significa que la transacción se procesó correctamente y los cambios se aplicaron al ledger.
 
-### tec — Transacción incluida pero falló
+### tec: Transacción incluida pero falló
 
 Los códigos \`tec\` significan que la transacción fue **incluida en un ledger** (y se cobró el fee), pero la operación **no se ejecutó**:
 
@@ -1287,7 +1306,7 @@ Los códigos \`tec\` significan que la transacción fue **incluida en un ledger*
 
 **Importante**: En los errores \`tec\`, el fee **sí se cobra** aunque la operación falle.
 
-### tef — Error antes del procesamiento
+### tef: Error antes del procesamiento
 
 Los códigos \`tef\` indican que la transacción fue **rechazada antes de ser procesada**. El fee **no se cobra**:
 
@@ -1297,7 +1316,7 @@ Los códigos \`tef\` indican que la transacción fue **rechazada antes de ser pr
 | **tefMAX_LEDGER** | LastLedgerSequence ya pasó (transacción caducada) |
 | **tefALREADY** | La transacción ya está en la cola |
 
-### tem — Error de formato
+### tem: Error de formato
 
 Los códigos \`tem\` indican que la transacción está **mal formada** y nunca podría ser válida:
 
@@ -1309,7 +1328,7 @@ Los códigos \`tem\` indican que la transacción está **mal formada** y nunca p
 | **temDISABLED** | La funcionalidad está desactivada en esta red |
 | **temINVALID_FLAG** | Flag no válido para este tipo de transacción |
 
-### ter — Error temporal (reintentar)
+### ter: Error temporal (reintentar)
 
 Los códigos \`ter\` indican un error **temporal** que podría resolverse si reintentas:
 
@@ -1351,11 +1370,11 @@ The \`xahau\` library offers two methods for sending transactions:
 
 Transaction results are divided into categories based on their **prefix**:
 
-### tes — Success
+### tes: Success
 
 \`tesSUCCESS\` is the only success code. It means the transaction was processed correctly and the changes were applied to the ledger.
 
-### tec — Transaction included but failed
+### tec: Transaction included but failed
 
 \`tec\` codes mean the transaction was **included in a ledger** (and the fee was charged), but the operation **was not executed**:
 
@@ -1372,7 +1391,7 @@ Transaction results are divided into categories based on their **prefix**:
 
 **Important**: For \`tec\` errors, the fee **is still charged** even though the operation fails.
 
-### tef — Error before processing
+### tef: Error before processing
 
 \`tef\` codes indicate the transaction was **rejected before being processed**. The fee is **not charged**:
 
@@ -1382,7 +1401,7 @@ Transaction results are divided into categories based on their **prefix**:
 | **tefMAX_LEDGER** | LastLedgerSequence has already passed (expired transaction) |
 | **tefALREADY** | The transaction is already in the queue |
 
-### tem — Malformed error
+### tem: Malformed error
 
 \`tem\` codes indicate the transaction is **malformed** and could never be valid:
 
@@ -1394,7 +1413,7 @@ Transaction results are divided into categories based on their **prefix**:
 | **temDISABLED** | The feature is disabled on this network |
 | **temINVALID_FLAG** | Invalid flag for this transaction type |
 
-### ter — Temporary error (retry)
+### ter: Temporary error (retry)
 
 \`ter\` codes indicate a **temporary** error that may resolve if you retry:
 
@@ -1504,7 +1523,7 @@ enviarConManejo().catch(console.error);`,
             en: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
-async function enviarConManejo() {
+async function sendChecking() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
@@ -1576,143 +1595,11 @@ async function enviarConManejo() {
   await client.disconnect();
 }
 
-enviarConManejo().catch(console.error);`,
+sendChecking().catch(console.error);`,
             jp: "",
           },
         },
-        {
-          title: {
-            es: "Diferencia entre submit y submitAndWait",
-            en: "Difference between submit and submitAndWait",
-            jp: "",
-          },
-          language: "javascript",
-          code: {
-            es: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function comparar() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // --- Método 1: submitAndWait (recomendado) ---
-  console.log("=== submitAndWait ===");
-  const tx1 = await client.autofill({
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  });
-  const signed1 = wallet.sign(tx1);
-
-  console.log("Enviando y esperando...");
-  const inicio1 = Date.now();
-  const result1 = await client.submitAndWait(signed1.tx_blob);
-  const tiempo1 = Date.now() - inicio1;
-
-  console.log("Resultado:", result1.result.meta.TransactionResult);
-  console.log("Tiempo:", tiempo1, "ms");
-  console.log("Ledger:", result1.result.ledger_index);
-
-  // --- Método 2: submit (sin esperar) ---
-  console.log("\\n=== submit (sin esperar) ===");
-  const tx2 = await client.autofill({
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  });
-  const signed2 = wallet.sign(tx2);
-
-  console.log("Enviando...");
-  const inicio2 = Date.now();
-  const result2 = await client.submit(signed2.tx_blob);
-  const tiempo2 = Date.now() - inicio2;
-
-  console.log("Resultado preliminar:", result2.result.engine_result);
-  console.log("Tiempo:", tiempo2, "ms (mucho más rápido)");
-  console.log("NOTA: Este resultado es PRELIMINAR, no final.");
-
-  // Para ver el resultado final, hay que consultar después:
-  console.log("\\nEsperando 5 segundos para consultar el resultado final...");
-  await new Promise((r) => setTimeout(r, 5000));
-
-  const txInfo = await client.request({
-    command: "tx",
-    transaction: signed2.hash,
-  });
-  console.log("Resultado final:", txInfo.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-comparar().catch(console.error);`,
-            en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function comparar() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // --- Method 1: submitAndWait (recommended) ---
-  console.log("=== submitAndWait ===");
-  const tx1 = await client.autofill({
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  });
-  const signed1 = wallet.sign(tx1);
-
-  console.log("Sending and waiting...");
-  const inicio1 = Date.now();
-  const result1 = await client.submitAndWait(signed1.tx_blob);
-  const tiempo1 = Date.now() - inicio1;
-
-  console.log("Result:", result1.result.meta.TransactionResult);
-  console.log("Time:", tiempo1, "ms");
-  console.log("Ledger:", result1.result.ledger_index);
-
-  // --- Method 2: submit (without waiting) ---
-  console.log("\\n=== submit (sin esperar) ===");
-  const tx2 = await client.autofill({
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  });
-  const signed2 = wallet.sign(tx2);
-
-  console.log("Sending...");
-  const inicio2 = Date.now();
-  const result2 = await client.submit(signed2.tx_blob);
-  const tiempo2 = Date.now() - inicio2;
-
-  console.log("Preliminary result:", result2.result.engine_result);
-  console.log("Time:", tiempo2, "ms (much faster)");
-  console.log("NOTE: This result is PRELIMINARY, not final.");
-
-  // To see the final result, query afterwards:
-  console.log("\\nEsperando 5 segundos para consultar el resultado final...");
-  await new Promise((r) => setTimeout(r, 5000));
-
-  const txInfo = await client.request({
-    command: "tx",
-    transaction: signed2.hash,
-  });
-  console.log("Final result:", txInfo.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-comparar().catch(console.error);`,
-            jp: "",
-          },
-        },
+        
       ],
       slides: [
         {
@@ -1756,13 +1643,13 @@ comparar().catch(console.error);`,
 
 ### ¿Cómo modifica una transacción el ledger?
 
-Cuando una transacción se procesa con éxito, modifica el **estado del ledger** — los objetos almacenados en la base de datos del ledger. Estos cambios se registran en la **metadata** de la transacción.
+Cuando una transacción se procesa con éxito, modifica el **estado del ledger**, los objetos almacenados en la base de datos del ledger. Estos cambios se registran en la **metadata** de la transacción.
 
-### AffectedNodes — La huella de la transacción
+### AffectedNodes: La huella de la transacción
 
 El campo \`meta.AffectedNodes\` es un array que describe **exactamente qué cambió** en el ledger. Cada nodo afectado puede ser de tres tipos:
 
-### CreatedNode — Objeto nuevo
+### CreatedNode: Objeto nuevo
 
 Se creó un nuevo objeto en el ledger:
 
@@ -1782,7 +1669,7 @@ Se creó un nuevo objeto en el ledger:
 
 Ejemplos: nueva trust line, nueva oferta en el DEX, nuevo URIToken.
 
-### ModifiedNode — Objeto modificado
+### ModifiedNode: Objeto modificado
 
 Se modificó un objeto existente:
 
@@ -1804,7 +1691,7 @@ Se modificó un objeto existente:
 
 \`PreviousFields\` solo muestra los campos que **cambiaron** (no todos los campos del objeto). \`FinalFields\` muestra el estado completo después del cambio.
 
-### DeletedNode — Objeto eliminado
+### DeletedNode: Objeto eliminado
 
 Se eliminó un objeto del ledger:
 
@@ -1823,7 +1710,7 @@ Se eliminó un objeto del ledger:
 
 Ejemplos: oferta completada/cancelada, trust line eliminada (balance 0), URIToken quemado.
 
-### Balance changes — Seguir el dinero
+### Balance changes: Seguir el dinero
 
 En una transacción de pago, puedes rastrear exactamente cómo se movió el dinero observando los \`ModifiedNode\` de tipo \`AccountRoot\`:
 
@@ -1833,7 +1720,7 @@ En una transacción de pago, puedes rastrear exactamente cómo se movió el dine
 
 Para tokens (IOUs), los cambios se ven en los \`ModifiedNode\` de tipo \`RippleState\`.
 
-### Reserves — El sistema de reservas
+### Reserves: El sistema de reservas
 
 El ledger de Xahau usa un sistema de **reservas** que afecta tu balance disponible:
 
@@ -1865,13 +1752,13 @@ Si un validador calcula un hash diferente al 80% de la UNL, su ledger se descart
 
 ### How does a transaction modify the ledger?
 
-When a transaction is successfully processed, it modifies the **ledger state** — the objects stored in the ledger database. These changes are recorded in the transaction's **metadata**.
+When a transaction is successfully processed, it modifies the **ledger state**, the objects stored in the ledger database. These changes are recorded in the transaction's **metadata**.
 
-### AffectedNodes — The transaction's footprint
+### AffectedNodes: The transaction's footprint
 
 The \`meta.AffectedNodes\` field is an array that describes **exactly what changed** in the ledger. Each affected node can be one of three types:
 
-### CreatedNode — New object
+### CreatedNode: New object
 
 A new object was created in the ledger:
 
@@ -1891,7 +1778,7 @@ A new object was created in the ledger:
 
 Examples: new trust line, new DEX offer, new URIToken.
 
-### ModifiedNode — Modified object
+### ModifiedNode: Modified object
 
 An existing object was modified:
 
@@ -1913,7 +1800,7 @@ An existing object was modified:
 
 \`PreviousFields\` only shows the fields that **changed** (not all the object's fields). \`FinalFields\` shows the complete state after the change.
 
-### DeletedNode — Deleted object
+### DeletedNode: Deleted object
 
 An object was removed from the ledger:
 
@@ -1932,7 +1819,7 @@ An object was removed from the ledger:
 
 Examples: completed/canceled offer, deleted trust line (zero balance), burned URIToken.
 
-### Balance changes — Follow the money
+### Balance changes: Follow the money
 
 In a payment transaction, you can trace exactly how money moved by observing the \`ModifiedNode\` entries of type \`AccountRoot\`:
 
@@ -1942,7 +1829,7 @@ In a payment transaction, you can trace exactly how money moved by observing the
 
 For tokens (IOUs), changes are visible in the \`ModifiedNode\` entries of type \`RippleState\`.
 
-### Reserves — The reserve system
+### Reserves: The reserve system
 
 The Xahau ledger uses a **reserve** system that affects your available balance:
 
@@ -2003,7 +1890,7 @@ async function analizarMetadata() {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const meta = result.result.meta;
-  console.log("=== ANÁLISIS DE METADATA ===\\n");
+  console.log("=== ANÁLISIS DE METADATA ===");
   console.log("Resultado:", meta.TransactionResult);
   console.log("Nodos afectados:", meta.AffectedNodes.length);
 
@@ -2024,7 +1911,7 @@ async function analizarMetadata() {
 
   // Mostrar objetos creados
   if (creados.length > 0) {
-    console.log("\\n--- OBJETOS CREADOS ---");
+    console.log("--- OBJETOS CREADOS ---");
     for (const n of creados) {
       console.log("  +", n.LedgerEntryType);
       console.log("   Index:", n.LedgerIndex);
@@ -2033,7 +1920,7 @@ async function analizarMetadata() {
 
   // Mostrar objetos modificados
   if (modificados.length > 0) {
-    console.log("\\n--- OBJETOS MODIFICADOS ---");
+    console.log("--- OBJETOS MODIFICADOS ---");
     for (const n of modificados) {
       console.log("  ~", n.LedgerEntryType);
       if (n.PreviousFields && n.FinalFields) {
@@ -2055,14 +1942,14 @@ async function analizarMetadata() {
 
   // Mostrar objetos eliminados
   if (eliminados.length > 0) {
-    console.log("\\n--- OBJETOS ELIMINADOS ---");
+    console.log("--- OBJETOS ELIMINADOS ---");
     for (const n of eliminados) {
       console.log("  -", n.LedgerEntryType);
     }
   }
 
   // Resumen de balance
-  console.log("\\n--- RESUMEN ---");
+  console.log("--- RESUMEN ---");
   console.log("Fee pagado:", Number(result.result.Fee) / 1000000, "XAH");
   console.log("El fee se quemó (no fue a ninguna cuenta).");
 
@@ -2092,7 +1979,7 @@ async function analizarMetadata() {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const meta = result.result.meta;
-  console.log("=== ANÁLISIS DE METADATA ===\\n");
+  console.log("=== METADATA ANALYSIS ===");
   console.log("Result:", meta.TransactionResult);
   console.log("Affected nodes:", meta.AffectedNodes.length);
 
@@ -2113,7 +2000,7 @@ async function analizarMetadata() {
 
   // Show created objects
   if (created.length > 0) {
-    console.log("\\n--- OBJETOS CREADOS ---");
+    console.log("--- CREATED OBJECTS ---");
     for (const n of created) {
       console.log("  +", n.LedgerEntryType);
       console.log("   Index:", n.LedgerIndex);
@@ -2122,7 +2009,7 @@ async function analizarMetadata() {
 
   // Show modified objects
   if (modified.length > 0) {
-    console.log("\\n--- OBJETOS MODIFICADOS ---");
+    console.log("--- MODIFIED OBJECTS ---");
     for (const n of modified) {
       console.log("  ~", n.LedgerEntryType);
       if (n.PreviousFields && n.FinalFields) {
@@ -2144,14 +2031,14 @@ async function analizarMetadata() {
 
   // Show deleted objects
   if (deleted.length > 0) {
-    console.log("\\n--- OBJETOS ELIMINADOS ---");
+    console.log("--- DELETED OBJECTS ---");
     for (const n of deleted) {
       console.log("  -", n.LedgerEntryType);
     }
   }
 
   // Balance summary
-  console.log("\\n--- RESUMEN ---");
+  console.log("--- SUMMARY ---");
   console.log("Fee paid:", Number(result.result.Fee) / 1000000, "XAH");
   console.log("The fee was burned (it didn't go to any account).");
 
@@ -2200,7 +2087,7 @@ async function consultarReserva(address) {
   const reservaTotal = reservaBase + (ownerCount * reservaObjeto);
   const disponible = balance - reservaTotal;
 
-  console.log("\n=== TU CUENTA ===");
+  console.log("=== TU CUENTA ===");
   console.log("Dirección:", address);
   console.log("Balance total:", balance, "XAH");
   console.log("Objetos en el ledger:", ownerCount);
@@ -2222,7 +2109,7 @@ async function consultarReserva(address) {
     porTipo[tipo] = (porTipo[tipo] || 0) + 1;
   }
 
-  console.log("\n=== OBJETOS POR TIPO ===");
+  console.log("=== OBJETOS POR TIPO ===");
   for (const [tipo, cantidad] of Object.entries(porTipo)) {
     console.log("  " + tipo + ":", cantidad, "(reserva:", cantidad * reservaObjeto, "XAH)");
   }
@@ -2261,7 +2148,7 @@ async function consultarReserva(address) {
   const totalReserve = baseReserve + (ownerCount * ownerReserve);
   const available = balance - totalReserve;
 
-  console.log("\n=== YOUR ACCOUNT ===");
+  console.log("=== YOUR ACCOUNT ===");
   console.log("Address:", address);
   console.log("Total balance:", balance, "XAH");
   console.log("Objects in the ledger:", ownerCount);
@@ -2283,7 +2170,7 @@ async function consultarReserva(address) {
     byType[tipo] = (byType[tipo] || 0) + 1;
   }
 
-  console.log("\n=== OBJECTS BY TYPE ===");
+  console.log("=== OBJECTS BY TYPE ===");
   for (const [tipo, count] of Object.entries(byType)) {
     console.log("  " + tipo + ":", count, "(reserve:", count * ownerReserve, "XAH)");
   }
