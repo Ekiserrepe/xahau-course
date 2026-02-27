@@ -62,7 +62,7 @@ Xahau soporta crypto-condiciones del protocolo **Interledger (ILP)**:
 - El creador genera un \`Condition\` (hash) y guarda el \`Fulfillment\` (preimagen)
 - Para completar el escrow, se debe proporcionar el \`Fulfillment\` que corresponda al \`Condition\`
 - Esto permite escrows que solo se liberan cuando alguien demuestra conocer un secreto`,
-        en: `An **Escrow** is a conditional payment mechanism that locks funds until certain conditions are met. Like a sealed envelope with money that can only be opened under specific circumstances — a conditional safe.
+        en: `An **Escrow** is a conditional payment mechanism that locks funds until certain conditions are met. Like a sealed envelope with money that can only be opened under specific circumstances, a conditional safe.
 
 ### Use cases
 
@@ -143,7 +143,7 @@ async function createTimeLockedEscrow() {
     TransactionType: "EscrowCreate",
     Account: sender.address,
     Destination: "rDireccionDelDestinatario",
-    Amount: xahToDrops(100), // Bloquear 100 XAH
+    Amount: xahToDrops(10), // Bloquear 10 XAH
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
   };
@@ -167,7 +167,7 @@ async function createTimeLockedEscrow() {
       "CancelAfter:",
       new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
     );
-    console.log("\\n¡Guarda el Sequence! Lo necesitas para EscrowFinish.");
+    console.log("¡Guarda el Sequence! Lo necesitas para EscrowFinish.");
     console.log(\`Sequence del escrow: \${prepared.Sequence}\`);
     console.log(\`Tu dirección: \${sender.address}\`);
 
@@ -200,7 +200,7 @@ async function createTimeLockedEscrow() {
     TransactionType: "EscrowCreate",
     Account: sender.address,
     Destination: "rDestinationAddress",
-    Amount: xahToDrops(100), // Lock 100 XAH
+    Amount: xahToDrops(10), // Lock 10 XAH
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
   };
@@ -224,7 +224,7 @@ async function createTimeLockedEscrow() {
       "CancelAfter:",
       new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
     );
-    console.log("\\nSave the Sequence! You need it for EscrowFinish.");
+    console.log("\Save the Sequence! You need it for EscrowFinish.");
     console.log(\`Escrow Sequence: \${prepared.Sequence}\`);
     console.log(\`Your address: \${sender.address}\`);
 
@@ -285,7 +285,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   if (now < finishAfterUnix) {
     const remaining = finishAfterUnix - now;
     console.log(
-      \`\\nAún no puedes completar este escrow. Faltan \${remaining} segundos.\`
+      \`Aún no puedes completar este escrow. Faltan \${remaining} segundos.\`
     );
     console.log(
       \`Disponible a partir de: \${new Date(finishAfterUnix * 1000).toISOString()}\`
@@ -294,7 +294,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
     return;
   }
 
-  console.log("\\nEl tiempo de bloqueo ha pasado. Completando escrow...");
+  console.log("El tiempo de bloqueo ha pasado. Completando escrow...");
 
   const escrowFinish = {
     TransactionType: "EscrowFinish",
@@ -308,7 +308,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("\\n=== EscrowFinish ===");
+  console.log("=== EscrowFinish ===");
   console.log("Resultado:", txResult);
 
   if (txResult === "tesSUCCESS") {
@@ -363,7 +363,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   if (now < finishAfterUnix) {
     const remaining = finishAfterUnix - now;
     console.log(
-      \`\\nCannot finish this escrow yet. \${remaining} seconds remaining.\`
+      \`Cannot finish this escrow yet. \${remaining} seconds remaining.\`
     );
     console.log(
       \`Available from: \${new Date(finishAfterUnix * 1000).toISOString()}\`
@@ -372,7 +372,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
     return;
   }
 
-  console.log("\\nThe lock period has passed. Finishing escrow...");
+  console.log("The lock period has passed. Finishing escrow...");
 
   const escrowFinish = {
     TransactionType: "EscrowFinish",
@@ -386,7 +386,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("\\n=== EscrowFinish ===");
+  console.log("=== EscrowFinish ===");
   console.log("Result:", txResult);
 
   if (txResult === "tesSUCCESS") {
@@ -624,7 +624,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("\\nGuarda este CheckID para poder cobrar el cheque de tu cuenta. " + sender.address);
+      console.log("Guarda este CheckID para poder cobrar el cheque de tu cuenta. " + sender.address);
     }
   }
 
@@ -670,7 +670,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("\\nSave this CheckID to cash the check from your account: " + sender.address);
+      console.log("Save this CheckID to cash the check from your account: " + sender.address);
     }
   }
 
@@ -982,7 +982,7 @@ async function paymentsWithTickets() {
   console.log("Tickets creados:", ticketSequences);
 
   // === PASO 2: Usar los Tickets para enviar pagos (en cualquier orden) ===
-  console.log("\\n=== Paso 2: Enviar pagos con Tickets ===");
+  console.log("=== Paso 2: Enviar pagos con Tickets ===");
 
   const destinations = [
     { address: "rDestino1XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Pago A" },
@@ -1017,7 +1017,7 @@ async function paymentsWithTickets() {
     console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
   }
 
-  console.log("\\n¡Todos los pagos enviados con Tickets!");
+  console.log("¡Todos los pagos enviados con Tickets!");
   console.log("Los Tickets usados se han destruido y la reserva liberada.");
 
   await client.disconnect();
@@ -1062,7 +1062,7 @@ async function paymentsWithTickets() {
   console.log("Tickets created:", ticketSequences);
 
   // === STEP 2: Use the Tickets to send payments (in any order) ===
-  console.log("\\n=== Step 2: Send payments with Tickets ===");
+  console.log("=== Step 2: Send payments with Tickets ===");
 
   const destinations = [
     { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Payment A" },
@@ -1097,7 +1097,7 @@ async function paymentsWithTickets() {
     console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
   }
 
-  console.log("\\nAll payments sent with Tickets!");
+  console.log("All payments sent with Tickets!");
   console.log("Used Tickets have been destroyed and the reserve released.");
 
   await client.disconnect();
@@ -1259,7 +1259,7 @@ async function claimReward() {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("\\n=== ClaimReward ===");
+  console.log("=== ClaimReward ===");
   console.log("Resultado:", txResult);
   console.log("Hash:", signed.hash);
 
@@ -1272,7 +1272,7 @@ async function claimReward() {
     });
 
     const balanceAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
-    console.log("\\n=== Estado después de reclamar ===");
+    console.log("=== Estado después de reclamar ===");
     console.log("Balance nuevo:", balanceAfter, "XAH");
     console.log("Recompensa obtenida:", (balanceAfter - balanceBefore).toFixed(6), "XAH");
   }
@@ -1315,7 +1315,7 @@ async function claimReward() {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("\\n=== ClaimReward ===");
+  console.log("=== ClaimReward ===");
   console.log("Result:", txResult);
   console.log("Hash:", signed.hash);
 
@@ -1328,7 +1328,7 @@ async function claimReward() {
     });
 
     const balanceAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
-    console.log("\\n=== State after claiming ===");
+    console.log("=== State after claiming ===");
     console.log("New balance:", balanceAfter, "XAH");
     console.log("Reward received:", (balanceAfter - balanceBefore).toFixed(6), "XAH");
   }
@@ -1375,10 +1375,6 @@ claimReward();`,
 ### ¿Por qué existe Invoke?
 
 Los Hooks se ejecutan reactivamente cuando una transacción pasa por la cuenta. Pero hay situaciones donde necesitas activar un Hook **sin que ocurra ninguna otra acción**:
-
-- **Cron jobs / tareas programadas**: Un Hook que necesita ejecutarse periódicamente para comprobar condiciones o emitir transacciones
-- **Triggers manuales**: Activar la lógica de un Hook cuando lo decides, sin enviar fondos
-- **Hooks de servicio**: Hooks diseñados para ser invocados directamente y que realizan una acción autónoma en respuesta
 
 ### Transacción Invoke
 
@@ -1674,13 +1670,13 @@ async function setAccountRemarks() {
       {
         Remark: {
           RemarkName: toHex("nombre"),
-          RemarkValue: toHex("Xahau Academy Demo"),
+          RemarkValue: toHex("Learn Xahau Demo"),
         },
       },
       {
         Remark: {
           RemarkName: toHex("web"),
-          RemarkValue: toHex("https://xahau.academy"),
+          RemarkValue: toHex("https://learnxahau.inftf.org"),
         },
       },
       {
@@ -1699,11 +1695,11 @@ async function setAccountRemarks() {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("\\nResultado:", txResult);
+  console.log("Resultado:", txResult);
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nRemarks adjuntadas al AccountRoot.");
+    console.log("Remarks adjuntadas al AccountRoot.");
     console.log("Nota: la Remark 'creado' es inmutable y no se podrá cambiar.");
   }
 
@@ -1745,13 +1741,13 @@ async function setAccountRemarks() {
       {
         Remark: {
           RemarkName: toHex("name"),
-          RemarkValue: toHex("Xahau Academy Demo"),
+          RemarkValue: toHex("Learn Xahau Demo"),
         },
       },
       {
         Remark: {
           RemarkName: toHex("web"),
-          RemarkValue: toHex("https://xahau.academy"),
+          RemarkValue: toHex("https://learnxahau.inftf.org"),
         },
       },
       {
@@ -1770,11 +1766,11 @@ async function setAccountRemarks() {
   const result = await client.submitAndWait(signed.tx_blob);
 
   const txResult = result.result.meta.TransactionResult;
-  console.log("\\nResult:", txResult);
+  console.log("Result:", txResult);
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nRemarks attached to the AccountRoot.");
+    console.log("Remarks attached to the AccountRoot.");
     console.log("Note: the 'created' Remark is immutable and cannot be changed.");
   }
 
@@ -2138,7 +2134,7 @@ async function sendRemit() {
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nEn una sola transacción:");
+    console.log("En una sola transacción:");
     console.log("- Enviados 25 XAH al destino");
     console.log("- URIToken minteado directamente en la cuenta destino");
     console.log("- Fees de reservas cubiertos automáticamente");
@@ -2192,7 +2188,7 @@ async function sendRemit() {
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nIn a single transaction:");
+    console.log("In a single transaction:");
     console.log("- 25 XAH sent to the destination");
     console.log("- URIToken minted directly in the destination account");
     console.log("- Reserve fees covered automatically");
@@ -2429,7 +2425,7 @@ async function setupCron() {
 
   // === PASO 1: Activar TSH Collect en la cuenta ===
   // Necesario para que la red pueda ejecutar el Hook automáticamente
-  console.log("\\n=== Paso 1: Activar TSH Collect (asfTshCollect) ===");
+  console.log("=== Paso 1: Activar TSH Collect (asfTshCollect) ===");
 
   const accountSet = {
     TransactionType: "AccountSet",
@@ -2451,7 +2447,7 @@ async function setupCron() {
 
   // === PASO 2: Crear el CronSet ===
   // El Hook debe estar instalado con hsfCOLLECT antes de este paso
-  console.log("\\n=== Paso 2: Crear CronSet ===");
+  console.log("=== Paso 2: Crear CronSet ===");
 
   // Ripple Epoch: segundos desde 01/01/2000 00:00:00 UTC
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -2473,7 +2469,7 @@ async function setupCron() {
   console.log("Hash:", signedCron.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\n¡CronSet creado correctamente!");
+    console.log("¡CronSet creado correctamente!");
     console.log("El Hook se ejecutará automáticamente cada 1 hora durante 24 horas.");
     console.log("Asegúrate de que el Hook está instalado con el flag hsfCOLLECT.");
   }
@@ -2495,7 +2491,7 @@ async function setupCron() {
 
   // === STEP 1: Enable TSH Collect on the account ===
   // Required so the network can execute the Hook automatically
-  console.log("\\n=== Step 1: Enable TSH Collect (asfTshCollect) ===");
+  console.log("=== Step 1: Enable TSH Collect (asfTshCollect) ===");
 
   const accountSet = {
     TransactionType: "AccountSet",
@@ -2517,7 +2513,7 @@ async function setupCron() {
 
   // === STEP 2: Create the CronSet ===
   // The Hook must be installed with hsfCOLLECT before this step
-  console.log("\\n=== Step 2: Create CronSet ===");
+  console.log("=== Step 2: Create CronSet ===");
 
   // Ripple Epoch: seconds since 01/01/2000 00:00:00 UTC
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -2539,7 +2535,7 @@ async function setupCron() {
   console.log("Hash:", signedCron.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nCronSet created successfully!");
+    console.log("CronSet created successfully!");
     console.log("The Hook will run automatically every 1 hour for 24 hours.");
     console.log("Make sure the Hook is installed with the hsfCOLLECT flag.");
   }
@@ -2588,9 +2584,9 @@ async function deleteCron() {
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nCronSet eliminado. El Hook ya no se ejecutará automáticamente.");
+    console.log("CronSet eliminado. El Hook ya no se ejecutará automáticamente.");
   } else if (txResult === "tefBAD_LEDGER") {
-    console.log("\\nNo existe un CronSet activo para esta cuenta.");
+    console.log("No existe un CronSet activo para esta cuenta.");
   }
 
   await client.disconnect();
@@ -2626,9 +2622,9 @@ async function deleteCron() {
   console.log("Hash:", signed.hash);
 
   if (txResult === "tesSUCCESS") {
-    console.log("\\nCronSet deleted. The Hook will no longer run automatically.");
+    console.log("CronSet deleted. The Hook will no longer run automatically.");
   } else if (txResult === "tefBAD_LEDGER") {
-    console.log("\\nNo active CronSet found for this account.");
+    console.log("No active CronSet found for this account.");
   }
 
   await client.disconnect();

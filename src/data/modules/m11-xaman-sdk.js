@@ -72,13 +72,13 @@ La documentación completa está en **docs.xumm.dev**:
 \`\`\`
 Tu app                  Xaman API             Xaman (móvil)
   │                         │                      │
-  │── Crear payload ────────▶│                      │
-  │◀── UUID + QR URL ────────│                      │
+  │── Crear payload ───────▶│                      │
+  │◀── UUID + QR URL ───────│                      │
   │                         │                      │
-  │── Mostrar QR al usuario  │                      │
+  │── Mostrar QR al usuario │                      │
   │                         │◀── Usuario escanea ──│
   │                         │                      │
-  │◀── WebSocket: signed ────│◀── Usuario firma ────│
+  │◀── WebSocket: signed ───│◀── Usuario firma ────│
   │                         │                      │
   │── Verificar en ledger   │                      │
 \`\`\``,
@@ -98,8 +98,8 @@ The **xumm** npm package is the official SDK that simplifies integration with th
 
 Before writing code you need to visit the **developer portal**:
 
-1. Go to **apps.xumm.dev** and sign in with your Xaman account
-2. Click **"Create a new app"**
+1. Go to [apps.xumm.dev](https://apps.xumm.dev) and sign in with your Xaman account
+2. Click **"Create a new application"**
 3. Fill in the name, description and icon for your app
 4. Copy your **API Key** (public) and **API Secret** (private)
 
@@ -132,7 +132,22 @@ Full documentation is at **docs.xumm.dev**:
 | **UUID** | Unique identifier for each payload |
 | **QR / Deep link** | Ways to deliver the payload to the user |
 | **SignIn** | Special transaction for authentication (no fees) |
-| **Webhook** | HTTP notification Xaman sends when the user signs |`,
+| **Webhook** | HTTP notification Xaman sends when the user signs |
+
+### Basic integration flow
+\`\`\`
+Your app                  Xaman API             Xaman (mobile)
+  │                         │                      │
+  │── Create payload ──────▶│                      │
+  │◀── UUID + QR URL ───────│                      │
+  │                         │                      │
+  │── Show QR to user       │                      │
+  │                         │◀── User scans ─-----─│
+  │                         │                      │
+  │◀── WebSocket: signed ───│◀── User signs ──---──│
+  │                         │                      │
+  │── Verify on ledger      │                      │
+\`\`\``,
         jp: `**Xaman**（旧XUMM）は単なるウォレットではなく、開発者向けに**REST APIとSDK**を公開しているトランザクション署名プラットフォームです。これを使うと、ユーザーの秘密鍵に触れることなく、XahauトランザクションへのユーザーのIDを確認できるWebやモバイルアプリを作成できます。
 
 ### XUMM SDKとは？
@@ -504,6 +519,25 @@ Viteがプロジェクトを自動生成します。変更が必要なファイ�
 | \`src/index.css\` | 削除可またはそのまま — サンプルに影響しない |`,
       },
       codeBlocks: [
+        {
+          title: {
+            es: "Instalación y configuración básica del proyecto",
+            en: "SDK installation and project basic setup",
+            jp: "SDKのインストールとプロジェクトの基本設定",
+          },
+          language: "bash",
+          code: {
+            es: `npm create vite@latest xaman-login -- --template react
+cd xaman-login
+npm install xumm xahau
+npm run dev`,
+            en: `npm create vite@latest xaman-login -- --template react
+cd xaman-login
+npm install xumm xahau
+npm run dev`,
+            jp: ``,
+          },
+        },
         {
           title: {
             es: "App.jsx — Login con Xaman en React",
