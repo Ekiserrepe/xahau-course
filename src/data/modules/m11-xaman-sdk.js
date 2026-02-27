@@ -2192,15 +2192,15 @@ export default function App() {
 Frontend (React)          Backend (Express)          Xaman API
      │                          │                         │
      │── POST /pago ──────────▶ │                         │
-     │   { destino, cantidad }  │── Crear payload ────────▶│
-     │                          │◀── UUID + QR URL ────────│
+     │   { destino, cantidad }  │── Crear payload ───────▶│
+     │                          │◀── UUID + QR URL ───────│
      │◀── { qrUrl, uuid } ───── │                         │
      │                          │                         │
      │ (muestra QR al usuario)  │                         │
-     │                          │◀── Webhook: signed ──────│
-     │                          │   (usuario firmó)        │
-     │                          │── Guardar en DB          │
-     │                          │── Verificar ledger       │
+     │                          │◀── Webhook: signed ─────│
+     │                          │   (usuario firmó)       │
+     │                          │── Guardar en DB         │
+     │                          │── Verificar ledger      │
 \`\`\`
 
 ### Webhooks vs Suscripción WebSocket
@@ -2267,16 +2267,16 @@ xaman-backend/
 \`\`\`
 Frontend (React)          Backend (Express)          Xaman API
      │                          │                         │
-     │── POST /payment ────────▶ │                         │
-     │   { destination, amount } │── Create payload ───────▶│
-     │                          │◀── UUID + QR URL ─────────│
+     │── POST /payment ───────▶ │                         │
+     │  { destination, amount } │── Create payload ──────▶│
+     │                          │◀── UUID + QR URL ───────│
      │◀── { qrUrl, uuid } ───── │                         │
      │                          │                         │
      │ (show QR to user)        │                         │
-     │                          │◀── Webhook: signed ──────│
-     │                          │   (user signed)          │
-     │                          │── Save to DB             │
-     │                          │── Verify ledger          │
+     │                          │◀── Webhook: signed ─────│
+     │                          │   (user signed)         │
+     │                          │── Save to DB            │
+     │                          │── Verify ledger         │
 \`\`\`
 
 ### Webhooks vs WebSocket subscription
