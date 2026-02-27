@@ -530,34 +530,39 @@ Viteがプロジェクトを自動生成します。変更が必要なファイ�
             es: `npm create vite@latest xaman-login -- --template react
 cd xaman-login
 npm install xumm xahau
+# Después de modificar src/App.jsx ejecutar:
 npm run dev`,
             en: `npm create vite@latest xaman-login -- --template react
 cd xaman-login
 npm install xumm xahau
+# After modifying src/App.jsx run:
 npm run dev`,
             jp: ``,
           },
         },
         {
           title: {
-            es: "App.jsx — Login con Xaman en React",
-            en: "App.jsx — Xaman Login in React",
-            jp: "App.jsx — ReactでのXamanログイン",
+            es: "App.jsx — Login con QR",
+            en: "App.jsx — QR modal login",
+            jp: "App.jsx — QRモーダルログイン",
           },
           language: "javascript",
           code: {
-            es: `// src/App.jsx — sustituye TODO el contenido del archivo por este código
+            es: `// src/App.jsx — Login con QR modal en tu propia página
 // ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173 o la URL de tu web ejecutandose
-// Añade la API Key de tu app en la variable xumm = new Xumm("TU_API_KEY_AQUI");
+// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
+// Añade la API Key de tu app: xumm = new Xumm("TU_API_KEY_AQUI");
+//
+// Mismo patrón que el ejercicio de pago con QR modal:
+// createAndSubscribe() crea el payload y tú muestras el QR en tu propio modal.
+// El usuario nunca sale de tu página para hacer login.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Xumm } from "xumm";
 import { Client } from "xahau";
 
 const xumm = new Xumm("TU_API_KEY_AQUI");
 
-// ── Obtiene balance y secuencia del ledger ────────────────────────────────────
 async function obtenerInfoCuenta(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -580,8 +585,8 @@ async function obtenerInfoCuenta(address) {
   }
 }
 
-// ── Modal con el QR — aparece sobre la página sin reemplazarla ────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
+// ── Modal con el QR ───────────────────────────────────────────────────────────
+function QRModal({ titulo, qrUrl, deepLink, onCancel }) {
   return (
     <div style={{
       position: "fixed", inset: 0,
@@ -593,7 +598,7 @@ function QRModal({ qrUrl, deepLink, onCancel }) {
         background: "#fff", borderRadius: 16, padding: "2rem",
         textAlign: "center", maxWidth: 300, width: "90%",
       }}>
-        <h2 style={{ marginTop: 0 }}>Escanea con Xaman</h2>
+        <h2 style={{ marginTop: 0 }}>{titulo}</h2>
         <img src={qrUrl} alt="QR Xaman" width={220}
           style={{ display: "block", margin: "0 auto" }} />
         <p style={{ fontSize: "0.9rem" }}>
@@ -611,10 +616,23 @@ export default function App() {
   const [account, setAccount]   = useState(null);
   const [balance, setBalance]   = useState(null);
   const [sequence, setSequence] = useState(null);
-  const [qrUrl, setQrUrl]       = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
+  const [qrUrl, setQrUrl]       = useState(null);
+  const [deepLink, setDeepLink] = useState(null);
+
+  // Restaurar sesión si el SDK ya tiene un token guardado
+  useEffect(() => {
+    xumm.on("ready", async () => {
+      const me = await xumm.me;
+      if (me?.account) {
+        setAccount(me.account);
+        const info = await obtenerInfoCuenta(me.account);
+        setBalance(info.balance);
+        setSequence(info.sequence);
+      }
+    });
+  }, []);
 
   async function conectarConXaman() {
     setLoading(true);
@@ -638,16 +656,13 @@ export default function App() {
         const payloadResult = await xumm.payload.get(created.uuid);
         const userAccount = payloadResult.response.account;
         setAccount(userAccount);
-
-        // Consultar balance y secuencia directamente en el ledger
         const info = await obtenerInfoCuenta(userAccount);
         setBalance(info.balance);
         setSequence(info.sequence);
       } else {
-        setError("Firma rechazada por el usuario");
+        setError("Login rechazado por el usuario");
       }
     } catch (err) {
-      console.error("Error Xaman:", err);
       setError(\`Error: \${err.message || "No se pudo conectar"}\`);
     } finally {
       setLoading(false);
@@ -660,16 +675,16 @@ export default function App() {
     setLoading(false);
   }
 
-  function desconectar() {
+  async function desconectar() {
+    await xumm.logout();
     setAccount(null);
     setBalance(null);
     setSequence(null);
   }
 
-  // ── Renderizado ────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 480, margin: "0 auto" }}>
-      <h1>Xaman Login Demo</h1>
+      <h1>Xaman Login — QR Modal</h1>
 
       {account ? (
         <div>
@@ -701,473 +716,25 @@ export default function App() {
         </div>
       )}
 
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelar} />}
-    </div>
-  );
-}`,
-            en: `// src/App.jsx — replace ALL the file content with this code
-// BEFORE RUNNING:
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173 or the URL your web is running on
-// Add your app's API Key in the variable xumm = new Xumm("YOUR_API_KEY_HERE");
-
-import { useState } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-// ── Fetch balance and sequence from the ledger ────────────────────────────────
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "not activated", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── QR Modal — appears over the page without replacing it ────────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "2rem",
-        textAlign: "center", maxWidth: 300, width: "90%",
-      }}>
-        <h2 style={{ marginTop: 0 }}>Scan with Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220}
-          style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>
-          On mobile?{" "}
-          <a href={deepLink} rel="noopener noreferrer">Open Xaman directly</a>
-        </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [qrUrl, setQrUrl]       = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-
-  async function connectWithXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        const userAccount = payloadResult.response.account;
-        setAccount(userAccount);
-
-        // Fetch balance and sequence directly from the ledger
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Signature rejected by the user");
-      }
-    } catch (err) {
-      console.error("Xaman error:", err);
-      setError(\`Error: \${err.message || "Could not connect"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function cancel() {
-    setQrUrl(null);
-    setDeepLink(null);
-    setLoading(false);
-  }
-
-  function disconnect() {
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 480, margin: "0 auto" }}>
-      <h1>Xaman Login Demo</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Connected</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Account</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Sequence</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>Disconnect</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Generating QR..." : "🔑 Connect with Xaman"}
-          </button>
-        </div>
-      )}
-
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancel} />}
-    </div>
-  );
-}`,
-            jp: `// src/App.jsx — replace ALL the file content with this code
-// BEFORE RUNNING:
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173 or the URL your web is running on
-// Add your app's API Key in the variable xumm = new Xumm("YOUR_API_KEY_HERE");
-
-import { useState } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-// ── Fetch balance and sequence from the ledger ────────────────────────────────
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "not activated", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── QR Modal — appears over the page without replacing it ────────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "2rem",
-        textAlign: "center", maxWidth: 300, width: "90%",
-      }}>
-        <h2 style={{ marginTop: 0 }}>Scan with Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220}
-          style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>
-          On mobile?{" "}
-          <a href={deepLink} rel="noopener noreferrer">Open Xaman directly</a>
-        </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [qrUrl, setQrUrl]       = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-
-  async function connectWithXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        const userAccount = payloadResult.response.account;
-        setAccount(userAccount);
-
-        // Fetch balance and sequence directly from the ledger
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Signature rejected by the user");
-      }
-    } catch (err) {
-      console.error("Xaman error:", err);
-      setError(\`Error: \${err.message || "Could not connect"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function cancel() {
-    setQrUrl(null);
-    setDeepLink(null);
-    setLoading(false);
-  }
-
-  function disconnect() {
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 480, margin: "0 auto" }}>
-      <h1>Xaman Login Demo</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Connected</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Account</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Sequence</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>Disconnect</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Generating QR..." : "🔑 Connect with Xaman"}
-          </button>
-        </div>
-      )}
-
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancel} />}
-    </div>
-  );
-}`,
-          },
-        },
-        {
-          title: {
-            es: "App.jsx — Login con Xaman usando el popup nativo (authorize)",
-            en: "App.jsx — Xaman Login using the native popup (authorize)",
-            jp: "App.jsx — ネイティブポップアップを使ったXamanログイン（authorize）",
-          },
-          language: "javascript",
-          code: {
-            es: `// src/App.jsx — Login con Xaman usando el popup nativo OAuth2
-// ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
-// Añade la API Key de tu app: xumm = new Xumm("TU_API_KEY_AQUI");
-//
-// DIFERENCIA con el enfoque QR modal:
-// xumm.authorize() abre el popup oficial de Xaman — no tienes que
-// construir ni mostrar un QR tú mismo. El SDK gestiona todo.
-
-import { useState, useEffect } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("TU_API_KEY_AQUI");
-
-// ── Obtiene balance y secuencia del ledger ────────────────────────────────────
-async function obtenerInfoCuenta(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "no activada", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── Componente principal ──────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-
-  // Restaurar sesión si el SDK ya tiene un token guardado
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await obtenerInfoCuenta(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  async function conectarConXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      // authorize() abre el popup nativo de Xaman (OAuth2)
-      // El SDK muestra su propio QR dentro del popup — no necesitas uno propio
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await obtenerInfoCuenta(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Autorización cancelada");
-      }
-    } catch (err) {
-      console.error("Error Xaman:", err);
-      setError(\`Error: \${err.message || "No se pudo conectar"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function desconectar() {
-    await xumm.logout();
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-  }
-
-  // ── Renderizado ────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 480, margin: "0 auto" }}>
-      <h1>Xaman Login — Popup Nativo</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Conectado</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Cuenta</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Secuencia</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={desconectar}>Desconectar</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={conectarConXaman} disabled={loading}>
-            {loading ? "Abriendo Xaman..." : "🔑 Conectar con Xaman"}
-          </button>
-        </div>
+      {qrUrl && (
+        <QRModal
+          titulo="Inicia sesión con Xaman"
+          qrUrl={qrUrl}
+          deepLink={deepLink}
+          onCancel={cancelar}
+        />
       )}
     </div>
   );
 }`,
-            en: `// src/App.jsx — Xaman Login using the native OAuth2 popup
+            en: `// src/App.jsx — QR modal login in your own page
 // BEFORE RUNNING:
 // In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173
 // Add your app's API Key: xumm = new Xumm("YOUR_API_KEY_HERE");
 //
-// DIFFERENCE from the QR modal approach:
-// xumm.authorize() opens the official Xaman popup — you don't have to
-// build or display a QR yourself. The SDK handles everything.
+// Same pattern as the QR modal payment exercise:
+// createAndSubscribe() creates the payload and you display the QR in your own modal.
+// The user never leaves your page to log in.
 
 import { useState, useEffect } from "react";
 import { Xumm } from "xumm";
@@ -1175,7 +742,6 @@ import { Client } from "xahau";
 
 const xumm = new Xumm("YOUR_API_KEY_HERE");
 
-// ── Fetch balance and sequence from the ledger ────────────────────────────────
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -1198,6 +764,32 @@ async function getAccountInfo(address) {
   }
 }
 
+// ── QR Modal ──────────────────────────────────────────────────────────────────
+function QRModal({ title, qrUrl, deepLink, onCancel }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "rgba(0,0,0,0.75)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 1000,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, padding: "2rem",
+        textAlign: "center", maxWidth: 300, width: "90%",
+      }}>
+        <h2 style={{ marginTop: 0 }}>{title}</h2>
+        <img src={qrUrl} alt="QR Xaman" width={220}
+          style={{ display: "block", margin: "0 auto" }} />
+        <p style={{ fontSize: "0.9rem" }}>
+          On mobile?{" "}
+          <a href={deepLink} rel="noopener noreferrer">Open Xaman directly</a>
+        </p>
+        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function App() {
   const [account, setAccount]   = useState(null);
@@ -1205,6 +797,8 @@ export default function App() {
   const [sequence, setSequence] = useState(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
+  const [qrUrl, setQrUrl]       = useState(null);
+  const [deepLink, setDeepLink] = useState(null);
 
   // Restore session if the SDK already has a saved token
   useEffect(() => {
@@ -1223,24 +817,41 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
-      // authorize() opens the native Xaman popup (OAuth2)
-      // The SDK shows its own QR inside the popup — you don't need your own
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
+      const { created, resolved } = await xumm.payload.createAndSubscribe(
+        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
+        (event) => {
+          if (typeof event.data.signed !== "undefined") return event.data;
+        }
+      );
+
+      setQrUrl(created.refs.qr_png);
+      setDeepLink(created.next.always);
+
+      const result = await resolved;
+      setQrUrl(null);
+      setDeepLink(null);
+
+      if (result.signed) {
+        const payloadResult = await xumm.payload.get(created.uuid);
+        const userAccount = payloadResult.response.account;
         setAccount(userAccount);
         const info = await getAccountInfo(userAccount);
         setBalance(info.balance);
         setSequence(info.sequence);
       } else {
-        setError("Authorization cancelled");
+        setError("Login rejected by the user");
       }
     } catch (err) {
-      console.error("Xaman error:", err);
       setError(\`Error: \${err.message || "Could not connect"}\`);
     } finally {
       setLoading(false);
     }
+  }
+
+  function cancel() {
+    setQrUrl(null);
+    setDeepLink(null);
+    setLoading(false);
   }
 
   async function disconnect() {
@@ -1250,10 +861,9 @@ export default function App() {
     setSequence(null);
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 480, margin: "0 auto" }}>
-      <h1>Xaman Login — Native Popup</h1>
+      <h1>Xaman Login — QR Modal</h1>
 
       {account ? (
         <div>
@@ -1280,21 +890,30 @@ export default function App() {
         <div>
           {error && <p style={{ color: "red" }}>{error}</p>}
           <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Opening Xaman..." : "🔑 Connect with Xaman"}
+            {loading ? "Generating QR..." : "🔑 Connect with Xaman"}
           </button>
         </div>
+      )}
+
+      {qrUrl && (
+        <QRModal
+          title="Sign in with Xaman"
+          qrUrl={qrUrl}
+          deepLink={deepLink}
+          onCancel={cancel}
+        />
       )}
     </div>
   );
 }`,
-            jp: `// src/App.jsx — ネイティブOAuth2ポップアップを使ったXamanログイン
+            jp: `// src/App.jsx — 自分のページでQRモーダルログイン
 // 実行前に:
 // apps.xumm.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
 // APIキーを設定: xumm = new Xumm("YOUR_API_KEY_HERE");
 //
-// QRモーダルアプローチとの違い:
-// xumm.authorize() が公式Xamanポップアップを開きます — 自分でQRを
-// 構築・表示する必要はありません。SDKがすべて処理します。
+// 支払いQRモーダル演習と同じパターン:
+// createAndSubscribe()でペイロードを作成し、自分のモーダルにQRを表示します。
+// ログインのためにユーザーはページを離れません。
 
 import { useState, useEffect } from "react";
 import { Xumm } from "xumm";
@@ -1302,103 +921,91 @@ import { Client } from "xahau";
 
 const xumm = new Xumm("YOUR_API_KEY_HERE");
 
-// ── レジャーからバランスとシーケンスを取得 ────────────────────────────────────
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
+    const res = await client.request({ command: "account_info", account: address, ledger_index: "current" });
     const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
+    return { balance: (Number(info.Balance) / 1_000_000).toFixed(6), sequence: info.Sequence };
   } catch (err) {
     if (err.data?.error === "actNotFound") return { balance: "未アクティブ", sequence: "—" };
     throw err;
-  } finally {
-    await client.disconnect();
-  }
+  } finally { await client.disconnect(); }
 }
 
-// ── メインコンポーネント ──────────────────────────────────────────────────────
+// ── QRモーダル ────────────────────────────────────────────────────────────────
+function QRModal({ title, qrUrl, deepLink, onCancel }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+      <div style={{ background: "#fff", borderRadius: 16, padding: "2rem", textAlign: "center", maxWidth: 300, width: "90%" }}>
+        <h2 style={{ marginTop: 0 }}>{title}</h2>
+        <img src={qrUrl} alt="QR Xaman" width={220} style={{ display: "block", margin: "0 auto" }} />
+        <p style={{ fontSize: "0.9rem" }}>モバイルの場合?{" "}<a href={deepLink} rel="noopener noreferrer">Xamanを直接開く</a></p>
+        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>キャンセル</button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [account, setAccount]   = useState(null);
   const [balance, setBalance]   = useState(null);
   const [sequence, setSequence] = useState(null);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
+  const [qrUrl, setQrUrl]       = useState(null);
+  const [deepLink, setDeepLink] = useState(null);
 
-  // SDKに保存済みトークンがあればセッションを復元
   useEffect(() => {
     xumm.on("ready", async () => {
       const me = await xumm.me;
       if (me?.account) {
         setAccount(me.account);
         const info = await getAccountInfo(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
+        setBalance(info.balance); setSequence(info.sequence);
       }
     });
   }, []);
 
   async function connectWithXaman() {
-    setLoading(true);
-    setError(null);
+    setLoading(true); setError(null);
     try {
-      // authorize() がネイティブXamanポップアップ（OAuth2）を開く
-      // SDKがポップアップ内に独自のQRを表示 — 自分で用意する必要なし
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("認証がキャンセルされました");
-      }
-    } catch (err) {
-      console.error("Xamanエラー:", err);
-      setError(\`エラー: \${err.message || "接続できませんでした"}\`);
-    } finally {
-      setLoading(false);
-    }
+      const { created, resolved } = await xumm.payload.createAndSubscribe(
+        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
+        (event) => { if (typeof event.data.signed !== "undefined") return event.data; }
+      );
+      setQrUrl(created.refs.qr_png); setDeepLink(created.next.always);
+      const result = await resolved;
+      setQrUrl(null); setDeepLink(null);
+      if (result.signed) {
+        const p = await xumm.payload.get(created.uuid);
+        setAccount(p.response.account);
+        const info = await getAccountInfo(p.response.account);
+        setBalance(info.balance); setSequence(info.sequence);
+      } else { setError("ログインがユーザーに拒否されました"); }
+    } catch (err) { setError(\`エラー: \${err.message || "接続できませんでした"}\`); }
+    finally { setLoading(false); }
   }
+
+  function cancel() { setQrUrl(null); setDeepLink(null); setLoading(false); }
 
   async function disconnect() {
     await xumm.logout();
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
+    setAccount(null); setBalance(null); setSequence(null);
   }
 
-  // ── レンダリング ────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 480, margin: "0 auto" }}>
-      <h1>Xaman Login — ネイティブポップアップ</h1>
-
+      <h1>Xaman Login — QRモーダル</h1>
       {account ? (
         <div>
           <p>✅ 接続済み</p>
           <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
             <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>アカウント</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>残高</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>シーケンス</td>
-                <td>{sequence}</td>
-              </tr>
+              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>アカウント</td><td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td></tr>
+              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>残高</td><td><strong>{balance} XAH</strong></td></tr>
+              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>シーケンス</td><td>{sequence}</td></tr>
             </tbody>
           </table>
           <button onClick={disconnect}>切断</button>
@@ -1407,9 +1014,17 @@ export default function App() {
         <div>
           {error && <p style={{ color: "red" }}>{error}</p>}
           <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Xamanを開いています..." : "🔑 Xamanで接続"}
+            {loading ? "QRを生成中..." : "🔑 Xamanで接続"}
           </button>
         </div>
+      )}
+      {qrUrl && (
+        <QRModal
+          title="Xamanでサインイン"
+          qrUrl={qrUrl}
+          deepLink={deepLink}
+          onCancel={cancel}
+        />
       )}
     </div>
   );
@@ -1664,2294 +1279,25 @@ const txid   = result.txid;                              // トランザクシ�
       codeBlocks: [
         {
           title: {
-            es: "Componente completo: Login + formulario de pago",
-            en: "Complete component: Login + payment form",
-            jp: "完全なコンポーネント：ログイン＋支払いフォーム",
+            es: "Instalación y configuración básica del proyecto",
+            en: "SDK installation and project basic setup",
+            jp: "SDKのインストールとプロジェクトの基本設定",
           },
-          language: "javascript",
+          language: "bash",
           code: {
-            es: `// src/App.jsx — sustituye TODO el contenido del archivo por este código
-// ANTES DE EJECUTAR:
-// 1. npm install xumm xahau
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173 o la URL de tu web ejecutandose
-// Añade la API Key de tu app en la variable xumm = new Xumm("TU_API_KEY_AQUI");
-
-import { useState } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("TU_API_KEY_AQUI");
-
-// ── Obtiene balance y secuencia del ledger ────────────────────────────────────
-async function obtenerInfoCuenta(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "no activada", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── Convierte XAH a drops ─────────────────────────────────────────────────────
-function xahToDrops(xah) {
-  return String(Math.floor(Number(xah) * 1_000_000));
-}
-
-// ── Valida dirección r... ─────────────────────────────────────────────────────
-function esRAddressValida(address) {
-  return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
-}
-
-// ── Modal con el QR ────────────────────────────────────────────────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "2rem",
-        textAlign: "center", maxWidth: 300, width: "90%",
-      }}>
-        <h2 style={{ marginTop: 0 }}>Escanea con Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220}
-          style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>
-          ¿En móvil?{" "}
-          <a href={deepLink} rel="noopener noreferrer">Abre Xaman directamente</a>
-        </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancelar</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [qrUrl, setQrUrl]       = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-
-  const [destino, setDestino]   = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [txid, setTxid]         = useState(null);
-  const [txStatus, setTxStatus] = useState(null);
-
-  // ── Login ────────────────────────────────────────────────────────────────────
-  async function conectarConXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        const userAccount = payloadResult.response.account;
-        setAccount(userAccount);
-
-        const info = await obtenerInfoCuenta(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Firma rechazada por el usuario");
-      }
-    } catch (err) {
-      console.error("Error Xaman:", err);
-      setError(\`Error: \${err.message || "No se pudo conectar"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Enviar pago ───────────────────────────────────────────────────────────────
-  async function enviarPago(e) {
-    e.preventDefault();
-    setError(null);
-    setTxid(null);
-    setTxStatus(null);
-
-    if (!esRAddressValida(destino)) {
-      setError("Dirección destino inválida (debe empezar por 'r')");
-      return;
-    }
-    if (destino === account) {
-      setError("No puedes enviarte a ti mismo");
-      return;
-    }
-    const cantidadNum = Number(cantidad);
-    if (isNaN(cantidadNum) || cantidadNum <= 0) {
-      setError("Introduce una cantidad válida mayor que 0");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        {
-          txjson: {
-            TransactionType: "Payment",
-            NetworkID: 21338,
-            Account: account,
-            Destination: destino,
-            Amount: xahToDrops(cantidadNum),
-          },
-        },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        setTxid(result.txid);
-        setTxStatus(payloadResult.response.dispatched_result);
-      } else {
-        setError("El usuario rechazó la transacción");
-      }
-    } catch (err) {
-      console.error("Error pago:", err);
-      setError(\`Error: \${err.message || "No se pudo crear el pago"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function cancelar() {
-    setQrUrl(null);
-    setDeepLink(null);
-    setLoading(false);
-  }
-
-  function desconectar() {
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-    setTxid(null);
-    setTxStatus(null);
-    setDestino("");
-    setCantidad("");
-  }
-
-  // ── Renderizado ───────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment Demo</h1>
-
-      {/* Barra de sesión */}
-      {account ? (
-        <div>
-          <p>✅ Conectado</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Cuenta</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Secuencia</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={desconectar}>Desconectar</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={conectarConXaman} disabled={loading}>
-            {loading ? "Generando QR..." : "🔑 Conectar con Xaman"}
-          </button>
-        </div>
-      )}
-
-      {/* Formulario de pago — visible cuando hay sesión y no hay QR activo */}
-      {account && !qrUrl && (
-        <form onSubmit={enviarPago} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Enviar XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Dirección destino:</label>
-            <input
-              type="text"
-              placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              value={destino}
-              onChange={(e) => setDestino(e.target.value)}
-              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Cantidad (XAH):</label>
-            <input
-              type="number"
-              placeholder="0.01"
-              min="0.000001"
-              step="0.000001"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              style={{ width: 160, padding: 8 }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Esperando firma..." : "📤 Enviar pago"}
-          </button>
-        </form>
-      )}
-
-      {/* Resultado del pago */}
-      {txid && (
-        <div style={{
-          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
-          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
-          padding: 16, borderRadius: 8, marginTop: "1.5rem",
-          color: "#ffffff",
-        }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#000000" }}>✅ <strong>¡Pago confirmado!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#000000" }}>Hash de la transacción:</p>
-              <p style={{ margin: "0 0 8px" }}>
-                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#000000" }}>{txid}</code>
-              </p>
-              <a
-                href={\`https://xaman.app/explorer/21338/\${txid}\`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#66ccff" }}
-              >
-                🔍 Ver en Xaman Explorer
-              </a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Resultado: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelar} />}
-    </div>
-  );
-}`,
-            en: `// src/App.jsx — replace ALL the file content with this code
-// BEFORE RUNNING:
-// 1. npm install xumm xahau
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173 or the URL your web is running on
-// Add your app's API Key in the variable xumm = new Xumm("YOUR_API_KEY_HERE");
-
-import { useState } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-// ── Fetch balance and sequence from the ledger ────────────────────────────────
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "not activated", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── Convert XAH to drops ──────────────────────────────────────────────────────
-function xahToDrops(xah) {
-  return String(Math.floor(Number(xah) * 1_000_000));
-}
-
-// ── Validate r... address ─────────────────────────────────────────────────────
-function isValidRAddress(address) {
-  return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
-}
-
-// ── QR Modal ──────────────────────────────────────────────────────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "2rem",
-        textAlign: "center", maxWidth: 300, width: "90%",
-      }}>
-        <h2 style={{ marginTop: 0 }}>Scan with Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220}
-          style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>
-          On mobile?{" "}
-          <a href={deepLink} rel="noopener noreferrer">Open Xaman directly</a>
-        </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [qrUrl, setQrUrl]       = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount]           = useState("");
-  const [txid, setTxid]               = useState(null);
-  const [txStatus, setTxStatus]       = useState(null);
-
-  // ── Login ─────────────────────────────────────────────────────────────────
-  async function connectWithXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        const userAccount = payloadResult.response.account;
-        setAccount(userAccount);
-
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Signature rejected by the user");
-      }
-    } catch (err) {
-      console.error("Xaman error:", err);
-      setError(\`Error: \${err.message || "Could not connect"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Send payment ──────────────────────────────────────────────────────────
-  async function sendPayment(e) {
-    e.preventDefault();
-    setError(null);
-    setTxid(null);
-    setTxStatus(null);
-
-    if (!isValidRAddress(destination)) {
-      setError("Invalid destination address (must start with 'r')");
-      return;
-    }
-    if (destination === account) {
-      setError("You cannot send to yourself");
-      return;
-    }
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setError("Enter a valid amount greater than 0");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        {
-          txjson: {
-            TransactionType: "Payment",
-            NetworkID: 21338,
-            Account: account,
-            Destination: destination,
-            Amount: xahToDrops(amountNum),
-          },
-        },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        setTxid(result.txid);
-        setTxStatus(payloadResult.response.dispatched_result);
-      } else {
-        setError("The user rejected the transaction");
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(\`Error: \${err.message || "Could not create the payment"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function cancel() {
-    setQrUrl(null);
-    setDeepLink(null);
-    setLoading(false);
-  }
-
-  function disconnect() {
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-    setTxid(null);
-    setTxStatus(null);
-    setDestination("");
-    setAmount("");
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment Demo</h1>
-
-      {/* Session bar */}
-      {account ? (
-        <div>
-          <p>✅ Connected</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Account</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Sequence</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>Disconnect</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Generating QR..." : "🔑 Connect with Xaman"}
-          </button>
-        </div>
-      )}
-
-      {/* Payment form — visible when logged in and no active QR */}
-      {account && !qrUrl && (
-        <form onSubmit={sendPayment} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Send XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Destination address:</label>
-            <input
-              type="text"
-              placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Amount (XAH):</label>
-            <input
-              type="number"
-              placeholder="0.01"
-              min="0.000001"
-              step="0.000001"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              style={{ width: 160, padding: 8 }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Waiting for signature..." : "📤 Send payment"}
-          </button>
-        </form>
-      )}
-
-      {/* Payment result */}
-      {txid && (
-        <div style={{
-          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
-          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
-          padding: 16, borderRadius: 8, marginTop: "1.5rem",
-          color: "#ffffff",
-        }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>Payment confirmed!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>Transaction hash:</p>
-              <p style={{ margin: "0 0 8px" }}>
-                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code>
-              </p>
-              <a
-                href={\`https://xaman.app/explorer/21338/\${txid}\`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#66ccff" }}
-              >
-                🔍 View on Xaman Explorer
-              </a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Result: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancel} />}
-    </div>
-  );
-}`,
-            jp: `// src/App.jsx — replace ALL the file content with this code
-// BEFORE RUNNING:
-// 1. npm install xumm xahau
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173 or the URL your web is running on
-// Add your app's API Key in the variable xumm = new Xumm("YOUR_API_KEY_HERE");
-
-import { useState } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({ command: "account_info", account: address, ledger_index: "current" });
-    const info = res.result.account_data;
-    return { balance: (Number(info.Balance) / 1_000_000).toFixed(6), sequence: info.Sequence };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "not activated", sequence: "—" };
-    throw err;
-  } finally { await client.disconnect(); }
-}
-
-function xahToDrops(xah) { return String(Math.floor(Number(xah) * 1_000_000)); }
-function isValidRAddress(address) { return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address); }
-
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-      <div style={{ background: "#fff", borderRadius: 16, padding: "2rem", textAlign: "center", maxWidth: 300, width: "90%" }}>
-        <h2 style={{ marginTop: 0 }}>Scan with Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220} style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>On mobile? <a href={deepLink} rel="noopener noreferrer">Open Xaman directly</a></p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  const [account, setAccount] = useState(null);
-  const [balance, setBalance] = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [qrUrl, setQrUrl] = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount] = useState("");
-  const [txid, setTxid] = useState(null);
-  const [txStatus, setTxStatus] = useState(null);
-
-  async function connectWithXaman() {
-    setLoading(true); setError(null);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "SignIn", NetworkID: 21338 } },
-        (event) => { if (typeof event.data.signed !== "undefined") return event.data; }
-      );
-      setQrUrl(created.refs.qr_png); setDeepLink(created.next.always);
-      const result = await resolved;
-      setQrUrl(null); setDeepLink(null);
-      if (result.signed) {
-        const p = await xumm.payload.get(created.uuid);
-        setAccount(p.response.account);
-        const info = await getAccountInfo(p.response.account);
-        setBalance(info.balance); setSequence(info.sequence);
-      } else { setError("Signature rejected by the user"); }
-    } catch (err) { setError(\`Error: \${err.message || "Could not connect"}\`); }
-    finally { setLoading(false); }
-  }
-
-  async function sendPayment(e) {
-    e.preventDefault(); setError(null); setTxid(null); setTxStatus(null);
-    if (!isValidRAddress(destination)) { setError("Invalid destination address"); return; }
-    if (destination === account) { setError("You cannot send to yourself"); return; }
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) { setError("Enter a valid amount greater than 0"); return; }
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "Payment", NetworkID: 21338, Account: account, Destination: destination, Amount: xahToDrops(amountNum) } },
-        (event) => { if (typeof event.data.signed !== "undefined") return event.data; }
-      );
-      setQrUrl(created.refs.qr_png); setDeepLink(created.next.always);
-      const result = await resolved;
-      setQrUrl(null); setDeepLink(null);
-      if (result.signed) {
-        const p = await xumm.payload.get(created.uuid);
-        setTxid(result.txid); setTxStatus(p.response.dispatched_result);
-      } else { setError("The user rejected the transaction"); }
-    } catch (err) { setError(\`Error: \${err.message || "Could not create the payment"}\`); }
-    finally { setLoading(false); }
-  }
-
-  function cancel() { setQrUrl(null); setDeepLink(null); setLoading(false); }
-  function disconnect() { setAccount(null); setBalance(null); setSequence(null); setTxid(null); setTxStatus(null); setDestination(""); setAmount(""); }
-
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment Demo</h1>
-      {account ? (
-        <div>
-          <p>✅ Connected</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Account</td><td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td></tr>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td><td><strong>{balance} XAH</strong></td></tr>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Sequence</td><td>{sequence}</td></tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>Disconnect</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>{loading ? "Generating QR..." : "🔑 Connect with Xaman"}</button>
-        </div>
-      )}
-      {account && !qrUrl && (
-        <form onSubmit={sendPayment} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Send XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Destination address:</label>
-            <input type="text" placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" value={destination} onChange={(e) => setDestination(e.target.value)} style={{ width: "100%", padding: 8, boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Amount (XAH):</label>
-            <input type="number" placeholder="0.01" min="0.000001" step="0.000001" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 160, padding: 8 }} />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>{loading ? "Waiting for signature..." : "📤 Send payment"}</button>
-        </form>
-      )}
-      {txid && (
-        <div style={{ background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a", border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`, padding: 16, borderRadius: 8, marginTop: "1.5rem", color: "#ffffff" }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>Payment confirmed!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>Transaction hash:</p>
-              <p style={{ margin: "0 0 8px" }}><code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code></p>
-              <a href={\`https://xaman.app/explorer/21338/\${txid}\`} target="_blank" rel="noopener noreferrer" style={{ color: "#66ccff" }}>🔍 View on Xaman Explorer</a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Result: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancel} />}
-    </div>
-  );
-}`,
-          },
-        },
-        {
-          title: {
-            es: "App.jsx — Login con popup + Payment con popup de firma Xaman",
-            en: "App.jsx — Popup login + Payment with Xaman signing popup",
-            jp: "App.jsx — ポップアップログイン＋Xaman署名ポップアップでPayment",
-          },
-          language: "javascript",
-          code: {
-            es: `// src/App.jsx — Login con popup + Payment con popup de firma Xaman
-// ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
-// Añade la API Key de tu app: xumm = new Xumm("TU_API_KEY_AQUI");
-//
-// ¿POR QUÉ NO SE USA authorize() PARA EL PAGO?
-// xumm.authorize() es solo para login (SignIn OAuth2).
-// Para firmar un Payment hay que usar payload.createAndSubscribe().
-// La diferencia con el ejercicio anterior es que aquí, en vez de mostrar
-// un QRModal propio, abrimos la página de firma de Xaman con window.open().
-// En desktop muestra un QR en xumm.app; en móvil abre la app Xaman.
-
-import { useState, useEffect, useRef } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("TU_API_KEY_AQUI");
-
-function xahToDrops(xah) {
-  return String(Math.floor(Number(xah) * 1_000_000));
-}
-
-function esRAddressValida(address) {
-  return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
-}
-
-async function obtenerInfoCuenta(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "no activada", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-  const [destino, setDestino]   = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [txid, setTxid]         = useState(null);
-  const [txStatus, setTxStatus] = useState(null);
-  const popupRef = useRef(null);
-
-  // Restaurar sesión si el SDK ya tiene un token guardado
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await obtenerInfoCuenta(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  // ── Login: usa el popup OAuth2 nativo de Xaman ────────────────────────────
-  async function conectarConXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await obtenerInfoCuenta(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Autorización cancelada");
-      }
-    } catch (err) {
-      setError(\`Error: \${err.message || "No se pudo conectar"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Pago: createAndSubscribe + window.open en vez de QRModal propio ───────
-  // authorize() NO sirve para esto — es solo para login.
-  // Creamos el payload con createAndSubscribe() y abrimos la URL de firma
-  // de Xaman en un popup del navegador (en vez de mostrar el QR nosotros).
-  async function enviarPago(e) {
-    e.preventDefault();
-    setError(null);
-    setTxid(null);
-    setTxStatus(null);
-
-    if (!esRAddressValida(destino)) {
-      setError("Dirección destino inválida (debe empezar por 'r')");
-      return;
-    }
-    if (destino === account) {
-      setError("No puedes enviarte a ti mismo");
-      return;
-    }
-    const cantidadNum = Number(cantidad);
-    if (isNaN(cantidadNum) || cantidadNum <= 0) {
-      setError("Introduce una cantidad válida mayor que 0");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        {
-          txjson: {
-            TransactionType: "Payment",
-            NetworkID: 21338,
-            Account: account,
-            Destination: destino,
-            Amount: xahToDrops(cantidadNum),
-          },
-        },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      // En vez de <QRModal>, abrimos la página de firma de Xaman en un popup:
-      // - Desktop: muestra un QR en xumm.app para escanear con la app
-      // - Móvil:   redirige directamente a la app Xaman (deep link)
-      popupRef.current = window.open(
-        created.next.always,
-        "xaman-sign",
-        "popup,width=500,height=650,left=300,top=100"
-      );
-
-      const result = await resolved;
-
-      // Cierra el popup si el usuario no lo cerró ya
-      if (popupRef.current && !popupRef.current.closed) {
-        popupRef.current.close();
-      }
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        setTxid(result.txid);
-        setTxStatus(payloadResult.response.dispatched_result);
-      } else {
-        setError("El usuario rechazó la transacción");
-      }
-    } catch (err) {
-      console.error("Error pago:", err);
-      setError(\`Error: \${err.message || "No se pudo crear el pago"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function desconectar() {
-    await xumm.logout();
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-    setTxid(null);
-    setTxStatus(null);
-    setDestino("");
-    setCantidad("");
-  }
-
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment — Popup</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Conectado</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Cuenta</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Secuencia</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={desconectar}>Desconectar</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={conectarConXaman} disabled={loading}>
-            {loading ? "Abriendo Xaman..." : "🔑 Conectar con Xaman"}
-          </button>
-        </div>
-      )}
-
-      {account && (
-        <form onSubmit={enviarPago} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Enviar XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Dirección destino:</label>
-            <input
-              type="text"
-              placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              value={destino}
-              onChange={(e) => setDestino(e.target.value)}
-              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Cantidad (XAH):</label>
-            <input
-              type="number"
-              placeholder="0.01"
-              min="0.000001"
-              step="0.000001"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              style={{ width: 160, padding: 8 }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Esperando firma en Xaman..." : "📤 Enviar pago"}
-          </button>
-        </form>
-      )}
-
-      {txid && (
-        <div style={{
-          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
-          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
-          padding: 16, borderRadius: 8, marginTop: "1.5rem",
-          color: "#ffffff",
-        }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>¡Pago confirmado!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>Hash de la transacción:</p>
-              <p style={{ margin: "0 0 8px" }}>
-                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code>
-              </p>
-              <a
-                href={\`https://xaman.app/explorer/21338/\${txid}\`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#66ccff" }}
-              >
-                🔍 Ver en Xaman Explorer
-              </a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Resultado: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}`,
-            en: `// src/App.jsx — Popup login + Payment with Xaman signing popup
-// BEFORE RUNNING:
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173
-// Add your app's API Key: xumm = new Xumm("YOUR_API_KEY_HERE");
-//
-// WHY NOT authorize() FOR THE PAYMENT?
-// xumm.authorize() is login-only (SignIn OAuth2 flow).
-// To sign a Payment you must use payload.createAndSubscribe().
-// The difference from the previous exercise is that here, instead of showing
-// a custom QRModal, we open Xaman's signing page with window.open().
-// On desktop it shows a QR at xumm.app; on mobile it opens the Xaman app.
-
-import { useState, useEffect, useRef } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-function xahToDrops(xah) {
-  return String(Math.floor(Number(xah) * 1_000_000));
-}
-
-function isValidRAddress(address) {
-  return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
-}
-
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "not activated", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-export default function App() {
-  const [account, setAccount]         = useState(null);
-  const [balance, setBalance]         = useState(null);
-  const [sequence, setSequence]       = useState(null);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState(null);
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount]           = useState("");
-  const [txid, setTxid]               = useState(null);
-  const [txStatus, setTxStatus]       = useState(null);
-  const popupRef = useRef(null);
-
-  // Restore session if the SDK already has a saved token
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await getAccountInfo(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  // ── Login: uses the native Xaman OAuth2 popup ─────────────────────────────
-  async function connectWithXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Authorization cancelled");
-      }
-    } catch (err) {
-      setError(\`Error: \${err.message || "Could not connect"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Payment: createAndSubscribe + window.open instead of custom QRModal ───
-  // authorize() does NOT work here — it is login-only.
-  // We create the payload with createAndSubscribe() and open Xaman's signing
-  // URL in a browser popup instead of displaying the QR ourselves.
-  async function sendPayment(e) {
-    e.preventDefault();
-    setError(null);
-    setTxid(null);
-    setTxStatus(null);
-
-    if (!isValidRAddress(destination)) {
-      setError("Invalid destination address (must start with 'r')");
-      return;
-    }
-    if (destination === account) {
-      setError("You cannot send to yourself");
-      return;
-    }
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setError("Enter a valid amount greater than 0");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        {
-          txjson: {
-            TransactionType: "Payment",
-            NetworkID: 21338,
-            Account: account,
-            Destination: destination,
-            Amount: xahToDrops(amountNum),
-          },
-        },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      // Instead of <QRModal>, open Xaman's signing page in a browser popup:
-      // - Desktop: shows a QR at xumm.app — user scans with the app
-      // - Mobile:  redirects directly to the Xaman app (deep link)
-      popupRef.current = window.open(
-        created.next.always,
-        "xaman-sign",
-        "popup,width=500,height=650,left=300,top=100"
-      );
-
-      const result = await resolved;
-
-      // Close the popup if the user didn't already close it
-      if (popupRef.current && !popupRef.current.closed) {
-        popupRef.current.close();
-      }
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        setTxid(result.txid);
-        setTxStatus(payloadResult.response.dispatched_result);
-      } else {
-        setError("The user rejected the transaction");
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(\`Error: \${err.message || "Could not create the payment"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function disconnect() {
-    await xumm.logout();
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-    setTxid(null);
-    setTxStatus(null);
-    setDestination("");
-    setAmount("");
-  }
-
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment — Popup</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Connected</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Account</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Sequence</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>Disconnect</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Opening Xaman..." : "🔑 Connect with Xaman"}
-          </button>
-        </div>
-      )}
-
-      {account && (
-        <form onSubmit={sendPayment} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Send XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Destination address:</label>
-            <input
-              type="text"
-              placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Amount (XAH):</label>
-            <input
-              type="number"
-              placeholder="0.01"
-              min="0.000001"
-              step="0.000001"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              style={{ width: 160, padding: 8 }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Waiting for Xaman signature..." : "📤 Send payment"}
-          </button>
-        </form>
-      )}
-
-      {txid && (
-        <div style={{
-          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
-          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
-          padding: 16, borderRadius: 8, marginTop: "1.5rem",
-          color: "#ffffff",
-        }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>Payment confirmed!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>Transaction hash:</p>
-              <p style={{ margin: "0 0 8px" }}>
-                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code>
-              </p>
-              <a
-                href={\`https://xaman.app/explorer/21338/\${txid}\`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#66ccff" }}
-              >
-                🔍 View on Xaman Explorer
-              </a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Result: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}`,
-            jp: `// src/App.jsx — ポップアップログイン＋Xaman署名ポップアップでPayment
-// 実行前に:
-// apps.xumm.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
-// APIキーを設定: xumm = new Xumm("YOUR_API_KEY_HERE");
-//
-// なぜ支払いにauthorize()を使わないのか？
-// xumm.authorize()はログイン専用（SignIn OAuth2フロー）です。
-// Paymentに署名するにはpayload.createAndSubscribe()が必要です。
-// 前の演習との違いは、カスタムQRModalの代わりにwindow.open()で
-// Xamanの署名ページをポップアップ表示する点です。
-
-import { useState, useEffect, useRef } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-function xahToDrops(xah) { return String(Math.floor(Number(xah) * 1_000_000)); }
-function isValidRAddress(address) { return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address); }
-
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({ command: "account_info", account: address, ledger_index: "current" });
-    const info = res.result.account_data;
-    return { balance: (Number(info.Balance) / 1_000_000).toFixed(6), sequence: info.Sequence };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "未アクティブ", sequence: "—" };
-    throw err;
-  } finally { await client.disconnect(); }
-}
-
-export default function App() {
-  const [account, setAccount]         = useState(null);
-  const [balance, setBalance]         = useState(null);
-  const [sequence, setSequence]       = useState(null);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState(null);
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount]           = useState("");
-  const [txid, setTxid]               = useState(null);
-  const [txStatus, setTxStatus]       = useState(null);
-  const popupRef = useRef(null);
-
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await getAccountInfo(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  // ── ログイン: ネイティブXaman OAuth2ポップアップ ───────────────────────────
-  async function connectWithXaman() {
-    setLoading(true); setError(null);
-    try {
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance); setSequence(info.sequence);
-      } else { setError("認証がキャンセルされました"); }
-    } catch (err) { setError(\`エラー: \${err.message || "接続できませんでした"}\`); }
-    finally { setLoading(false); }
-  }
-
-  // ── 支払い: createAndSubscribe + window.open でXaman署名ページをポップアップ
-  // authorize()はここでは使えません — ログイン専用です。
-  // createAndSubscribe()でペイロードを作成し、QRModalの代わりに
-  // Xamanの署名URLをブラウザポップアップで開きます。
-  async function sendPayment(e) {
-    e.preventDefault(); setError(null); setTxid(null); setTxStatus(null);
-    if (!isValidRAddress(destination)) { setError("無効な宛先アドレス（'r'で始まる必要があります）"); return; }
-    if (destination === account) { setError("自分自身には送れません"); return; }
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) { setError("0より大きい有効な金額を入力してください"); return; }
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "Payment", NetworkID: 21338, Account: account, Destination: destination, Amount: xahToDrops(amountNum) } },
-        (event) => { if (typeof event.data.signed !== "undefined") return event.data; }
-      );
-      // <QRModal>の代わりにXamanの署名ページをブラウザポップアップで開く:
-      // - デスクトップ: xumm.appにQRを表示 — ユーザーがアプリでスキャン
-      // - モバイル:   Xamanアプリに直接リダイレクト（ディープリンク）
-      popupRef.current = window.open(
-        created.next.always,
-        "xaman-sign",
-        "popup,width=500,height=650,left=300,top=100"
-      );
-      const result = await resolved;
-      if (popupRef.current && !popupRef.current.closed) popupRef.current.close();
-      if (result.signed) {
-        const p = await xumm.payload.get(created.uuid);
-        setTxid(result.txid); setTxStatus(p.response.dispatched_result);
-      } else { setError("ユーザーがトランザクションを拒否しました"); }
-    } catch (err) { setError(\`エラー: \${err.message || "支払いを作成できませんでした"}\`); }
-    finally { setLoading(false); }
-  }
-
-  async function disconnect() {
-    await xumm.logout();
-    setAccount(null); setBalance(null); setSequence(null);
-    setTxid(null); setTxStatus(null); setDestination(""); setAmount("");
-  }
-
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment — ポップアップ</h1>
-      {account ? (
-        <div>
-          <p>✅ 接続済み</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>アカウント</td><td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td></tr>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>残高</td><td><strong>{balance} XAH</strong></td></tr>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>シーケンス</td><td>{sequence}</td></tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>切断</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>{loading ? "Xamanを開いています..." : "🔑 Xamanで接続"}</button>
-        </div>
-      )}
-      {account && (
-        <form onSubmit={sendPayment} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>XAHを送る</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>宛先アドレス:</label>
-            <input type="text" placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" value={destination} onChange={(e) => setDestination(e.target.value)} style={{ width: "100%", padding: 8, boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>金額（XAH）:</label>
-            <input type="number" placeholder="0.01" min="0.000001" step="0.000001" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 160, padding: 8 }} />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>{loading ? "Xamanの署名を待っています..." : "📤 支払いを送る"}</button>
-        </form>
-      )}
-      {txid && (
-        <div style={{ background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a", border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`, padding: 16, borderRadius: 8, marginTop: "1.5rem", color: "#ffffff" }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>支払い確認済み！</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>トランザクションハッシュ:</p>
-              <p style={{ margin: "0 0 8px" }}><code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code></p>
-              <a href={\`https://xaman.app/explorer/21338/\${txid}\`} target="_blank" rel="noopener noreferrer" style={{ color: "#66ccff" }}>🔍 Xaman Explorerで表示</a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>結果: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}`,
-          },
-        },
-        {
-          title: {
-            es: "App.jsx — Login con popup + Payment con QR modal en la página",
-            en: "App.jsx — Popup login + Payment with QR modal in the page",
-            jp: "App.jsx — ポップアップログイン＋ページ内QRモーダルでPayment",
-          },
-          language: "javascript",
-          code: {
-            es: `// src/App.jsx — Lo mejor de los dos enfoques:
-// Login con popup authorize() + pago con QR modal inline en tu propia web
-// ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
-// Añade la API Key de tu app: xumm = new Xumm("TU_API_KEY_AQUI");
-//
-// DIFERENCIAS respecto a los ejercicios anteriores:
-// - Login: authorize() abre el popup de Xaman — no necesitas QR propio para eso
-// - Pago: createAndSubscribe() + <QRModal> muestra el QR dentro de tu página
-//   (el usuario NO sale de tu web, escanea directamente desde tu modal)
-
-import { useState, useEffect } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("TU_API_KEY_AQUI");
-
-function xahToDrops(xah) {
-  return String(Math.floor(Number(xah) * 1_000_000));
-}
-
-function esRAddressValida(address) {
-  return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
-}
-
-async function obtenerInfoCuenta(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "no activada", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── Modal con el QR — solo para el pago, el login no lo necesita ──────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "2rem",
-        textAlign: "center", maxWidth: 300, width: "90%",
-      }}>
-        <h2 style={{ marginTop: 0 }}>Escanea con Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220}
-          style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>
-          ¿En móvil?{" "}
-          <a href={deepLink} rel="noopener noreferrer">Abre Xaman directamente</a>
-        </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancelar</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Componente principal ──────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]   = useState(null);
-  const [balance, setBalance]   = useState(null);
-  const [sequence, setSequence] = useState(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState(null);
-
-  // Estado del pago
-  const [destino, setDestino]   = useState("");
-  const [cantidad, setCantidad] = useState("");
-  const [txid, setTxid]         = useState(null);
-  const [txStatus, setTxStatus] = useState(null);
-
-  // Estado del QR modal (solo para el pago)
-  const [qrUrl, setQrUrl]       = useState(null);
-  const [deepLink, setDeepLink] = useState(null);
-
-  // Restaurar sesión si el SDK ya tiene un token guardado
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await obtenerInfoCuenta(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  // ── Login: popup nativo de Xaman (sin QR propio) ──────────────────────────
-  async function conectarConXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await obtenerInfoCuenta(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Autorización cancelada");
-      }
-    } catch (err) {
-      setError(\`Error: \${err.message || "No se pudo conectar"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Pago: QR modal inline en la misma página ──────────────────────────────
-  async function enviarPago(e) {
-    e.preventDefault();
-    setError(null);
-    setTxid(null);
-    setTxStatus(null);
-
-    if (!esRAddressValida(destino)) {
-      setError("Dirección destino inválida (debe empezar por 'r')");
-      return;
-    }
-    if (destino === account) {
-      setError("No puedes enviarte a ti mismo");
-      return;
-    }
-    const cantidadNum = Number(cantidad);
-    if (isNaN(cantidadNum) || cantidadNum <= 0) {
-      setError("Introduce una cantidad válida mayor que 0");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        {
-          txjson: {
-            TransactionType: "Payment",
-            NetworkID: 21338,
-            Account: account,
-            Destination: destino,
-            Amount: xahToDrops(cantidadNum),
-          },
-        },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      // Muestra el QR en el modal inline de tu página
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        setTxid(result.txid);
-        setTxStatus(payloadResult.response.dispatched_result);
-      } else {
-        setError("El usuario rechazó la transacción");
-      }
-    } catch (err) {
-      console.error("Error pago:", err);
-      setError(\`Error: \${err.message || "No se pudo crear el pago"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function cancelarPago() {
-    setQrUrl(null);
-    setDeepLink(null);
-    setLoading(false);
-  }
-
-  async function desconectar() {
-    await xumm.logout();
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-    setTxid(null);
-    setTxStatus(null);
-    setDestino("");
-    setCantidad("");
-  }
-
-  // ── Renderizado ────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment — Modal + Popup</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Conectado</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Cuenta</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Secuencia</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={desconectar}>Desconectar</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={conectarConXaman} disabled={loading}>
-            {loading ? "Abriendo Xaman..." : "🔑 Conectar con Xaman"}
-          </button>
-        </div>
-      )}
-
-      {/* Formulario de pago — visible cuando hay sesión y el modal no está abierto */}
-      {account && !qrUrl && (
-        <form onSubmit={enviarPago} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Enviar XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Dirección destino:</label>
-            <input
-              type="text"
-              placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              value={destino}
-              onChange={(e) => setDestino(e.target.value)}
-              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Cantidad (XAH):</label>
-            <input
-              type="number"
-              placeholder="0.01"
-              min="0.000001"
-              step="0.000001"
-              value={cantidad}
-              onChange={(e) => setCantidad(e.target.value)}
-              style={{ width: 160, padding: 8 }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Generando QR del pago..." : "📤 Enviar pago"}
-          </button>
-        </form>
-      )}
-
-      {/* Resultado del pago */}
-      {txid && (
-        <div style={{
-          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
-          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
-          padding: 16, borderRadius: 8, marginTop: "1.5rem",
-          color: "#ffffff",
-        }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>¡Pago confirmado!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>Hash de la transacción:</p>
-              <p style={{ margin: "0 0 8px" }}>
-                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code>
-              </p>
-              <a
-                href={\`https://xaman.app/explorer/21338/\${txid}\`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#66ccff" }}
-              >
-                🔍 Ver en Xaman Explorer
-              </a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Resultado: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-
-      {/* QR modal — aparece solo al firmar el pago */}
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelarPago} />}
-    </div>
-  );
-}`,
-            en: `// src/App.jsx — The best of both approaches:
-// Popup login with authorize() + Payment with inline QR modal in your page
-// BEFORE RUNNING:
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173
-// Add your app's API Key: xumm = new Xumm("YOUR_API_KEY_HERE");
-//
-// DIFFERENCES from previous exercises:
-// - Login: authorize() opens the Xaman popup — no custom QR needed for login
-// - Payment: createAndSubscribe() + <QRModal> shows the QR inside your page
-//   (the user does NOT leave your site, they scan directly from your modal)
-
-import { useState, useEffect } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-function xahToDrops(xah) {
-  return String(Math.floor(Number(xah) * 1_000_000));
-}
-
-function isValidRAddress(address) {
-  return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address);
-}
-
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "current",
-    });
-    const info = res.result.account_data;
-    return {
-      balance: (Number(info.Balance) / 1_000_000).toFixed(6),
-      sequence: info.Sequence,
-    };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "not activated", sequence: "—" };
-    throw err;
-  } finally {
-    await client.disconnect();
-  }
-}
-
-// ── QR Modal — only for payment, login doesn't need it ───────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{
-      position: "fixed", inset: 0,
-      background: "rgba(0,0,0,0.75)",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      zIndex: 1000,
-    }}>
-      <div style={{
-        background: "#fff", borderRadius: 16, padding: "2rem",
-        textAlign: "center", maxWidth: 300, width: "90%",
-      }}>
-        <h2 style={{ marginTop: 0 }}>Scan with Xaman</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220}
-          style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>
-          On mobile?{" "}
-          <a href={deepLink} rel="noopener noreferrer">Open Xaman directly</a>
-        </p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-export default function App() {
-  const [account, setAccount]         = useState(null);
-  const [balance, setBalance]         = useState(null);
-  const [sequence, setSequence]       = useState(null);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState(null);
-
-  // Payment state
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount]           = useState("");
-  const [txid, setTxid]               = useState(null);
-  const [txStatus, setTxStatus]       = useState(null);
-
-  // QR modal state (payment only)
-  const [qrUrl, setQrUrl]             = useState(null);
-  const [deepLink, setDeepLink]       = useState(null);
-
-  // Restore session if the SDK already has a saved token
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await getAccountInfo(me.account);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  // ── Login: native Xaman popup (no custom QR needed) ───────────────────────
-  async function connectWithXaman() {
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance);
-        setSequence(info.sequence);
-      } else {
-        setError("Authorization cancelled");
-      }
-    } catch (err) {
-      setError(\`Error: \${err.message || "Could not connect"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  // ── Payment: inline QR modal in the same page ─────────────────────────────
-  async function sendPayment(e) {
-    e.preventDefault();
-    setError(null);
-    setTxid(null);
-    setTxStatus(null);
-
-    if (!isValidRAddress(destination)) {
-      setError("Invalid destination address (must start with 'r')");
-      return;
-    }
-    if (destination === account) {
-      setError("You cannot send to yourself");
-      return;
-    }
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) {
-      setError("Enter a valid amount greater than 0");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        {
-          txjson: {
-            TransactionType: "Payment",
-            NetworkID: 21338,
-            Account: account,
-            Destination: destination,
-            Amount: xahToDrops(amountNum),
-          },
-        },
-        (event) => {
-          if (typeof event.data.signed !== "undefined") return event.data;
-        }
-      );
-
-      // Show the QR in the inline modal of your page
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-
-      const result = await resolved;
-      setQrUrl(null);
-      setDeepLink(null);
-
-      if (result.signed) {
-        const payloadResult = await xumm.payload.get(created.uuid);
-        setTxid(result.txid);
-        setTxStatus(payloadResult.response.dispatched_result);
-      } else {
-        setError("The user rejected the transaction");
-      }
-    } catch (err) {
-      console.error("Payment error:", err);
-      setError(\`Error: \${err.message || "Could not create the payment"}\`);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function cancelPayment() {
-    setQrUrl(null);
-    setDeepLink(null);
-    setLoading(false);
-  }
-
-  async function disconnect() {
-    await xumm.logout();
-    setAccount(null);
-    setBalance(null);
-    setSequence(null);
-    setTxid(null);
-    setTxStatus(null);
-    setDestination("");
-    setAmount("");
-  }
-
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment — Modal + Popup</h1>
-
-      {account ? (
-        <div>
-          <p>✅ Connected</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Account</td>
-                <td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Balance</td>
-                <td><strong>{balance} XAH</strong></td>
-              </tr>
-              <tr>
-                <td style={{ padding: "6px 12px 6px 0", color: "#666" }}>Sequence</td>
-                <td>{sequence}</td>
-              </tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>Disconnect</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>
-            {loading ? "Opening Xaman..." : "🔑 Connect with Xaman"}
-          </button>
-        </div>
-      )}
-
-      {/* Payment form — visible when logged in and QR modal is not open */}
-      {account && !qrUrl && (
-        <form onSubmit={sendPayment} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>Send XAH</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Destination address:</label>
-            <input
-              type="text"
-              placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-              value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-              style={{ width: "100%", padding: 8, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>Amount (XAH):</label>
-            <input
-              type="number"
-              placeholder="0.01"
-              min="0.000001"
-              step="0.000001"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              style={{ width: 160, padding: 8 }}
-            />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>
-            {loading ? "Generating payment QR..." : "📤 Send payment"}
-          </button>
-        </form>
-      )}
-
-      {/* Payment result */}
-      {txid && (
-        <div style={{
-          background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a",
-          border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`,
-          padding: 16, borderRadius: 8, marginTop: "1.5rem",
-          color: "#ffffff",
-        }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>Payment confirmed!</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>Transaction hash:</p>
-              <p style={{ margin: "0 0 8px" }}>
-                <code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code>
-              </p>
-              <a
-                href={\`https://xaman.app/explorer/21338/\${txid}\`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#66ccff" }}
-              >
-                🔍 View on Xaman Explorer
-              </a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>Result: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-
-      {/* QR modal — only appears when signing the payment */}
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelPayment} />}
-    </div>
-  );
-}`,
-            jp: `// src/App.jsx — 両アプローチのベスト：
-// authorize()ポップアップログイン＋ページ内QRモーダルでPayment
-// 実行前に:
-// apps.xumm.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
-// APIキーを設定: xumm = new Xumm("YOUR_API_KEY_HERE");
-//
-// 前の演習との違い:
-// - ログイン: authorize()がXamanポップアップを開く — 独自QR不要
-// - 支払い: createAndSubscribe() + <QRModal> でQRをページ内に表示
-//   （ユーザーはサイトを離れず、モーダルから直接スキャン）
-
-import { useState, useEffect } from "react";
-import { Xumm } from "xumm";
-import { Client } from "xahau";
-
-const xumm = new Xumm("YOUR_API_KEY_HERE");
-
-function xahToDrops(xah) { return String(Math.floor(Number(xah) * 1_000_000)); }
-function isValidRAddress(address) { return /^r[1-9A-HJ-NP-Za-km-z]{24,33}$/.test(address); }
-
-async function getAccountInfo(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  try {
-    const res = await client.request({ command: "account_info", account: address, ledger_index: "current" });
-    const info = res.result.account_data;
-    return { balance: (Number(info.Balance) / 1_000_000).toFixed(6), sequence: info.Sequence };
-  } catch (err) {
-    if (err.data?.error === "actNotFound") return { balance: "未アクティブ", sequence: "—" };
-    throw err;
-  } finally { await client.disconnect(); }
-}
-
-// ── QRモーダル — 支払い専用、ログインには不要 ─────────────────────────────────
-function QRModal({ qrUrl, deepLink, onCancel }) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-      <div style={{ background: "#fff", borderRadius: 16, padding: "2rem", textAlign: "center", maxWidth: 300, width: "90%" }}>
-        <h2 style={{ marginTop: 0 }}>Xamanでスキャン</h2>
-        <img src={qrUrl} alt="QR Xaman" width={220} style={{ display: "block", margin: "0 auto" }} />
-        <p style={{ fontSize: "0.9rem" }}>モバイルの場合?{" "}<a href={deepLink} rel="noopener noreferrer">Xamanを直接開く</a></p>
-        <button onClick={onCancel} style={{ marginTop: "0.5rem" }}>キャンセル</button>
-      </div>
-    </div>
-  );
-}
-
-export default function App() {
-  const [account, setAccount]         = useState(null);
-  const [balance, setBalance]         = useState(null);
-  const [sequence, setSequence]       = useState(null);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState(null);
-  const [destination, setDestination] = useState("");
-  const [amount, setAmount]           = useState("");
-  const [txid, setTxid]               = useState(null);
-  const [txStatus, setTxStatus]       = useState(null);
-  const [qrUrl, setQrUrl]             = useState(null);
-  const [deepLink, setDeepLink]       = useState(null);
-
-  useEffect(() => {
-    xumm.on("ready", async () => {
-      const me = await xumm.me;
-      if (me?.account) {
-        setAccount(me.account);
-        const info = await getAccountInfo(me.account);
-        setBalance(info.balance); setSequence(info.sequence);
-      }
-    });
-  }, []);
-
-  // ── ログイン: ネイティブXamanポップアップ（独自QR不要） ──────────────────
-  async function connectWithXaman() {
-    setLoading(true); setError(null);
-    try {
-      const result = await xumm.authorize();
-      if (result) {
-        const userAccount = result.me?.account;
-        setAccount(userAccount);
-        const info = await getAccountInfo(userAccount);
-        setBalance(info.balance); setSequence(info.sequence);
-      } else { setError("認証がキャンセルされました"); }
-    } catch (err) { setError(\`エラー: \${err.message || "接続できませんでした"}\`); }
-    finally { setLoading(false); }
-  }
-
-  // ── 支払い: 同じページのインラインQRモーダル ──────────────────────────────
-  async function sendPayment(e) {
-    e.preventDefault(); setError(null); setTxid(null); setTxStatus(null);
-    if (!isValidRAddress(destination)) { setError("無効な宛先アドレス（'r'で始まる必要があります）"); return; }
-    if (destination === account) { setError("自分自身には送れません"); return; }
-    const amountNum = Number(amount);
-    if (isNaN(amountNum) || amountNum <= 0) { setError("0より大きい有効な金額を入力してください"); return; }
-    setLoading(true);
-    try {
-      const { created, resolved } = await xumm.payload.createAndSubscribe(
-        { txjson: { TransactionType: "Payment", NetworkID: 21338, Account: account, Destination: destination, Amount: xahToDrops(amountNum) } },
-        (event) => { if (typeof event.data.signed !== "undefined") return event.data; }
-      );
-      setQrUrl(created.refs.qr_png);
-      setDeepLink(created.next.always);
-      const result = await resolved;
-      setQrUrl(null); setDeepLink(null);
-      if (result.signed) {
-        const p = await xumm.payload.get(created.uuid);
-        setTxid(result.txid); setTxStatus(p.response.dispatched_result);
-      } else { setError("ユーザーがトランザクションを拒否しました"); }
-    } catch (err) { setError(\`エラー: \${err.message || "支払いを作成できませんでした"}\`); }
-    finally { setLoading(false); }
-  }
-
-  function cancelPayment() { setQrUrl(null); setDeepLink(null); setLoading(false); }
-
-  async function disconnect() {
-    await xumm.logout();
-    setAccount(null); setBalance(null); setSequence(null);
-    setTxid(null); setTxStatus(null); setDestination(""); setAmount("");
-  }
-
-  return (
-    <div style={{ padding: "2rem", fontFamily: "sans-serif", maxWidth: 520, margin: "0 auto" }}>
-      <h1>💸 Xahau Payment — モーダル＋ポップアップ</h1>
-      {account ? (
-        <div>
-          <p>✅ 接続済み</p>
-          <table style={{ borderCollapse: "collapse", width: "100%", marginBottom: "1rem" }}>
-            <tbody>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>アカウント</td><td><code style={{ wordBreak: "break-all", fontSize: "0.85rem" }}>{account}</code></td></tr>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>残高</td><td><strong>{balance} XAH</strong></td></tr>
-              <tr><td style={{ padding: "6px 12px 6px 0", color: "#666" }}>シーケンス</td><td>{sequence}</td></tr>
-            </tbody>
-          </table>
-          <button onClick={disconnect}>切断</button>
-        </div>
-      ) : (
-        <div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button onClick={connectWithXaman} disabled={loading}>{loading ? "Xamanを開いています..." : "🔑 Xamanで接続"}</button>
-        </div>
-      )}
-      {account && !qrUrl && (
-        <form onSubmit={sendPayment} style={{ marginTop: "1.5rem", borderTop: "1px solid #ddd", paddingTop: "1.5rem" }}>
-          <h2 style={{ marginTop: 0 }}>XAHを送る</h2>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>宛先アドレス:</label>
-            <input type="text" placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" value={destination} onChange={(e) => setDestination(e.target.value)} style={{ width: "100%", padding: 8, boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", marginBottom: 4 }}>金額（XAH）:</label>
-            <input type="number" placeholder="0.01" min="0.000001" step="0.000001" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 160, padding: 8 }} />
-          </div>
-          {error && <p style={{ color: "red" }}>{error}</p>}
-          <button type="submit" disabled={loading}>{loading ? "支払いQRを生成中..." : "📤 支払いを送る"}</button>
-        </form>
-      )}
-      {txid && (
-        <div style={{ background: txStatus === "tesSUCCESS" ? "#1a3a1a" : "#3a1a1a", border: \`1px solid \${txStatus === "tesSUCCESS" ? "#4caf50" : "#e53935"}\`, padding: 16, borderRadius: 8, marginTop: "1.5rem", color: "#ffffff" }}>
-          {txStatus === "tesSUCCESS" ? (
-            <>
-              <p style={{ margin: "0 0 8px", color: "#4caf50" }}>✅ <strong>支払い確認済み！</strong></p>
-              <p style={{ margin: "0 0 4px", fontSize: "0.85rem", color: "#cccccc" }}>トランザクションハッシュ:</p>
-              <p style={{ margin: "0 0 8px" }}><code style={{ fontSize: "0.75rem", wordBreak: "break-all", color: "#ffffff" }}>{txid}</code></p>
-              <a href={\`https://xaman.app/explorer/21338/\${txid}\`} target="_blank" rel="noopener noreferrer" style={{ color: "#66ccff" }}>🔍 Xaman Explorerで表示</a>
-            </>
-          ) : (
-            <p style={{ margin: 0, color: "#ff8080" }}>⚠️ <strong>結果: {txStatus}</strong></p>
-          )}
-        </div>
-      )}
-      {qrUrl && <QRModal qrUrl={qrUrl} deepLink={deepLink} onCancel={cancelPayment} />}
-    </div>
-  );
-}`,
+            es: `# No hay necesitar de ejecutar esta parte si ya lo has hecho en la sección anterior
+npm create vite@latest xaman-login -- --template react
+cd xaman-login
+npm install xumm xahau
+# Después de modificar src/App.jsx ejecutar:
+npm run dev`,
+            en: `# No need to run this part if you already did it in the previous step
+npm create vite@latest xaman-login -- --template react
+cd xaman-login
+npm install xumm xahau
+# After modifying src/App.jsx run:
+npm run dev`,
+            jp: ``,
           },
         },
         {
