@@ -1,6 +1,8 @@
-# ⬡ Xahau Academy
+# ⬡ Learn AcadXahauemy
 
 Open-source, multilingual training portal for learning Xahau blockchain development.
+
+[https://learnxahau.inftf.org](https://learnxahau.inftf.org).
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Languages](https://img.shields.io/badge/languages-ES%20%7C%20EN%20%7C%20JP-blue)
