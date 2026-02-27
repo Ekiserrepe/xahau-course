@@ -1,4 +1,4 @@
-# ⬡ Learn AcadXahauemy
+# ⬡ Learn Xahau
 
 Open-source, multilingual training portal for learning Xahau blockchain development.
 
@@ -69,4 +69,4 @@ MIT — Use freely for education and community building.
 
 ## Credits
 
-Built for the Xahau developer community. Learn more about Xahau at [xahau.network](https://xahau.network).
+Built for the Xahau developer community by INFTF. Learn more about Xahau at [xahau.network](https://xahau.network).
