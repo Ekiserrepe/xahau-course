@@ -38,22 +38,22 @@ export default function LessonView({
     <div className="min-h-screen" style={{ background: 'var(--color-bg)', color: 'var(--color-text)' }}>
       {/* Lesson header */}
       <header
-        className="px-6 py-4 border-b"
+        className="px-4 sm:px-6 py-3 sm:py-4 border-b"
         style={{ background: 'var(--color-surface)', borderColor: 'var(--color-border-light)' }}
       >
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--color-text-muted)' }}>
-              ← {labels.allModules}
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <button onClick={onBack} className="flex items-center gap-1.5 text-sm font-medium shrink-0" style={{ color: 'var(--color-text-muted)' }}>
+              ← <span className="hidden sm:inline">{labels.allModules}</span>
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               {/* Language selector */}
               <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
-                {['es', 'en'].map((l) => (
+                {['en', 'es'].map((l) => (
                   <button
                     key={l}
                     onClick={() => setLang(l)}
-                    className="px-3 py-1.5 text-sm font-bold uppercase transition-all"
+                    className="px-2.5 py-1 text-xs font-bold uppercase transition-all"
                     style={{
                       background: lang === l ? 'var(--color-accent)' : 'transparent',
                       color: lang === l ? '#000' : 'var(--color-text-dim)',
@@ -66,7 +66,7 @@ export default function LessonView({
               {/* Theme toggle */}
               <button
                 onClick={onToggleTheme}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-base transition-all"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-sm transition-all"
                 style={{
                   background: 'var(--color-button-bg)',
                   border: '1px solid var(--color-border)',
@@ -75,30 +75,30 @@ export default function LessonView({
               >
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
-              {/* Lesson position indicator */}
-              <span className="text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--color-icon-bg)', color: 'var(--color-text-muted)' }}>
+              {/* Lesson position indicator — hidden on small screens */}
+              <span className="hidden sm:inline text-xs font-bold px-2.5 py-1 rounded-lg" style={{ background: 'var(--color-icon-bg)', color: 'var(--color-text-muted)' }}>
                 {labels.module} {moduleIdx}/{totalModules} — {labels.theory} {lessonNumber}/{totalLessons}
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-2xl">{mod.icon}</span>
-            <div>
-              <div className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+            <span className="text-xl sm:text-2xl shrink-0">{mod.icon}</span>
+            <div className="min-w-0">
+              <div className="text-xs font-bold uppercase tracking-wider truncate" style={{ color: 'var(--color-text-muted)' }}>
                 {mod.title[lang]}
               </div>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-heading)' }}>{lesson.title[lang]}</h2>
+              <h2 className="text-base sm:text-xl font-bold leading-tight" style={{ color: 'var(--color-text-heading)' }}>{lesson.title[lang]}</h2>
             </div>
           </div>
 
           {/* Lesson navigation pills */}
-          <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-2 mt-3 flex-wrap">
             {mod.lessons.map((l, idx) => (
               <button
                 key={l.id}
                 onClick={() => onGoToLesson(idx)}
-                className="text-xs px-3 py-1.5 rounded-full font-medium transition-all"
+                className="text-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full font-medium transition-all"
                 style={{
                   background: idx === lessonIdx ? 'var(--color-accent)' : 'var(--color-button-bg)',
                   color: idx === lessonIdx ? '#000' : 'var(--color-text-muted)',
@@ -125,7 +125,7 @@ export default function LessonView({
                     }
                   }}
                   disabled={tab.disabled}
-                  className="px-4 py-2 rounded-t-lg text-sm font-medium transition-all flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2 rounded-t-lg text-xs sm:text-sm font-medium transition-all flex items-center gap-1 sm:gap-2"
                   style={{
                     background: isActive ? 'var(--color-surface-alt)' : 'transparent',
                     color: tab.disabled ? 'var(--color-text-faint)' : isActive ? 'var(--color-accent)' : 'var(--color-text-muted)',
@@ -143,10 +143,10 @@ export default function LessonView({
       </header>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
         {activeTab === 'theory' && (
           <div
-            className="rounded-2xl p-6 md:p-8"
+            className="rounded-2xl p-4 sm:p-6 md:p-8"
             style={{
               background: `linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-alt) 100%)`,
               border: '1px solid var(--color-border)',
@@ -165,11 +165,11 @@ export default function LessonView({
         )}
 
         {/* Bottom actions */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-8 pt-6 border-t" style={{ borderColor: 'var(--color-border-light)' }}>
           <button
             onClick={onPrev}
             disabled={!hasPrev}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+            className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-center"
             style={{
               background: !hasPrev ? 'var(--color-button-disabled-bg)' : 'var(--color-button-bg)',
               color: !hasPrev ? 'var(--color-text-faint)' : 'var(--color-text-secondary)',
@@ -182,7 +182,7 @@ export default function LessonView({
 
           <button
             onClick={onToggleComplete}
-            className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all"
+            className="px-5 py-2.5 rounded-xl text-sm font-bold transition-all text-center"
             style={{
               background: isCompleted ? 'var(--color-complete-bg)' : 'var(--color-accent)',
               color: isCompleted ? 'var(--color-accent)' : '#000',
@@ -195,7 +195,7 @@ export default function LessonView({
           <button
             onClick={onNext}
             disabled={!hasNext}
-            className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+            className="px-4 py-2.5 rounded-xl text-sm font-medium transition-all text-center"
             style={{
               background: !hasNext ? 'var(--color-button-disabled-bg)' : 'var(--color-accent)',
               color: !hasNext ? 'var(--color-text-faint)' : '#000',

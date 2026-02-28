@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function Overview({ courseData, lang, labels, completedLessons, onOpenLesson }) {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div className="grid gap-4">
         {courseData.map((mod, mIdx) => (
           <div
@@ -13,22 +13,22 @@ export default function Overview({ courseData, lang, labels, completedLessons, o
               border: '1px solid var(--color-border)',
             }}
           >
-            <div className="p-5">
-              <div className="flex items-center gap-4 mb-4">
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center gap-3 sm:gap-4 mb-4">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl shrink-0"
                   style={{ background: 'var(--color-icon-bg)' }}
                 >
                   {mod.icon}
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
                     {labels.module} {mIdx}
                   </div>
-                  <h3 className="text-lg font-bold" style={{ color: 'var(--color-text-heading)' }}>{mod.title[lang]}</h3>
+                  <h3 className="text-base sm:text-lg font-bold truncate" style={{ color: 'var(--color-text-heading)' }}>{mod.title[lang]}</h3>
                 </div>
               </div>
-              <div className="grid gap-2 ml-16">
+              <div className="grid gap-2 sm:ml-16">
                 {mod.lessons.map((lesson, lIdx) => {
                   const done = completedLessons[lesson.id]
                   return (
@@ -47,7 +47,7 @@ export default function Overview({ courseData, lang, labels, completedLessons, o
                       >
                         {done ? '✓ ' : ''}{lesson.title[lang]}
                       </span>
-                      <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>→</span>
+                      <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--color-text-muted)' }}>→</span>
                     </button>
                   )
                 })}

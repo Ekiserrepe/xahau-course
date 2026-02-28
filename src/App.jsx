@@ -7,7 +7,7 @@ import LessonView from './components/LessonView'
 import SlideViewer from './components/SlideViewer'
 
 export default function App() {
-  const [lang, setLang] = useState('es')
+  const [lang, setLang] = useState('en')
   const [view, setView] = useState('overview')
   const [activeModuleIdx, setActiveModuleIdx] = useState(0)
   const [activeLessonIdx, setActiveLessonIdx] = useState(0)
