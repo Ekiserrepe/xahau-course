@@ -4,7 +4,7 @@ export default {
   title: {
     es: "Arquitectura básica de una blockchain No-EVM",
     en: "Basic Architecture of a Non-EVM Blockchain",
-    jp: "",
+    jp: "Non-EVMブロックチェーンの基本アーキテクチャ",
   },
   lessons: [
     {
@@ -12,7 +12,7 @@ export default {
       title: {
         es: "¿Qué es una blockchain?",
         en: "What is a Blockchain?",
-        jp: "",
+        jp: "ブロックチェーンとは？",
       },
       theory: {
         es: `Antes de hablar de blockchains No-EVM, necesitamos entender **qué es una blockchain** y por qué esta tecnología es revolucionaria.
@@ -145,43 +145,107 @@ Blockchains are used for:
 - **Hybrid**: Combine elements of both
 
 In this course we will focus on **Xahau**, a **public** blockchain designed for fast payments, tokens, and efficient smart contracts.`,
-        jp: "",
+        jp: `Non-EVMブロックチェーンの話をする前に、**ブロックチェーンとは何か**、そしてなぜこの技術が革命的なのかを理解する必要があります。
+
+### シンプルな定義
+
+**ブロックチェーン**（ブロックの連鎖）とは、**デジタルで分散された不変の台帳**です。次のような帳簿をイメージしてください：
+- 世界中の**何千ものコンピュータにコピー**されている（分散型）
+- すでに書かれた内容を**誰も消したり変更したりできない**（不変性）
+- データが正しいことを**誰でも検証できる**（透明性）
+- 銀行や企業のような**仲介者が不要**（分散化）
+
+### どのように機能するのか？
+
+データは**ブロック**にまとめられます。各ブロックには以下が含まれます：
+1. **トランザクション**のセット（例：「アリスがボブに10トークンを送る」）
+2. ブロックの**ハッシュ**（ユニークなデジタル指紋）
+3. **前のブロックのハッシュ**、これによってチェーンが形成される
+
+この構造により、古いブロックを改ざんすることは事実上不可能です。変更するとそのハッシュが変わり、その後のチェーン全体が壊れてしまうからです。
+
+### 主要概念
+
+**分散化**
+中央サーバーは存在しません。ネットワークは台帳のコピーを保持する**ノード**（コンピュータ）で構成されています。単一障害点はありません。
+
+**不変性**
+トランザクションがブロックに含まれ検証されると、**変更も削除もできません**。これにより信頼できる履歴が保証されます。
+
+**コンセンサス**
+ノードはどのトランザクションが有効かについて合意するメカニズムを必要とします。これを**コンセンサスプロトコル**と呼びます（モジュール2で詳しく説明します）。
+
+**暗号技術**
+ブロックチェーンは以下のために暗号関数を使用します：
+- **ハッシュ**：ブロックの識別とデータの整合性検証
+- **デジタル署名**：トランザクションが所有者によって承認されたことの証明
+- **公開鍵/秘密鍵**：各ユーザーはアイデンティティとして機能する鍵ペアを持つ
+
+**トランザクション**
+ブロックチェーンの状態を変更する操作です：トークンの送信、コントラクトの作成、データの記録など。各トランザクションは送信者によって**デジタル署名**されています。
+
+### ブロックチェーン vs 従来のデータベース
+
+| 特徴 | 従来のデータベース | ブロックチェーン |
+|---|---|---|
+| 管理 | 企業（中央集権） | ノードのネットワーク（分散型） |
+| 変更 | アクセス権を持つ誰でも編集可能 | 検証後は不変 |
+| 信頼 | 企業を信頼する | 暗号技術とコンセンサスを信頼する |
+| 透明性 | デフォルトで非公開 | 公開かつ検証可能 |
+| 仲介者 | 必要（銀行、サーバー） | 不要（ピアツーピア） |
+
+### 何に使われるのか？
+
+ブロックチェーンは以下に使用されます：
+- **暗号通貨**：銀行なしでお金を送る（Bitcoin、XAH）
+- **トークン**：独自のデジタル資産を作成する
+- **NFT**：ユニークなデジタルオブジェクトの所有権を証明する
+- **スマートコントラクト**：プログラマブルなロジックを自動かつ信頼性高く実行する
+- **トレーサビリティ**：サプライチェーン、証明書、投票などの記録
+
+### ブロックチェーンの種類
+
+- **パブリック**：誰でも参加できる（Bitcoin、Ethereum、Xahau）
+- **プライベート/許可型**：承認されたメンバーのみが参加する（Hyperledger）
+- **ハイブリッド**：両方の要素を組み合わせる
+
+このコースでは**Xahau**に焦点を当てます。Xahauは高速な支払い、トークン、効率的なスマートコントラクトのために設計された**パブリック**ブロックチェーンです。`,
       },
       codeBlocks: [],
       slides: [
         {
-          title: { es: "¿Qué es una blockchain?", en: "What is a Blockchain?", jp: "" },
+          title: { es: "¿Qué es una blockchain?", en: "What is a Blockchain?", jp: "ブロックチェーンとは？" },
           content: {
             es: "Un libro de registros digital:\n\n• Distribuido → Copiado en miles de nodos\n• Inmutable → No se puede alterar\n• Transparente → Cualquiera puede verificar\n• Descentralizado → Sin intermediarios",
             en: "A digital ledger:\n\n• Distributed → Copied across thousands of nodes\n• Immutable → Cannot be altered\n• Transparent → Anyone can verify\n• Decentralized → No intermediaries",
-            jp: "",
+            jp: "デジタル台帳：\n\n• 分散型 → 何千ものノードにコピー\n• 不変性 → 改ざん不可能\n• 透明性 → 誰でも検証可能\n• 分散化 → 仲介者不要",
           },
           visual: "📒",
         },
         {
-          title: { es: "Cadena de bloques", en: "Chain of Blocks", jp: "" },
+          title: { es: "Cadena de bloques", en: "Chain of Blocks", jp: "ブロックの連鎖" },
           content: {
             es: "Bloque 1 → Bloque 2 → Bloque 3 → ...\n\nCada bloque contiene:\n• Transacciones\n• Hash propio (huella digital)\n• Hash del bloque anterior\n\nCambiar un bloque rompe toda la cadena",
             en: "Block 1 → Block 2 → Block 3 → ...\n\nEach block contains:\n• Transactions\n• Its own hash (digital fingerprint)\n• Hash of the previous block\n\nChanging a block breaks the entire chain",
-            jp: "",
+            jp: "ブロック1 → ブロック2 → ブロック3 → ...\n\n各ブロックには：\n• トランザクション\n• 固有のハッシュ（デジタル指紋）\n• 前のブロックのハッシュ\n\nブロックを変更するとチェーン全体が壊れる",
           },
           visual: "🔗",
         },
         {
-          title: { es: "Conceptos clave", en: "Key Concepts", jp: "" },
+          title: { es: "Conceptos clave", en: "Key Concepts", jp: "主要概念" },
           content: {
             es: "🔐 Criptografía → Hashes y firmas digitales\n🤝 Consenso → Nodos se ponen de acuerdo\n🔑 Claves → Tu identidad en la red\n📝 Transacciones → Operaciones firmadas",
             en: "🔐 Cryptography → Hashes and digital signatures\n🤝 Consensus → Nodes agree with each other\n🔑 Keys → Your identity on the network\n📝 Transactions → Signed operations",
-            jp: "",
+            jp: "🔐 暗号技術 → ハッシュとデジタル署名\n🤝 コンセンサス → ノードが合意する\n🔑 鍵 → ネットワーク上のアイデンティティ\n📝 トランザクション → 署名された操作",
           },
           visual: "🧩",
         },
         {
-          title: { es: "¿Para qué sirve?", en: "What Is It Used For?", jp: "" },
+          title: { es: "¿Para qué sirve?", en: "What Is It Used For?", jp: "何に使われるのか？" },
           content: {
             es: "• 💰 Criptomonedas (pagos sin bancos)\n• 🪙 Tokens (activos digitales)\n• 🎨 NFTs (objetos únicos)\n• 🪝 Smart contracts (lógica programable)\n• 📦 Trazabilidad (registros verificables)",
             en: "• 💰 Cryptocurrencies (payments without banks)\n• 🪙 Tokens (digital assets)\n• 🎨 NFTs (unique objects)\n• 🪝 Smart contracts (programmable logic)\n• 📦 Traceability (verifiable records)",
-            jp: "",
+            jp: "• 💰 暗号通貨（銀行なしの支払い）\n• 🪙 トークン（デジタル資産）\n• 🎨 NFT（ユニークなオブジェクト）\n• 🪝 スマートコントラクト（プログラマブルなロジック）\n• 📦 トレーサビリティ（検証可能な記録）",
           },
           visual: "🌐",
         },
@@ -192,7 +256,7 @@ In this course we will focus on **Xahau**, a **public** blockchain designed for 
       title: {
         es: "¿Qué es una blockchain No-EVM?",
         en: "What is a Non-EVM Blockchain?",
-        jp: "",
+        jp: "Non-EVMブロックチェーンとは？",
       },
       theory: {
         es: `Cuando hablamos de blockchains, la mayoría de desarrolladores piensan en **Ethereum** y su máquina virtual (**EVM**). Sin embargo, existen blockchains que funcionan de manera completamente diferente, sin usar la EVM ni Solidity.
@@ -245,14 +309,38 @@ Unlike EVM networks, in Xahau:
 - The ledger maintains **structured objects**, not arbitrary states
 - Smart contracts (Hooks) execute as **reactive filters** on transactions
 - The native token is **XAH**`,
-        jp: "",
+        jp: `ブロックチェーンと言えば、ほとんどの開発者は**Ethereum**とその仮想マシン（**EVM**）を思い浮かべます。しかし、EVMやSolidityを使わず、まったく異なる方法で機能するブロックチェーンも存在します。
+
+### EVM vs Non-EVM
+
+| 特徴 | EVMブロックチェーン | Non-EVMブロックチェーン（Xahau） |
+|---|---|---|
+| コントラクト言語 | Solidity / Vyper | C（WebAssemblyにコンパイル） |
+| 仮想マシン | EVM（Ethereum Virtual Machine） | VMなし、ネイティブWASM実行 |
+| 状態モデル | 任意ストレージを持つアカウント | 型付きレジャーオブジェクト |
+| ガス/手数料 | 変動的で高価なガス | 固定で予測可能な手数料 |
+| データモデル | ストレージのキーバリュー | ネイティブオブジェクト（AccountRoot、TrustLineなど） |
+
+### なぜNon-EVMなのか？
+
+**Xahau**のようなNon-EVMブロックチェーンは、特定のユースケースのためにゼロから設計されました：高速な支払い、トークン化、効率的なプログラマブルロジック。Ethereumのような「汎用コンピュータ」を目指すのではなく、**パフォーマンス、低コスト、高速な最終性**に最適化しています。
+
+### Xahau：Non-EVMブロックチェーン
+
+**Xahau**は**XRP Ledger（XRPL）**のアーキテクチャを継承し、**Hooks**（Cで書かれWebAssemblyにコンパイルされた軽量スマートコントラクト）を実行する能力を追加したレイヤー1ブロックチェーンです。
+
+EVMネットワークとは異なり、Xahauでは：
+- トランザクションは**ネイティブかつ型付き**（Payment、TrustSet、OfferCreateなど）
+- レジャーは**構造化されたオブジェクト**を維持し、任意の状態ではない
+- スマートコントラクト（Hooks）はトランザクションに対する**リアクティブフィルタ**として実行される
+- ネイティブトークンは**XAH**`,
       },
       codeBlocks: [
         {
           title: {
             es: "Conectar a un nodo Xahau y ver info del servidor",
             en: "Connect to a Xahau node and view server info",
-            jp: "",
+            jp: "Xahauノードに接続してサーバー情報を表示する",
           },
           language: "javascript",
           code: {
@@ -296,35 +384,54 @@ async function serverInfo() {
 }
 
 serverInfo();`,
-            jp: "",
+            jp: `const { Client } = require("xahau");
+
+async function serverInfo() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("ネットワーク:", info.network_id);
+  console.log("バージョン:", info.build_version);
+  console.log("現在のレジャー:", info.validated_ledger.seq);
+  console.log("ネットワーク種別: Non-EVM（Xahauブロックチェーン）");
+
+  await client.disconnect();
+}
+
+serverInfo();`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "EVM vs No-EVM", en: "EVM vs Non-EVM", jp: "" },
+          title: { es: "EVM vs No-EVM", en: "EVM vs Non-EVM", jp: "EVM vs Non-EVM" },
           content: {
             es: "EVM (Ethereum)\n• Solidity → Bytecode EVM\n• Gas variable\n• Estado arbitrario\n\nNo-EVM (Xahau)\n• C → WebAssembly\n• Fees fijos\n• Objetos tipados del ledger",
             en: "EVM (Ethereum)\n• Solidity → EVM Bytecode\n• Variable gas\n• Arbitrary state\n\nNon-EVM (Xahau)\n• C → WebAssembly\n• Fixed fees\n• Typed ledger objects",
-            jp: "",
+            jp: "EVM（Ethereum）\n• Solidity → EVMバイトコード\n• 変動ガス\n• 任意の状態\n\nNon-EVM（Xahau）\n• C → WebAssembly\n• 固定手数料\n• 型付きレジャーオブジェクト",
           },
           visual: "⚖️",
         },
         {
-          title: { es: "¿Qué es Xahau?", en: "What is Xahau?", jp: "" },
+          title: { es: "¿Qué es Xahau?", en: "What is Xahau?", jp: "Xahauとは？" },
           content: {
             es: "Blockchain de capa 1 basada en XRPL\n\n• Smart Contracts nativos (Hooks)\n• Token nativo: XAH\n• Transacciones tipadas\n• Fees bajos y predecibles\n• Finalidad en 3-5 segundos",
             en: "Layer 1 blockchain based on XRPL\n\n• Native Smart Contracts (Hooks)\n• Native token: XAH\n• Typed transactions\n• Low and predictable fees\n• Finality in 3-5 seconds",
-            jp: "",
+            jp: "XRPLベースのレイヤー1ブロックチェーン\n\n• ネイティブスマートコントラクト（Hooks）\n• ネイティブトークン：XAH\n• 型付きトランザクション\n• 低く予測可能な手数料\n• 3〜5秒での最終確定",
           },
           visual: "🧱",
         },
         {
-          title: { es: "Arquitectura del Ledger", en: "Ledger Architecture", jp: "" },
+          title: { es: "Arquitectura del Ledger", en: "Ledger Architecture", jp: "レジャーアーキテクチャ" },
           content: {
             es: "El ledger de Xahau contiene objetos nativos:\n\n• AccountRoot → Cuentas\n• TrustLine → Líneas de confianza\n• Offer → Órdenes de intercambio\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Estado de los Hooks",
             en: "The Xahau ledger contains native objects:\n\n• AccountRoot → Accounts\n• TrustLine → Trust lines\n• Offer → Trade orders\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Hook state data",
-            jp: "",
+            jp: "Xahauレジャーにはネイティブオブジェクトが含まれる：\n\n• AccountRoot → アカウント\n• TrustLine → トラストライン\n• Offer → 取引注文\n• URIToken → NFT\n• Hook → スマートコントラクト\n• HookState → Hookの状態データ",
           },
           visual: "📦",
         },
@@ -335,7 +442,7 @@ serverInfo();`,
       title: {
         es: "Estructura del ledger en Xahau",
         en: "Ledger Structure in Xahau",
-        jp: "",
+        jp: "Xahauのレジャー構造",
       },
       theory: {
         es: `El **ledger** (libro mayor) de Xahau es una base de datos distribuida que almacena el estado completo de la red en un momento dado. Cada ledger tiene un **número de secuencia** único y contiene todos los objetos del estado actual.
@@ -384,14 +491,36 @@ Objects are **typed**, each type has specific, predefined fields:
 ### Key Difference from EVM
 
 In Ethereum, the state is an **account tree** where each account has its own **storage** (arbitrary key-value). In Xahau, the state consists of **typed objects** with predefined fields. This is more restrictive but much more efficient and easier to query.`,
-        jp: "",
+        jp: `Xahauの**レジャー**（台帳）は、特定の時点におけるネットワークの完全な状態を格納する分散データベースです。各レジャーには固有の**シーケンス番号**があり、現在の状態のすべてのオブジェクトが含まれています。
+
+### レジャーのコンポーネント
+
+各レジャーバージョンには以下が含まれます：
+- **レジャーヘッダー**：メタデータ（ハッシュ、シーケンス、タイムスタンプ、手数料）
+- **状態ツリー**：すべてのレジャーオブジェクト（アカウント、トークン、Hooksなど）
+- **トランザクションセット**：このレジャーを生成したトランザクション
+
+### レジャーオブジェクトの種類
+
+オブジェクトは**型付き**されており、各種類には特定の事前定義されたフィールドがあります：
+
+- **AccountRoot**：残高、シーケンス、フラグ、インストールされたHooksを持つアカウントを表す
+- **RippleState（TrustLine）**：2つのアカウント間のトークンに対するトラストライン
+- **Offer**：ネイティブDEXでの売買注文
+- **URIToken**：関連するURIを持つ非代替可能トークン
+- **HookDefinition**：デプロイされたHookのWASMコード
+- **HookState**：Hookによって格納された永続的なデータ
+
+### EVMとの主要な違い
+
+Ethereumでは、状態は各アカウントが独自の**ストレージ**（任意のキーバリュー）を持つ**アカウントツリー**です。Xahauでは、状態は事前定義されたフィールドを持つ**型付きオブジェクト**です。これはより制限的ですが、はるかに効率的でクエリが容易です。`,
       },
       codeBlocks: [
         {
           title: {
             es: "Consultar información del ledger actual",
             en: "Query current ledger information",
-            jp: "",
+            jp: "現在のレジャー情報を照会する",
           },
           language: "javascript",
           code: {
@@ -435,35 +564,54 @@ async function getLedgerInfo() {
 }
 
 getLedgerInfo();`,
-            jp: "",
+            jp: `const { Client } = require("xahau");
+
+async function getLedgerInfo() {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const response = await client.request({
+    command: "ledger",
+    ledger_index: "validated",
+  });
+
+  const ledger = response.result.ledger;
+  console.log("レジャーシーケンス:", ledger.ledger_index);
+  console.log("ハッシュ:", ledger.ledger_hash);
+  console.log("クローズ時刻:", ledger.close_time_human);
+
+  await client.disconnect();
+}
+
+getLedgerInfo();`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "El Ledger de Xahau", en: "The Xahau Ledger", jp: "" },
+          title: { es: "El Ledger de Xahau", en: "The Xahau Ledger", jp: "Xahauのレジャー" },
           content: {
             es: "Base de datos distribuida con el estado completo\n\n• Cada ledger tiene un número de secuencia\n• Se cierra cada 3-5 segundos\n• Contiene todos los objetos del estado\n• Inmutable una vez validado",
             en: "Distributed database with the complete state\n\n• Each ledger has a sequence number\n• Closes every 3-5 seconds\n• Contains all state objects\n• Immutable once validated",
-            jp: "",
+            jp: "完全な状態を持つ分散データベース\n\n• 各レジャーにはシーケンス番号がある\n• 3〜5秒ごとにクローズする\n• すべての状態オブジェクトを含む\n• 検証後は不変",
           },
           visual: "📖",
         },
         {
-          title: { es: "Objetos del Ledger", en: "Ledger Objects", jp: "" },
+          title: { es: "Objetos del Ledger", en: "Ledger Objects", jp: "レジャーオブジェクト" },
           content: {
             es: "Objetos tipados y estructurados:\n\n• AccountRoot → Cuentas\n• RippleState → TrustLines\n• Offer → Órdenes DEX\n• URIToken → NFTs\n• HookDefinition → Código de Hooks\n• HookState → Estado de Hooks",
             en: "Typed and structured objects:\n\n• AccountRoot → Accounts\n• RippleState → TrustLines\n• Offer → DEX orders\n• URIToken → NFTs\n• HookDefinition → Hook code\n• HookState → Hook state data",
-            jp: "",
+            jp: "型付きかつ構造化されたオブジェクト：\n\n• AccountRoot → アカウント\n• RippleState → トラストライン\n• Offer → DEX注文\n• URIToken → NFT\n• HookDefinition → Hookコード\n• HookState → Hookの状態データ",
           },
           visual: "🗂️",
         },
         {
-          title: { es: "Detalle de objetos del Ledger", en: "Ledger Object Details", jp: "" },
+          title: { es: "Detalle de objetos del Ledger", en: "Ledger Object Details", jp: "レジャーオブジェクトの詳細" },
           content: {
             es: "Cada objeto tiene campos predefinidos:\n\n• AccountRoot → Balance, Sequence, Flags, Hooks\n• RippleState → Saldo entre dos cuentas para un token\n• Offer → Precio, cantidad, par de intercambio\n• DirectoryNode → Índice que conecta objetos\n\nDiferencia con EVM:\n• Sin storage arbitrario (key-value)\n• Campos fijos → consultas más eficientes",
             en: "Each object has predefined fields:\n\n• AccountRoot → Balance, Sequence, Flags, Hooks\n• RippleState → Balance between two accounts for a token\n• Offer → Price, amount, trading pair\n• DirectoryNode → Index connecting objects\n\nDifference from EVM:\n• No arbitrary storage (key-value)\n• Fixed fields → more efficient queries",
-            jp: "",
+            jp: "各オブジェクトには事前定義されたフィールドがある：\n\n• AccountRoot → 残高、シーケンス、フラグ、Hooks\n• RippleState → 2つのアカウント間のトークン残高\n• Offer → 価格、数量、取引ペア\n• DirectoryNode → オブジェクトを接続するインデックス\n\nEVMとの違い：\n• 任意ストレージなし（キーバリュー）\n• 固定フィールド → より効率的なクエリ",
           },
           visual: "🔍",
         },
@@ -474,7 +622,7 @@ getLedgerInfo();`,
       title: {
         es: "Historia de las blockchains: de Bitcoin a Xahau",
         en: "History of Blockchains: from Bitcoin to Xahau",
-        jp: "",
+        jp: "ブロックチェーンの歴史：ビットコインからXahauまで",
       },
       theory: {
         es: `Para entender por qué Xahau existe y qué la hace diferente, necesitamos recorrer la **historia de las blockchains** y cómo cada generación resolvió problemas que la anterior no podía.
@@ -641,43 +789,124 @@ As a fork of XRPL, Xahau leverages all the advantages of a proven blockchain opt
 | 2020 | DeFi Summer | Decentralized finance on Ethereum |
 | 2020+ | L1s/L2s | Solana, Avalanche, Polygon, Rollups |
 | 2023 | Xahau | XRPL + Hooks (smart contracts in C/WASM) |`,
-        jp: "",
+        jp: `Xahauがなぜ存在し、何が違うのかを理解するために、**ブロックチェーンの歴史**を振り返り、各世代が前の世代では解決できなかった問題をどのように解決したかを見ていきましょう。
+
+### 2008年 — Bitcoin：誕生
+
+すべては**サトシ・ナカモト**が公開した9ページの文書から始まりました。タイトルは*「Bitcoin: A Peer-to-Peer Electronic Cash System」*。アイデアはシンプルかつ革命的でした：**仲介者なしのデジタルマネー**。
+
+Bitcoinが導入したもの：
+- **プルーフ・オブ・ワーク（PoW）**：マイナーが数学的問題を解いてトランザクションを検証する
+- **完全な分散化**：銀行なし、中央サーバーなし
+- **不変性**：確認されたトランザクションは取り消せない
+- **デジタル希少性**：Bitcoinは2,100万枚しか存在しない
+
+限界：Bitcoinは遅く（毎秒約7トランザクション）、スクリプト言語は非常に限定的。複雑なロジックを実行するために設計されていない。
+
+### 2012年 — XRP Ledger：マイニングなしの速度
+
+後に**XRP Ledger（XRPL）**が作られました。**プルーフ・オブ・ワークを使用しない**最初の主要なブロックチェーンです。代わりに、**信頼できるバリデーター（UNL）**に基づくコンセンサスプロトコルを使用します。
+
+XRPLが導入したもの：
+- **マイニングなしのコンセンサス**：3〜5秒でトランザクションが確認される
+- **ネイティブDEX**：プロトコルに統合された分散取引所
+- **ネイティブトークン**：スマートコントラクトなしでトークンを作成
+- **最小手数料**：トランザクションあたり数セントの何分の一
+
+限界：XRPLにはスマートコントラクト（カスタムプログラマブルロジック）を実行する能力がなかった。
+
+### 2015年 — Ethereum：ワールドコンピュータ
+
+**ヴィタリック・ブテリン**は野心的なアイデアを持つEthereumホワイトペーパーを発表しました：**あらゆるプログラム**を実行できるブロックチェーン。こうして**Ethereum Virtual Machine（EVM）**が誕生しました。
+
+Ethereumが導入したもの：
+- **スマートコントラクト**：ブロックチェーン上に存在し自動的に実行されるプログラム
+- **Solidity**：コントラクトを書くためのプログラミング言語
+- **EVM**：コントラクトコードを実行する仮想マシン
+- **ERC-20 / ERC-721**：代替可能トークンとNFTの標準
+- **DeFi**：分散型金融（貸付、取引所、ステーブルコイン）
+
+限界：高価で変動するガス、低速（約15 TPS）、限られたスケーラビリティ。
+
+### 2020年以降 — L1とL2の爆発
+
+Ethereumの問題が新しいブロックチェーンの波を引き起こしました：
+
+- **Solana**（2020年）：プルーフ・オブ・ヒストリーによる高速（理論値約65,000 TPS）
+- **Avalanche**（2020年）：高速コンセンサスによるカスタマイズ可能なサブネット
+- **Polygon**（2020年）：Ethereumをスケールするためのレイヤー2ソリューション
+- **Arbitrum / Optimism**（2021年）：Ethereum外でトランザクションを処理するロールアップ
+- **Cosmos / Polkadot**：相互接続されたブロックチェーンのエコシステム
+
+これらのネットワークのほとんどは**EVM互換**で、SolidityとEthereumのツールを使用します。
+
+### 2023年 — Xahau：XRPL + スマートコントラクト
+
+**Xahau**は**XRP Ledgerのフォーク**として誕生し、XRPLが常に必要としていた機能を追加しました：**スマートコントラクト**（**Hooks**と呼ばれる）。当初XahauはXRP Ledgerの一部になる予定でHooksがXRP Ledgerに組み込まれる予定でしたが、Rippleはコミュニティのこの改善を受け入れませんでした。何年もかけてきた作業を無駄にしないために、Xahauが誕生しました。
+
+Xahauが導入したもの：
+- **Hooks**：Cで書かれWebAssemblyにコンパイルされたスマートコントラクト
+- **XAH**：エミッション/報酬システムを持つネイティブトークン
+- **XRPLの継承**：速度、ネイティブDEX、低手数料を維持
+- **EVMなし**：独自のアーキテクチャ、Solidityと非互換
+
+### なぜXahauはXRPLのフォークなのか？
+
+XRPLのフォークとして、Xahauは支払いとトークンのために実証され最適化されたブロックチェーンのすべての利点を活用し、欠けていたピースを追加します：プロトコル内で直接プログラマブルロジックを実行する能力。
+
+1. **実証済みの基盤**：XRPLは2012年から大きな中断なく稼働している
+2. **ネイティブな速度**：XRPLのコンセンサスはすでに3〜5秒の最終確定を提供する
+3. **統合DEX**：分散取引所をゼロから構築する必要がない
+4. **ネイティブトークン**：TrustLinesとトークンシステムはすでに存在し機能している
+5. **既存のコミュニティ**：XRPLの開発者とツールが適応できる
+
+### 年表まとめ
+
+| 年 | マイルストーン | 主要なイノベーション |
+|---|---|---|
+| 2008 | Bitcoin | 分散型デジタルマネー |
+| 2012 | XRP Ledger | マイニングなしのコンセンサス、ネイティブDEX |
+| 2015 | Ethereum | スマートコントラクト（EVM + Solidity） |
+| 2017 | ICOブーム | ERC-20トークン、分散型資金調達 |
+| 2020 | DeFiサマー | Ethereum上の分散型金融 |
+| 2020年以降 | L1s/L2s | Solana、Avalanche、Polygon、ロールアップ |
+| 2023 | Xahau | XRPL + Hooks（C/WASMのスマートコントラクト） |`,
       },
       codeBlocks: [],
       slides: [
         {
-          title: { es: "2008-2015: Los orígenes", en: "2008-2015: The Origins", jp: "" },
+          title: { es: "2008-2015: Los orígenes", en: "2008-2015: The Origins", jp: "2008-2015年：起源" },
           content: {
             es: "2008 — Bitcoin\n• Primer dinero digital descentralizado\n• Proof of Work, lento pero revolucionario\n\n2012 — XRP Ledger\n• Sin minería, consenso en 3-5 segundos\n• DEX nativo y tokens integrados\n\n2015 — Ethereum\n• Smart contracts con Solidity\n• La EVM como computadora mundial",
             en: "2008 — Bitcoin\n• First decentralized digital money\n• Proof of Work, slow but revolutionary\n\n2012 — XRP Ledger\n• No mining, consensus in 3-5 seconds\n• Native DEX and integrated tokens\n\n2015 — Ethereum\n• Smart contracts with Solidity\n• The EVM as a world computer",
-            jp: "",
+            jp: "2008年 — Bitcoin\n• 最初の分散型デジタルマネー\n• プルーフ・オブ・ワーク、遅いが革命的\n\n2012年 — XRP Ledger\n• マイニングなし、3〜5秒でコンセンサス\n• ネイティブDEXと統合トークン\n\n2015年 — Ethereum\n• Solidityによるスマートコントラクト\n• ワールドコンピュータとしてのEVM",
           },
           visual: "📜",
         },
         {
-          title: { es: "2020+: La explosión", en: "2020+: The Explosion", jp: "" },
+          title: { es: "2020+: La explosión", en: "2020+: The Explosion", jp: "2020年以降：爆発" },
           content: {
             es: "Los problemas de Ethereum impulsan nuevas redes:\n\n• Solana → Alta velocidad\n• Avalanche → Subredes personalizables\n• Polygon → Layer 2 para Ethereum\n• Arbitrum/Optimism → Rollups\n\nLa mayoría son compatibles con EVM (Solidity)",
             en: "Ethereum's problems drive new networks:\n\n• Solana → High speed\n• Avalanche → Customizable subnets\n• Polygon → Layer 2 for Ethereum\n• Arbitrum/Optimism → Rollups\n\nMost are EVM-compatible (Solidity)",
-            jp: "",
+            jp: "Ethereumの問題が新しいネットワークを生む：\n\n• Solana → 高速\n• Avalanche → カスタマイズ可能なサブネット\n• Polygon → Ethereum用レイヤー2\n• Arbitrum/Optimism → ロールアップ\n\nほとんどがEVM互換（Solidity）",
           },
           visual: "🚀",
         },
         {
-          title: { es: "2023: Nace Xahau", en: "2023: Xahau Is Born", jp: "" },
+          title: { es: "2023: Nace Xahau", en: "2023: Xahau Is Born", jp: "2023年：Xahauの誕生" },
           content: {
             es: "Fork de XRPL + Smart Contracts (Hooks)\n\n¿Por qué un fork de XRPL?\n• Base probada desde 2012\n• Velocidad nativa (3-5 seg)\n• DEX y tokens integrados\n• Solo faltaban smart contracts\n\nHooks = C compilado a WebAssembly\nSin EVM, sin Solidity",
             en: "Fork of XRPL + Smart Contracts (Hooks)\n\nWhy a fork of XRPL?\n• Proven foundation since 2012\n• Native speed (3-5 sec)\n• Integrated DEX and tokens\n• Only smart contracts were missing\n\nHooks = C compiled to WebAssembly\nNo EVM, no Solidity",
-            jp: "",
+            jp: "XRPLのフォーク + スマートコントラクト（Hooks）\n\nなぜXRPLのフォークなのか？\n• 2012年からの実証済みの基盤\n• ネイティブな速度（3〜5秒）\n• DEXとトークンが統合済み\n• スマートコントラクトだけが欠けていた\n\nHooks = CをWebAssemblyにコンパイル\nEVMなし、Solidityなし",
           },
           visual: "🧱",
         },
         {
-          title: { es: "Línea temporal completa", en: "Complete Timeline", jp: "" },
+          title: { es: "Línea temporal completa", en: "Complete Timeline", jp: "完全な年表" },
           content: {
             es: "2008 → Bitcoin (PoW, dinero digital)\n2012 → XRPL (sin minería, DEX)\n2015 → Ethereum (EVM, Solidity)\n2017 → Boom de ICOs y tokens\n2020 → DeFi + nuevas L1s/L2s\n2023 → Xahau (XRPL + Hooks)\n\nCada generación resolvió limitaciones de la anterior",
             en: "2008 → Bitcoin (PoW, digital money)\n2012 → XRPL (no mining, DEX)\n2015 → Ethereum (EVM, Solidity)\n2017 → ICO and token boom\n2020 → DeFi + new L1s/L2s\n2023 → Xahau (XRPL + Hooks)\n\nEach generation solved limitations of the previous one",
-            jp: "",
+            jp: "2008年 → Bitcoin（PoW、デジタルマネー）\n2012年 → XRPL（マイニングなし、DEX）\n2015年 → Ethereum（EVM、Solidity）\n2017年 → ICOとトークンのブーム\n2020年 → DeFi + 新しいL1s/L2s\n2023年 → Xahau（XRPL + Hooks）\n\n各世代は前の世代の限界を解決した",
           },
           visual: "⏳",
         },
@@ -688,7 +917,7 @@ As a fork of XRPL, Xahau leverages all the advantages of a proven blockchain opt
       title: {
         es: "El ecosistema Xahau",
         en: "The Xahau Ecosystem",
-        jp: "",
+        jp: "Xahauエコシステム",
       },
       theory: {
         es: `Xahau no es solo una blockchain, es un **ecosistema completo** con herramientas, wallets, exploradores y una comunidad activa. En esta lección conocerás las piezas fundamentales del ecosistema para saber dónde buscar información y cómo interactuar con la red.
@@ -853,35 +1082,115 @@ Xahau has two main networks:
 **For this course we will always use the testnet.** Testnet tokens have no real value, so you can experiment freely without the risk of losing money.
 
 To obtain testnet XAH, use the **faucet**: a tool that sends free tokens to your test account. We will cover this in detail in later modules.`,
-        jp: "",
+        jp: `Xahauは単なるブロックチェーンではなく、ツール、ウォレット、エクスプローラー、活発なコミュニティを備えた**完全なエコシステム**です。このレッスンでは、情報をどこで探すか、ネットワークとどのようにやりとりするかを知るために、エコシステムの基本的な要素を学びます。
+
+### XAH：ネイティブトークン
+
+**XAH**はXahauのネイティブ暗号通貨です。XRPLのXRPとは異なり、XAHには**インフレ型エミッションシステム**があります：アクティブなアカウントの保有者は定期的にXAHの報酬をリクエストできます。これによりネットワークへの参加と利用が奨励されます。
+
+XAHの特徴：
+- **手数料**（トランザクション手数料）の支払いに使用される
+- アクティブなアカウントを維持するために**最小リザーブ**が必要
+- **エミッションシステム**がリクエストしたアクティブなアカウントにXAHを配布する
+- 送信、交換、Hooksでの使用が可能
+
+### Xaman（旧XUMM）：メインウォレット
+
+**Xaman**（以前はXUMMとして知られていた）はXRPL/Xahauエコシステムで最も広く使用されているウォレットです。以下を可能にするモバイルアプリケーションです：
+
+- XahauとXRPLのアカウントを作成・管理する
+- XAHとトークンを送受信する
+- トランザクションを安全に署名する
+- 分散型アプリケーション（xApps）と連携する
+- **iOS**と**Android**で利用可能
+
+ダウンロード：[xaman.app](https://xaman.app)
+
+### Hooks Builder：スマートコントラクト用オンラインIDE
+
+**Hooks Builder**はブラウザで動作する統合開発環境（IDE）で、コンピュータに何もインストールせずにXahau Testnet上でHooksを書き、コンパイルし、デプロイできます。
+
+特徴：
+- C言語のシンタックスハイライト付きコードエディタ
+- 組み込みのCからWebAssemblyへのコンパイラ
+- Xahau testnetへの直接デプロイ
+- すぐに始めるためのサンプルとテンプレート
+
+URL：[builder.xahau.network/](https://builder.xahau.network/)
+
+### ブロックエクスプローラー
+
+**エクスプローラー**はブロックチェーン上で起きていることをすべて視覚的に確認できます：
+
+- ハッシュでトランザクションを検索する
+- 任意のアカウントの状態を確認する（残高、トークン、Hooks）
+- レジャーとその内容を探索する
+- ネットワークの状態を確認する
+
+**Xahau Mainnet**の場合：
+
+URL：[xahauexplorer.com](https://xahauexplorer.com)
+URL：[xahau.xrplwin.com](https://xahau.xrplwin.com)
+URL：[explorer.xahau.network](https://explorer.xahau.network)
+URL：[xahscan.com](https://xahscan.com)
+
+**Xahau Testnet**の場合：
+
+URL：[test.xahauexplorer.com](https://test.xahauexplorer.com)
+URL：[xahau-testnet.xrplwin.com](https://xahau-testnet.xrplwin.com)
+URL：[explorer.xahau-test.net](https://explorer.xahau-test.net)
+
+### 開発者向けリソース
+
+- **公式ドキュメント**：[xahau.network/docs/](https://xahau.network/docs/) ガイド、APIリファレンス、チュートリアル
+- **GitHub**：[https://github.com/xahau](https://github.com/xahau) ノードのソースコード、ライブラリ、ツール
+- **Discord**：[https://discord.gg/ds7nb93mYj](https://discord.gg/ds7nb93mYj) 質問やプロジェクト共有のための活発なコミュニティ
+- **X**：[https://x.com/XahauNetwork](https://x.com/XahauNetwork) ニュースとアップデートのためのXahauブロックチェーン公式アカウント
+- **xahau jsライブラリ**：[https://www.npmjs.com/package/xahau](https://www.npmjs.com/package/xahau) このコースでネットワークと連携するために使用するJavaScriptライブラリ
+
+### TestnetとMainnet
+
+Xahauには2つの主要なネットワークがあります：
+
+| 特徴 | Testnet | Mainnet |
+|---|---|---|
+| WebSocket URL | wss://xahau-test.net | wss://xahau.network |
+| トークン | XAH（実際の価値なし） | XAH（実際の価値あり） |
+| 目的 | 開発とテスト | 本番環境 |
+| フォーセット | あり（テスト用の無料XAH） | なし |
+| データ | 定期的にリセットされる場合がある | 永続的 |
+
+**このコースでは常にtestnetを使用します。** Testnetのトークンには実際の価値がないため、お金を失うリスクなく自由に実験できます。
+
+Testnet XAHを取得するには、**フォーセット**（蛇口）を使用します：テストアカウントに無料トークンを送るツールです。これは後のモジュールで詳しく説明します。`,
       },
       codeBlocks: [
       ],
       slides: [
         {
-          title: { es: "XAH y el sistema de emisiones", en: "XAH and the Emission System", jp: "" },
+          title: { es: "XAH y el sistema de emisiones", en: "XAH and the Emission System", jp: "XAHとエミッションシステム" },
           content: {
             es: "XAH = Token nativo de Xahau\n\n• Pagar fees (comisiones)\n• Reserva mínima para cuentas\n• Sistema de emisión inflaccionario\n  → Los usuarios que lo soliciten, reciben XAH periódicamente",
             en: "XAH = Native token of Xahau\n\n• Pay fees (transaction fees)\n• Minimum reserve for accounts\n• Inflationary emission system\n  → Users who request it receive XAH periodically",
-            jp: "",
+            jp: "XAH = Xahauのネイティブトークン\n\n• 手数料（取引手数料）の支払い\n• アカウントの最小リザーブ\n• インフレ型エミッションシステム\n  → リクエストしたユーザーは定期的にXAHを受け取る",
           },
           visual: "💰",
         },
         {
-          title: { es: "Herramientas del ecosistema", en: "Ecosystem Tools", jp: "" },
+          title: { es: "Herramientas del ecosistema", en: "Ecosystem Tools", jp: "エコシステムツール" },
           content: {
             es: "Xaman → Wallet móvil (iOS/Android)\n  xaman.app\n\nHooks Builder → IDE online para smart contracts\n  builder.xahau.network\n\nExplorer → Exploradores de bloques\n  xahauexplorer.com xahau.xrplwin.com xahscan.com\n\nDocs → Documentación oficial\n  xahau.network/docs",
             en: "Xaman → Mobile wallet (iOS/Android)\n  xaman.app\n\nHooks Builder → Online IDE for smart contracts\n  builder.xahau.network\n\nExplorer → Block explorers\n  xahauexplorer.com xahau.xrplwin.com xahscan.com\n\nDocs → Official documentation\n  xahau.network/docs",
-            jp: "",
+            jp: "Xaman → モバイルウォレット（iOS/Android）\n  xaman.app\n\nHooks Builder → スマートコントラクト用オンラインIDE\n  builder.xahau.network\n\nエクスプローラー → ブロックエクスプローラー\n  xahauexplorer.com xahau.xrplwin.com xahscan.com\n\nDocs → 公式ドキュメント\n  xahau.network/docs",
           },
           visual: "🛠️",
         },
         {
-          title: { es: "Testnet vs Mainnet", en: "Testnet vs Mainnet", jp: "" },
+          title: { es: "Testnet vs Mainnet", en: "Testnet vs Mainnet", jp: "Testnet vs Mainnet" },
           content: {
             es: "Testnet (desarrollo)\n• wss://xahau-test.net\n• XAH sin valor real\n• Faucet para obtener tokens gratis\n\nMainnet (producción)\n• wss://xahau.network\n• XAH con valor real\n• Sin faucet\n\nEn este curso usamos SIEMPRE testnet",
             en: "Testnet (development)\n• wss://xahau-test.net\n• XAH with no real value\n• Faucet to get free tokens\n\nMainnet (production)\n• wss://xahau.network\n• XAH with real value\n• No faucet\n\nIn this course we ALWAYS use testnet",
-            jp: "",
+            jp: "Testnet（開発）\n• wss://xahau-test.net\n• 実際の価値のないXAH\n• 無料トークンを取得するフォーセット\n\nMainnet（本番）\n• wss://xahau.network\n• 実際の価値のあるXAH\n• フォーセットなし\n\nこのコースでは常にtestnetを使用する",
           },
           visual: "🌐",
         },

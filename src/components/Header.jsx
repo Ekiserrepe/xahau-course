@@ -35,7 +35,7 @@ export default function Header({ lang, setLang, labels, completedCount, totalLes
             </button>
             {/* Language Switcher */}
             <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
-              {['en', 'es'].map((l) => (
+              {['en', 'es', 'jp'].map((l) => (
                 <button
                   key={l}
                   onClick={() => setLang(l)}
