@@ -20,6 +20,7 @@ import m08 from './modules/m08-nfts.js'
 import m09 from './modules/m09-smart-contracts.js'
 import m10 from './modules/m10-escrows-checks.js'
 import m11 from './modules/m11-xaman-sdk.js'
+import m12 from './modules/m12-xahaud-modes.js'
 
 export const COURSE_DATA = [
   m00,
@@ -34,4 +35,5 @@ export const COURSE_DATA = [
   m09,
   m10,
   m11,
+  m12,
 ]
