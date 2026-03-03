@@ -121,150 +121,270 @@ A well-connected node that acts as a relay point between other network nodes. Do
         jp: "",
       },
       theory: {
-        es: `xahaud es el daemon del nodo Xahau, equivalente a \`rippled\` en XRPL. Se distribuye como paquete \`.deb\` para sistemas Debian/Ubuntu y como paquete \`.rpm\` para sistemas basados en Red Hat.
+        es: `Existen dos formas principales de instalar un nodo xahaud, según tu preferencia por entornos contenedorizados o instalaciones nativas en el sistema operativo.
 
-### Requisitos mínimos (nodo de seguimiento)
-- CPU: 4 núcleos (8 recomendados)
-- RAM: 16 GB (32 GB recomendados para validadores)
-- Disco: 500 GB SSD NVMe (historia completa requiere ≥ 4 TB)
-- Red: 100 Mbps, IP pública estática
-- OS: Ubuntu 22.04 LTS o Debian 11+
 
-### Directorios principales
-Después de instalar el paquete, los archivos se ubican en:
-- \`/opt/xahau/\` — binarios del nodo
-- \`/etc/opt/xahau/\` — archivos de configuración (\`xahaud.cfg\`, \`validators.txt\`)
-- \`/var/lib/xahaud/\` — datos del libro mayor (NuDB)
-- \`/var/log/xahaud/\` — logs
+### Opción A: Docker (Xahau/mainnet-docker)
+El repositorio oficial [Xahau/mainnet-docker](https://github.com/Xahau/mainnet-docker) proporciona un contenedor Docker listo para usar. Es la opción más rápida para poner en marcha un nodo en mainnet.
 
-### Servicio systemd
-xahaud se integra con systemd para arrancar automáticamente con el sistema. Los comandos habituales son:
-- \`systemctl start xahaud\`
-- \`systemctl stop xahaud\`
-- \`systemctl status xahaud\`
-- \`journalctl -fu xahaud\` — ver logs en tiempo real
+**Requisitos:**
+- Docker instalado
+- CPU: 8 núcleos, RAM: 32 GB, Disco: 500 GB NVMe SSD, Red: 500 Mbps + IP pública
 
-### Archivo de configuración principal
-Toda la configuración del nodo vive en \`/etc/opt/xahau/xahaud.cfg\`. Este archivo controla: conexiones de red, tipo de base de datos, historial de ledgers, peers, modo SSL y, si aplica, la clave de validador.`,
-        en: `xahaud is the Xahau node daemon, equivalent to \`rippled\` on XRPL. It is distributed as a \`.deb\` package for Debian/Ubuntu systems and as a \`.rpm\` package for Red Hat-based systems.
+**Estructura de directorios del repositorio:**
+- \`./store/etc\` → configuración (\`xahaud.cfg\`, \`validators.txt\`)
+- \`./store/db\` → base de datos NuDB (persistente)
+- \`./store/log\` → logs del nodo
+- \`./store/ssh/authorized_keys\` → acceso SSH al contenedor (puerto 2222)
 
-### Minimum Requirements (tracking node)
-- CPU: 4 cores (8 recommended)
-- RAM: 16 GB (32 GB recommended for validators)
-- Disk: 500 GB NVMe SSD (full history requires ≥ 4 TB)
-- Network: 100 Mbps, static public IP
-- OS: Ubuntu 22.04 LTS or Debian 11+
+**Identidad del servidor:** El nodo mantiene su identidad mientras \`wallet.db\` permanezca en \`./store/db\`. Puedes detener y recrear el contenedor sin perder la identidad.
 
-### Main Directories
-After installing the package, files are located at:
-- \`/opt/xahau/\` — node binaries
-- \`/etc/opt/xahau/\` — config files (\`xahaud.cfg\`, \`validators.txt\`)
-- \`/var/lib/xahaud/\` — ledger data (NuDB)
-- \`/var/log/xahaud/\` — logs
+> ⚠️ El script \`build\` elimina cualquier imagen existente con el mismo tag. El script \`up\` elimina cualquier contenedor llamado \`xahaud-mainnet\` antes de arrancar uno nuevo.
 
-### systemd Service
-xahaud integrates with systemd to start automatically with the system. Common commands:
-- \`systemctl start xahaud\`
-- \`systemctl stop xahaud\`
-- \`systemctl status xahaud\`
-- \`journalctl -fu xahaud\` — view logs in real time
 
-### Main Configuration File
-All node configuration lives in \`/etc/opt/xahau/xahaud.cfg\`. This file controls: network connections, database type, ledger history, peers, SSL mode and, if applicable, the validator key.`,
+### Opción B: Instalador automático sin Docker (gadget78/xahl-node)
+El repositorio [gadget78/xahl-node](https://github.com/gadget78/xahl-node) ofrece un script de instalación interactivo que configura un nodo RPC/WSS completo con Nginx, SSL automático (Let's Encrypt) y firewall UFW en una sola ejecución.
+
+**Requisitos:**
+- Ubuntu / Debian
+- Mínimo 2 GB RAM y 5 GB de disco
+- Un dominio con registro A apuntando al servidor
+- Correo electrónico para la gestión del certificado SSL
+
+**El script configura automáticamente:**
+- xahaud (descarga y configura el binario)
+- Nginx como proxy inverso para RPC y WebSocket
+- Certificado SSL con Certbot
+- Reglas UFW de firewall
+- Detección automática de IPv4/IPv6
+- Actualizaciones automáticas cada 24 horas (comando \`update\`)
+
+**Archivo de variables de configuración:** \`xahl_node.vars\`
+- \`VARVAL_CHAIN_NAME\`: \`"mainnet"\` o \`"testnet"\`
+- \`INSTALL_CERTBOT_SSL\`: activar/desactivar SSL automático
+- \`USE_SYSTEMCTL\`: útil si se usa dentro de Docker`,
+        en: `There are two main ways to install a xahaud node, depending on your preference for containerized environments or native OS installations.
+
+
+### Option A: Docker (Xahau/mainnet-docker)
+The official [Xahau/mainnet-docker](https://github.com/Xahau/mainnet-docker) repository provides a ready-to-use Docker container. It is the fastest way to spin up a mainnet node.
+
+**Requirements:**
+- Docker installed
+- CPU: 8 cores, RAM: 32 GB, Disk: 500 GB NVMe SSD, Network: 500 Mbps + public IP
+
+**Repository directory structure:**
+- \`./store/etc\` → configuration (\`xahaud.cfg\`, \`validators.txt\`)
+- \`./store/db\` → NuDB database (persistent)
+- \`./store/log\` → node logs
+- \`./store/ssh/authorized_keys\` → SSH access to container (port 2222)
+
+**Server identity:** The node keeps its identity as long as \`wallet.db\` remains in \`./store/db\`. You can stop and recreate the container without losing identity.
+
+> ⚠️ The \`build\` script removes any existing image with the same tag. The \`up\` script removes any running container named \`xahaud-mainnet\` before starting a new one.
+
+
+### Option B: Automated installer without Docker (gadget78/xahl-node)
+The [gadget78/xahl-node](https://github.com/gadget78/xahl-node) repository provides an interactive install script that sets up a full RPC/WSS node with Nginx, automatic SSL (Let's Encrypt), and UFW firewall in a single run.
+
+**Requirements:**
+- Ubuntu / Debian
+- Minimum 2 GB RAM and 5 GB disk
+- A domain name with an A record pointing to the server
+- Email address for SSL certificate management
+
+**The script automatically configures:**
+- xahaud (downloads and configures the binary)
+- Nginx as a reverse proxy for RPC and WebSocket
+- SSL certificate via Certbot
+- UFW firewall rules
+- Automatic IPv4/IPv6 detection
+- Automatic updates every 24 hours (\`update\` command)
+
+**Configuration variables file:** \`xahl_node.vars\`
+- \`VARVAL_CHAIN_NAME\`: \`"mainnet"\` or \`"testnet"\`
+- \`INSTALL_CERTBOT_SSL\`: enable/disable automatic SSL
+- \`USE_SYSTEMCTL\`: useful when running inside Docker`,
         jp: "",
       },
       codeBlocks: [
         {
           title: {
-            es: "Instalación del paquete xahaud (Ubuntu/Debian)",
-            en: "Installing xahaud package (Ubuntu/Debian)",
+            es: "Método A — Instalación con Docker (Xahau/mainnet-docker)",
+            en: "Method A — Docker installation (Xahau/mainnet-docker)",
             jp: "",
           },
           language: "bash",
           code: {
-            es: `# Agregar el repositorio oficial de Xahau
-curl -s https://packagecloud.io/install/repositories/xahau/xahaud/script.deb.sh | sudo bash
+            es: `# 1. Clonar el repositorio oficial
+git clone https://github.com/Xahau/mainnet-docker
+cd mainnet-docker
 
-# Instalar xahaud
-sudo apt-get install xahaud
+# 2. Construir la imagen Docker
+# ⚠️ Esto elimina cualquier imagen existente con el mismo tag
+./build
 
-# Verificar la instalación
-xahaud --version
+# 3. Iniciar el contenedor
+# ⚠️ Esto elimina cualquier contenedor llamado xahaud-mainnet
+./up
 
-# Habilitar el servicio para que arranque automáticamente
-sudo systemctl enable xahaud
+# ── Comandos de gestión ───────────────────────────────────────────────────
 
-# Iniciar el servicio
-sudo systemctl start xahaud
+# Ver el estado del servidor
+docker exec xahaud-mainnet xahaud server_info
 
-# Ver el estado del servicio
-sudo systemctl status xahaud
+# Monitorizar la sincronización en tiempo real
+watch 'docker exec xahaud-mainnet xahaud -q server_info | grep complete_ledgers'
+
+# Ver los peers conectados
+docker exec xahaud-mainnet xahaud -q peers | grep address
 
 # Ver logs en tiempo real
-sudo journalctl -fu xahaud`,
-            en: `# Add the official Xahau repository
-curl -s https://packagecloud.io/install/repositories/xahau/xahaud/script.deb.sh | sudo bash
+docker exec xahaud-mainnet tail -f /opt/xahaud/log/debug.log
 
-# Install xahaud
-sudo apt-get install xahaud
+# Gestionar el servicio xahaud dentro del contenedor
+docker exec xahaud-mainnet systemctl status xahaud
+docker exec xahaud-mainnet systemctl restart xahaud
 
-# Verify installation
-xahaud --version
+# ── Estructura de datos persistentes ─────────────────────────────────────
+# ./store/etc/   → xahaud.cfg, validators.txt (configuración)
+# ./store/db/    → Base de datos NuDB (wallet.db preserva la identidad)
+# ./store/log/   → Logs del nodo
+# ./store/ssh/authorized_keys → Claves SSH (acceso por puerto 2222)`,
+            en: `# 1. Clone the official repository
+git clone https://github.com/Xahau/mainnet-docker
+cd mainnet-docker
 
-# Enable the service to start automatically
-sudo systemctl enable xahaud
+# 2. Build the Docker image
+# ⚠️ This removes any existing image with the same tag
+./build
 
-# Start the service
-sudo systemctl start xahaud
+# 3. Start the container
+# ⚠️ This removes any running container named xahaud-mainnet
+./up
 
-# View service status
-sudo systemctl status xahaud
+# ── Management commands ───────────────────────────────────────────────────
+
+# Check server status
+docker exec xahaud-mainnet xahaud server_info
+
+# Monitor sync progress in real time
+watch 'docker exec xahaud-mainnet xahaud -q server_info | grep complete_ledgers'
+
+# View connected peers
+docker exec xahaud-mainnet xahaud -q peers | grep address
 
 # View logs in real time
-sudo journalctl -fu xahaud`,
+docker exec xahaud-mainnet tail -f /opt/xahaud/log/debug.log
+
+# Manage the xahaud service inside the container
+docker exec xahaud-mainnet systemctl status xahaud
+docker exec xahaud-mainnet systemctl restart xahaud
+
+# ── Persistent data structure ─────────────────────────────────────────────
+# ./store/etc/   → xahaud.cfg, validators.txt (configuration)
+# ./store/db/    → NuDB database (wallet.db preserves node identity)
+# ./store/log/   → Node logs
+# ./store/ssh/authorized_keys → SSH keys (access via port 2222)`,
             jp: "",
           },
         },
         {
           title: {
-            es: "Directorios y archivos importantes",
-            en: "Important directories and files",
+            es: "Método B — Instalador automático sin Docker (gadget78/xahl-node)",
+            en: "Method B — Automated installer without Docker (gadget78/xahl-node)",
             jp: "",
           },
           language: "bash",
           code: {
-            es: `# Binarios del nodo
-ls /opt/xahau/bin/
+            es: `# ── Instalación rápida (una sola línea) ──────────────────────────────────
+sudo bash -c "$(wget -qLO - https://raw.githubusercontent.com/gadget78/xahl-node/main/setup.sh)"
 
-# Archivos de configuración
-ls /etc/opt/xahau/
-# xahaud.cfg  — configuración principal
-# validators.txt — lista de validadores de confianza (UNL)
+# El script pedirá de forma interactiva:
+# • Dominio del servidor (registro A apuntando al servidor)
+# • Correo para el certificado SSL (Let's Encrypt)
+# • Tipo de nodo (mainnet / testnet)
+# • IPs permitidas (allowlist), una por línea — línea vacía para terminar
 
-# Base de datos del libro mayor (NuDB)
-ls /var/lib/xahaud/db/
+# ── Instalación manual (para pre-configurar antes de ejecutar) ────────────
+apt install git
+git clone https://github.com/gadget78/xahl-node
+cd xahl-node
+chmod +x *.sh
+sudo ./setup.sh
 
-# Logs del nodo
-ls /var/log/xahaud/
+# ── Tras la instalación ───────────────────────────────────────────────────
 
-# Consultar el estado actual del nodo (debe estar corriendo)
-/opt/xahau/bin/xahaud server_info | grep -E "server_state|complete_ledgers|peers"`,
-            en: `# Node binaries
-ls /opt/xahau/bin/
+# Verificar el estado del nodo local
+xahaud server_info
 
-# Configuration files
-ls /etc/opt/xahau/
-# xahaud.cfg  — main configuration
-# validators.txt — trusted validator list (UNL)
+# Probar el endpoint RPC vía HTTPS
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"method":"server_info"}' https://tu.dominio
 
-# Ledger database (NuDB)
-ls /var/lib/xahaud/db/
+# Probar WebSocket (requiere Node.js y el paquete ws)
+npm install ws
+node -e "const ws = new (require('ws'))('wss://tu.dominio');
+ws.once('open', () => { console.log('WebSocket OK'); ws.close(); })
+.on('error', () => console.log('Error de conexión'));"
 
-# Node logs
-ls /var/log/xahaud/
+# Actualizar el nodo en cualquier momento
+update
 
-# Query current node status (must be running)
-/opt/xahau/bin/xahaud server_info | grep -E "server_state|complete_ledgers|peers"`,
+# ── Archivo de configuración avanzada ─────────────────────────────────────
+# xahl_node.vars — variables principales:
+# VARVAL_CHAIN_NAME="mainnet"   # o "testnet"
+# INSTALL_CERTBOT_SSL=true      # SSL automático con Let's Encrypt
+# USE_SYSTEMCTL=true            # Gestión con systemctl
+# ALWAYS_ASK=false              # Si true, vuelve a pedir todos los datos
+
+# Modificar IPs en la allowlist de Nginx
+sudo nano /etc/nginx/sites-available/nginx_allowlist.conf
+sudo nginx -s reload`,
+            en: `# ── Quick install (single command) ───────────────────────────────────────
+sudo bash -c "$(wget -qLO - https://raw.githubusercontent.com/gadget78/xahl-node/main/setup.sh)"
+
+# The script will interactively ask for:
+# • Server domain (A record pointing to the server)
+# • Email for SSL certificate (Let's Encrypt)
+# • Node type (mainnet / testnet)
+# • Allowed IPs (allowlist), one per line — blank line to finish
+
+# ── Manual installation (to pre-configure before running) ────────────────
+apt install git
+git clone https://github.com/gadget78/xahl-node
+cd xahl-node
+chmod +x *.sh
+sudo ./setup.sh
+
+# ── After installation ────────────────────────────────────────────────────
+
+# Check local node status
+xahaud server_info
+
+# Test RPC endpoint via HTTPS
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"method":"server_info"}' https://your.domain
+
+# Test WebSocket (requires Node.js and ws package)
+npm install ws
+node -e "const ws = new (require('ws'))('wss://your.domain');
+ws.once('open', () => { console.log('WebSocket OK'); ws.close(); })
+.on('error', () => console.log('Connection error'));"
+
+# Update the node at any time
+update
+
+# ── Advanced configuration file ───────────────────────────────────────────
+# xahl_node.vars — main variables:
+# VARVAL_CHAIN_NAME="mainnet"   # or "testnet"
+# INSTALL_CERTBOT_SSL=true      # Automatic SSL with Let's Encrypt
+# USE_SYSTEMCTL=true            # Manage with systemctl
+# ALWAYS_ASK=false              # If true, re-prompts for all settings
+
+# Modify IPs in the Nginx allowlist
+sudo nano /etc/nginx/sites-available/nginx_allowlist.conf
+sudo nginx -s reload`,
             jp: "",
           },
         },
@@ -272,29 +392,42 @@ ls /var/log/xahaud/
       slides: [
         {
           title: {
-            es: "Instalación de xahaud",
-            en: "Installing xahaud",
+            es: "Dos formas de instalar xahaud",
+            en: "Two ways to install xahaud",
             jp: "",
           },
           content: {
-            es: "Pasos de instalación\n\n• Agregar repositorio oficial\n• apt-get install xahaud\n• systemctl enable xahaud\n• Editar /etc/opt/xahau/xahaud.cfg\n• systemctl start xahaud",
-            en: "Installation steps\n\n• Add official repository\n• apt-get install xahaud\n• systemctl enable xahaud\n• Edit /etc/opt/xahau/xahaud.cfg\n• systemctl start xahaud",
+            es: "Elige tu método\n\n• Docker → Xahau/mainnet-docker\n  Rápido, contenedor oficial\n• Sin Docker → gadget78/xahl-node\n  Script interactivo + Nginx + SSL",
+            en: "Choose your method\n\n• Docker → Xahau/mainnet-docker\n  Fast, official container\n• No Docker → gadget78/xahl-node\n  Interactive script + Nginx + SSL",
             jp: "",
           },
-          visual: "📦",
+          visual: "⚙️",
         },
         {
           title: {
-            es: "Requisitos mínimos",
-            en: "Minimum Requirements",
+            es: "Docker — Xahau/mainnet-docker",
+            en: "Docker — Xahau/mainnet-docker",
             jp: "",
           },
           content: {
-            es: "Hardware recomendado\n\n• CPU: 4-8 núcleos\n• RAM: 16-32 GB\n• Disco: 500 GB NVMe SSD\n• Red: 100 Mbps + IP pública\n• OS: Ubuntu 22.04 LTS",
-            en: "Recommended hardware\n\n• CPU: 4-8 cores\n• RAM: 16-32 GB\n• Disk: 500 GB NVMe SSD\n• Network: 100 Mbps + public IP\n• OS: Ubuntu 22.04 LTS",
+            es: "Instalación con Docker\n\n• git clone + ./build + ./up\n• Datos en ./store/db, etc, log\n• wallet.db preserva identidad\n• SSH en puerto 2222\n• Monitorear con docker exec",
+            en: "Docker installation\n\n• git clone + ./build + ./up\n• Data in ./store/db, etc, log\n• wallet.db preserves identity\n• SSH on port 2222\n• Monitor with docker exec",
             jp: "",
           },
-          visual: "🖥️",
+          visual: "🐳",
+        },
+        {
+          title: {
+            es: "Sin Docker — gadget78/xahl-node",
+            en: "No Docker — gadget78/xahl-node",
+            jp: "",
+          },
+          content: {
+            es: "Instalador automático\n\n• Un solo comando wget\n• Configura Nginx + SSL + UFW\n• Soporta mainnet y testnet\n• Dominio + correo requeridos\n• Actualizar con: update",
+            en: "Automated installer\n\n• Single wget command\n• Sets up Nginx + SSL + UFW\n• Supports mainnet and testnet\n• Domain + email required\n• Update with: update",
+            jp: "",
+          },
+          visual: "🚀",
         },
       ],
     },
