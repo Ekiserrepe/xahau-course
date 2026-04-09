@@ -16,25 +16,6 @@ Open-source, multilingual training portal for learning Xahau blockchain developm
 - 📈 **Progress Tracking** — Mark lessons as completed
 - 🔌 **Modular** — Easy to add new modules and lessons
 
-## Quick Start
-
-```bash
-git clone https://github.com/YOUR_USERNAME/xahau-academy.git
-cd xahau-academy
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-## Adding Content
-
-See [docs/ADDING_MODULES.md](docs/ADDING_MODULES.md) for a step-by-step guide.
-
-Quick version:
-1. Copy `src/data/modules/_template.js` → `src/data/modules/mXX-your-topic.js`
-2. Fill in content for all 3 languages (es, en, jp)
-3. Import in `src/data/courses.js`
 
 ## Tech Stack
 
@@ -69,4 +50,4 @@ MIT — Use freely for education and community building.
 
 ## Credits
 
-Built for the Xahau developer community by INFTF. Learn more about Xahau at [xahau.network](https://xahau.network).
+Built by [INFTF](https://inftf.org). Learn more about Xahau at [xahau.network](https://xahau.network).
