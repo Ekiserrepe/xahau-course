@@ -152,7 +152,7 @@ Your app                  Xaman API             Xaman (mobile)
 
 ### XUMM SDKとは？
 
-**xumm** npmパッケージはXaman APIとの連携を簡素化する公式SDKです。以下のことができます：
+**xumm** npmパッケージはXaman APIとの連携を簡素化する公式SDKです。次のようなことが可能です。
 
 - ユーザーがスマホで署名する**SignIn**によるユーザー認証
 - あらゆるXahauトランザクションタイプの**ペイロード**（署名リクエスト）の作成
@@ -477,7 +477,7 @@ const qrUrl   = created.refs.qr_png;  // QR image — show it in your modal
 const deepLink = created.next.always; // deep link for mobile
 const result   = await resolved;      // wait for sign or reject
 \`\`\``,
-        jp: `最初に構築する連携は**Xamanログイン**です：ユーザーがXamanアプリでQRをスキャンし、あなたのWebアプリケーションに認証されるフローです。Xahauエコシステムにおける「MetaMaskで接続」に相当します。
+        jp: `最初に構築する連携はユーザーがXamanアプリでQRをスキャンし、あなたのWebアプリケーションに認証されるフローである**Xamanログイン**です。これはXahauエコシステムにおける「MetaMaskで接続」に相当します。
 
 ### Xamanログインの仕組み
 
@@ -1236,7 +1236,7 @@ const txid   = result.txid;                              // transaction hash
 }
 \`\`\`
 
-金額は常に**drops**（XAHの最小単位）で表します。変換：\`drops = XAH × 1,000,000\`
+金額は常に**drops**（XAHの最小単位）で表します。\`drops = XAH × 1,000,000\`
 
 ### SDKでペイロードを作成する
 
@@ -2328,7 +2328,7 @@ xaman-backend/
     │   └── payment.js # Payment routes
     └── webhook.js    # Xaman webhook handler
 \`\`\``,
-        jp: `前のレッスンではフロントエンドがブラウザから直接ペイロードを作成しました（APIキーのみ使用）。**バックエンド**アプローチはセキュリティレイヤーとビジネスロジックを追加します：サーバーがAPIキーと**APIシークレット**を使ってペイロードを作成し、フロントエンドは表示するQRのみを受け取ります。
+        jp: `前のレッスンではフロントエンドがブラウザから直接ペイロードを作成しました（APIキーのみ使用）。**バックエンド**アプローチはセキュリティレイヤーとビジネスロジックを追加します。サーバーがAPIキーと**APIシークレット**を使ってペイロードを作成し、フロントエンドは表示するQRのみを受け取ります。
 
 ### なぜバックエンドを使うのか？
 
@@ -2341,23 +2341,23 @@ xaman-backend/
 ### バックエンドプロジェクトのアーキテクチャ
 
 \`\`\`
-Frontend (React)          Backend (Express)          Xaman API
-     │                          │                         │
+Frontend (React)           Backend (Express)          Xaman API
+     │                           │                         │
      │── POST /payment ────────▶ │                         │
      │   { destination, amount } │── ペイロード作成 ────────▶│
-     │                          │◀── UUID + QR URL ─────────│
-     │◀── { qrUrl, uuid } ───── │                         │
-     │                          │                         │
-     │ （ユーザーにQR表示）       │                         │
-     │                          │◀── Webhook: signed ──────│
-     │                          │   （ユーザーが署名）       │
-     │                          │── DBに保存               │
-     │                          │── レジャーで確認          │
+     │                           │◀── UUID + QR URL ───────│
+     │◀── { qrUrl, uuid } ────── │                         │
+     │                           │                         │
+     │ （ユーザーにQR表示）         │                         │
+     │                           │◀── Webhook: signed ─────│
+     │                           │   （ユーザーが署名）       │
+     │                           │── DBに保存               │
+     │                           │── レジャーで確認          │
 \`\`\`
 
 ### Webhookと WebSocketサブスクリプション
 
-署名通知を受け取る方法は2つあります：
+署名通知を受け取る方法には次の2つがあります。
 
 **Webhook**（本番環境推奨）：
 - ユーザーが署名するとXamanがサーバーにHTTP POSTを送信
@@ -2385,9 +2385,9 @@ XUMM_API_SECRET=your-api-secret-here
 PORT=3001
 \`\`\`
 
-\`.env\`を\`.gitignore\`に追加して認証情報がGitHubに上がらないようにしましょう。
+\`.env\`を\`.gitignore\`に追加して認証情報がGitHubにPushされないようにしましょう。
 
-APIシークレットが漏洩した疑いがある場合は、Xummダッシュボードから認証情報をローテーションしてください：新しいAPIキー＋APIシークレットのペアを生成し、バックエンドを新しい認証情報で更新して、古いものを削除します。
+APIシークレットが漏洩した疑いがある場合は、Xummダッシュボードから認証情報をローテーションしてください。新しいAPIキー+APIシークレットのペアを生成し、バックエンドを新しい認証情報で更新して、古いものを削除します。
 
 ### バックエンドプロジェクトの構造
 

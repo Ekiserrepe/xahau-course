@@ -2397,7 +2397,7 @@ main();`,
 Imagina que tienes esto en tu script:
 
 \`\`\`
-const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r", {algorithm: 'secp256k1'});
+const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r");
 \`\`\`
 
 Esto es **muy peligroso** por varias razones:
@@ -2480,7 +2480,7 @@ Esto protege tanto tus claves (\`.env\`) como las librerías descargadas (\`node
 Imagine you have this in your script:
 
 \`\`\`
-const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r", {algorithm: 'secp256k1'});
+const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r");
 \`\`\`
 
 This is **very dangerous** for several reasons:
@@ -2563,7 +2563,7 @@ This protects both your keys (\`.env\`) and the downloaded libraries (\`node_mod
 スクリプトに次のようなコードがあるとします:
 
 \`\`\`
-const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r", {algorithm: 'secp256k1'});
+const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r");
 \`\`\`
 
 これはいくつかの理由で**非常に危険**です:
@@ -2578,8 +2578,8 @@ const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r", {algorithm: 's
 \`.env\`ファイル（"environment"の略）は**環境変数**を保存するプレーンテキストファイルです。コードに必要だがソースコードにあるべきではない機密設定を格納します:
 
 \`\`\`
-WALLET_A_SEED=sEdVxxxテストネットのシード
-WALLET_B_SEED=sEdYyy別のテストネットのシード
+WALLET_A_SEED=sEdVxxxYourTestnetSeed
+WALLET_B_SEED=sEdYyyAnotherTestnetSeed
 XAHAU_NODE=wss://xahau-test.net
 \`\`\`
 
@@ -2589,7 +2589,7 @@ XAHAU_NODE=wss://xahau-test.net
 - **環境ごとに1つの.env**: テストネット用とメインネット用を別々に持てる
 - **引用符なし**（値にスペースがある場合を除く）: \`KEY=value\`
 - **\`=\`の前後にスペースなし**: \`KEY=value\`（正しい）vs \`KEY = value\`（誤り）
-- **各変数は独立した行に**
+- **各変数は別々の行に**
 
 ### dotenvのインストール
 
@@ -2635,10 +2635,10 @@ node_modules/
 
 ### セキュリティへの影響
 
-- **テストネット**: テストネットのシードが漏洩しても実際のお金は失いませんが、テストに干渉される可能性がある
-- **メインネット**: メインネットのシードが漏洩すると、**すべての資金を不可逆的に失う可能性があります**。ブロックチェーンでは盗まれた資金を回収する方法がない
-- **パブリックリポジトリ**: シードがパブリックリポジトリにアップロードされたら、**侵害されたものとみなす**。直ちに資金を新しいアカウントに移動する
-- **Gitの履歴**: ファイルを削除してもシードは履歴に残ります。Gitの履歴を書き直す必要があり、それは複雑です`,
+- **テストネット**: テストネットのシードが漏洩しても実際のお金は失いませんが、テストに干渉される可能性があります。
+- **メインネット**: メインネットのシードが漏洩すると、**すべての資金を永久に失う可能性があります**。ブロックチェーンでは盗まれた資金を回収する方法がありません。
+- **パブリックリポジトリ**: シードがパブリックリポジトリにアップロードされたら、**侵害されたものとみなします**。直ちに資金を新しいアカウントに移動してください。
+- **Gitの履歴**: ファイルを削除してもシードは履歴に残ります。Gitの履歴を書き直す必要があり、それは複雑な作業です。`,
       },
       codeBlocks: [
         {

@@ -121,53 +121,53 @@ Xahau is not based on competition (like PoW) or locked capital (like PoS), but o
 
 ### なぜコンセンサスが必要なのか？
 
-分散型ネットワークには、どのトランザクションが有効かを決定する中央権限が存在しません。コンセンサスは、複数の独立したノードが互いを信頼せずにどのように単一の状態に合意できるかという問題を解決します。
+分散型ネットワークには、どのトランザクションが有効かを決定する中央機関が存在しません。コンセンサスは、複数の独立したノードが互いを信頼せずにどのように単一の状態に合意できるかという問題を解決します。
 
 ### 二重支払い問題
 
-**二重支払い**はすべてのデジタルマネーシステムが解決しなければならない根本的な問題です：同じお金を2回使われるのをどうやって防ぐか？
+**二重支払い**はすべてのデジタルマネーシステムが解決しなければならない根本的な問題です。同じお金を2回使われるのを防ぐにはどうしたらいいでしょうか？
 
 物理的なお金ではこれは不可能です。誰かに紙幣を渡したら、自分はもう持っていません。しかしデジタルデータはコピーできます。コンセンサスメカニズムがなければ、アリスは10 XAHをボブに送ると同時に、その同じ10 XAHをキャロルに送ることができてしまいます。両方のトランザクションが別々に有効に見えます。
 
-コンセンサスはこれを解決します：ネットワークのすべてのノードがトランザクションの**唯一の順序**について合意します。ボブへのトランザクションが最初に処理されれば、アリスにはもうその資金がないのでキャロルへのトランザクションは拒否されます。
+コンセンサスはこれを解決します。ネットワークのすべてのノードがトランザクションの**一意の順序**について合意します。ボブへのトランザクションが最初に処理されれば、アリスにはもうその資金がないのでキャロルへのトランザクションは拒否されます。
 
 ### ビザンチン将軍問題
 
-二重支払いは分散コンピューティングのより一般的な問題の特殊なケースです：**ビザンチン将軍問題**（1982年、ランポート、ショスタク、ピース）。
+二重支払いは分散コンピューティングのより一般的な問題である**ビザンチン将軍問題**（1982年、ランポート、ショスタク、ピース）の1つのケースです。
 
-敵の都市を包囲した軍の複数の将軍を想像してください。攻撃するか撤退するかを調整しなければなりません。一部だけが攻撃すると負けます。問題は、彼らは使者を通じて通信し、**一部の将軍は混乱を引き起こすために矛盾した命令を送る裏切り者かもしれない**ことです。
+敵の都市を包囲した軍の複数の将軍を想像してみましょう。攻撃するか撤退するかを調整しなければなりません。一部だけが攻撃すると負けます。問題は、彼らは使者を通じて通信し、**一部の将軍は混乱を引き起こすために矛盾した命令を送る裏切り者かもしれない**ことです。
 
 ブロックチェーンに当てはめると：
 - **将軍**は**ノード/バリデーター**
 - **メッセージ**は**トランザクションと提案**
 - **裏切り者**は不正を試みる**悪意のあるノード**（例：二重支払いの承認）
 
-コンセンサスプロトコルは**参加者の一部が嘘をついたり失敗しても**正しく機能しなければなりません。これを**ビザンチン障害耐性（BFT）**と呼びます。各コンセンサスメカニズムはこれを異なる方法で解決します：
+コンセンサスプロトコルは**参加者の一部が嘘をついたり失敗しても**正しく機能しなければなりません。これを**ビザンチン障害耐性（BFT）**と呼びます。各コンセンサスメカニズムはこれを異なる方法で解決します。
 - **PoW**：嘘をつくことを非常に高価にする（エネルギーの消費が必要）
 - **PoS**：嘘をつくことに経済的な結果をもたらす（ステークを失う）
-- **フェデレーテッドコンセンサス（Xahau）**：信頼できるバリデーターの少なくとも80%の合意が必要
+- **連合型コンセンサス（Xahau）**：信頼できるバリデーターの少なくとも80%の合意が必要
 
 ### 主なコンセンサスの種類
 
-**プルーフ・オブ・ワーク（PoW）** — Bitcoin
+**Proof of Work (PoW)** — Bitcoin
 - マイナーが数学的問題を解いて競争する
 - 高エネルギー消費
-- 確率的な最終性（複数の確認を待つ必要がある）
+- 確率的なファイナリティ(最終性)（複数の確認を待つ必要がある）
 
-**プルーフ・オブ・ステーク（PoS）** — Ethereum
+**Proof of Stake (PoS)** — Ethereum
 - バリデーターがトークンをステーク（担保）に入れる
 - PoWより効率的
-- より高速な最終性だが再編成の可能性あり
+- より高速なファイナリティだが再編成の可能性あり
 
-**フェデレーテッドコンセンサス / UNL** — Xahau
+**Federated consensus / UNL** — Xahau
 - バリデーターが有効なトランザクションに投票する
 - マイニングもステーキングも不要
-- 数秒での決定論的な最終性
+- 数秒での決定論的なファイナリティ
 - 低エネルギー消費
 
 ### Xahauのコンセンサスは何が違うのか？
 
-Xahauは競争（PoWのような）にも、ロックされた資本（PoSのような）にも基づいていません。UNLリストを通じた**バリデーター間の信頼**に基づいています。`,
+Xahauは（PoWのような）競争にも、（PoSのような）ロックされた資本にも基づいていません。UNLリストを通じた**バリデーター間の信頼**に基づいています。`,
       },
       codeBlocks: [
         {
@@ -255,20 +255,20 @@ getValidators();`,
           visual: "🤝",
         },
         {
-          title: { es: "PoW vs PoS vs Federated", en: "PoW vs PoS vs Federated", jp: "PoW vs PoS vs フェデレーテッド" },
+          title: { es: "PoW vs PoS vs Federated", en: "PoW vs PoS vs Federated", jp: "PoW vs PoS vs 連合型コンセンサス" },
           content: {
             es: "⛏️ PoW → Minería (Bitcoin)\n💰 PoS → Staking (Ethereum)\n🗳️ Federado → Votación (Xahau)\n\nXahau: sin minería, sin staking\nFinalidad determinística en segundos",
             en: "⛏️ PoW → Mining (Bitcoin)\n💰 PoS → Staking (Ethereum)\n🗳️ Federated → Voting (Xahau)\n\nXahau: no mining, no staking\nDeterministic finality in seconds",
-            jp: "⛏️ PoW → マイニング（Bitcoin）\n💰 PoS → ステーキング（Ethereum）\n🗳️ フェデレーテッド → 投票（Xahau）\n\nXahau：マイニングなし、ステーキングなし\n数秒での決定論的な最終性",
+            jp: "⛏️ PoW → マイニング（Bitcoin）\n💰 PoS → ステーキング（Ethereum）\n🗳️ 連合型コンセンサス → 投票（Xahau）\n\nXahau：マイニングなし、ステーキングなし\n数秒での決定論的なファイナリティ",
           },
           visual: "⚡",
         },
         {
-          title: { es: "¿Por qué consenso federado?", en: "Why federated consensus?", jp: "なぜフェデレーテッドコンセンサスなのか？" },
+          title: { es: "¿Por qué consenso federado?", en: "Why federated consensus?", jp: "なぜ連合型コンセンサスなのか？" },
           content: {
             es: "Xahau eligió consenso federado por:\n\n• Velocidad → Finalidad en 3-5 segundos\n• Eficiencia energética → Sin minería costosa\n• Finalidad determinística → Sin reorgs ni forks\n• Sin barreras económicas → No requiere staking\n• Confianza distribuida → Validadores diversos\n\nIdeal para pagos y aplicaciones financieras",
             en: "Xahau chose federated consensus for:\n\n• Speed → Finality in 3-5 seconds\n• Energy efficiency → No costly mining\n• Deterministic finality → No reorgs or forks\n• No economic barriers → No staking required\n• Distributed trust → Diverse validators\n\nIdeal for payments and financial applications",
-            jp: "Xahauがフェデレーテッドコンセンサスを選んだ理由：\n\n• 速度 → 3〜5秒での最終性\n• エネルギー効率 → コストのかかるマイニング不要\n• 決定論的な最終性 → 再編成やフォークなし\n• 経済的障壁なし → ステーキング不要\n• 分散した信頼 → 多様なバリデーター\n\n支払いと金融アプリケーションに最適",
+            jp: "Xahauが連合型コンセンサスを選んだ理由：\n\n• 速度 → 3〜5秒でのファイナリティ\n• エネルギー効率 → コストのかかるマイニング不要\n• 決定論的なファイナリティ → 再編成やフォークなし\n• 経済的障壁なし → ステーキング不要\n• 分散した信頼 → 多様なバリデーター\n\n支払いと金融アプリケーションに最適",
           },
           visual: "🏆",
         },
@@ -332,7 +332,7 @@ Each node maintains a **UNL**, the list of validators whose opinions it consider
 ### Difference from Proof of Stake
 
 In PoS, security is backed by economic capital (staked tokens). In Xahau's consensus, security is backed by the **reputation and diversity** of validators. Validators are operated by independent entities (universities, companies, foundations, or individuals).`,
-        jp: `Xahauは**フェデレーテッドコンセンサスメカニズム**を使用しています。このプロトコルは、各ノードが信頼するバリデーターのリストである**UNL（Unique Node List）**の概念に基づいています。
+        jp: `Xahauは**連合型コンセンサスメカニズム**を使用しています。このプロトコルは、各ノードが信頼するバリデーターのリストである**UNL（Unique Node List）**の概念に基づいています。
 
 ### どのように機能するのか？
 
@@ -340,7 +340,7 @@ In PoS, security is backed by economic capital (staked tokens). In Xahau's conse
 2. **投票**：バリデーターが自分のUNLの他のバリデーターの提案と比較する
 3. **収束**：複数のラウンドを通じて、バリデーターは共通のトランザクションセットに収束する
 4. **検証**：UNLバリデーターの少なくとも**80%**が合意すると、レジャーが検証される
-5. **クローズ**：新しいレジャーがクローズし、ネットワークの公式状態となる
+5. **閉鎖**：新しいレジャーがクローズし、ネットワークの公式状態となる
 
 ### UNL（Unique Node List）
 
@@ -348,13 +348,13 @@ In PoS, security is backed by economic capital (staked tokens). In Xahau's conse
 
 ### Xahauのコンセンサスの特性
 
-- **決定論的な最終性**：レジャーが検証されると、それは最終的です。再編成はありません（Bitcoin/Ethereumとは異なる）
+- **決定論的なファイナリティ**：レジャーが検証されると、それは最終的です。再編成はありません（Bitcoin/Ethereumとは異なる）
 - **速度**：レジャーは**3〜5秒**ごとにクローズする
 - **エネルギー効率**：PoWのような集中的な計算を必要としない
 - **ステーキング不要**：バリデーターは資本をロックする必要がない
 - **障害耐性**：UNLバリデーターの少なくとも80%が稼働している限りネットワークは機能する
 
-### プルーフ・オブ・ステークとの違い
+### Proof of Stakeとの違い
 
 PoSでは、セキュリティは経済的資本（ステークされたトークン）によって裏付けられています。Xahauのコンセンサスでは、セキュリティはバリデーターの**評判と多様性**によって裏付けられています。バリデーターは独立した組織（大学、企業、財団、または個人）によって運営されています。`,
       },
@@ -558,7 +558,7 @@ When the 80% threshold is not reached, the ledger simply **does not close**. Dis
 
 敵の都市を包囲した軍の複数の将軍を想像してください。勝つには同時攻撃を調整しなければなりません。一部だけが攻撃すると負けます。問題は、使者を通じて通信しており、**一部の将軍が矛盾したメッセージを送る裏切り者かもしれない**ことです。
 
-これが1982年にランポート、ショスタク、ピースが定式化した**ビザンチン将軍問題**です。ブロックチェーンに当てはめると：
+これが1982年にランポート、ショスタク、ピースが定式化した**ビザンチン将軍問題**です。ブロックチェーンに当てはめると次のようになります。
 - **将軍**は**バリデーター**
 - **メッセージ**は**トランザクションの提案**
 - **裏切り者**は**悪意のあるまたは欠陥のあるノード**
@@ -726,7 +726,7 @@ When a UNL validator stops responding:
 
 1. A developer proposes a change to the protocol and implements it with a unique amendment ID
 2. Validators **vote** on whether they support activating that amendment
-3. If an amendment receives support from **80% of validators** for **2 consecutive weeks**, it is automatically activated
+3. If an amendment receives support from **80% of validators** for **5 consecutive days**, it is automatically activated
 4. Once activated, it is permanent and irreversible
 
 Examples of amendments include: new transaction types, new blockchain features.
@@ -740,11 +740,11 @@ How do you measure if a network is truly decentralized? Some key metrics:
 - **Operator diversity**: Different types of entities (companies, universities, individuals)
 - **Infrastructure diversity**: Different hosting providers, not all on AWS or Google Cloud
 - **UNL overlap**: What percentage of validators the different UNLs share`,
-        jp: `これまでバリデーターについて理論的に話してきました。このレッスンでは**実践的に**どのように機能するかを見ていきます：誰が運営するか、1つ実行するために何が必要か、そしてネットワークがエンメントメントシステムを通じてどのように進化するか。
+        jp: `これまでバリデーターについて理論的に話してきました。このレッスンでは、誰が運営するか、1つ実行するために何が必要か、そしてネットワークがエンメントメントシステムを通じてどのように進化するか、など**実践的に**どのように機能するかを見ていきます。
 
 ### Xahauで誰がバリデーターを運営するのか？
 
-分散型ネットワークの強さはその**バリデーターの多様性**に依存します。Xahauでは、バリデーターは以下によって運営されます：
+分散型ネットワークの強さはその**バリデーターの多様性**に依存します。Xahauでは、バリデーターは次のような組織によって運営されます。
 
 - エコシステムの**財団と組織**
 - ネットワーク上に構築する**企業**
@@ -754,7 +754,7 @@ How do you measure if a network is truly decentralized? Some key metrics:
 
 ### バリデーターを運営するための要件
 
-Xahauでバリデーターノードを実行するには以下が必要です：
+Xahauでバリデーターノードを実行するには次のような要件があります。
 
 - **ハードウェア**：少なくとも8GBのRAM、4つのCPU、高速SSDストレージを持つサーバー
 - **ネットワーク**：低遅延と高可用性の安定したインターネット接続
@@ -779,26 +779,26 @@ Xahauでバリデーターノードを実行するには以下が必要です：
 
 ### バリデーターが切断された場合はどうなるのか？
 
-UNLバリデーターが応答を停止した場合：
+UNLバリデーターが応答を停止した場合
 1. 他のバリデーターはそれなしで続行する
-2. クォーラムは**アクティブな**バリデーターに基づいて計算される
-3. あまりにも多くのバリデーターがダウンした場合（80%未満利用可能）、ネットワークは新しいレジャーの**検証を停止する**（破損せず、一時停止するだけ）
+2. 閾値は**アクティブな**バリデーターに基づいて計算される
+3. あまりにも多くのバリデーターがダウンした場合（80%未満）、ネットワークは新しいレジャーの**検証を停止する**（破損せず、一時停止するだけ）
 4. 十分なバリデーターが戻ると、ネットワークは自動的に再開する
 
-### エンメントメント（修正案）とプロトコル投票
+### Amendment（修正案）とプロトコル投票
 
-**エンメントメント**はXahauが分散型の方法でプロトコルを更新するメカニズムです：
+**Amendment**はXahauが分散型の方法でプロトコルを更新するメカニズムです：
 
-1. 開発者がプロトコルへの変更を提案し、一意のエンメントメントIDで実装する
-2. バリデーターがそのエンメントメントのアクティベーションを支持するかどうか**投票する**
-3. エンメントメントが**2週間連続して**バリデーターの**80%のサポート**を受けると、自動的にアクティベートされる
+1. 開発者がプロトコルへの変更を提案し、一意のAmendmentIDで実装する
+2. バリデーターがそのAmendmentのアクティベーションを支持するかどうか**投票する**
+3. Amendmentが**5日間連続して**バリデーターの**80%のサポート**を受けると、自動的にアクティベートされる
 4. 一度アクティベートされると、永続的かつ不可逆です
 
-エンメントメントの例：新しいトランザクションタイプ、新しいブロックチェーン機能。
+Amendmentの例：新しいトランザクションタイプ、新しいブロックチェーン機能。
 
 ### 分散化の指標
 
-ネットワークが本当に分散化されているかどうかをどのように測定するか？主要な指標：
+ネットワークが本当に分散化されているかどうかをどのように測定するか？主要な指標は次の通りです。
 
 - **中本係数**：ネットワークを侵害するために共謀する必要がある最小エンティティ数。高いほど良い
 - **地理的分布**：異なる国や大陸のバリデーター
@@ -1052,8 +1052,8 @@ checkNetworkFees();`,
           title: { es: "Enmiendas: gobernanza descentralizada", en: "Amendments: decentralized governance", jp: "エンメントメント：分散型ガバナンス" },
           content: {
             es: "Las actualizaciones del protocolo\nse votan de forma descentralizada:\n\n1. Se propone un cambio (amendment)\n2. Los validadores votan a favor o en contra\n3. 80% de apoyo durante 2 semanas\n4. Se activa automáticamente\n5. Es permanente e irreversible",
-            en: "Protocol updates\nare voted on in a decentralized way:\n\n1. A change is proposed (amendment)\n2. Validators vote for or against\n3. 80% support for 2 weeks\n4. It is activated automatically\n5. It is permanent and irreversible",
-            jp: "プロトコルの更新は\n分散型の方法で投票される：\n\n1. 変更（エンメントメント）を提案する\n2. バリデーターが賛否を投票する\n3. 2週間、80%の支持を得る\n4. 自動的にアクティベートされる\n5. 永続的かつ不可逆",
+            en: "Protocol updates\nare voted on in a decentralized way:\n\n1. A change is proposed (amendment)\n2. Validators vote for or against\n3. 80% support for 5 days\n4. It is activated automatically\n5. It is permanent and irreversible",
+            jp: "プロトコルの更新は\n分散型の方法で投票される：\n\n1. 変更（エンメントメント）を提案する\n2. バリデーターが賛否を投票する\n3. 5日間、80%の支持を得る\n4. 自動的にアクティベートされる\n5. 永続的かつ不可逆",
           },
           visual: "🗳️",
         },

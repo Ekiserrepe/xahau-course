@@ -12,7 +12,7 @@ export default {
       title: {
         es: "TrustLines y el modelo de tokens en Xahau",
         en: "TrustLines and the token model in Xahau",
-        jp: "TrustLineとXahauのトークンモデル",
+        jp: "トラストラインとXahauのトークンモデル",
       },
       theory: {
         es: `En Xahau, los tokens fungibles funcionan de manera diferente a ERC-20 en Ethereum. No necesitas desplegar un smart contract para crear un token. En su lugar, se usa un sistema basado en **TrustLines** (líneas de confianza).
@@ -107,50 +107,50 @@ One of the advantages of Xahau's token system is that the issuing account can co
 **Important**: Some configurations are irreversible (\`NoFreeze\`) and others must be activated before issuing tokens (\`Clawback\`). Plan your issuer's configuration carefully before you start distributing tokens.
 
 We will cover each of these configurations in detail in the following sections of this module.`,
-        jp: `XahauのFungibleトークンは、EthereumのERC-20とは異なる仕組みで動作します。トークンを作成するためにスマートコントラクトをデプロイする必要はありません。代わりに、**TrustLine**（信頼ライン）に基づくシステムが使用されます。
+        jp: `Xahauの(代替可能)トークンは、EthereumのERC-20とは異なる仕組みで動作します。トークンを作成するためにスマートコントラクトをデプロイする必要はありません。代わりに、**TrustLine**（トラストライン）に基づくシステムが使用されます。
 
 ### 仕組み
 
 1. **発行者（Issuer）**: どのアカウントもトークンを発行できます。発行アカウントはそのトークンの「中央銀行」となります
-2. **TrustLine**: トークンを受け取るには、受取人が先に発行者への**TrustLine**を作成する必要があります。これは「このアカウントをこのトークンのX量まで信頼する」と宣言するようなものです
-3. **転送**: TrustLineが存在すれば、発行者はPaymentトランザクションで受取人にトークンを送ることができます
+2. **トラストライン**: トークンを受け取るには、受取人が先に発行者への**トラストライン**を作成する必要があります。これは「このアカウントをこのトークンのX量まで信頼する」と宣言するようなものです
+3. **転送**: トラストラインが存在すれば、発行者はPaymentトランザクションで受取人にトークンを送ることができます
 
 ### トークンの識別
 
-各トークンは2つのフィールドで識別されます：
+各トークンは次の2つのフィールドで識別されます。
 - **currency**: 3文字のコード（例："USD"、"EUR"）または長い名前用の40文字の16進数コード
 - **issuer**: 発行アカウントのアドレス
 
 同じ\`currency\`でも\`issuer\`が異なれば、それは**まったく別のトークン**です。
 
-### TrustLine vs ERC-20
+### トラストライン vs ERC-20
 
-| 特徴 | ERC-20 (Ethereum) | TrustLine (Xahau) |
+| 特徴 | ERC-20 (Ethereum) | トラストライン (Xahau) |
 |---|---|---|
 | トークン作成 | Solidityコントラクトのデプロイ | アカウントから直接発行 |
-| トークン受取 | 自動（許可不要） | TrustLineの作成が必要（オプトイン） |
-| 数量制限 | コントラクトで定義 | 受取人がTrustLineで定義 |
+| トークン受取 | 自動（許可不要） | トラストラインの作成が必要（オプトイン） |
+| 数量制限 | コントラクトで定義 | 受取人がトラストラインで定義 |
 | 転送 | コントラクト関数 | ネイティブPaymentトランザクション |
 | コスト | 高価なガス代 | 最小限のFee（〜12 drops） |
 
-### アカウントリザーブ
+### アカウント準備金
 
-各TrustLineはアカウントの**オーナーリザーブ**を消費します。つまり、作成するTrustLineごとに追加のXAHをロックしておく必要があります。
+各トラストラインはアカウントの**所有者準備金**を消費します。つまり、作成するトラストラインごとに追加のXAHをロックしておく必要があります。
 
 ### トークン作成時の発行者設定
 
-Xahauのトークンシステムの利点の一つは、発行アカウントがトークン発行**前後**に\`AccountSet\`トランザクションを使って様々なプロパティを設定できることです。これらの設定はネットワーク上でのトークンの動作を定義します：
+Xahauのトークンシステムの利点の一つは、発行アカウントがトークン発行**前後**に\`AccountSet\`トランザクションを使って様々なプロパティを設定できることです。これらの設定はネットワーク上でのトークンの動作を定義します。
 
 | 設定 | Flag / フィールド | 説明 |
 |---|---|---|
 | **DefaultRipple** | \`SetFlag: 8\` | 第三者間でトークンを自由に転送できるようにします。このフラグなしでは、トークンは発行者との間でしか移動できません |
-| **TransferFee** | \`TransferRate\` | 第三者間の転送ごとに割合（例：0.1%）を徴収します。フィーは発行者に入ります |
-| **RequireAuth** | \`SetFlag: 2\` | ホルダーがトークンを受け取れるようにする前に、発行者が各TrustLineを承認する必要があります。KYCトークンに最適 |
-| **Freeze** | \`SetFlag: 7\`（グローバル） | 個別またはすべてのTrustLineを凍結して転送を防ぐことができます |
+| **TransferFee** | \`TransferRate\` | 第三者間の転送ごとに割合（例：0.1%）を徴収します。手数料は発行者に入ります |
+| **RequireAuth** | \`SetFlag: 2\` | ホルダーがトークンを受け取れるようにする前に、発行者が各トラストラインを承認する必要があります。KYCを必要とするトークンに最適 |
+| **Freeze** | \`SetFlag: 7\`（グローバル） | 個別またはすべてのトラストラインを凍結して転送を防ぐことができます |
 | **NoFreeze** | \`SetFlag: 6\` | 凍結能力の**恒久的**かつ取り消し不能な放棄。信頼のシグナル |
-| **Clawback** | \`SetFlag: 17\` | 発行者がどのホルダーからもトークンを回収できるようにします。TrustLineを作成する**前**に有効化が必要 |
+| **Clawback** | \`SetFlag: 17\` | 発行者がどのホルダーからもトークンを回収できるようにします。トラストラインを作成する**前**に有効化が必要 |
 
-**重要**: 一部の設定は取り消し不能（\`NoFreeze\`）で、他はトークン発行前に有効化する必要があります（\`Clawback\`）。トークンの配布を開始する前に、発行者の設定を慎重に計画してください。
+**重要**: 一部の設定は取り消し不能（\`NoFreeze\`）で、一部はトークン発行前に有効化する必要があります（\`Clawback\`）。トークンの発行を開始する前に、発行者の設定を慎重に計画してください。
 
 これらの設定の詳細は、このモジュールの以降のセクションで説明します。`,
       },
@@ -527,7 +527,7 @@ console.log(currencyToHex("EURZ"));
 | Create TrustLine | \`TrustSet\` | Reserve account |
 | Issue supply | \`Payment\` (Amount as IOU) | Issuer |
 | Distribute | \`Payment\` (Amount as IOU) | Reserve account |`,
-        jp: `TrustLineの仕組みを理解したところで、独自トークンを作成して配布するための完全なプロセスを見ていきましょう。他のブロックチェーンとは異なり、Xahauでは**コントラクトをデプロイする必要はありません**。プロセスはすべてネイティブトランザクションで行われます。
+        jp: `トラストラインの仕組みを理解したところで、独自トークンを作成して配布するための完全なプロセスを見ていきましょう。他のブロックチェーンとは異なり、Xahauでは**コントラクトをデプロイする必要はありません**。プロセスはすべてネイティブトランザクションで行われます。
 
 ### プロセスの概要
 
@@ -536,18 +536,18 @@ console.log(currencyToHex("EURZ"));
 1. **発行アカウントの準備**: トークン発行専用のアカウントを作成（または使用）する
 2. **発行者フラグの設定**: 第三者間でトークンが転送できるよう\`DefaultRipple\`を有効化する
 3. **リザーブ/配布アカウントの準備**: 初期サプライを受け取り、トークンを配布するための2つ目のアカウントを作成（または使用）する
-4. **リザーブアカウントからTrustLineを作成**: 配布アカウントが発行者へのTrustLineを作成する
-5. **トークンの発行**: 発行者がPaymentトランザクションでリザーブアカウントに全サプライを送信する
-6. **配布**: リザーブアカウントからエンドユーザーにトークンを配布する（ユーザーはあらかじめTrustLineを持っている必要がある）
+4. **リザーブアカウントからトラストラインを作成**: 配布アカウントが発行者へのトラストラインを作成する
+5. **トークンの発行**: 発行者がPaymentトランザクションでリザーブアカウントに全供給量を送信する
+6. **配布**: リザーブアカウントからエンドユーザーにトークンを配布する（ユーザーはあらかじめトラストラインを持っている必要がある）
 
 ### なぜ2つのアカウントを分けるのか？
 
-**発行アカウント**と**配布アカウント**を分けることはベストプラクティスです：
+**発行アカウント**と**配布アカウント**を分けることはベストプラクティスとして推奨されています。
 
 - **発行アカウント**: トークンの発行と設定（freeze、clawbackなど）にのみ使用。マルチサインで保護したり、設定完了後にマスターキーを無効化することができる
-- **配布/リザーブアカウント**: 流通サプライを保持し、日常業務（DEXでの販売、ユーザーへの配布など）に使用する
+- **配布/リザーブアカウント**: 流通供給量を保持し、日常業務（DEXでの販売、ユーザーへの配布など）に使用する
 
-この分離によりリスクが低減されます：配布アカウントが侵害された場合、発行者がトークンを凍結できます。すべてが1つのアカウントにある場合、侵害により発行と配布の両方が危険にさらされます。
+この分離によりリスクが低減されます。配布アカウントが侵害された場合、発行者がトークンを凍結できます。すべてが1つのアカウントにある場合、侵害により発行と配布の両方が危険にさらされます。
 
 ### 通貨コード：3文字 vs 16進数
 
@@ -571,8 +571,8 @@ console.log(currencyToHex("EURZ"));
 | ステップ | トランザクション | 実行アカウント |
 |---|---|---|
 | 発行者を設定 | \`AccountSet\` (SetFlag: 8) | 発行者 |
-| TrustLineを作成 | \`TrustSet\` | リザーブアカウント |
-| サプライを発行 | \`Payment\`（IOUとしてAmount） | 発行者 |
+| トラストラインを作成 | \`TrustSet\` | リザーブアカウント |
+| 供給量を発行 | \`Payment\`（IOUとしてAmount） | 発行者 |
 | 配布 | \`Payment\`（IOUとしてAmount） | リザーブアカウント |`,
       },
       codeBlocks: [
@@ -580,7 +580,7 @@ console.log(currencyToHex("EURZ"));
           title: {
             es: "Proceso completo: configurar emisor, crear TrustLine, emitir y distribuir token",
             en: "Complete process: configure issuer, create TrustLine, issue and distribute token",
-            jp: "完全なプロセス：発行者の設定、TrustLineの作成、トークンの発行と配布",
+            jp: "完全なプロセス：発行者の設定、トラストラインの作成、トークンの発行と配布",
           },
           language: "javascript",
           code: {
@@ -1136,24 +1136,24 @@ For token names longer than 3 characters, a 40-character hexadecimal code is use
 - Example: "EURZ" -> hex -> padded to 40 chars`,
         jp: `トークンを作成したら、残高の照会、発行アカウントの設定、ユーザー間のトークン転送など、さまざまな側面を管理できます。
 
-### TrustLineと残高の照会
+### トラストラインと残高の照会
 
-\`account_lines\`コマンドはアカウントのすべてのTrustLineを返し、保有または発行した各トークンの現在の残高を表示します。
+\`account_lines\`コマンドはアカウントのすべてのトラストラインを返し、保有または発行した各トークンの現在の残高を表示します。
 
 ### 発行者の設定
 
 発行アカウントで重要なフラグを設定できます：
 
 - **DefaultRipple**: 発行者を経由せずに第三者間でトークンを転送できるようにします。トークンを自由に転送可能にしたい場合は**有効化が必要**です
-- **RequireAuth**: 誰かがトークンを受け取れるようにする前に、発行者が各TrustLineを承認する必要があります
+- **RequireAuth**: 誰かがトークンを受け取れるようにする前に、発行者が各トラストラインを承認する必要があります
 
 ### 第三者間の転送（Rippling）
 
-**DefaultRipple**フラグなしでは、トークンは発行者にしか送り返せません。有効化すると、トークンは「リップル」できます。つまり、同じ発行者へのTrustLineを持つアカウント間で転送できるようになります。
+**DefaultRipple**フラグなしでは、トークンは発行者にしか送り返せません。有効化すると、トークンは「ripple(波及)」できます。つまり、同じ発行者へのトラストラインを持つアカウント間で転送できるようになります。
 
 ### 特殊な通貨コード
 
-3文字を超えるトークン名には、40文字の16進数コードが使用されます：
+3文字を超えるトークン名には、40文字の16進数コードが使用されます。
 - 形式：名前を16進数に変換し、ゼロで埋める
 - 例："EURZ" -> hex -> 40文字に埋める`,
       },
@@ -1373,7 +1373,7 @@ When a new order matches an existing one (prices cross), it is automatically exe
 - **tfImmediateOrCancel**: The order executes immediately against existing orders. Whatever isn't filled is canceled instantly. Nothing remains in the order book
 - **tfPassive**: The order only executes against existing orders with an equal or better price. It is not placed in the book if there's no immediate match
 - **tfFillOrKill**: The order is either fully executed or canceled. Partial executions are not allowed
-- **tfSell**: Indicates the order is a sell (rather than a buy). Affects how TakerPays and TakerGets are interpreted
+- **tfSell**: Exchange the entire TakerGets amount, even if it means obtaining more than the TakerPays amount in exchange.
 
 Visit more information about flags in the [official documentation](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/#offercreate-flags).
 
@@ -1392,12 +1392,12 @@ All in a single transaction, transparently. This significantly improves DEX liqu
 
 ### OfferCreate：DEXに注文を出す
 
-\`OfferCreate\`トランザクションにより、DEXの注文書に買いまたは売り注文を出すことができます。2つの主要フィールドがあります：
+\`OfferCreate\`トランザクションにより、DEXのオーダーブックに買いまたは売り注文を出すことができます。次の2つの主要フィールドがあります。
 
 - **TakerPays**: **受け取りたい**もの（「テイカー」が支払うもの）
 - **TakerGets**: **提供する意思がある**もの（「テイカー」が受け取るもの）
 
-例えば、100 USDをXAHで売りたい場合：
+例えば、100 USDをXAHで売りたい場合は次のように設定します。
 - TakerPays: 受け取りたいXAHの量
 - TakerGets: 100 USD（提供するもの）
 
@@ -1407,32 +1407,32 @@ All in a single transaction, transparently. This significantly improves DEX liqu
 
 ### 注文書の仕組み
 
-DEXは各トークンペアの**注文書**（オーダーブック）を管理します：
+DEXは各トークンペアの**オーダーブック**を管理します。
 - **Bids（買い注文）**: トークンを買いたい注文
 - **Asks（売り注文）**: トークンを売りたい注文
 
-新しい注文が既存の注文と一致した場合（価格が交差）、完全にまたは部分的に自動実行されます。
+新しい注文が既存の注文と一致（価格が交差）した場合、完全にまたは部分的に自動的に約定します。
 
 ### OfferCreateの特殊フラグ
 
-- **tfImmediateOrCancel**: 注文は既存の注文に対して即座に実行されます。満たされなかった部分は即座にキャンセルされます。注文書に何も残りません
-- **tfPassive**: 注文は同等またはより良い価格の既存注文に対してのみ実行されます。即時マッチがない場合、注文書には追加されません
-- **tfFillOrKill**: 注文は完全に実行されるかキャンセルされます。部分的な実行は許可されません
-- **tfSell**: 注文が（買いではなく）売りであることを示します。TakerPaysとTakerGetsの解釈方法に影響します
+- **tfImmediateOrCancel**: 注文は既存の注文に対して即座に約定します。約定しななかった部分は即座にキャンセルされます。オーダーブックには注文は残りません
+- **tfPassive**: 注文は同等またはより良い価格の既存注文に対してのみ約定します。即時マッチがない場合、オーダーブックには追加されません
+- **tfFillOrKill**: 注文は完全に約定されるかキャンセルされます。部分的な約定は許可されません
+- **tfSell**: TakerPaysの金額よりも多く取得することになっても、TakerGetsの金額を約定します。
 
 フラグの詳細については[公式ドキュメント](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/#offercreate-flags)をご覧ください。
 
-### 注文書の照会：book_offers
+### オーダーブックの照会：book_offers
 
 \`book_offers\`コマンドでトークンペアの未決注文を表示できます。最良の注文を価格順に返します。
 
 ### XAHを通じたオートブリッジング
 
-XahauのDEXはXAHを通じてマルチホップ取引を自動的にルーティングできます。USDをEURに交換したいが直接USD/EUR注文がない場合、DEXは：
+XahauのDEXはXAHを通じてマルチホップ取引を自動的にルーティングできます。USDをEURに交換したいが直接USD/EUR注文がない場合、DEXは次の処理を1つのトランザクションで透過的に行います。
 1. USDをXAHに売る
 2. XAHでEURを買う
 
-これをすべて1つのトランザクションで透過的に行います。これによりDEXの流動性が大幅に向上します。`,
+これによりDEXの流動性が大幅に向上します。`,
       },
       codeBlocks: [
         {
@@ -1897,8 +1897,8 @@ cancelOffer();`,
           title: { es: "OfferCreate: anatomía de una orden", en: "OfferCreate: anatomy of an order", jp: "OfferCreate：注文の構造" },
           content: {
             es: "TakerPays → Lo que quieres RECIBIR\nTakerGets → Lo que estás dispuesto a DAR\n\nFlags especiales:\n• tfImmediateOrCancel → Ejecutar o cancelar\n• tfPassive → Solo match existente\n• tfFillOrKill → Ejecutar todo o nada\n• tfSell → Indica que es una venta\n\nOfferCancel → Cancelar orden abierta",
-            en: "TakerPays -> What you want to RECEIVE\nTakerGets -> What you are willing to GIVE\n\nSpecial flags:\n• tfImmediateOrCancel -> Execute or cancel\n• tfPassive -> Only match existing\n• tfFillOrKill -> Execute all or nothing\n• tfSell -> Indicates it's a sell\n\nOfferCancel -> Cancel open order",
-            jp: "TakerPays -> 受け取りたいもの\nTakerGets -> 提供する意思があるもの\n\n特殊フラグ：\n• tfImmediateOrCancel -> 実行またはキャンセル\n• tfPassive -> 既存注文にのみマッチ\n• tfFillOrKill -> 全量実行またはキャンセル\n• tfSell -> 売り注文であることを示す\n\nOfferCancel -> 未決注文をキャンセル",
+            en: "TakerPays -> What you want to RECEIVE\nTakerGets -> What you are willing to GIVE\n\nSpecial flags:\n• tfImmediateOrCancel -> Execute or cancel\n• tfPassive -> Only match existing\n• tfFillOrKill -> Execute all or nothing\n• tfSell -> Receive as much as TakerGets amount\n\nOfferCancel -> Cancel open order",
+            jp: "TakerPays -> 受け取りたいもの\nTakerGets -> 提供する意思があるもの\n\n特殊フラグ：\n• tfImmediateOrCancel -> 実行またはキャンセル\n• tfPassive -> 既存注文にのみマッチ\n• tfFillOrKill -> 全量実行またはキャンセル\n• tfSell -> 可能な限り多くの金額を受け取る\n\nOfferCancel -> 未決注文をキャンセル",
           },
           visual: "🔄",
         },
@@ -1996,22 +1996,22 @@ The issuer can charge a percentage on each transfer of their token between third
 - Configured with the \`TransferRate\` field in \`AccountSet\`
 - The value is an integer: 1000000000 = 0%, 1001000000 = 0.1%, 1010000000 = 1%
 - Only applies to transfers between third parties, not when sending to the issuer
-- Example: With a 0.1% fee, sending 100 tokens charges 100.1 from the sender
+- Example: With a 0.1% fee, sending 100 tokens receives 99.9 tokens from the receiver (charges 0.1 from the receiver)
 
 ### Authorized TrustLines: RequireAuth
 
 The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the issuer to **explicitly authorize** each TrustLine before a holder can receive tokens. Useful for tokens that need KYC or prior verification.`,
-        jp: `Xahauはトークン発行者に高度な制御ツールを提供します：**Freeze**（凍結）、**Clawback**（強制回収）、**Transfer fees**（転送手数料）、**Authorized TrustLines**（承認済みTrustLine）。
+        jp: `Xahauはトークン発行者に**Freeze**（凍結）、**Clawback**（強制回収）、**Transfer fees**（転送手数料）、**Authorized TrustLines**（承認済みトラストライン）のような高度な制御ツールを提供します。
 
-### Freeze：TrustLineの凍結
+### Freeze：トラストラインの凍結
 
-トークンの発行者はTrustLineを凍結して、ホルダーがトークンを転送できないようにすることができます。3つのレベルがあります：
+トークンの発行者はトラストラインを凍結して、ホルダーがトークンを転送できないようにすることができます。次の3つのレベルがあります。
 
 ### 個別Freeze
-発行者とホルダー間の特定のTrustLineを凍結します。\`tfSetFreeze\`フラグを使った\`TrustSet\`で行います。凍結中はホルダーそのトークンを送受信できません。解除するには\`tfClearFreeze\`を使います。
+発行者とホルダー間の特定のトラストラインを凍結します。\`tfSetFreeze\`フラグを使った\`TrustSet\`で行います。凍結中はホルダーそのトークンを送受信できません。解除するには\`tfClearFreeze\`を使います。
 
 ### グローバルFreeze
-発行したトークンの**すべての**TrustLineを凍結します。\`SetFlag: 7\`（asfGlobalFreeze）を使った\`AccountSet\`で有効化します。すべてのホルダーが同時に凍結されます。\`ClearFlag: 7\`で解除できます。
+発行したトークンの**すべての**トラストラインを凍結します。\`SetFlag: 7\`（asfGlobalFreeze）を使った\`AccountSet\`で有効化します。すべてのホルダーが同時に凍結されます。\`ClearFlag: 7\`で解除できます。
 
 ### NoFreeze（取り消し不能）
 \`AccountSet\`で\`SetFlag: 6\`（asfNoFreeze）を有効化すると、発行者は凍結能力を**恒久的**に放棄します。これは取り消せません。ホルダーへの信頼のシグナルです。
@@ -2023,24 +2023,24 @@ The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the is
 
 ### Clawback：ホルダーからのトークン回収
 
-**Clawback**は発行者が任意のホルダーからトークンを回収できるようにします。これは強力なツールで、トークン発行**前**に設定する必要があります：
+**Clawback**は発行者が任意のホルダーからトークンを回収できるようにします。これは強力なツールで、トークン発行**前**に設定する必要があります。
 
-1. \`AccountSet\`で\`asfAllowTrustLineClawback\`（フラグ17）を**TrustLine作成前**に有効化する
+1. \`AccountSet\`で\`asfAllowTrustLineClawback\`（フラグ17）を**トラストライン作成前**に有効化する
 2. 有効化後、\`Clawback\`トランザクションを使ってトークンを回収する
 3. **NoFreezeとは組み合わせ不可** — 凍結を放棄した場合、Clawbackもできません
 
 ### Transfer fees：転送手数料
 
-発行者は第三者間のトークン転送ごとに割合を徴収できます：
+発行者は第三者間のトークン転送ごとに割合を徴収できます。
 
 - \`AccountSet\`の\`TransferRate\`フィールドで設定
 - 値は整数で指定：1000000000 = 0%、1001000000 = 0.1%、1010000000 = 1%
 - 発行者への送信時ではなく、第三者間の転送にのみ適用
-- 例：0.1%の手数料で100トークン送信すると、送信者から100.1が徴収される
+- 例：0.1%の手数料で100トークン送信すると、受信者に99.9トークンが入金され（受信者から0.1が徴収される）
 
 ### Authorized TrustLines：RequireAuth
 
-発行アカウントの\`RequireAuth\`フラグ（asfRequireAuth）は、ホルダーがトークンを受け取れるようになる前に、発行者が**各TrustLineを明示的に承認**することを要求します。KYCや事前確認が必要なトークンに便利です。`,
+発行アカウントの\`RequireAuth\`フラグ（asfRequireAuth）は、ホルダーがトークンを受け取れるようになる前に、発行者が**各トラストラインを明示的に承認**することを要求します。KYCや事前確認が必要なトークンに便利です。`,
       },
       codeBlocks: [
         {

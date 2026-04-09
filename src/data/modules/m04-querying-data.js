@@ -87,7 +87,7 @@ The Xahau API provides commands to query:
 
 ### 照会の種類
 
-Xahau APIは以下を照会するコマンドを提供しています：
+Xahau APIは次のようなコマンドを提供しています。
 - **サーバー情報**：\`server_info\`、\`server_state\`
 - **アカウント**：\`account_info\`、\`account_lines\`、\`account_objects\`、\`account_tx\`
 - **レジャー**：\`ledger\`、\`ledger_data\`、\`ledger_entry\`
@@ -96,9 +96,9 @@ Xahau APIは以下を照会するコマンドを提供しています：
 
 ### 重要な概念
 
-- **レジャーインデックス**：番号で特定のレジャーを照会できる。最後に検証されたものには\`"validated"\`を使用
-- **ドロップ（Drops）**：XAHの量はドロップで表現される（1 XAH = 1,000,000ドロップ）
-- **マーカー（Markers）**：大量の結果をページングするために、APIはマーカーを使用する`,
+- **レジャーインデックス** (\`ledger_index\`)：番号で特定のレジャーを照会できる。最後に検証されたものには\`"validated"\`を使用
+- **ドロップ（drops）**：XAHの量はドロップで表現される（1 XAH = 1,000,000ドロップ）
+- **マーカー** (\`marker\`)：大量の結果をページングするために、APIはマーカーを使用する`,
       },
       codeBlocks: [
         {
@@ -383,16 +383,16 @@ You can query the details of a specific transaction using its **hash** with the 
 
 ### アカウントオブジェクト
 
-\`account_objects\`コマンドはアカウントに関連するすべてのレジャーオブジェクトを返します：
+\`account_objects\`コマンドはアカウントに関連するすべてのレジャーオブジェクトを返します。
 - TrustLine（トラストライン）
 - Offer（DEXの注文）
 - URIToken（NFT）
 - インストールされたHook
-- Hookのステート
+- HookState
 
 ### リアルタイムサブスクリプション
 
-\`subscribe\`コマンドを使用して、イベントが発生したときに通知を受け取ることができます：
+\`subscribe\`コマンドを使用して、イベントが発生したときに通知を受け取ることができます。
 - **ledger**：新しいレジャーが閉じるたびに通知
 - **transactions**：ネットワークのすべてのトランザクション
 - **accounts**：特定のアカウントに影響するトランザクション
@@ -749,7 +749,7 @@ Many API commands return paginated results. When there is more data than fits in
 - **Handle disconnections**: Listen for the client's \`disconnected\` event and reconnect automatically
 - **Rate limiting**: Public nodes may throttle requests. Add pauses between bulk requests
 - **Timeouts**: Configure a reasonable timeout to prevent your application from hanging`,
-        jp: `Xahau APIを使用する際、2つの側面をマスターすることが不可欠です：大量の結果セットの**ページネーション**と、堅牢なアプリケーションを構築するための**エラー処理**です。
+        jp: `Xahau APIを使用する際、大量の結果セットの**ページネーション**と、堅牢なアプリケーションを構築するための**エラー処理**といった2つの側面をマスターすることが不可欠です。
 
 ### マーカーシステム
 
@@ -1077,7 +1077,7 @@ These indexes are deterministic: you can always recalculate them if you know the
 
 \`ledger_entry\`を使用すると、**インデックス**（64文字の16進数ハッシュ）を使用してレジャーの特定のオブジェクトを照会できます。これは、必要なオブジェクトの正確な識別子がすでにわかっている場合に役立ちます。
 
-### 照会可能なオブジェクトタイプ
+### 照会可能なオブジェクトタイプの例
 
 | タイプ | 説明 |
 |---|---|
@@ -1090,7 +1090,7 @@ These indexes are deterministic: you can always recalculate them if you know the
 
 ### タイプフィルターを使用したaccount_objectsコマンド
 
-\`account_objects\`コマンドは、特定のタイプのオブジェクトのみをフィルタリングするために\`type\`パラメータを受け付けます。有効な値には：
+\`account_objects\`コマンドは、特定のタイプのオブジェクトのみをフィルタリングするために\`type\`パラメータを受け付けます。有効な値には次のようなものがあります。
 - \`"state"\` → RippleState（トラストライン）
 - \`"offer"\` → Offer（DEXの注文）
 - \`"uri_token"\` → URIToken
@@ -1098,11 +1098,11 @@ These indexes are deterministic: you can always recalculate them if you know the
 
 ### レジャーインデックスの理解
 
-レジャーの各オブジェクトには、その識別データのSHA-512Halfハッシュとして計算された**一意のインデックス**があります。例えば：
+レジャーの各オブジェクトには、その識別データのSHA-512Halfハッシュとして計算された**一意のインデックス**があります。例えば次のようなものがあります。
 - AccountRootのインデックスはアカウントアドレスから計算される
 - RippleStateのインデックスは2つのアカウントと通貨から計算される
 
-これらのインデックスは決定論的です：入力データがわかれば、いつでも再計算できます。`,
+これらのインデックスは決定論的です。入力データがわかれば、いつでも再計算できます。`,
       },
       codeBlocks: [
 
