@@ -2241,7 +2241,83 @@ Si añades \`Flags: 1\` (\`tfImmutable\`) al crear una Remark, **no podrá ser m
 | \`tecNO_PERMISSION\` | La cuenta no es propietaria/emisora del objeto |
 | \`tecIMMUTABLE\` | Se intenta modificar una Remark con \`tfImmutable\` |
 | \`tecTOO_MANY_REMARKS\` | El objeto ya tiene 32 Remarks (el máximo permitido) |`,
-        en: "",
+        en: `The \`SetRemarks\` transaction allows you to attach **key-value pairs** to existing Xahau ledger objects. It is not a way to send messages or record data in transactions: it is a mechanism to **annotate ledger objects** (accounts, offers, escrows, checks, URITokens, TrustLines...) with metadata that remains associated with the object itself.
+
+### What types of objects support Remarks?
+
+\`SetRemarks\` can attach metadata to the following ledger object types:
+
+- **AccountRoot** — the account itself (address, balance, flags)
+- **Offer** — DEX offers
+- **Escrow** — conditional payments
+- **Ticket** — sequence tickets
+- **PayChannel** — payment channels
+- **Check** — checks
+- **DepositPreauth** — deposit pre-authorizations
+- **URIToken** — non-fungible tokens
+- **RippleState** — TrustLines
+
+Only the **owner or issuer** of the object can modify its Remarks (except for URITokens and TrustLines, where the token issuer has permission).
+
+### SetRemarks Fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| \`TransactionType\` | String | Yes | \`"SetRemarks"\` |
+| \`Account\` | String | Yes | Account sending the transaction (must be owner/issuer of the object) |
+| \`ObjectID\` | Hash256 | Yes | ID of the ledger object to attach the Remarks to |
+| \`Remarks\` | Array | Yes | Array of \`Remark\` objects to create, modify, or delete |
+
+### Structure of each Remark
+
+Each array element contains a \`Remark\` object with:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| \`RemarkName\` | Blob | Yes | Name/key of the Remark (1–256 bytes). Must be unique per object |
+| \`RemarkValue\` | Blob | No | Value of the Remark (1–256 bytes). **Omit to delete** the Remark |
+| \`Flags\` | UInt32 | No | \`1\` (\`tfImmutable\`) makes the Remark **permanent and unmodifiable** |
+
+The values of \`RemarkName\` and \`RemarkValue\` are expressed in **hexadecimal**.
+
+### Getting the ObjectID of an account
+
+To attach Remarks to your own account (AccountRoot), you need its \`ObjectID\`, which is the \`index\` field of the object in the ledger:
+
+\`\`\`javascript
+const info = await client.request({
+  command: "account_info",
+  account: wallet.address,
+  ledger_index: "validated",
+});
+const objectID = info.result.account_data.index;
+\`\`\`
+
+For other objects (Escrow, Check, Offer...) the \`ObjectID\` is the \`LedgerIndex\` that appears in the \`AffectedNodes\` when the object is created.
+
+### Deleting a Remark
+
+Omit \`RemarkValue\` in the corresponding \`Remark\` object. Xahau will remove that entry from the object.
+
+### Immutable Remarks
+
+If you add \`Flags: 1\` (\`tfImmutable\`) when creating a Remark, **it cannot be modified or deleted** in the future. Useful for certifications or data that must remain permanently sealed.
+
+### Limits and costs
+
+- **Maximum 32 Remarks** per ledger object
+- **Additional fee**: 1 drop per byte of \`RemarkName\` + \`RemarkValue\` in the transaction
+- Name and value: between 1 and 256 bytes each
+- Names must be unique within the same object
+
+### Common errors
+
+| Error | Cause |
+|---|---|
+| \`temDISABLED\` | The Remarks amendment is not active on the network |
+| \`tecNO_PERMISSION\` | The account is not the owner/issuer of the object |
+| \`tecIMMUTABLE\` | Attempting to modify a Remark with \`tfImmutable\` |
+| \`tecTOO_MANY_REMARKS\` | The object already has 32 Remarks (the maximum allowed) |`,
         jp: `\`SetRemarks\`トランザクションは、Xahauの既存のオブジェクトに**キーと値のペア**を添付します。これはトランザクションでメッセージを送ったりデータを記録したりする方法ではありません。これはレジャーオブジェクト（アカウント、オファー、エスクロー、チェック、URIToken、トラストライン...）にオブジェクト自体に関連付けられたメタデータを**注釈する**メカニズムです。
 
 ### どのタイプのオブジェクトがRemarksをサポートするか？
