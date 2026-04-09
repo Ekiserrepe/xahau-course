@@ -661,7 +661,7 @@ Las **enmiendas** son el mecanismo por el cual Xahau actualiza su protocolo de f
 
 1. Un desarrollador propone un cambio al protocolo y lo implementa con un ID de enmienda único
 2. Los validadores **votan** si apoyan la activación de esa enmienda
-3. Si una enmienda recibe apoyo del **80% de los validadores** durante **2 semanas consecutivas**, se activa automáticamente
+3. Si una enmienda recibe apoyo del **80% de los validadores** durante **5 días consecutivos**, se activa automáticamente
 4. Una vez activada, es permanente e irreversible
 
 Ejemplos de enmiendas incluyen: nuevos tipos de transacciones, nuevas características de la blockchain.
@@ -1051,7 +1051,7 @@ checkNetworkFees();`,
         {
           title: { es: "Enmiendas: gobernanza descentralizada", en: "Amendments: decentralized governance", jp: "エンメントメント：分散型ガバナンス" },
           content: {
-            es: "Las actualizaciones del protocolo\nse votan de forma descentralizada:\n\n1. Se propone un cambio (amendment)\n2. Los validadores votan a favor o en contra\n3. 80% de apoyo durante 2 semanas\n4. Se activa automáticamente\n5. Es permanente e irreversible",
+            es: "Las actualizaciones del protocolo\nse votan de forma descentralizada:\n\n1. Se propone un cambio (amendment)\n2. Los validadores votan a favor o en contra\n3. 80% de apoyo durante 5 días\n4. Se activa automáticamente\n5. Es permanente e irreversible",
             en: "Protocol updates\nare voted on in a decentralized way:\n\n1. A change is proposed (amendment)\n2. Validators vote for or against\n3. 80% support for 5 days\n4. It is activated automatically\n5. It is permanent and irreversible",
             jp: "プロトコルの更新は\n分散型の方法で投票される：\n\n1. 変更（エンメントメント）を提案する\n2. バリデーターが賛否を投票する\n3. 5日間、80%の支持を得る\n4. 自動的にアクティベートされる\n5. 永続的かつ不可逆",
           },

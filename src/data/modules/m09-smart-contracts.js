@@ -501,7 +501,7 @@ Si además quieres **limpiar todo el estado** del namespace de ese Hook, añade 
 |---|---|---|
 | \`hsfOverride\` | 1 | Permite reemplazar o eliminar un Hook existente en esa posición |
 | \`hsfNSDelete\` | 2 | Elimina todo el estado del namespace al desinstalar |
-| \`hsfCollect\` | 4 | Recolecta los grants del Hook anterior |
+| \`hsfCollect\` | 4 | Permite ejecución como weakTSH |
 
 ### HookOn: Filtro de transacciones
 

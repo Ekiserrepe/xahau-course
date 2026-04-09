@@ -1328,7 +1328,7 @@ Cuando una nueva orden coincide con una existente (el precio se cruza), se ejecu
 - **tfImmediateOrCancel**: La orden se ejecuta inmediatamente contra las órdenes existentes. Lo que no se llene se cancela al instante. No queda nada en el libro de órdenes
 - **tfPassive**: La orden solo se ejecuta contra órdenes existentes que tengan un precio igual o mejor. No se coloca en el libro si no hay match inmediato
 - **tfFillOrKill**: La orden se ejecuta completamente o se cancela. No se permiten ejecuciones parciales.
-- **tfSell**: Indica que la orden es una venta (en lugar de una compra). Afecta cómo se interpreta TakerPays y TakerGets.
+- **tfSell**: Intercambia la cantidad total de TakerGets, incluso si eso significa obtener más de la cantidad de TakerPays a cambio.
 
 Visita más información sobre los flags en la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/#offercreate-flags).
 
@@ -1896,7 +1896,7 @@ cancelOffer();`,
         {
           title: { es: "OfferCreate: anatomía de una orden", en: "OfferCreate: anatomy of an order", jp: "OfferCreate：注文の構造" },
           content: {
-            es: "TakerPays → Lo que quieres RECIBIR\nTakerGets → Lo que estás dispuesto a DAR\n\nFlags especiales:\n• tfImmediateOrCancel → Ejecutar o cancelar\n• tfPassive → Solo match existente\n• tfFillOrKill → Ejecutar todo o nada\n• tfSell → Indica que es una venta\n\nOfferCancel → Cancelar orden abierta",
+            es: "TakerPays → Lo que quieres RECIBIR\nTakerGets → Lo que estás dispuesto a DAR\n\nFlags especiales:\n• tfImmediateOrCancel → Ejecutar o cancelar\n• tfPassive → Solo match existente\n• tfFillOrKill → Ejecutar todo o nada\n• tfSell → Recibe tanto como la cantidad de TakerGets\n\nOfferCancel → Cancelar orden abierta",
             en: "TakerPays -> What you want to RECEIVE\nTakerGets -> What you are willing to GIVE\n\nSpecial flags:\n• tfImmediateOrCancel -> Execute or cancel\n• tfPassive -> Only match existing\n• tfFillOrKill -> Execute all or nothing\n• tfSell -> Receive as much as TakerGets amount\n\nOfferCancel -> Cancel open order",
             jp: "TakerPays -> 受け取りたいもの\nTakerGets -> 提供する意思があるもの\n\n特殊フラグ：\n• tfImmediateOrCancel -> 実行またはキャンセル\n• tfPassive -> 既存注文にのみマッチ\n• tfFillOrKill -> 全量実行またはキャンセル\n• tfSell -> 可能な限り多くの金額を受け取る\n\nOfferCancel -> 未決注文をキャンセル",
           },
@@ -1956,7 +1956,7 @@ El emisor puede cobrar un porcentaje en cada transferencia de su token entre ter
 - Se configura con el campo \`TransferRate\` en \`AccountSet\`
 - El valor es un entero: 1000000000 = 0%, 1001000000 = 0.1%, 1010000000 = 1%
 - Solo aplica en transferencias entre terceros, no cuando envías al emisor
-- Ejemplo: Con 0.1% de fee, al enviar 100 tokens se cobran 100.1 del remitente
+- Ejemplo: Con 0.1% de fee, al enviar 100 tokens se cobran 99.9 del receptor
 
 ### Authorized TrustLines: RequireAuth
 

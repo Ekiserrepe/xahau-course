@@ -1706,9 +1706,9 @@ Una vez instalado Xaman, puedes importar la cuenta que generaste por código usa
 7. Confirma con tu PIN o biometría
 8. Tu cuenta aparecerá en la lista de cuentas de Xaman
 
-### Añadir la red Xahau en Xaman
+### Añadir la red Xahau Testnet en Xaman
 
-Por defecto, Xaman se conecta a **XRPL Mainnet**. Para trabajar con **Xahau**, debes añadir la red:
+Por defecto, Xaman se conecta a **XRPL Mainnet**. Para trabajar con **Xahau Testnet**, debes añadir la red:
 
 1. En Xaman, ve a **Ajustes** (icono de engranaje)
 2. Busca la sección **"Advanced"** o **"Avanzado"**

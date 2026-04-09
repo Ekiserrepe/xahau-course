@@ -568,7 +568,7 @@ Puedes adjuntar datos a cualquier transacción usando el campo **Memos**:
 
 - **MemoType**: Tipo MIME en hexadecimal (ej: "text/plain")
 - **MemoData**: El contenido en hexadecimal
-- Los memos son **públicos** y permanentes en el ledger
+- Los memos son **públicos** y permanentes guardados como datos de transacción
 - No afectan la lógica de la transacción, solo almacenan información adicional
 - Si no tienes la necesidad de hacerlo, se recomienda no usar estos campos para no almacenar datos innecesarios en la blockchain`,
         en: `Every transaction in Xahau is an **object with specific fields**. Some fields are required, others are optional, and others are filled in by \`autofill()\`. Understanding each field will give you full control over your transactions.
