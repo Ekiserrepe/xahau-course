@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Markdown from './Markdown'
 import CodeBlock from './CodeBlock'
 
@@ -24,6 +24,10 @@ export default function LessonView({
   setLang,
 }) {
   const [activeTab, setActiveTab] = useState('theory')
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [lesson.id])
 
   const tabs = [
     { key: 'theory', icon: '📖', label: labels.theory, disabled: false },
