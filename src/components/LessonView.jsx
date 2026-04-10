@@ -93,12 +93,12 @@ export default function LessonView({
           </div>
 
           {/* Lesson navigation pills */}
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-1.5 mt-3">
             {mod.lessons.map((l, idx) => (
               <button
                 key={l.id}
                 onClick={() => onGoToLesson(idx)}
-                className="text-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full font-medium transition-all"
+                className="text-xs px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full font-medium transition-all text-left sm:text-center w-full sm:w-auto"
                 style={{
                   background: idx === lessonIdx ? 'var(--color-accent)' : 'var(--color-button-bg)',
                   color: idx === lessonIdx ? '#000' : 'var(--color-text-muted)',

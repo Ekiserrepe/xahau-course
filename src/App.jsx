@@ -76,6 +76,7 @@ export default function App() {
     setView(nextView)
     setActiveModuleIdx(mIdx)
     setActiveLessonIdx(lIdx)
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
   const openLesson = (mIdx, lIdx) => navigate('lesson', mIdx, lIdx)
