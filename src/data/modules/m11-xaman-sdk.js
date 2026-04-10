@@ -31,7 +31,7 @@ El paquete **xumm** (npm) es el SDK oficial que facilita la integración con la 
 
 Antes de escribir código necesitas acceder al **portal de desarrolladores**:
 
-1. Ve a [apps.xumm.dev](https://apps.xumm.dev) e inicia sesión con tu cuenta de Xaman
+1. Ve a [apps.xaman.dev](https://apps.xaman.dev) e inicia sesión con tu cuenta de Xaman
 2. Haz clic en **"Create new application"**
 3. Rellena el nombre, descripción e icono de tu aplicación y pulsa **Create application**.
 4. Copia tu **API Key** (pública) y tu **API Secret** (privada)
@@ -40,7 +40,7 @@ Antes de escribir código necesitas acceder al **portal de desarrolladores**:
 
 ### Panel de control de desarrolladores
 
-El dashboard de apps.xumm.dev te permite:
+El dashboard de apps.xaman.dev te permite:
 
 - **App details**: Nombre, descripción, URL del icono
 - **Origin/redirect URLs**: Lista blanca de dominios que pueden usar tu API Key
@@ -98,7 +98,7 @@ The **xumm** npm package is the official SDK that simplifies integration with th
 
 Before writing code you need to visit the **developer portal**:
 
-1. Go to [apps.xumm.dev](https://apps.xumm.dev) and sign in with your Xaman account
+1. Go to [apps.xaman.dev](https://apps.xaman.dev) and sign in with your Xaman account
 2. Click **"Create a new application"**
 3. Fill in the name, description and icon for your app
 4. Copy your **API Key** (public) and **API Secret** (private)
@@ -107,7 +107,7 @@ Before writing code you need to visit the **developer portal**:
 
 ### Developer dashboard
 
-The apps.xumm.dev dashboard lets you:
+The apps.xaman.dev dashboard lets you:
 
 - **App details**: Name, description, icon URL
 - **Origin/redirect URLs**: Whitelist of domains allowed to use your API Key
@@ -164,7 +164,7 @@ Your app                  Xaman API             Xaman (mobile)
 
 コードを書く前に**開発者ポータル**にアクセスする必要があります：
 
-1. **apps.xumm.dev**にアクセスし、Xamanアカウントでサインイン
+1. **apps.xaman.dev**にアクセスし、Xamanアカウントでサインイン
 2. **"Create a new app"**をクリック
 3. アプリの名前、説明、アイコンを入力
 4. **APIキー**（公開）と**APIシークレット**（非公開）をコピー
@@ -292,9 +292,9 @@ console.log("App UUID:", appInfo?.uuidv4);`,
             jp: "開発者ポータル",
           },
           content: {
-            es: "apps.xumm.dev — tu centro de control\n\n• Crear app → obtener API Key + Secret\n• Whitelist de dominios permitidos\n• Configurar webhook URL\n• Ver estadísticas y logs de API\n\ndocs.xumm.dev — documentación completa",
-            en: "apps.xumm.dev — your control center\n\n• Create app → get API Key + Secret\n• Whitelist of allowed domains\n• Configure webhook URL\n• View stats and API logs\n\ndocs.xumm.dev — full documentation",
-            jp: "apps.xumm.dev — あなたのコントロールセンター\n\n• アプリ作成 → APIキー＋シークレット取得\n• 許可ドメインのホワイトリスト\n• WebhookURL設定\n• 統計とAPIログの確認\n\ndocs.xumm.dev — 完全なドキュメント",
+            es: "apps.xaman.dev — tu centro de control\n\n• Crear app → obtener API Key + Secret\n• Whitelist de dominios permitidos\n• Configurar webhook URL\n• Ver estadísticas y logs de API\n\ndocs.xumm.dev — documentación completa",
+            en: "apps.xaman.dev — your control center\n\n• Create app → get API Key + Secret\n• Whitelist of allowed domains\n• Configure webhook URL\n• View stats and API logs\n\ndocs.xumm.dev — full documentation",
+            jp: "apps.xaman.dev — あなたのコントロールセンター\n\n• アプリ作成 → APIキー＋シークレット取得\n• 許可ドメインのホワイトリスト\n• WebhookURL設定\n• 統計とAPIログの確認\n\ndocs.xumm.dev — 完全なドキュメント",
           },
           visual: "🖥️",
         },
@@ -370,11 +370,11 @@ Vite genera el proyecto con varios archivos. Solo tienes que tocar **uno**:
 | \`src/App.css\` | Puedes borrarlo — el ejemplo usa estilos inline |
 | \`src/index.css\` | Puedes borrarlo o dejarlo — no afecta al ejemplo |
 
-### Paso previo obligatorio, whitelist en apps.xumm.dev
+### Paso previo obligatorio, whitelist en apps.xaman.dev
 
 Antes de ejecutar el código, debes registrar tu URL en el portal de Xaman:
 
-1. Ve a **apps.xumm.dev** → tu aplicación → **Origin/Redirect URLs**
+1. Ve a **apps.xaman.dev** → tu aplicación → **Origin/Redirect URLs**
 2. Añade tu localhost y port ejecutando tu proyecto web como: \`http://localhost:5173\`
 3. Guarda los cambios
 
@@ -382,7 +382,7 @@ Sin este paso recibirás el error **"access_denied / Invalid client/redirect URL
 
 ### Cómo funciona el QR en el modal del navegador
 
-El SDK puede crear payloads directamente desde el browser usando **\`payload.createAndSubscribe()\`**. Para que funcione, la URL de tu app debe estar en la **whitelist** de apps.xumm.dev — el browser envía la cabecera Origin automáticamente, y Xaman la valida contra esa lista.
+El SDK puede crear payloads directamente desde el browser usando **\`payload.createAndSubscribe()\`**. Para que funcione, la URL de tu app debe estar en la **whitelist** de apps.xaman.dev — el browser envía la cabecera Origin automáticamente, y Xaman la valida contra esa lista.
 
 Una vez que el origen está permitido, el método:
 
@@ -443,11 +443,11 @@ Vite scaffolds the project for you. You only need to touch **one file**:
 | \`src/App.css\` | You can delete it — the example uses inline styles |
 | \`src/index.css\` | You can delete it or leave it — does not affect the example |
 
-### Required step first — whitelist in apps.xumm.dev
+### Required step first — whitelist in apps.xaman.dev
 
 Before running the code, register your URL in the Xaman developer portal:
 
-1. Go to **apps.xumm.dev** → your app → **Origin/Redirect URLs**
+1. Go to **apps.xaman.dev** → your app → **Origin/Redirect URLs**
 2. Add your localhost url and port web project like: \`http://localhost:5173\`
 3. Save the changes
 
@@ -455,7 +455,7 @@ Without this step you will get **"access_denied / Invalid client/redirect URL"**
 
 ### How the QR modal works in the browser
 
-The SDK can create payloads directly from the browser using **\`payload.createAndSubscribe()\`**. For this to work, your app URL must be in the **whitelist** at apps.xumm.dev — the browser sends the Origin header automatically and Xaman validates it against that list.
+The SDK can create payloads directly from the browser using **\`payload.createAndSubscribe()\`**. For this to work, your app URL must be in the **whitelist** at apps.xaman.dev — the browser sends the Origin header automatically and Xaman validates it against that list.
 
 Once the origin is allowed, the method:
 
@@ -550,7 +550,7 @@ npm run dev`,
           code: {
             es: `// src/App.jsx — Login con QR modal en tu propia página
 // ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
+// En apps.xaman.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
 // Añade la API Key de tu app: xumm = new Xumm("TU_API_KEY_AQUI");
 //
 // Mismo patrón que el ejercicio de pago con QR modal:
@@ -729,7 +729,7 @@ export default function App() {
 }`,
             en: `// src/App.jsx — QR modal login in your own page
 // BEFORE RUNNING:
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173
+// In apps.xaman.dev → your app → Origin/Redirect URLs → add http://localhost:5173
 // Add your app's API Key: xumm = new Xumm("YOUR_API_KEY_HERE");
 //
 // Same pattern as the QR modal payment exercise:
@@ -908,7 +908,7 @@ export default function App() {
 }`,
             jp: `// src/App.jsx — 自分のページでQRモーダルログイン
 // 実行前に:
-// apps.xumm.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
+// apps.xaman.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
 // APIキーを設定: xumm = new Xumm("YOUR_API_KEY_HERE");
 //
 // 支払いQRモーダル演習と同じパターン:
@@ -1310,7 +1310,7 @@ npm run dev`,
           code: {
             es: `// src/App.jsx — Todo en tu propia página: QR modal para login y QR modal para pago
 // ANTES DE EJECUTAR:
-// En apps.xumm.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
+// En apps.xaman.dev → tu app → Origin/Redirect URLs → añade http://localhost:5173
 // Añade la API Key de tu app: xumm = new Xumm("TU_API_KEY_AQUI");
 //
 // Un solo <QRModal> reutilizable sirve tanto para el login como para el pago.
@@ -1629,7 +1629,7 @@ export default function App() {
 }`,
             en: `// src/App.jsx — Everything in your own page: QR modal for login and QR modal for payment
 // BEFORE RUNNING:
-// In apps.xumm.dev → your app → Origin/Redirect URLs → add http://localhost:5173
+// In apps.xaman.dev → your app → Origin/Redirect URLs → add http://localhost:5173
 // Add your app's API Key: xumm = new Xumm("YOUR_API_KEY_HERE");
 //
 // A single reusable <QRModal> handles both login and payment.
@@ -1948,7 +1948,7 @@ export default function App() {
 }`,
             jp: `// src/App.jsx — すべて自分のページで：ログインもPaymentもQRモーダル
 // 実行前に:
-// apps.xumm.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
+// apps.xaman.dev → あなたのアプリ → Origin/Redirect URLs → http://localhost:5173 を追加
 // APIキーを設定: xumm = new Xumm("YOUR_API_KEY_HERE");
 //
 // 再利用可能な<QRModal>1つでログインと支払いの両方を処理します。
@@ -2219,7 +2219,7 @@ Tienes dos formas de recibir la notificación de firma:
 
 ### Configurar el webhook en el dashboard
 
-1. En **apps.xumm.dev**, ve a tu app
+1. En **apps.xaman.dev**, ve a tu app
 2. En "Webhook", introduce la URL de tu servidor: \`https://tu-servidor.com/webhook/xaman\`
 3. Guarda los cambios
 4. Xaman enviará un POST a esa URL con el resultado de cada payload
@@ -2295,7 +2295,7 @@ You have two ways to receive the signing notification:
 
 ### Configure the webhook in the dashboard
 
-1. In **apps.xumm.dev**, go to your app
+1. In **apps.xaman.dev**, go to your app
 2. Under "Webhook", enter your server URL: \`https://your-server.com/webhook/xaman\`
 3. Save the changes
 4. Xaman will send a POST to that URL with the result of each payload
@@ -2371,7 +2371,7 @@ Frontend (React)           Backend (Express)          Xaman API
 
 ### ダッシュボードでWebhookを設定する
 
-1. **apps.xumm.dev**でアプリに移動
+1. **apps.xaman.dev**でアプリに移動
 2. 「Webhook」にサーバーURLを入力：\`https://your-server.com/webhook/xaman\`
 3. 変更を保存
 4. XamanがペイロードごとにそのURLへPOSTを送信する
@@ -2505,19 +2505,19 @@ npm run dev
           language: "bash",
           code: {
             es: `# Crea el archivo .env en la raíz del proyecto xaman-backend/
-# Sustituye los valores por los de tu app en apps.xumm.dev
+# Sustituye los valores por los de tu app en apps.xaman.dev
 
 XUMM_API_KEY=tu-api-key-aqui
 XUMM_API_SECRET=tu-api-secret-aqui
 PORT=3001`,
             en: `# Create the .env file in the root of the xaman-backend/ project
-# Replace the values with those from your app at apps.xumm.dev
+# Replace the values with those from your app at apps.xaman.dev
 
 XUMM_API_KEY=your-api-key-here
 XUMM_API_SECRET=your-api-secret-here
 PORT=3001`,
             jp: `# Create the .env file in the root of the xaman-backend/ project
-# Replace the values with those from your app at apps.xumm.dev
+# Replace the values with those from your app at apps.xaman.dev
 
 XUMM_API_KEY=your-api-key-here
 XUMM_API_SECRET=your-api-secret-here
@@ -2656,7 +2656,7 @@ app.get("/api/pago/:uuid", async (req, res) => {
 });
 
 // ── Ruta: Webhook de Xaman ────────────────────────────────────────────────────
-// Configura esta URL en apps.xumm.dev → tu app → Webhook
+// Configura esta URL en apps.xaman.dev → tu app → Webhook
 app.post("/webhook/xaman", (req, res) => {
   const body = req.body;
   console.log("Webhook recibido:", JSON.stringify(body, null, 2));
@@ -2803,7 +2803,7 @@ app.get("/api/payment/:uuid", async (req, res) => {
 });
 
 // ── Route: Xaman Webhook ──────────────────────────────────────────────────────
-// Configure this URL in apps.xumm.dev → your app → Webhook
+// Configure this URL in apps.xaman.dev → your app → Webhook
 app.post("/webhook/xaman", (req, res) => {
   const body = req.body;
   console.log("Webhook received:", JSON.stringify(body, null, 2));
@@ -4004,9 +4004,9 @@ export default function App() {
             jp: "Webhook：サーバーで署名を受信",
           },
           content: {
-            es: "Configura tu webhook en apps.xumm.dev\n\nXaman llama a tu endpoint cuando:\n• El usuario firma el payload ✅\n• El usuario rechaza el payload ❌\n• El payload expira ⏰\n\nTu servidor debe responder 200 rápido\nProcesa la lógica de forma asíncrona\nUsa ngrok para probar en local",
-            en: "Configure your webhook at apps.xumm.dev\n\nXaman calls your endpoint when:\n• User signs the payload ✅\n• User rejects the payload ❌\n• Payload expires ⏰\n\nYour server must respond 200 quickly\nProcess logic asynchronously\nUse ngrok to test locally",
-            jp: "apps.xumm.devでWebhookを設定\n\nXamanがエンドポイントを呼び出す時：\n• ユーザーがペイロードに署名 ✅\n• ユーザーがペイロードを拒否 ❌\n• ペイロードが期限切れ ⏰\n\nサーバーは素早く200で応答する必要あり\nロジックは非同期で処理\nローカルテストにはngrokを使用",
+            es: "Configura tu webhook en apps.xaman.dev\n\nXaman llama a tu endpoint cuando:\n• El usuario firma el payload ✅\n• El usuario rechaza el payload ❌\n• El payload expira ⏰\n\nTu servidor debe responder 200 rápido\nProcesa la lógica de forma asíncrona\nUsa ngrok para probar en local",
+            en: "Configure your webhook at apps.xaman.dev\n\nXaman calls your endpoint when:\n• User signs the payload ✅\n• User rejects the payload ❌\n• Payload expires ⏰\n\nYour server must respond 200 quickly\nProcess logic asynchronously\nUse ngrok to test locally",
+            jp: "apps.xaman.devでWebhookを設定\n\nXamanがエンドポイントを呼び出す時：\n• ユーザーがペイロードに署名 ✅\n• ユーザーがペイロードを拒否 ❌\n• ペイロードが期限切れ ⏰\n\nサーバーは素早く200で応答する必要あり\nロジックは非同期で処理\nローカルテストにはngrokを使用",
           },
           visual: "🔔",
         },
