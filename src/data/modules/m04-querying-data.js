@@ -6,6 +6,7 @@ export default {
     en: "Querying data from a network node",
     jp: "ネットワークノードへのデータ照会",
     ko: "네트워크 노드에서 데이터 조회하기",
+    zh: "从网络节点查询数据",
   },
   lessons: [
     {
@@ -15,6 +16,7 @@ export default {
         en: "Connecting to Xahau nodes",
         jp: "Xahauノードへの接続",
         ko: "Xahau 노드에 연결하기",
+        zh: "连接到 Xahau 节点",
       },
       theory: {
         es: `Para leer datos de la blockchain Xahau, necesitas conectarte a un **nodo de la red** mediante **WebSocket**. Los nodos exponen una API JSON-RPC que permite consultar toda la información del ledger.
@@ -129,6 +131,34 @@ Xahau API는 다음 명령을 제공합니다:
 - **Ledger index**: 번호로 특정 ledger를 조회하거나, 마지막 검증 ledger에는 \`"validated"\`를 사용할 수 있습니다
 - **Drops**: XAH 수량은 drops 단위로 표현됩니다 (1 XAH = 1,000,000 drops)
 - **Markers**: 많은 결과를 페이지네이션할 때 API가 marker를 사용합니다`,
+        zh: `要从 Xahau 区块链读取数据，你需要通过 **WebSocket** 连接到**网络节点**。节点暴露 JSON-RPC API，可查询账本的所有信息。
+
+### 节点类型
+
+- **公共节点**：由社区维护，任何人均可访问。适合开发使用
+- **自有节点**：你可以运行自己的节点，以获得更高的控制力和可靠性
+
+### 主要端点
+
+| 网络 | WebSocket URL |
+|---|---|
+| 主网 | \`wss://xahau.network\` |
+| 测试网 | \`wss://xahau-test.net\` |
+
+### 查询类型
+
+Xahau API 提供以下命令：
+- **服务器信息**：\`server_info\`、\`server_state\`
+- **账户**：\`account_info\`、\`account_lines\`、\`account_objects\`、\`account_tx\`
+- **账本**：\`ledger\`、\`ledger_data\`、\`ledger_entry\`
+- **交易**：\`tx\`、\`transaction_entry\`
+- **订阅**：用于实时事件的 \`subscribe\` / \`unsubscribe\`
+
+### 重要概念
+
+- **账本索引（Ledger index）**：可按编号查询特定账本，或使用 \`"validated"\` 查询最新已验证账本
+- **Drops**：XAH 数量以 drops 表示（1 XAH = 1,000,000 drops）
+- **标记（Markers）**：对大量结果分页时，API 使用标记`,
       },
       codeBlocks: [
         {
@@ -137,6 +167,7 @@ Xahau API는 다음 명령을 제공합니다:
             en: "Connect and query server information",
             jp: "サーバー情報の接続と照会",
             ko: "서버 정보 연결 및 조회",
+            zh: "连接并查询服务器信息",
           },
           language: "javascript",
           code: {
@@ -232,6 +263,29 @@ async function getServerInfo() {
 }
 
 getServerInfo();`,
+            zh: `const { Client } = require("xahau");
+
+async function getServerInfo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("=== 服务器信息 ===");
+  console.log("版本:", info.build_version);
+  console.log("网络 ID:", info.network_id);
+  console.log("状态:", info.server_state);
+  console.log("已连接节点数:", info.peers);
+  console.log("已验证账本:", info.validated_ledger.seq);
+  console.log("验证法定人数:", info.validation_quorum);
+
+  await client.disconnect();
+}
+
+getServerInfo();`,
           },
         },
         {
@@ -240,6 +294,7 @@ getServerInfo();`,
             en: "Query detailed account information",
             jp: "アカウントの詳細情報を照会する",
             ko: "계정 상세 정보 조회",
+            zh: "查询账户详细信息",
           },
           language: "javascript",
           code: {
@@ -365,6 +420,38 @@ async function getAccountInfo(address) {
     console.log("Namespaces:", data.HookNamespaces);
   } else {
     console.log("Namespace 설치됨: 아니오");
+  }
+
+  await client.disconnect();
+}
+
+getAccountInfo("rYourAddressHere");`,
+            zh: `const { Client } = require("xahau");
+
+async function getAccountInfo(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_info",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  const data = response.result.account_data;
+  console.log("=== 账户数据 ===");
+  console.log("地址:", data.Account);
+  console.log("余额:", Number(data.Balance) / 1_000_000, "XAH");
+  console.log("序列号:", data.Sequence);
+  console.log("拥有者数量:", data.OwnerCount);
+  console.log("标志位:", data.Flags);
+
+  // 检查是否安装了 Namespace
+  if (data.HookNamespaces) {
+    console.log("已安装 Namespace: 是");
+    console.log("Namespaces:", data.HookNamespaces);
+  } else {
+    console.log("已安装 Namespace: 否");
   }
 
   await client.disconnect();

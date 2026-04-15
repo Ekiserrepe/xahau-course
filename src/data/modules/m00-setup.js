@@ -6,6 +6,7 @@ export default {
     en: "Setting Up the Development Environment",
     jp: "開発環境のセットアップ",
     ko: "개발 환경 설정",
+    zh: "开发环境配置",
   },
   lessons: [
     {
@@ -15,6 +16,7 @@ export default {
         en: "Installing Visual Studio Code",
         jp: "Visual Studio Codeのインストール",
         ko: "Visual Studio Code 설치",
+        zh: "安装 Visual Studio Code",
       },
       theory: {
         es: `**Visual Studio Code (VS Code)** es el editor de código que usaremos durante todo el curso. Es gratuito, ligero y tiene un ecosistema enorme de extensiones que nos facilitarán el desarrollo.
@@ -242,6 +244,73 @@ code --version
 - **Linux (Ubuntu/Debian/Fedora)**: 패키지 저장소를 추가한 뒤 \`apt\` 또는 \`dnf\`로 설치합니다
 
 초반 개발 환경을 안정적으로 만드는 것이 이후 실습 속도를 크게 좌우합니다.`,
+        zh: `**Visual Studio Code（VS Code）** 是我们在整个课程中使用的代码编辑器。它免费、轻量，拥有丰富的插件生态系统，能大大提升开发效率。
+
+### 为什么选择 VS Code？
+
+- **免费且开源**（由 Microsoft 维护）
+- **跨平台**：支持 Windows、macOS 和 Linux
+- **集成终端**：无需离开编辑器即可运行命令
+- **插件丰富**：支持 JavaScript、自动格式化、智能补全等功能
+- **内置 Git**：无需离开编辑器即可进行版本管理
+
+### 在 Windows 上安装
+
+1. 访问 [code.visualstudio.com](https://code.visualstudio.com)
+2. 点击 **"Download for Windows"**
+3. 运行下载的 \`.exe\` 安装程序
+4. 安装过程中，勾选以下推荐选项：
+   - ✅ 将"通过 Code 打开"添加到文件右键菜单
+   - ✅ 将"通过 Code 打开"添加到目录右键菜单
+   - ✅ 添加到 PATH（以便在终端中使用 \`code .\` 命令打开）
+5. 点击 **安装** 并等待完成
+
+### 在 macOS 上安装
+
+1. 访问 [code.visualstudio.com](https://code.visualstudio.com)
+2. 点击 **"Download for Mac"**
+3. 解压下载的 \`.zip\` 文件
+4. 将 **Visual Studio Code.app** 拖到 **应用程序** 文件夹
+5. 若要在终端中使用 \`code\` 命令：
+   - 打开 VS Code
+   - 按 \`Cmd + Shift + P\` 打开命令面板
+   - 输入 **"Shell Command: Install 'code' command in PATH"**
+   - 选择该选项并确认
+
+### 在 Linux（Ubuntu/Debian）上安装
+
+1. 打开终端并执行以下命令：
+
+\`\`\`
+sudo apt update
+sudo apt install software-properties-common apt-transport-https wget
+wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+sudo apt update
+sudo apt install code
+\`\`\`
+
+2. 或者，从 [code.visualstudio.com](https://code.visualstudio.com) 下载 \`.deb\` 安装包，双击安装
+
+### 在 Linux（Fedora/RHEL）上安装
+
+1. 打开终端并执行：
+
+\`\`\`
+sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc
+sudo sh -c 'echo -e "[code]\\nname=Visual Studio Code\\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\\nenabled=1\\ngpgcheck=1\\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc" > /etc/yum.repos.d/vscode.repo'
+sudo dnf install code
+\`\`\`
+
+### 验证安装
+
+安装完成后，打开终端（Windows 上打开命令提示符）并执行：
+
+\`\`\`
+code --version
+\`\`\`
+
+应该会显示已安装的版本号。`,
       },
       codeBlocks: [
         {
@@ -250,6 +319,7 @@ code --version
             en: "Verify VS Code installation from the terminal",
             jp: "ターミナルからVS Codeのインストールを確認する",
             ko: "터미널에서 VS Code 설치 확인하기",
+            zh: "从终端验证 VS Code 安装",
           },
           language: "bash",
           code: {
@@ -285,6 +355,14 @@ code .
 
 # 특정 파일 열기
 code my-file.js`,
+            zh: `# 验证 VS Code 是否已安装
+code --version
+
+# 在当前目录中打开 VS Code
+code .
+
+# 打开特定文件
+code my-file.js`,
           },
         },
         {
@@ -293,6 +371,7 @@ code my-file.js`,
             en: "Recommended extensions for the course",
             jp: "コース用の推奨拡張機能",
             ko: "강좌용 추천 확장 기능",
+            zh: "课程推荐插件",
           },
           language: "bash",
           code: {
@@ -352,27 +431,43 @@ code --install-extension CoenraadS.bracket-pair-colorizer-2
 
 # 파일 탐색기 아이콘
 code --install-extension vscode-icons-team.vscode-icons`,
+            zh: `# 从终端安装插件
+# （也可以在 VS Code 的 Extensions 标签页中搜索安装）
+
+# 增强 JavaScript/TypeScript 支持
+code --install-extension dbaeumer.vscode-eslint
+
+# 自动代码格式化
+code --install-extension esbenp.prettier-vscode
+
+# 括号对颜色高亮
+code --install-extension CoenraadS.bracket-pair-colorizer-2
+
+# 文件浏览器图标
+code --install-extension vscode-icons-team.vscode-icons`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "Visual Studio Code", en: "Visual Studio Code", jp: "Visual Studio Code", ko: "Visual Studio Code" },
+          title: { es: "Visual Studio Code", en: "Visual Studio Code", jp: "Visual Studio Code", ko: "Visual Studio Code", zh: "Visual Studio Code" },
           content: {
             es: "Editor de código gratuito y multiplataforma\n\n• Windows, macOS y Linux\n• Terminal integrada\n• Miles de extensiones\n• Git integrado\n• Descarga: code.visualstudio.com",
             en: "Free and cross-platform code editor\n\n• Windows, macOS, and Linux\n• Integrated terminal\n• Thousands of extensions\n• Built-in Git\n• Download: code.visualstudio.com",
             jp: "無料のクロスプラットフォームコードエディタ\n\n• Windows、macOS、Linux対応\n• 統合ターミナル\n• 数千の拡張機能\n• Git統合\n• ダウンロード: code.visualstudio.com",
             ko: "무료 크로스플랫폼 코드 에디터\n\n• Windows, macOS, Linux 지원\n• 통합 터미널\n• 수천 개의 확장 기능\n• Git 통합\n• 다운로드: code.visualstudio.com",
+            zh: "免费跨平台代码编辑器\n\n• 支持 Windows、macOS 和 Linux\n• 集成终端\n• 数千个插件\n• 内置 Git\n• 下载：code.visualstudio.com",
           },
           visual: "💻",
         },
         {
-          title: { es: "Instalación rápida", en: "Quick Installation", jp: "クイックインストール", ko: "빠른 설치" },
+          title: { es: "Instalación rápida", en: "Quick Installation", jp: "クイックインストール", ko: "빠른 설치", zh: "快速安装" },
           content: {
             es: "🪟 Windows → Descargar .exe e instalar\n🍎 macOS → Descargar .zip, arrastrar a Aplicaciones\n🐧 Linux → apt install code / dnf install code\n\n✅ Verificar: code --version",
             en: "🪟 Windows → Download .exe and install\n🍎 macOS → Download .zip, drag to Applications\n🐧 Linux → apt install code / dnf install code\n\n✅ Verify: code --version",
             jp: "🪟 Windows → .exeをダウンロードしてインストール\n🍎 macOS → .zipをダウンロードしてアプリケーションにドラッグ\n🐧 Linux → apt install code / dnf install code\n\n✅ 確認: code --version",
             ko: "🪟 Windows → .exe 다운로드 후 설치\n🍎 macOS → .zip 다운로드 후 Applications로 이동\n🐧 Linux → apt install code / dnf install code\n\n✅ 확인: code --version",
+            zh: "🪟 Windows → 下载 .exe 并安装\n🍎 macOS → 下载 .zip，拖到应用程序文件夹\n🐧 Linux → apt install code / dnf install code\n\n✅ 验证：code --version",
           },
           visual: "📦",
         },
@@ -385,6 +480,7 @@ code --install-extension vscode-icons-team.vscode-icons`,
         en: "Installing Node.js",
         jp: "Node.jsのインストール",
         ko: "Node.js 설치",
+        zh: "安装 Node.js",
       },
       theory: {
         es: `**Node.js** es el entorno de ejecución de JavaScript que necesitamos para ejecutar los scripts del curso. Todos los ejemplos de código que interactúan con la blockchain Xahau se ejecutan con Node.js.
@@ -655,6 +751,82 @@ npm install xahau
 \`\`\`
 
 이제 강좌 예제를 실행할 준비가 됩니다.`,
+        zh: `**Node.js** 是运行本课程脚本所需的 JavaScript 运行环境。所有与 Xahau 区块链交互的代码示例均在 Node.js 中执行。
+
+### 什么是 Node.js？
+
+Node.js 允许你在**浏览器之外**直接在电脑上运行 JavaScript 代码。它包含：
+- **node**：JavaScript 解释器（运行你的脚本）
+- **npm**：包管理器（安装 \`xahau\` 等库）
+- **npx**：包运行器（无需全局安装即可运行工具）
+
+### 推荐版本
+
+本课程需要 **Node.js v18 或更高版本**（推荐使用最新的 LTS 版本）。\`xahau\` 库至少需要 v18。
+
+### 在 Windows 上安装
+
+1. 访问 [nodejs.org](https://nodejs.org)
+2. 下载 **LTS**（长期支持）版本
+3. 运行 \`.msi\` 安装程序
+4. 按默认选项完成安装向导
+5. **重要**：如有提示，勾选"Automatically install the necessary tools"
+6. 安装完成后重启终端
+
+### 在 macOS 上安装
+
+**方式 A — 官方安装包：**
+1. 访问 [nodejs.org](https://nodejs.org)
+2. 下载 macOS 版 **LTS**
+3. 打开 \`.pkg\` 文件并按向导操作
+
+**方式 B — 使用 Homebrew（推荐）：**
+1. 若未安装 Homebrew，先从 [brew.sh](https://brew.sh) 安装
+2. 在终端执行：
+
+\`\`\`
+brew install node@22
+\`\`\`
+
+### 在 Linux（Ubuntu/Debian）上安装
+
+使用 NodeSource 官方仓库获取最新版本：
+
+\`\`\`
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+\`\`\`
+
+### 在 Linux（Fedora）上安装
+
+\`\`\`
+curl -fsSL https://rpm.nodesource.com/setup_22.x | sudo bash -
+sudo dnf install -y nodejs
+\`\`\`
+
+### 验证安装
+
+打开**新终端**（在 Windows 上尤为重要）并执行：
+
+\`\`\`
+node --version
+npm --version
+\`\`\`
+
+应该分别显示类似 \`v22.x.x\` 和 \`10.x.x\` 的版本号。
+
+### 安装 xahau 库
+
+安装好 Node.js 后，即可安装本课程使用的库：
+
+\`\`\`
+mkdir xahau-curso
+cd xahau-curso
+npm init -y
+npm install xahau
+\`\`\`
+
+这将创建你的项目并下载 \`xahau\` 库，使你能够运行课程中的所有示例。`,
       },
       codeBlocks: [
         {
@@ -663,6 +835,7 @@ npm install xahau
             en: "Verify installation and create the course project",
             jp: "インストールを確認してコースプロジェクトを作成する",
             ko: "설치 확인 및 강좌 프로젝트 생성",
+            zh: "验证安装并创建课程项目",
           },
           language: "bash",
           code: {
@@ -730,6 +903,22 @@ npm init -y
 
 # 4. xahau 라이브러리 설치
 npm install xahau`,
+            zh: `# 1. 验证 Node.js 是否已安装
+node --version
+# 预期：v22.x.x（或 v18+）
+
+npm --version
+# 预期：10.x.x
+
+# 2. 创建课程项目目录
+mkdir xahau-curso
+cd xahau-curso
+
+# 3. 初始化 Node.js 项目
+npm init -y
+
+# 4. 安装 xahau 库
+npm install xahau`,
           },
         },
         {
@@ -738,6 +927,7 @@ npm install xahau`,
             en: "Your first script: Hello Xahau",
             jp: "はじめてのスクリプト: Hello Xahau",
             ko: "첫 번째 스크립트: Hello Xahau",
+            zh: "你的第一个脚本：Hello Xahau",
           },
           language: "javascript",
           code: {
@@ -845,37 +1035,66 @@ async function main() {
 }
 
 main();`,
+            zh: `// 文件：hola-xahau.js
+// 运行方式：node hola-xahau.js
+
+const { Client } = require("xahau");
+
+async function main() {
+  console.log("正在连接到 Xahau...");
+
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("连接成功！");
+  console.log("网络：", info.network_id);
+  console.log("版本：", info.build_version);
+  console.log("账本：", info.validated_ledger.seq);
+
+  await client.disconnect();
+  console.log("已断开连接。你的环境已准备就绪！");
+}
+
+main();`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "¿Qué es Node.js?", en: "What is Node.js?", jp: "Node.jsとは？", ko: "Node.js란?" },
+          title: { es: "¿Qué es Node.js?", en: "What is Node.js?", jp: "Node.jsとは？", ko: "Node.js란?", zh: "什么是 Node.js？" },
           content: {
             es: "JavaScript fuera del navegador\n\n• node → Ejecuta tus scripts\n• npm → Instala librerías\n• npx → Ejecuta herramientas\n\nVersiones: v18+ (recomendado v22 LTS)",
             en: "JavaScript outside the browser\n\n• node → Runs your scripts\n• npm → Installs libraries\n• npx → Runs tools\n\nVersions: v18+ (recommended v22 LTS)",
             jp: "ブラウザの外側で動くJavaScript\n\n• node → スクリプトを実行する\n• npm → ライブラリをインストールする\n• npx → ツールを実行する\n\nバージョン: v18+ (v22 LTS推奨)",
             ko: "브라우저 밖에서 실행되는 JavaScript\n\n• node → 스크립트 실행\n• npm → 라이브러리 설치\n• npx → 도구 실행\n\n버전: v18+ (v22 LTS 권장)",
+            zh: "在浏览器之外运行的 JavaScript\n\n• node → 运行脚本\n• npm → 安装库\n• npx → 运行工具\n\n版本要求：v18+（推荐 v22 LTS）",
           },
           visual: "🟢",
         },
         {
-          title: { es: "Instalación rápida", en: "Quick Installation", jp: "クイックインストール", ko: "빠른 설치" },
+          title: { es: "Instalación rápida", en: "Quick Installation", jp: "クイックインストール", ko: "빠른 설치", zh: "快速安装" },
           content: {
             es: "🪟 Windows → nodejs.org → .msi\n🍎 macOS → brew install node@22\n🐧 Linux → NodeSource + apt/dnf\n\n✅ Verificar:\nnode --version\nnpm --version",
             en: "🪟 Windows → nodejs.org → .msi\n🍎 macOS → brew install node@22\n🐧 Linux → NodeSource + apt/dnf\n\n✅ Verify:\nnode --version\nnpm --version",
             jp: "🪟 Windows → nodejs.org → .msi\n🍎 macOS → brew install node@22\n🐧 Linux → NodeSource + apt/dnf\n\n✅ 確認:\nnode --version\nnpm --version",
             ko: "🪟 Windows → nodejs.org → .msi\n🍎 macOS → brew install node@22\n🐧 Linux → NodeSource + apt/dnf\n\n✅ 확인:\nnode --version\nnpm --version",
+            zh: "🪟 Windows → nodejs.org → .msi\n🍎 macOS → brew install node@22\n🐧 Linux → NodeSource + apt/dnf\n\n✅ 验证：\nnode --version\nnpm --version",
           },
           visual: "📦",
         },
         {
-          title: { es: "Preparar el proyecto", en: "Set Up the Project", jp: "プロジェクトの準備", ko: "프로젝트 준비" },
+          title: { es: "Preparar el proyecto", en: "Set Up the Project", jp: "プロジェクトの準備", ko: "프로젝트 준비", zh: "准备项目" },
           content: {
             es: "mkdir xahau-curso\ncd xahau-curso\nnpm init -y\nnpm install xahau\n\n¡Listo para ejecutar los scripts del curso!",
             en: "mkdir xahau-curso\ncd xahau-curso\nnpm init -y\nnpm install xahau\n\nReady to run the course scripts!",
             jp: "mkdir xahau-curso\ncd xahau-curso\nnpm init -y\nnpm install xahau\n\nコーススクリプトを実行する準備ができました！",
             ko: "mkdir xahau-curso\ncd xahau-curso\nnpm init -y\nnpm install xahau\n\n강좌 스크립트를 실행할 준비가 되었습니다!",
+            zh: "mkdir xahau-curso\ncd xahau-curso\nnpm init -y\nnpm install xahau\n\n已准备好运行课程脚本！",
           },
           visual: "🚀",
         },
@@ -888,6 +1107,7 @@ main();`,
         en: "Online Alternative: CodeSandbox",
         jp: "オンライン代替: CodeSandbox",
         ko: "온라인 대안: CodeSandbox",
+        zh: "在线替代方案：CodeSandbox",
       },
       theory: {
         es: `Si no quieres o no puedes instalar software en tu ordenador, puedes usar **CodeSandbox**, un entorno de desarrollo online gratuito que funciona directamente en tu navegador.
@@ -1147,6 +1367,64 @@ xahau-curso/
 - Hooks C 컴파일 같은 무거운 작업에는 적합하지 않습니다
 
 빠르게 실습을 시작하기엔 좋지만, 메인넷 작업은 로컬 환경이 더 안전합니다.`,
+        zh: `如果你不想或无法在电脑上安装软件，可以使用 **CodeSandbox**，这是一个免费的在线开发环境，直接在浏览器中运行。
+
+### 什么是 CodeSandbox？
+
+[CodeSandbox](https://codesandbox.io) 是一个云端 IDE，无需安装任何软件即可编写、运行和分享代码。其免费计划已涵盖本课程所需的一切。
+
+### CodeSandbox 的优势
+
+- **无需安装**：一切都在浏览器中运行
+- **随时随地访问**：只需要网络连接
+- **集成终端**：可以运行 npm 和 node 命令
+- **代码分享**：每个沙盒都有唯一的 URL
+- **免费**：免费计划足以完成本课程
+
+### 创建账号
+
+1. 访问 [codesandbox.io](https://codesandbox.io)
+2. 点击右上角的 **"Sign In"**
+3. 可使用 **GitHub**、**Google** 或 **邮箱** 账号注册
+4. 登录后进入控制台
+
+### 为课程创建沙盒
+
+1. 在控制台中点击右上角的 **"Create"**
+2. 选择 **"Import from GitHub"** 或搜索 **"Node.js"** 模板
+3. 如果找不到 Node.js 模板：
+   - 点击 **"Create"** → **"Devbox"**
+   - 选择 **"Node.js"** 模板
+4. 将创建一个预装 Node.js 的环境
+
+### 为 Xahau 配置沙盒
+
+进入沙盒后：
+
+1. **打开终端**：点击底部面板的终端图标，或使用菜单 **Terminal → New Terminal**
+2. **安装 xahau 库**：在终端执行：
+
+\`\`\`
+npm install xahau
+\`\`\`
+
+3. **创建第一个文件**：在文件浏览器（左侧面板）右键 → **New File** → 命名为 \`hola-xahau.js\`
+4. **编写代码**：将课程中的示例代码复制进去
+5. **运行脚本**：在终端执行：
+
+\`\`\`
+node hola-xahau.js
+\`\`\`
+
+### 免费计划的限制
+
+- **公开沙盒**：你的代码对其他人可见（不要放主网私钥）
+- **闲置暂停**：长时间不使用后沙盒会暂停（返回后会重新激活）
+- **资源有限**：足以运行课程脚本，但不适合编译 C 语言 Hooks
+
+### 安全建议
+
+由于免费沙盒是公开的，**请勿在 CodeSandbox 中放置主网种子或私钥**。只使用**测试网密钥**（没有真实价值的代币）。若需使用主网，请在本地使用 VS Code 环境。`,
       },
       codeBlocks: [
         {
@@ -1155,6 +1433,7 @@ xahau-curso/
             en: "Install xahau in CodeSandbox (terminal)",
             jp: "CodeSandboxにxahauをインストールする（ターミナル）",
             ko: "CodeSandbox에서 xahau 설치하기 (터미널)",
+            zh: "在 CodeSandbox 中安装 xahau（终端）",
           },
           language: "bash",
           code: {
@@ -1198,6 +1477,16 @@ touch hi-xahau.js
 
 # 3. 코드 작성 후 스크립트 실행
 node hi-xahau.js`,
+            zh: `# 在 CodeSandbox 终端中：
+
+# 1. 安装 xahau 库
+npm install xahau
+
+# 2. 创建测试文件
+touch hi-xahau.js
+
+# 3. 编写代码后运行脚本
+node hi-xahau.js`,
           },
         },
         {
@@ -1206,6 +1495,7 @@ node hi-xahau.js`,
             en: "Test script for CodeSandbox",
             jp: "CodeSandbox用テストスクリプト",
             ko: "CodeSandbox용 테스트 스크립트",
+            zh: "CodeSandbox 测试脚本",
           },
           language: "javascript",
           code: {
@@ -1325,37 +1615,69 @@ async function main() {
 }
 
 main().catch(console.error);`,
+            zh: `// 文件：hi-xahau.js
+// 将此代码复制到沙盒中并运行：node hi-xahau.js
+
+const { Client } = require("xahau");
+
+async function main() {
+  console.log("=== Xahau Academy - 连接测试 ===");
+
+  // 连接到 Xahau 测试网
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  console.log("已连接到 Xahau Testnet");
+
+  // 获取服务器信息
+  const response = await client.request({
+    command: "server_info"
+  });
+
+  const info = response.result.info;
+  console.log("网络 ID：", info.network_id);
+  console.log("账本：", info.validated_ledger.seq);
+  console.log("版本：", info.build_version);
+
+  await client.disconnect();
+  console.log("CodeSandbox 环境已准备就绪！");
+  console.log("现在可以继续学习 Xahau Academy 课程了。");
+}
+
+main().catch(console.error);`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "CodeSandbox", en: "CodeSandbox", jp: "CodeSandbox", ko: "CodeSandbox" },
+          title: { es: "CodeSandbox", en: "CodeSandbox", jp: "CodeSandbox", ko: "CodeSandbox", zh: "CodeSandbox" },
           content: {
             es: "IDE online gratuito en tu navegador\n\n• Sin instalar nada\n• Terminal integrada\n• Node.js preinstalado\n• codesandbox.io",
             en: "Free online IDE in your browser\n\n• No installation needed\n• Integrated terminal\n• Node.js preinstalled\n• codesandbox.io",
             jp: "ブラウザで使える無料のオンラインIDE\n\n• インストール不要\n• 統合ターミナル\n• Node.jsプリインストール\n• codesandbox.io",
             ko: "브라우저에서 쓰는 무료 온라인 IDE\n\n• 설치 불필요\n• 통합 터미널\n• Node.js 사전 설치\n• codesandbox.io",
+            zh: "浏览器中的免费在线 IDE\n\n• 无需安装\n• 集成终端\n• 预装 Node.js\n• codesandbox.io",
           },
           visual: "☁️",
         },
         {
-          title: { es: "Configurar para Xahau", en: "Configure for Xahau", jp: "Xahau用の設定", ko: "Xahau용 설정" },
+          title: { es: "Configurar para Xahau", en: "Configure for Xahau", jp: "Xahau用の設定", ko: "Xahau용 설정", zh: "为 Xahau 配置" },
           content: {
             es: "1️⃣ Crear cuenta en codesandbox.io\n2️⃣ Crear Devbox con plantilla Node.js\n3️⃣ npm install xahau\n4️⃣ Crear archivo .js y escribir código\n5️⃣ node mi-archivo.js",
             en: "1️⃣ Create account at codesandbox.io\n2️⃣ Create Devbox with Node.js template\n3️⃣ npm install xahau\n4️⃣ Create .js file and write code\n5️⃣ node mi-archivo.js",
             jp: "1️⃣ codesandbox.ioでアカウント作成\n2️⃣ Node.jsテンプレートでDevboxを作成\n3️⃣ npm install xahau\n4️⃣ .jsファイルを作成してコードを書く\n5️⃣ node mi-archivo.js",
             ko: "1️⃣ codesandbox.io에서 계정 생성\n2️⃣ Node.js 템플릿으로 Devbox 생성\n3️⃣ npm install xahau\n4️⃣ .js 파일 생성 후 코드 작성\n5️⃣ node my-file.js",
+            zh: "1️⃣ 在 codesandbox.io 注册账号\n2️⃣ 使用 Node.js 模板创建 Devbox\n3️⃣ npm install xahau\n4️⃣ 创建 .js 文件并编写代码\n5️⃣ node my-file.js",
           },
           visual: "🛠️",
         },
         {
-          title: { es: "Seguridad", en: "Security", jp: "セキュリティ", ko: "보안" },
+          title: { es: "Seguridad", en: "Security", jp: "セキュリティ", ko: "보안", zh: "安全须知" },
           content: {
             es: "⚠️ Los sandboxes gratuitos son PÚBLICOS\n\n• NUNCA pongas seeds de mainnet\n• Usa SOLO claves de testnet\n• Para mainnet → entorno local con VS Code",
             en: "⚠️ Free sandboxes are PUBLIC\n\n• NEVER put mainnet seeds\n• Use ONLY testnet keys\n• For mainnet → local environment with VS Code",
             jp: "⚠️ 無料のサンドボックスはパブリックです\n\n• メインネットのシードは絶対に入力しない\n• テストネットのキーのみ使用する\n• メインネット用 → VS Codeのローカル環境",
             ko: "⚠️ 무료 샌드박스는 공개될 수 있습니다\n\n• 메인넷 시드는 절대 넣지 마세요\n• 테스트넷 키만 사용하세요\n• 메인넷 작업 → VS Code 로컬 환경 사용",
+            zh: "⚠️ 免费沙盒是公开的\n\n• 绝对不要放入主网种子\n• 只使用测试网密钥\n• 主网操作 → 使用本地 VS Code 环境",
           },
           visual: "🔒",
         },
@@ -1368,6 +1690,7 @@ main().catch(console.error);`,
         en: "Structure of a Node.js Project",
         jp: "Node.jsプロジェクトの構造",
         ko: "Node.js 프로젝트 구조",
+        zh: "Node.js 项目结构",
       },
       theory: {
         es: `Ahora que tienes Node.js instalado y la librería \`xahau\` descargada, es importante entender **cómo se organiza un proyecto Node.js** antes de empezar a escribir código que interactúe con la blockchain.
@@ -1704,6 +2027,86 @@ xahau-curso/
 블록체인과 통신하는 작업은 시간이 걸리므로 \`async/await\`가 필요합니다. 또한 연결 실패나 응답 오류에 대비해 항상 \`try/catch\`로 예외를 처리해야 합니다.
 
 이 구조를 이해하면 강좌의 예제 파일이 많아져도 어디에 무엇이 있는지 쉽게 파악할 수 있습니다.`,
+        zh: `现在你已经安装了 Node.js 并下载了 \`xahau\` 库，在编写与区块链交互的代码之前，了解 **Node.js 项目的组织结构**非常重要。
+
+### 什么是 package.json？
+
+\`package.json\` 文件是项目的**技术说明书**。运行 \`npm init -y\` 时会自动创建，包含以下内容：
+
+- **name**：项目名称
+- **version**：当前版本
+- **description**：简短描述
+- **main**：主文件（默认为 \`index.js\`）
+- **scripts**：可通过 \`npm run\` 执行的自定义命令
+- **dependencies**：项目所需的库（如 \`xahau\`）
+
+执行 \`npm install xahau\` 时，npm 会下载该库并自动将其注册到 \`package.json\` 的 \`dependencies\` 字段中。
+
+### 什么是 node_modules/？
+
+\`node_modules/\` 文件夹是 npm 下载所有项目所需库的地方，包含：
+
+- 你安装的 \`xahau\` 库
+- 该库的所有**内部依赖**（它运行所需的其他库）
+- 可能包含数百甚至数千个文件
+
+**重要规则**：**永远不要将 \`node_modules/\` 提交到仓库或共享给他人。** 该文件夹可以随时通过运行 \`npm install\` 重新创建。使用 Git 时，请将 \`node_modules/\` 添加到 \`.gitignore\` 文件中。
+
+### 什么是 require()？如何导入库？
+
+在 Node.js 中，我们使用 \`require()\` 来**导入库**并在代码中使用：
+
+\`\`\`
+const { Client, Wallet } = require("xahau");
+\`\`\`
+
+你也可以导入自己的文件：
+
+\`\`\`
+const myUtils = require("./utils.js");
+\`\`\`
+
+开头的 \`./\` 表示文件在当前目录中。
+
+### 创建和组织 .js 文件
+
+课程中每个脚本都是独立的 \`.js\` 文件。推荐以下组织方式：
+
+\`\`\`
+xahau-curso/
+├── package.json
+├── node_modules/
+├── 01-connection.js
+├── 02-wallet.js
+├── 03-balance.js
+├── 04-payment.js
+└── utils.js          ← 共享函数（可选）
+\`\`\`
+
+每个文件可通过 \`node 文件名.js\` 独立运行。
+
+### async/await：异步操作
+
+当你的代码与区块链通信时，操作**需要时间**（连接节点、发送交易、等待响应）。JavaScript 使用 **async/await** 来处理这些操作而不阻塞程序：
+
+- **async**：标记一个异步函数（可以包含耗时操作）
+- **await**：暂停执行直到操作完成并返回结果
+
+### 使用 try/catch 处理错误
+
+区块链操作可能会失败：节点可能宕机、网络可能很慢，或代码本身可能有错误。使用 **try/catch** 来受控地捕获这些错误：
+
+\`\`\`
+try {
+  // 可能失败的代码
+  await client.connect();
+} catch (error) {
+  // 出错时执行
+  console.error("错误：", error.message);
+}
+\`\`\`
+
+没有 \`try/catch\`，任何错误都会让整个程序突然停止。`,
       },
       codeBlocks: [
         {
@@ -1712,6 +2115,7 @@ xahau-curso/
             en: "package.json example explained",
             jp: "package.jsonの例（解説付き）",
             ko: "설명과 함께 보는 package.json 예시",
+            zh: "package.json 示例解析",
           },
           language: "javascript",
           code: {
@@ -1803,6 +2207,28 @@ xahau-curso/
 
 // 참고: node_modules/는 npm install 시 자동 생성됩니다.
 // 공유하지 말고 필요하면 다시 설치하세요.`,
+            zh: `// 文件：package.json（由 npm init -y 创建）
+// 通常不需要手动编辑此文件。
+// 安装库时 npm 会自动更新它。
+
+{
+  "name": "xahau-course",       // 项目名称
+  "version": "1.0.0",          // 项目版本
+  "description": "",            // 描述（可填写）
+  "main": "index.js",          // 主文件（课程中不使用）
+  "scripts": {
+    "test": "echo \\"Error: no test specified\\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "xahau": "^1.0.0"          // <-- npm install xahau 添加了这一项
+  }
+}
+
+// 注意：node_modules/ 由 npm install 自动创建。
+// 不要共享它，可随时通过 npm install 重新生成。`,
           },
         },
         {
@@ -1811,6 +2237,7 @@ xahau-curso/
             en: "Basic script with async/await and try/catch",
             jp: "async/awaitとtry/catchを使った基本スクリプト",
             ko: "async/await와 try/catch를 사용하는 기본 스크립트",
+            zh: "使用 async/await 和 try/catch 的基础脚本",
           },
           language: "javascript",
           code: {
@@ -1986,37 +2413,83 @@ async function main() {
 
 // 8. 메인 함수 실행
 main();`,
+            zh: `// 文件：basic-structure.js
+// 运行方式：node basic-structure.js
+
+// 1. 从 node_modules/ 导入 xahau 库
+const { Client, Wallet } = require("xahau");
+
+// 2. 创建异步（async）函数
+async function main() {
+  console.log("=== Xahau 脚本基础结构 ===");
+
+  // 3. 使用 try/catch 处理错误
+  try {
+    // 4. await 等待每个操作完成
+    const client = new Client("wss://xahau-test.net");
+    console.log("正在连接节点...");
+    await client.connect();
+    console.log("连接成功。");
+
+    // 5. 查询区块链
+    const response = await client.request({
+      command: "server_info"
+    });
+
+    const info = response.result.info;
+    console.log("服务器信息：");
+    console.log("网络：", info.network_id);
+    console.log("版本：", info.build_version);
+    console.log("账本：", info.validated_ledger.seq);
+
+    // 6. 正常断开连接
+    await client.disconnect();
+    console.log("已正常断开连接。");
+
+  } catch (error) {
+    // 7. 出错时显示错误信息而不崩溃程序
+    console.error("发现错误！");
+    console.error("类型：", error.name);
+    console.error("信息：", error.message);
+  }
+}
+
+// 8. 执行主函数
+main();`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "Anatomía de un proyecto Node.js", en: "Anatomy of a Node.js Project", jp: "Node.jsプロジェクトの構造", ko: "Node.js 프로젝트 구조" },
+          title: { es: "Anatomía de un proyecto Node.js", en: "Anatomy of a Node.js Project", jp: "Node.jsプロジェクトの構造", ko: "Node.js 프로젝트 구조", zh: "Node.js 项目结构" },
           content: {
             es: "package.json → Ficha técnica del proyecto\n\nnode_modules/ → Librerías descargadas\n  (nunca compartir, se regenera con npm install)\n\narchivo.js → Tu código\n  (se ejecuta con: node archivo.js)",
             en: "package.json → Project's technical spec sheet\n\nnode_modules/ → Downloaded libraries\n  (never share, regenerated with npm install)\n\nfile.js → Your code\n  (run with: node file.js)",
             jp: "package.json → プロジェクトの技術仕様書\n\nnode_modules/ → ダウンロードされたライブラリ\n  （共有しない、npm installで再生成可能）\n\nfile.js → あなたのコード\n  （実行: node file.js）",
             ko: "package.json → 프로젝트 설정 파일\n\nnode_modules/ → 설치된 라이브러리\n  (공유하지 않고 npm install로 재생성)\n\nfile.js → 내가 작성한 코드\n  (실행: node file.js)",
+            zh: "package.json → 项目技术说明书\n\nnode_modules/ → 已下载的库\n  （不要共享，通过 npm install 重新生成）\n\nfile.js → 你的代码\n  （运行方式：node file.js）",
           },
           visual: "📁",
         },
         {
-          title: { es: "require() e importaciones", en: "require() and imports", jp: "require()とインポート", ko: "require()와 import" },
+          title: { es: "require() e importaciones", en: "require() and imports", jp: "require()とインポート", ko: "require()와 import", zh: "require() 与导入" },
           content: {
             es: "Importar librerías instaladas:\nconst { Client, Wallet } = require(\"xahau\");\n\nImportar archivos propios:\nconst utils = require(\"./utils.js\");\n\nrequire() busca en node_modules/ o en la ruta indicada",
             en: "Import installed libraries:\nconst { Client, Wallet } = require(\"xahau\");\n\nImport your own files:\nconst utils = require(\"./utils.js\");\n\nrequire() searches in node_modules/ or in the specified path",
             jp: "インストール済みライブラリのインポート:\nconst { Client, Wallet } = require(\"xahau\");\n\n自分のファイルのインポート:\nconst utils = require(\"./utils.js\");\n\nrequire()はnode_modules/または指定されたパスを検索する",
             ko: "설치한 라이브러리 가져오기:\nconst { Client, Wallet } = require(\"xahau\");\n\n내 파일 가져오기:\nconst utils = require(\"./utils.js\");\n\nrequire()는 node_modules/ 또는 지정한 경로를 찾습니다",
+            zh: "导入已安装的库：\nconst { Client, Wallet } = require(\"xahau\");\n\n导入自己的文件：\nconst utils = require(\"./utils.js\");\n\nrequire() 在 node_modules/ 或指定路径中查找",
           },
           visual: "📦",
         },
         {
-          title: { es: "async/await y try/catch", en: "async/await and try/catch", jp: "async/awaitとtry/catch", ko: "async/await와 try/catch" },
+          title: { es: "async/await y try/catch", en: "async/await and try/catch", jp: "async/awaitとtry/catch", ko: "async/await와 try/catch", zh: "async/await 与 try/catch" },
           content: {
             es: "async → Marca funciones que hacen operaciones lentas\nawait → Espera a que la operación termine\n\ntry { } → Intenta ejecutar el código\ncatch (error) { } → Captura errores sin romper el programa\n\nIndispensables para trabajar con blockchain",
             en: "async → Marks functions that perform slow operations\nawait → Waits for the operation to finish\n\ntry { } → Attempts to execute the code\ncatch (error) { } → Catches errors without crashing the program\n\nEssential for working with blockchain",
             jp: "async → 時間のかかる操作を行う関数をマーク\nawait → 操作の完了を待つ\n\ntry { } → コードの実行を試みる\ncatch (error) { } → プログラムをクラッシュさせずにエラーをキャッチ\n\nブロックチェーン操作に不可欠",
             ko: "async → 시간이 걸리는 함수를 표시\nawait → 작업이 끝날 때까지 대기\n\ntry { } → 코드 실행 시도\ncatch (error) { } → 프로그램을 멈추지 않고 오류 처리\n\n블록체인 작업에 필수",
+            zh: "async → 标记执行耗时操作的函数\nawait → 等待操作完成\n\ntry { } → 尝试执行代码\ncatch (error) { } → 捕获错误而不崩溃程序\n\n区块链开发中不可或缺",
           },
           visual: "⏳",
         },
@@ -2029,6 +2502,7 @@ main();`,
         en: "Running and Debugging Scripts",
         jp: "スクリプトの実行とデバッグ",
         ko: "스크립트 실행과 디버깅",
+        zh: "运行和调试脚本",
       },
       theory: {
         es: `Ya sabes cómo se estructura un proyecto Node.js. Ahora vamos a aprender a **ejecutar scripts** y, lo más importante, a **entender y solucionar los errores** que inevitablemente aparecerán.
@@ -2379,6 +2853,74 @@ Node.js가 실패하면 **stack trace**를 출력합니다. 여기서 확인할 
 5. 너무 오래 걸리면 타임아웃이나 노드 과부하를 의심
 
 오류를 무서워하기보다, 메시지를 차분히 읽고 원인을 좁혀가는 습관이 중요합니다.`,
+        zh: `你已经了解了 Node.js 项目的结构，现在来学习如何**运行脚本**，以及最重要的——如何**理解和解决错误**。
+
+### 使用 Node.js 运行脚本
+
+要运行任何 JavaScript 文件，使用以下命令：
+
+\`\`\`
+node 文件名.js
+\`\`\`
+
+例如：
+\`\`\`
+node hi-xahau.js
+node 01-connection.js
+node my-script.js
+\`\`\`
+
+**重要**：你必须在文件所在目录中运行命令，或使用完整路径。
+
+### 读懂错误信息（堆栈跟踪）
+
+发生错误时，Node.js 会显示**堆栈跟踪**——包含错误信息的消息。学会读懂它：
+
+1. **第一行**：发生错误的文件和行号（\`my-script.js:5\`）
+2. **错误类型**：\`SyntaxError\`、\`TypeError\`、\`ReferenceError\` 等
+3. **消息**：问题的说明
+4. **堆栈跟踪**：导致错误的执行路径
+
+### 使用 console.log 调试
+
+\`console.log()\` 是你最好的调试工具。用它在代码任意位置查看变量的值：
+
+\`\`\`
+console.log("第一步：连接中...");
+console.log("response 的值：", response);
+console.log("数据类型：", typeof variable);
+console.log("完整对象：", JSON.stringify(object, null, 2));
+\`\`\`
+
+### 常见错误及解决方法
+
+**Cannot find module 'xahau'**
+原因：未安装该库或不在正确目录。
+解决：在项目文件夹中运行 \`npm install xahau\`。
+
+**await is only valid in async functions**
+原因：在未标记 \`async\` 的函数外使用了 \`await\`。
+解决：将代码包裹在 \`async\` 函数中。
+
+**Unexpected token**
+原因：语法错误——缺少逗号、括号或花括号。
+解决：检查提示的行及其前几行。
+
+**connect ETIMEDOUT / ECONNREFUSED**
+原因：无法连接到 Xahau 节点（网络断开、防火墙或无网络）。
+解决：检查网络连接；如持续失败，尝试其他节点或稍后再试。
+
+**Account not found**
+原因：查询的账户在账本中不存在或未被激活。
+解决：确认地址是否正确。在测试网上，使用水龙头激活账户。
+
+### 区块链连接调试技巧
+
+1. **先测试连接**：在执行复杂操作前，先确认能连接到节点
+2. **始终使用 try/catch**：任何网络操作都可能失败
+3. **检查节点 URL**：测试网 \`wss://xahau-test.net\`，主网 \`wss://xahau.network\`
+4. **完成后断开连接**：使用 \`await client.disconnect()\` 释放资源
+5. **注意超时**：操作耗时过长可能表示节点负载过高`,
       },
       codeBlocks: [
         {
@@ -2387,6 +2929,7 @@ Node.js가 실패하면 **stack trace**를 출력합니다. 여기서 확인할 
             en: "Script with error handling and debugging",
             jp: "エラー処理とデバッグ付きスクリプト",
             ko: "오류 처리와 디버깅이 포함된 스크립트",
+            zh: "包含错误处理和调试的脚本",
           },
           language: "javascript",
           code: {
@@ -2638,6 +3181,68 @@ async function main() {
 }
 
 main();`,
+            zh: `// 文件：debug-errors.js
+// 运行方式：node debug-errors.js
+// 此脚本展示如何逐步处理错误。
+
+const { Client } = require("xahau");
+
+async function main() {
+  console.log("=== Xahau 错误调试 ===");
+
+  // 第一步：验证库是否正确导入
+  console.log("1. xahau 库导入成功");
+  console.log("   Client 类型：", typeof Client);
+
+  // 第二步：创建客户端
+  const client = new Client("wss://xahau-test.net");
+  console.log("2. 已为以下节点创建客户端：", "wss://xahau-test.net");
+
+  // 第三步：尝试连接并处理错误
+  try {
+    console.log("3. 尝试连接...");
+    await client.connect();
+    console.log("   连接成功");
+  } catch (error) {
+    console.error("   连接错误：", error.message);
+    console.error("   可能的原因：");
+    console.error("   - 无网络连接");
+    console.error("   - 节点宕机");
+    console.error("   - 防火墙阻止 WebSocket");
+    return; // 无法连接时退出函数
+  }
+
+  // 第四步：发起查询
+  try {
+    console.log("4. 查询 server_info...");
+    const response = await client.request({
+      command: "server_info"
+    });
+
+    // 第五步：检查响应
+    console.log("5. 收到响应：");
+    console.log("   类型：", typeof response);
+    console.log("   键：", Object.keys(response.result));
+
+    const info = response.result.info;
+    console.log("   网络：", info.network_id);
+    console.log("   账本：", info.validated_ledger.seq);
+  } catch (error) {
+    console.error("   查询错误：", error.message);
+  }
+
+  // 第六步：断开连接
+  try {
+    await client.disconnect();
+    console.log("6. 已正常断开连接");
+  } catch (error) {
+    console.error("   断开连接错误：", error.message);
+  }
+
+  console.log("=== 调试结束 ===");
+}
+
+main();`,
           },
         },
         {
@@ -2646,6 +3251,7 @@ main();`,
             en: "Connectivity test and common errors",
             jp: "接続テストとよくあるエラー",
             ko: "연결 테스트와 자주 발생하는 오류",
+            zh: "连接测试与常见错误",
           },
           language: "javascript",
           code: {
@@ -2841,37 +3447,88 @@ async function main() {
 }
 
 main();`,
+            zh: `// 文件：connectivity-test.js
+// 运行方式：node connectivity-test.js
+// 测试连接并展示常见错误。
+
+const { Client } = require("xahau");
+
+// 测试连接的辅助函数
+async function testConexion(url, nombre) {
+  console.log("测试中：", nombre, "(" + url + ")");
+
+  const client = new Client(url);
+
+  try {
+    await client.connect();
+    const response = await client.request({ command: "server_info" });
+    const ledger = response.result.info.validated_ledger.seq;
+    console.log("已连接 - 账本：", ledger);
+    await client.disconnect();
+    return true;
+  } catch (error) {
+    console.log("错误：", error.message);
+    return false;
+  }
+}
+
+async function main() {
+  console.log("=== Xahau 连接测试 ===");
+
+  // 测试 1：连接测试网（应该成功）
+  await testConexion("wss://xahau-test.net", "Xahau Testnet");
+
+  console.log("");
+
+  // 测试 2：连接主网（应该成功）
+  await testConexion("wss://xahau.network", "Xahau Mainnet");
+
+  console.log("");
+
+  // 测试 3：错误 URL（应该失败——错误示例）
+  await testConexion("wss://nodo-doesnt-exist.example.com", "错误 URL");
+
+  console.log("=== 总结 ===");
+  console.log("如果测试网和主网都能连接：你的环境已就绪。");
+  console.log("如果有失败：检查你的网络连接。");
+  console.log("错误 URL 必须失败（这是错误测试）。");
+}
+
+main();`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "Ejecutar scripts", en: "Running Scripts", jp: "スクリプトの実行", ko: "스크립트 실행" },
+          title: { es: "Ejecutar scripts", en: "Running Scripts", jp: "スクリプトの実行", ko: "스크립트 실행", zh: "运行脚本" },
           content: {
             es: "Comando básico:\nnode nombre-archivo.js\n\nDebes estar en la carpeta del proyecto\n(donde está package.json y node_modules/)\n\nEjemplo:\ncd xahau-curso\nnode hola-xahau.js",
             en: "Basic command:\nnode filename.js\n\nYou must be in the project folder\n(where package.json and node_modules/ are)\n\nExample:\ncd xahau-curso\nnode hola-xahau.js",
             jp: "基本コマンド:\nnode ファイル名.js\n\nプロジェクトフォルダにいる必要があります\n（package.jsonとnode_modules/がある場所）\n\n例:\ncd xahau-curso\nnode hola-xahau.js",
             ko: "기본 명령:\nnode filename.js\n\n프로젝트 폴더 안에서 실행해야 합니다\n(package.json과 node_modules/가 있는 위치)\n\n예시:\ncd xahau-curso\nnode hola-xahau.js",
+            zh: "基本命令：\nnode 文件名.js\n\n必须在项目文件夹中运行\n（package.json 和 node_modules/ 所在位置）\n\n示例：\ncd xahau-curso\nnode hola-xahau.js",
           },
           visual: "▶️",
         },
         {
-          title: { es: "Leer errores (stack trace)", en: "Reading Errors (Stack Trace)", jp: "エラーの読み方（スタックトレース）", ko: "오류 읽기 (스택 트레이스)" },
+          title: { es: "Leer errores (stack trace)", en: "Reading Errors (Stack Trace)", jp: "エラーの読み方（スタックトレース）", ko: "오류 읽기 (스택 트레이스)", zh: "读懂错误（堆栈跟踪）" },
           content: {
             es: "1. Archivo y línea del error → mi-script.js:5\n2. Tipo de error → SyntaxError, TypeError...\n3. Mensaje → Qué salió mal\n4. Stack trace → Ruta de ejecución\n\nSiempre empieza leyendo el TIPO y el MENSAJE",
             en: "1. File and line of the error → mi-script.js:5\n2. Error type → SyntaxError, TypeError...\n3. Message → What went wrong\n4. Stack trace → Execution path\n\nAlways start by reading the TYPE and MESSAGE",
             jp: "1. エラーのファイルと行番号 → mi-script.js:5\n2. エラーの種類 → SyntaxError、TypeError...\n3. メッセージ → 何が問題だったか\n4. スタックトレース → 実行パス\n\nまず種類とメッセージを読むことから始める",
             ko: "1. 오류가 난 파일과 줄 → mi-script.js:5\n2. 오류 종류 → SyntaxError, TypeError...\n3. 메시지 → 무엇이 잘못됐는지\n4. 스택 트레이스 → 실행 경로\n\n항상 먼저 오류 종류와 메시지를 읽으세요",
+            zh: "1. 错误的文件和行号 → mi-script.js:5\n2. 错误类型 → SyntaxError、TypeError...\n3. 消息 → 出了什么问题\n4. 堆栈跟踪 → 执行路径\n\n始终先读错误类型和消息",
           },
           visual: "🔍",
         },
         {
-          title: { es: "Errores más comunes", en: "Most Common Errors", jp: "よくあるエラー", ko: "자주 발생하는 오류" },
+          title: { es: "Errores más comunes", en: "Most Common Errors", jp: "よくあるエラー", ko: "자주 발생하는 오류", zh: "最常见错误" },
           content: {
             es: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → Envolver en async function\n\nconnect ETIMEDOUT\n  → Verificar internet / nodo\n\nUnexpected token\n  → Revisar sintaxis (comas, llaves)",
             en: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → Wrap in async function\n\nconnect ETIMEDOUT\n  → Check internet / node\n\nUnexpected token\n  → Check syntax (commas, braces)",
             jp: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → async関数でラップする\n\nconnect ETIMEDOUT\n  → インターネット/ノードを確認\n\nUnexpected token\n  → 構文を確認（カンマ、波括弧）",
             ko: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → async function으로 감싸기\n\nconnect ETIMEDOUT\n  → 인터넷 / 노드 확인\n\nUnexpected token\n  → 문법 확인 (쉼표, 중괄호)",
+            zh: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → 包裹在 async function 中\n\nconnect ETIMEDOUT\n  → 检查网络 / 节点\n\nUnexpected token\n  → 检查语法（逗号、花括号）",
           },
           visual: "⚠️",
         },
@@ -2884,6 +3541,7 @@ main();`,
         en: "Storing Keys Securely with .env",
         jp: ".envで安全にキーを保管する",
         ko: ".env로 키를 안전하게 저장하기",
+        zh: "使用 .env 安全存储密钥",
       },
       theory: {
         es: `A lo largo del curso vamos a trabajar con **seeds** (claves privadas) de cuentas de Xahau. Es fundamental que aprendas desde el principio a guardarlas de forma segura, incluso en testnet, para crear buenos hábitos que te protejan en mainnet.
@@ -3183,6 +3841,89 @@ require("dotenv").config();
 5. 공유용으로는 실제 값 없는 \`.env.example\` 생성
 
 메인넷 비밀키는 한 번 노출되면 되돌릴 수 없으므로, 이 습관은 선택이 아니라 필수입니다.`,
+        zh: `在整个课程中，我们将使用 Xahau 账户的**种子（seeds）**（私钥）。从一开始就学会安全存储它们非常重要——即使在测试网上也要如此，养成的好习惯将在主网上保护你。
+
+### 为什么不应该把密钥直接写在代码里？
+
+假设你的脚本中有这样的代码：
+
+\`\`\`
+const wallet = Wallet.fromSeed("sEdV9mHTYLPKPPPfBGB9xpGnFxsQo4r");
+\`\`\`
+
+这是**非常危险**的，原因如下：
+
+- 如果你将代码上传到 **GitHub**（或其他仓库），任何人都能看到你的私钥并盗走资金
+- 与他人分享文件（通过邮件、聊天等）就等于分享了你的密钥
+- GitHub 上的机器人会**扫描公开仓库**寻找暴露的私钥，并在几秒内自动盗走资金
+- 即使之后删除了密钥，Git 历史记录**仍然保留**，依然可以被访问
+
+### 什么是 .env 文件？
+
+\`.env\` 文件（"environment" 的缩写）是一个纯文本文件，用于存储**环境变量**——你的代码需要但不应出现在源代码中的敏感配置：
+
+\`\`\`
+WALLET_A_SEED=sEdVxxx你的测试网种子
+WALLET_B_SEED=sEdYyy另一个测试网种子
+XAHAU_NODE=wss://xahau-test.net
+\`\`\`
+
+### .env 文件规则
+
+- **不要将 .env 提交到 Git**：始终将其添加到 \`.gitignore\`
+- **每个环境一个 .env**：测试网和主网可以各有一个
+- **不加引号**（除非值中包含空格）：\`KEY=value\`
+- **等号两边不加空格**：\`KEY=value\`（正确）vs \`KEY = value\`（错误）
+- **每个变量独占一行**
+
+### 安装 dotenv
+
+\`dotenv\` 库读取 \`.env\` 文件并将变量加载到 \`process.env\` 中：
+
+\`\`\`
+npm install dotenv
+\`\`\`
+
+### 在代码中使用 dotenv
+
+在脚本开头添加一行：
+
+\`\`\`
+require("dotenv").config();
+\`\`\`
+
+这将把 \`.env\` 文件中的所有变量加载到 \`process.env\` 对象中。然后可以这样访问：
+
+\`\`\`
+const seed = process.env.WALLET_A_SEED;
+const node = process.env.XAHAU_NODE;
+\`\`\`
+
+### 创建 .gitignore 文件
+
+\`.gitignore\` 文件告诉 Git **不要跟踪或上传**哪些文件。在项目根目录创建一个名为 \`.gitignore\` 的文件，内容如下：
+
+\`\`\`
+.env
+node_modules/
+\`\`\`
+
+这样可以同时保护你的密钥（\`.env\`）和已下载的库（\`node_modules/\`）。
+
+### 推荐工作流
+
+1. 创建包含密钥的 \`.env\` 文件
+2. 创建或更新 \`.gitignore\` 以排除 \`.env\`
+3. 每个脚本开头加载 dotenv：\`require("dotenv").config()\`
+4. 通过 \`process.env.变量名\` 访问密钥
+5. 分享代码时，创建不含真实值的 \`.env.example\` 文件，让其他人知道需要哪些变量
+
+### 安全影响
+
+- **测试网**：测试网种子泄露不会损失真实资金，但可能干扰你的测试
+- **主网**：主网种子泄露，**你可能永久失去所有资金**。区块链上没有办法追回被盗资金
+- **公开仓库**：一旦种子被上传到公开仓库，视为**已泄露**。立即将资金转移到新账户
+- **Git 历史**：即使删除了文件，种子仍留在历史中。需要重写 Git 历史，操作复杂`,
       },
       codeBlocks: [
         {
@@ -3191,6 +3932,7 @@ require("dotenv").config();
             en: "Create the .env file",
             jp: ".envファイルを作成する",
             ko: ".env 파일 만들기",
+            zh: "创建 .env 文件",
           },
           language: "bash",
           code: {
@@ -3278,6 +4020,27 @@ npm install dotenv
 # WALLET_A_SEED=your_seed_here
 # WALLET_B_SEED=your_seed_here
 # XAHAU_NODE=wss://xahau-test.net`,
+            zh: `# 1. 安装 dotenv 库
+npm install dotenv
+
+# 2. 创建 .env 文件（在项目根目录）
+# 重要：此文件不上传到 Git
+
+# .env 文件内容：
+# WALLET_A_SEED=sEdVxxx你的测试网种子
+# WALLET_B_SEED=sEdYyy另一个测试网种子
+# XAHAU_NODE=wss://xahau-test.net
+
+# 3. 创建 .gitignore 文件
+# .gitignore 文件内容：
+# .env
+# node_modules/
+
+# 4. （可选）创建 .env.example 来记录变量
+# .env.example 文件内容：
+# WALLET_A_SEED=在此填入你的种子
+# WALLET_B_SEED=在此填入你的种子
+# XAHAU_NODE=wss://xahau-test.net`,
           },
         },
         {
@@ -3286,6 +4049,7 @@ npm install dotenv
             en: "Script that uses environment variables with dotenv",
             jp: "dotenvで環境変数を使用するスクリプト",
             ko: "dotenv로 환경 변수를 사용하는 스크립트",
+            zh: "使用 dotenv 读取环境变量的脚本",
           },
           language: "javascript",
           code: {
@@ -3517,6 +4281,63 @@ async function main() {
 }
 
 main().catch(console.error);`,
+            zh: `// 文件：safe-payment.js
+// 运行方式：node safe-payment.js
+// 需要：包含 WALLET_A_SEED、WALLET_B_SEED 和 XAHAU_NODE 的 .env 文件
+
+// 1. 从 .env 加载环境变量
+require("dotenv").config();
+
+const { Client, Wallet } = require("xahau");
+
+async function main() {
+  // 2. 从 process.env 读取密钥（而非硬编码在代码中）
+  const seedA = process.env.WALLET_A_SEED;
+  const seedB = process.env.WALLET_B_SEED;
+  const node = process.env.XAHAU_NODE;
+
+  // 3. 验证变量是否存在
+  if (!seedA || !seedB) {
+    console.error("错误：.env 文件中缺少变量");
+    console.error("请确保 WALLET_A_SEED 和 WALLET_B_SEED 已定义。");
+    console.error("将 .env.example 复制为 .env 并填入真实值。");
+    return;
+  }
+
+  if (!node) {
+    console.error("错误：.env 中缺少 XAHAU_NODE");
+    return;
+  }
+
+  console.log("已从 .env 正确加载变量");
+  console.log("节点：", node);
+  // 永远不要 console.log 种子——即使在测试网上也不行
+
+  const client = new Client(node);
+  await client.connect();
+
+  // 4. 用 .env 中的种子创建钱包
+  const walletA = Wallet.fromSeed(seedA, {algorithm: 'secp256k1'});
+  const walletB = Wallet.fromSeed(seedB, {algorithm: 'secp256k1'});
+
+  console.log("钱包 A：", walletA.address);
+  console.log("钱包 B：", walletB.address);
+
+  // 5. 从 A 向 B 发送付款
+  const payment = {
+    TransactionType: "Payment",
+    Account: walletA.address,
+    Destination: walletB.address,
+    Amount: "10000000", // 10 XAH
+  };
+
+  const result = await client.submitAndWait(payment, { wallet: walletA });
+  console.log("结果：", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
           },
         },
         {
@@ -3525,6 +4346,7 @@ main().catch(console.error);`,
             en: ".env.example example (for sharing without real keys)",
             jp: ".env.exampleの例（実際のキーなしで共有するため）",
             ko: "실제 키 없이 공유하는 .env.example 예시",
+            zh: ".env.example 示例（共享时不含真实密钥）",
           },
           language: "bash",
           code: {
@@ -3568,37 +4390,50 @@ XAHAU_NODE=wss://xahau-test.net`,
 WALLET_A_SEED=your_testnet_seed_here
 WALLET_B_SEED=your_testnet_seed_here
 XAHAU_NODE=wss://xahau-test.net`,
+            zh: `# 文件：.env.example
+# 将此文件复制为 .env 并填入真实值：
+#   cp .env.example .env
+#
+# 永远不要将 .env 文件上传到 Git。
+# 这个 .env.example 文件没有真实密钥，可以共享。
+
+WALLET_A_SEED=在此填入你的测试网种子
+WALLET_B_SEED=在此填入你的测试网种子
+XAHAU_NODE=wss://xahau-test.net`,
           },
         },
       ],
       slides: [
         {
-          title: { es: "¿Por qué usar .env?", en: "Why use .env?", jp: "なぜ.envを使うのか？", ko: "왜 .env를 사용하나요?" },
+          title: { es: "¿Por qué usar .env?", en: "Why use .env?", jp: "なぜ.envを使うのか？", ko: "왜 .env를 사용하나요?", zh: "为什么使用 .env？" },
           content: {
             es: "NUNCA pongas claves privadas en el código\n\n• Los bots escanean GitHub y roban fondos\n• El historial de Git conserva las claves\n• Compartir código = compartir claves\n\nSolución: archivo .env + .gitignore",
             en: "NEVER put private keys in the code\n\n• Bots scan GitHub and steal funds\n• Git history preserves the keys\n• Sharing code = sharing keys\n\nSolution: .env file + .gitignore",
             jp: "秘密鍵をコードに絶対入れない\n\n• ボットがGitHubをスキャンして資金を盗む\n• Gitの履歴がキーを保持する\n• コードを共有する = キーを共有する\n\n解決策: .envファイル + .gitignore",
             ko: "비밀키를 코드에 직접 넣지 마세요\n\n• 봇이 GitHub를 스캔해 자금을 탈취할 수 있음\n• Git 기록에 키가 남을 수 있음\n• 코드 공유 = 키 공유\n\n해결책: .env 파일 + .gitignore",
+            zh: "永远不要将私钥写入代码\n\n• 机器人扫描 GitHub 并盗取资金\n• Git 历史记录会保留密钥\n• 共享代码 = 共享密钥\n\n解决方案：.env 文件 + .gitignore",
           },
           visual: "🔐",
         },
         {
-          title: { es: "Cómo usar dotenv", en: "How to use dotenv", jp: "dotenvの使い方", ko: "dotenv 사용 방법" },
+          title: { es: "Cómo usar dotenv", en: "How to use dotenv", jp: "dotenvの使い方", ko: "dotenv 사용 방법", zh: "如何使用 dotenv" },
           content: {
             es: "1. npm install dotenv\n2. Crear .env con tus claves\n3. Añadir .env a .gitignore\n4. En tu script: require(\"dotenv\").config()\n5. Leer: process.env.NOMBRE_VARIABLE",
             en: "1. npm install dotenv\n2. Create .env with your keys\n3. Add .env to .gitignore\n4. In your script: require(\"dotenv\").config()\n5. Read: process.env.VARIABLE_NAME",
             jp: "1. npm install dotenv\n2. キーを含む.envを作成する\n3. .envを.gitignoreに追加する\n4. スクリプトで: require(\"dotenv\").config()\n5. 読み取り: process.env.変数名",
             ko: "1. npm install dotenv\n2. 키를 넣은 .env 생성\n3. .env를 .gitignore에 추가\n4. 스크립트에서: require(\"dotenv\").config()\n5. 읽기: process.env.VARIABLE_NAME",
+            zh: "1. npm install dotenv\n2. 创建包含密钥的 .env\n3. 将 .env 添加到 .gitignore\n4. 脚本中：require(\"dotenv\").config()\n5. 读取：process.env.变量名",
           },
           visual: "📋",
         },
         {
-          title: { es: "Buenas prácticas", en: "Best Practices", jp: "ベストプラクティス", ko: "모범 사례" },
+          title: { es: "Buenas prácticas", en: "Best Practices", jp: "ベストプラクティス", ko: "모범 사례", zh: "最佳实践" },
           content: {
             es: "• .env → Claves reales (NO subir a Git)\n• .env.example → Plantilla sin claves (SÍ subir)\n• .gitignore → Excluir .env y node_modules/\n• Nunca hacer console.log de un seed\n• En mainnet: un seed filtrado = fondos perdidos",
             en: "• .env → Real keys (DO NOT upload to Git)\n• .env.example → Template without keys (DO upload)\n• .gitignore → Exclude .env and node_modules/\n• Never console.log a seed\n• On mainnet: a leaked seed = lost funds",
             jp: "• .env → 実際のキー（Gitにアップロードしない）\n• .env.example → キーなしのテンプレート（アップロード可）\n• .gitignore → .envとnode_modules/を除外する\n• シードをconsole.logしない\n• メインネット: シードが漏洩 = 資金を失う",
             ko: "• .env → 실제 키 (Git에 올리지 않기)\n• .env.example → 키 없는 템플릿 (공유 가능)\n• .gitignore → .env와 node_modules/ 제외\n• 시드는 절대 console.log 하지 않기\n• 메인넷: 시드 유출 = 자금 손실",
+            zh: "• .env → 真实密钥（不上传到 Git）\n• .env.example → 无密钥模板（可上传）\n• .gitignore → 排除 .env 和 node_modules/\n• 永远不要 console.log 种子\n• 主网：种子泄露 = 资金损失",
           },
           visual: "✅",
         },

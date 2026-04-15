@@ -11,7 +11,7 @@ export default function CodeBlock({ block, lang, labels }) {
   const [copied, setCopied] = useState(false)
 
   const code = typeof block.code === 'object'
-    ? (block.code[lang] ?? block.code.es ?? '')
+    ? (block.code[lang] ?? block.code.en ?? block.code.es ?? '')
     : block.code
 
   const handleCopy = () => {

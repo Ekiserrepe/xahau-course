@@ -53,7 +53,7 @@ export default function LessonView({
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {/* Language selector */}
               <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--color-border)' }}>
-                {['en', 'es', 'jp', 'ko'].map((l) => (
+                {['en', 'es', 'jp', 'ko', 'zh'].map((l) => (
                   <button
                     key={l}
                     onClick={() => setLang(l)}
@@ -63,7 +63,7 @@ export default function LessonView({
                       color: lang === l ? '#000' : 'var(--color-text-dim)',
                     }}
                   >
-                    {l === 'jp' ? '日本語' : l === 'ko' ? '한국어' : l.toUpperCase()}
+                    {l === 'jp' ? '日本語' : l === 'ko' ? '한국어' : l === 'zh' ? '中文' : l.toUpperCase()}
                   </button>
                 ))}
               </div>
