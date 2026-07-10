@@ -1,4 +1,4 @@
-export default {
+const moduleData = {
   id: "m6",
   icon: "🪙",
   title: {
@@ -4195,3 +4195,1132 @@ freezeTrustLine();`,
     },
   ],
 }
+
+const arabicModuleTranslations = {
+  title: "إنشاء وإدارة tokens خاصة بك",
+  lessons: {
+    m6l1: {
+      title: "TrustLines ونموذج tokens في Xahau",
+      theory: `في Xahau، تعمل tokens القابلة للاستبدال (fungible) بشكل مختلف عن ERC-20 في Ethereum. لست بحاجة إلى نشر (deploy) smart contract لإنشاء token. بدلاً من ذلك، يُستخدم نظام يعتمد على **TrustLines**.
+
+### كيف يعمل؟
+
+1. **المُصدر (Issuer)**: يمكن لأي حساب أن يُصدر token. يصبح الحساب المُصدر بمثابة "البنك المركزي" لهذا الـtoken
+2. **TrustLine**: لاستقبال token، يجب على المستلم أولاً إنشاء **TrustLine** نحو المُصدر. هذا أشبه بالقول: "أثق بهذا الحساب حتى مقدار X من هذا الـtoken"
+3. **التحويل**: بمجرد وجود TrustLine، يمكن للمُصدر إرسال tokens إلى المستلم عبر معاملة Payment
+
+### تحديد هوية tokens
+
+يُحدد كل token بحقلين:
+- **currency**: رمز مكون من 3 أحرف (مثل "USD"، "EUR") أو رمز hex من 40 حرفًا للأسماء الأطول
+- **issuer**: عنوان الحساب المُصدر
+
+token بنفس \`currency\` ولكن بـ\`issuer\` مختلف يُعتبر **token مختلفًا تمامًا**.
+
+### TrustLine مقابل ERC-20
+
+| الخاصية | ERC-20 (Ethereum) | TrustLine (Xahau) |
+|---|---|---|
+| إنشاء token | نشر عقد Solidity | الإصدار مباشرة من حسابك |
+| استقبال token | تلقائي (بدون إذن) | يتطلب إنشاء TrustLine (opt-in) |
+| حد الكمية | مُعرّف في العقد | يُحدده المستلم في TrustLine |
+| التحويل | دالة في العقد | معاملة Payment أصلية |
+| التكلفة | غاز مرتفع التكلفة | fee ضئيل (~12 drops) |
+
+### احتياطي الحساب (Reserve)
+
+كل TrustLine تستهلك **احتياطي مالك** (owner reserve) من الحساب. هذا يعني أنك بحاجة إلى XAH إضافي محجوز مقابل كل TrustLine تنشئها.
+
+### إعدادات المُصدر عند إنشاء token
+
+من مزايا نظام tokens في Xahau أن الحساب المُصدر يمكنه ضبط خصائص متعددة **قبل أو بعد** إصدار tokens، باستخدام معاملات \`AccountSet\`. تُحدد هذه الإعدادات كيفية سلوك الـtoken على الشبكة:
+
+| الإعداد | Flag / الحقل | الوصف |
+|---|---|---|
+| **DefaultRipple** | \`SetFlag: 8\` | يسمح بتحويل الـtoken بحرية بين أطراف ثالثة. بدون هذا الـflag، لا يمكن لـtokens إلا الذهاب والعودة إلى المُصدر فقط |
+| **TransferFee** | \`TransferRate\` | يفرض نسبة مئوية على كل تحويل بين أطراف ثالثة (مثال: 0.1%). يذهب الـfee إلى المُصدر |
+| **RequireAuth** | \`SetFlag: 2\` | يجب على المُصدر أن يُصرّح كل TrustLine قبل أن يتمكن holder من استقبال tokens. مثالي لـtokens التي تتطلب KYC |
+| **Freeze** | \`SetFlag: 7\` (عام) | يسمح بتجميد TrustLines فردية أو جميعها دفعة واحدة، مما يمنع التحويلات |
+| **NoFreeze** | \`SetFlag: 6\` | تنازل **دائم** ولا رجعة فيه عن القدرة على التجميد. إشارة ثقة |
+| **Clawback** | \`SetFlag: 17\` | يسمح للمُصدر باسترداد tokens من أي holder. يجب تفعيله **قبل** إنشاء أي TrustLine |
+
+**مهم**: بعض الإعدادات لا رجعة فيها (\`NoFreeze\`) وأخرى يجب تفعيلها قبل إصدار tokens (\`Clawback\`). خطط لإعدادات المُصدر الخاص بك بعناية قبل البدء في توزيع tokens.
+
+سنتناول كل واحد من هذه الإعدادات بالتفصيل في الأقسام التالية من هذه الوحدة.`,
+      codeTitles: [
+        "إنشاء TrustLine نحو issuer",
+        "إصدار tokens إلى حساب لديه TrustLine",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function createTrustLine() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
+
+  // holder يعلن أنه يقبل token من issuer حتى حد معين
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: holder.address,
+    LimitAmount: {
+      currency: "USD",
+      issuer: process.env.ISSUER_ADDRESS,
+      value: "1000",
+    },
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = holder.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+createTrustLine().catch(console.error);`,
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function issueTokens() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, { algorithm: "secp256k1" });
+
+  // issuer يرسل IOU إلى holder الذي أنشأ TrustLine مسبقا
+  const payment = {
+    TransactionType: "Payment",
+    Account: issuer.address,
+    Destination: process.env.HOLDER_ADDRESS,
+    Amount: {
+      currency: "USD",
+      issuer: issuer.address,
+      value: "100",
+    },
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = issuer.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+issueTokens().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "نموذج tokens في Xahau",
+          content: "لا تحتاج ERC-20 contract\n\n• issuer يصدر العملة\n• holder ينشئ TrustLine\n• Payment ينقل IOUs\n• token = currency + issuer",
+        },
+        {
+          title: "TrustLine = Opt-in",
+          content: "الحساب يختار tokens التي يقبلها\n\n• يحدد issuer\n• يحدد limit\n• يمنع spam tokens\n• يحتاج owner reserve",
+        },
+        {
+          title: "نظام reserve",
+          content: "كل TrustLine تزيد objects الحساب\n\n• تحتاج XAH محجوزة\n• تقلل spam\n• يمكن تحريرها عند حذف TrustLine إذا أصبح الرصيد صفر",
+        },
+      ],
+    },
+    m6l1b: {
+      title: "العملية الكاملة: إنشاء وتوزيع token خاص بك",
+      theory: `الآن بعد أن فهمت كيف تعمل TrustLines، لنلقِ نظرة على العملية الكاملة لإنشاء token خاص بك وتوزيعه. على عكس بلوك تشينات أخرى، في Xahau **لست بحاجة إلى نشر أي عقد (contract)**. تتم العملية بالكامل عبر معاملات أصلية (native transactions).
+
+### نظرة عامة على العملية
+
+المسار الكامل لإنشاء token وتوزيعه هو:
+
+1. **تجهيز الحساب المُصدر**: إنشاء (أو استخدام) حساب مخصص حصريًا لإصدار الـtoken
+2. **ضبط flags المُصدر**: تفعيل \`DefaultRipple\` حتى يكون الـtoken قابلاً للتحويل بين أطراف ثالثة
+3. **تجهيز حساب الاحتياطي/التوزيع**: إنشاء (أو استخدام) حساب ثانٍ يستقبل العرض الأولي ومنه تُوزَّع tokens
+4. **إنشاء TrustLine من حساب الاحتياطي**: يُنشئ حساب التوزيع TrustLine نحو المُصدر
+5. **إصدار tokens**: يرسل المُصدر إجمالي العرض إلى حساب الاحتياطي عبر معاملة Payment
+6. **التوزيع**: من حساب الاحتياطي، تُوزَّع tokens على المستخدمين النهائيين (الذين يجب أن يكون لديهم TrustLine مسبقًا)
+
+### لماذا استخدام حسابين منفصلين؟
+
+من الممارسات الجيدة الفصل بين **الحساب المُصدر** و**حساب التوزيع**:
+
+- **الحساب المُصدر**: يُستخدم فقط للإصدار وضبط إعدادات الـtoken (freeze، clawback، إلخ). يمكن حمايته بواسطة multi-signing أو تعطيل المفتاح الرئيسي (master key) بعد ضبط الإعدادات
+- **حساب التوزيع/الاحتياطي**: يحتفظ بالعرض المتداول ويُستخدم للعمليات اليومية (البيع على DEX، التوزيع على المستخدمين، إلخ)
+
+هذا الفصل يُقلل من المخاطر: إذا تعرض حساب التوزيع للاختراق، يمكن للمُصدر تجميد tokens. لو كان كل شيء في حساب واحد، لأدى أي اختراق إلى تعريض كل من الإصدار والتوزيع للخطر.
+
+### رمز العملة: 3 أحرف مقابل hex
+
+- tokens ذات اسم من **3 أحرف** (مثل \`USD\`، \`EUR\`، \`EKI\`) تُستخدم مباشرة
+- tokens ذات اسم **أطول** (مثل \`EURZ\`، \`MyToken\`) يجب تحويلها إلى رمز hex من 40 حرفًا
+
+\`\`\`
+// دالة لتحويل اسم طويل إلى hex من 40 حرفًا
+function currencyToHex(name) {
+  const hex = Buffer.from(name, "ascii").toString("hex").toUpperCase();
+  return hex.padEnd(40, "0");
+}
+
+console.log(currencyToHex("EURZ"));
+
+// "EURZ" -> "4555525A00000000000000000000000000000000"
+\`\`\`
+
+### ملخص المعاملات المطلوبة
+
+| الخطوة | المعاملة | الحساب المُنفّذ |
+|---|---|---|
+| ضبط المُصدر | \`AccountSet\` (SetFlag: 8) | المُصدر |
+| إنشاء TrustLine | \`TrustSet\` | حساب الاحتياطي |
+| إصدار العرض | \`Payment\` (Amount كـIOU) | المُصدر |
+| التوزيع | \`Payment\` (Amount كـIOU) | حساب الاحتياطي |`,
+      codeTitles: [
+        "العملية الكاملة: إعداد issuer وإنشاء TrustLine وإصدار وتوزيع token",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// تحتاج إلى محفظتين لديهما رصيد على testnet، عرّفهما في ملف .env الخاص بك:
+//   ISSUER_SEED  → حساب مُصدر الـtoken
+//   RESERVE_SEED  → حساب الاحتياطي/التوزيع
+// يمكنك الحصول على رصيد من الـfaucet: https://xahau-test.net
+
+// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 أحرف أو أقل: رمز عملة قياسي
+  if (cur.length <= 3) return cur;
+
+  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+async function createAndDistributeToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // === الحسابات ===
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
+  const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
+
+  const TOKEN_CURRENCY_INPUT = "YourTokenName";          // اسم الـtoken (3 أحرف) أو hex من 40 حرفًا للأسماء الأطول
+  const TOTAL_SUPPLY = "1000000";        // إجمالي العرض المراد إصداره
+
+  const TOKEN_CURRENCY = normalizeCurrency(TOKEN_CURRENCY_INPUT);
+
+
+  console.log("=== إنشاء token ===");
+  console.log("المُصدر:", issuer.address);
+  console.log("الاحتياطي:", reserve.address);
+  console.log("Token:", TOKEN_CURRENCY);
+  console.log("العرض:", TOTAL_SUPPLY);
+
+  // === الخطوة 1: ضبط الحساب المُصدر بـ DefaultRipple ===
+  console.log("--- الخطوة 1: ضبط DefaultRipple على المُصدر ---");
+  const accountSet = {
+    TransactionType: "AccountSet",
+    Account: issuer.address,
+    SetFlag: 8, // asfDefaultRipple
+  };
+
+  const prep1 = await client.autofill(accountSet);
+  const signed1 = issuer.sign(prep1);
+  const result1 = await client.submitAndWait(signed1.tx_blob);
+  console.log("DefaultRipple:", result1.result.meta.TransactionResult);
+
+  if (result1.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("خطأ في ضبط المُصدر. جارٍ الإيقاف.");
+    await client.disconnect();
+    return;
+  }
+
+  // === الخطوة 2: يُنشئ حساب الاحتياطي TrustLine نحو المُصدر ===
+  console.log("--- الخطوة 2: إنشاء TrustLine (الاحتياطي ← المُصدر) ---");
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: reserve.address,
+    LimitAmount: {
+      currency: TOKEN_CURRENCY,
+      issuer: issuer.address,
+      value: TOTAL_SUPPLY, // قبول ما يصل إلى إجمالي العرض
+    },
+  };
+
+  const prep2 = await client.autofill(trustSet);
+  const signed2 = reserve.sign(prep2);
+  const result2 = await client.submitAndWait(signed2.tx_blob);
+  console.log("TrustLine:", result2.result.meta.TransactionResult);
+
+  if (result2.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("خطأ في إنشاء TrustLine. جارٍ الإيقاف.");
+    await client.disconnect();
+    return;
+  }
+
+  // === الخطوة 3: يرسل المُصدر إجمالي العرض إلى حساب الاحتياطي ===
+  console.log("--- الخطوة 3: إصدار tokens (المُصدر ← الاحتياطي) ---");
+  const issuePayment = {
+    TransactionType: "Payment",
+    Account: issuer.address,
+    Destination: reserve.address,
+    Amount: {
+      currency: TOKEN_CURRENCY,
+      issuer: issuer.address,
+      value: TOTAL_SUPPLY,
+    },
+  };
+
+  const prep3 = await client.autofill(issuePayment);
+  const signed3 = issuer.sign(prep3);
+  const result3 = await client.submitAndWait(signed3.tx_blob);
+  console.log("الإصدار:", result3.result.meta.TransactionResult);
+
+  if (result3.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("خطأ في إصدار tokens. جارٍ الإيقاف.");
+    await client.disconnect();
+    return;
+  }
+
+  console.log("تم إنشاء الـtoken وتوزيعه على حساب الاحتياطي!");
+  console.log("إجمالي العرض:", TOTAL_SUPPLY, TOKEN_CURRENCY);
+
+  // === التحقق: استعلام رصيد حساب الاحتياطي ===
+  console.log("--- التحقق ---");
+  const lines = await client.request({
+    command: "account_lines",
+    account: reserve.address,
+    ledger_index: "validated",
+  });
+
+  const tokenLine = lines.result.lines.find(
+    (l) => l.currency === TOKEN_CURRENCY && l.account === issuer.address
+  );
+
+  if (tokenLine) {
+    console.log("رصيد الاحتياطي:", tokenLine.balance, TOKEN_CURRENCY);
+    console.log("المُصدر:", tokenLine.account);
+    console.log("الحد:", tokenLine.limit, TOKEN_CURRENCY);
+  }
+
+  // === الخطوة 4 (مثال): توزيع tokens على مستخدم نهائي ===
+  // يجب على المستخدم النهائي أولاً إنشاء TrustLine نحو المُصدر
+  // بعدها يرسل له حساب الاحتياطي tokens:
+  //
+  // const distribution = {
+  //   TransactionType: "Payment",
+  //   Account: reserve.address,
+  //   Destination: "rEndUserAddress",
+  //   Amount: {
+  //     currency: TOKEN_CURRENCY,
+  //     issuer: issuer.address,
+  //     value: "100",
+  //   },
+  // };
+
+  await client.disconnect();
+}
+
+createAndDistributeToken();`,
+      ],
+      slides: [
+        {
+          title: "عملية إنشاء token",
+          content: "1. إعداد issuer\n2. اختيار flags\n3. إنشاء TrustLine\n4. إصدار token عبر Payment\n5. توزيعه أو تداوله",
+        },
+        {
+          title: "حسابان: issuer + reserve",
+          content: "issuer = مصدر token والثقة\nreserve/distributor = حساب توزيع وتشغيل\n\nهذا يقلل استخدام issuer في العمليات اليومية.",
+        },
+        {
+          title: "ملخص المعاملات",
+          content: "AccountSet → إعداد issuer\nTrustSet → قبول token\nPayment → إصدار ونقل token\nOfferCreate → التداول في DEX",
+        },
+      ],
+    },
+    m6l2: {
+      title: "إدارة tokens المتقدمة",
+      theory: `بعد إصدار token، تحتاج إلى قراءة TrustLines وإعدادات issuer. أهم أمر هنا هو \`account_lines\` لعرض tokens المرتبطة بالحساب.
+
+### account_lines
+
+يعرض TrustLines لحساب معين: العملة، issuer/counterparty، الرصيد، limit، وبعض flags.
+
+### DefaultRipple
+
+\`DefaultRipple\` يسمح بانتقال IOUs بين أطراف ثالثة. بدونه، قد يكون token محدودا بالحركة من وإلى issuer فقط. غالبا تحتاجه إذا أردت token قابلا للتداول.
+
+### flags مهمة للـ issuer
+
+\`RequireAuth\` للتحكم في من يستطيع فتح TrustLine فعالة، \`TransferRate\` لرسوم تحويل، \`Freeze\` لتجميد خطوط معينة، و\`Clawback\` لاسترداد tokens في سيناريوهات منظمة.`,
+      codeTitles: [
+        "استعلام tokens / TrustLines لحساب",
+      ],
+      code: [
+        `const { Client } = require("xahau");
+
+async function queryTrustLines() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const account = "rYourAddressHere";
+
+  // account_lines يعرض TrustLines والـ IOUs المرتبطة بالحساب
+  const response = await client.request({
+    command: "account_lines",
+    account,
+    ledger_index: "validated",
+  });
+
+  for (const line of response.result.lines) {
+    console.log("Currency:", line.currency);
+    console.log("Issuer/Counterparty:", line.account);
+    console.log("Balance:", line.balance);
+    console.log("Limit:", line.limit);
+  }
+
+  await client.disconnect();
+}
+
+queryTrustLines().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "استعلام tokens",
+          content: "account_lines يعرض TrustLines\n\n• currency\n• issuer/counterparty\n• balance\n• limit\n• flags\n\nمفيد لمعرفة tokens التي يملكها الحساب.",
+        },
+        {
+          title: "DefaultRipple",
+          content: "يسمح للـ IOU بالانتقال بين holders\n\nبدونه، الحركة قد تكون محدودة بالـ issuer\n\nمهم للـ tokens القابلة للتداول.",
+        },
+        {
+          title: "Flags مهمة للـ issuers",
+          content: "RequireAuth (asfRequireAuth):\n• المُصدر يُصرّح كل TrustLine\n• مثالي لـtokens التي تتطلب KYC\n\nDefaultRipple (asfDefaultRipple):\n• يسمح بالتحويل بين أطراف ثالثة\n\nاضبطها قبل إصدار tokens\nاستخدم AccountSet مع SetFlag/ClearFlag",
+        },
+      ],
+    },
+    m6l3: {
+      title: "التداول على DEX الأصلي",
+      theory: `يتضمن Xahau **بورصة لامركزية (DEX) أصلية** مدمجة مباشرة في البروتوكول. لست بحاجة إلى smart contracts أو منصات خارجية لتبادل tokens، فكل شيء يتم عبر معاملات أصلية.
+
+### OfferCreate: وضع الأوامر في DEX
+
+تسمح معاملة \`OfferCreate\` بوضع أمر شراء أو بيع في دفتر أوامر DEX. تحتوي على حقلين أساسيين:
+
+- **TakerPays**: ما تريد **استلامه** (ما يدفعه "الـtaker")
+- **TakerGets**: ما أنت **مستعد لتقديمه** (ما يحصل عليه "الـtaker")
+
+على سبيل المثال، إذا أردت بيع 100 USD مقابل XAH، فستضبط:
+- TakerPays: كمية XAH التي تريد استلامها
+- TakerGets: 100 USD (ما تُسلّمه)
+
+### OfferCancel: إلغاء الأوامر المفتوحة
+
+إذا كان لديك أمر مفتوح في DEX لم يُنفَّذ بعد، يمكنك إلغاءه باستخدام \`OfferCancel\`، مع تحديد \`OfferSequence\` الخاص بالأمر الأصلي.
+
+### كيف يعمل دفتر الأوامر
+
+يحتفظ DEX بـ**دفتر أوامر (order book)** لكل زوج من tokens:
+- **Bids (أوامر شراء)**: أوامر تريد شراء token
+- **Asks (أوامر بيع)**: أوامر تريد بيع token
+
+عندما يتطابق أمر جديد مع أمر موجود (يتقاطع السعر)، يُنفَّذ تلقائيًا، بشكل كامل أو جزئي.
+
+### flags خاصة بـ OfferCreate
+
+- **tfImmediateOrCancel**: يُنفَّذ الأمر فورًا مقابل الأوامر الموجودة. أي جزء غير مُنفَّذ يُلغى فورًا. لا يبقى شيء في دفتر الأوامر
+- **tfPassive**: يُنفَّذ الأمر فقط مقابل الأوامر الموجودة التي لها سعر مساوٍ أو أفضل. لا يُوضع في الدفتر إذا لم يوجد تطابق فوري
+- **tfFillOrKill**: يُنفَّذ الأمر بالكامل أو يُلغى. لا يُسمح بالتنفيذ الجزئي
+- **tfSell**: يُبادل كامل كمية TakerGets، حتى لو كان ذلك يعني الحصول على أكثر من كمية TakerPays مقابل ذلك
+
+يمكنك زيارة المزيد من المعلومات حول الـflags في [الوثائق الرسمية](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/#offercreate-flags).
+
+### استعلام دفتر الأوامر: book_offers
+
+يتيح لك أمر \`book_offers\` عرض الأوامر المفتوحة لزوج من tokens. يُعيد أفضل العروض مرتبة حسب السعر.
+
+### Auto-bridging عبر XAH
+
+يمكن لـDEX في Xahau توجيه عمليات متعددة القفزات تلقائيًا عبر XAH. إذا أردت تبادل USD مقابل EUR ولم تكن هناك عروض مباشرة USD/EUR، يمكن لـDEX أن:
+1. يبيع USD مقابل XAH
+2. يشتري EUR بواسطة XAH
+
+كل ذلك في معاملة واحدة، بشكل شفاف. هذا يُحسّن سيولة DEX بشكل كبير.`,
+      codeTitles: [
+        "استعلام order book لزوج token / XAH",
+        "إنشاء offer على DEX",
+        "إلغاء offer موجود",
+      ],
+      code: [
+        `const { Client } = require("xahau");
+
+async function viewOrderBook() {
+ // نتصل بشبكة Xahau Mainnet في هذا المثال لأن احتمال نشاط DEX هناك أكبر. عادة ما يكون نشاط DEX في testnet قليلاً، لكن يمكنك تجربة كلتيهما.
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  const issuerAddress = "rEvernodee8dJLaFsujS6q1EiXvZYmHXr8";
+
+  // استعلام عن العروض: من يبيع EVR مقابل XAH؟
+  const response = await client.request({
+    command: "book_offers",
+    taker_pays: {
+      currency: "XAH",
+    },
+    taker_gets: {
+      currency: "EVR",
+      issuer: issuerAddress,
+    },
+    limit: 10,
+  });
+
+  console.log("=== دفتر الأوامر: EVR → XAH ===");
+  console.log(\`عدد العروض الموجودة: \${response.result.offers.length}\`);
+
+  for (const offer of response.result.offers) {
+    const getsUSD = offer.TakerGets.value || offer.TakerGets;
+    const paysXAH =
+      typeof offer.TakerPays === "string"
+        ? Number(offer.TakerPays) / 1_000_000
+        : offer.TakerPays.value;
+
+    console.log(\`الحساب: \${offer.Account}\`);
+    console.log(\`  يبيع: \${getsUSD} EVR\`);
+    console.log(\`  يطلب: \${paysXAH} XAH\`);
+    console.log(\`  Sequence: \${offer.Sequence}\`);
+  }
+
+  await client.disconnect();
+}
+
+viewOrderBook();`,
+        `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 أحرف أو أقل: رمز عملة قياسي
+  if (cur.length <= 3) return cur;
+
+  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+
+async function createOffer() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
+  const issuerAddress = "rTokenIssuerAddress";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
+
+  // بيع 100 Token مقابل 50 XAH
+  const offer = {
+    TransactionType: "OfferCreate",
+    Account: trader.address,
+    // ما أريد استلامه: 50 XAH
+    TakerPays: xahToDrops(50),
+    // ما أنا مستعد لتقديمه: 100 Tokens
+    TakerGets: {
+      currency: token_currency,
+      issuer: issuerAddress,
+      value: "100",
+    },
+  };
+
+  const prepared = await client.autofill(offer);
+  const signed = trader.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("تم إنشاء العرض في DEX!");
+    console.log(\`بيع 100 Tokens مقابل 50 XAH (0.5 XAH/Token)\`);
+    console.log(\`Sequence الخاص بالعرض: \${prepared.Sequence}\`);
+  }
+
+  await client.disconnect();
+}
+
+createOffer();`,
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function cancelOffer() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // OfferSequence هو Sequence الخاص بمعاملة OfferCreate الأصلية
+  const cancel = {
+    TransactionType: "OfferCancel",
+    Account: wallet.address,
+    OfferSequence: Number(process.env.OFFER_SEQUENCE),
+  };
+
+  const prepared = await client.autofill(cancel);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+cancelOffer().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "DEX الأصلي في Xahau",
+          content: "التداول مدمج في البروتوكول\n\n• OfferCreate\n• OfferCancel\n• Order books\n• IOU/XAH أو IOU/IOU\n• لا يحتاج smart contract منفصل",
+        },
+        {
+          title: "OfferCreate: تشريح order",
+          content: "TakerPays -> ما تريد استلامه\nTakerGets -> ما أنت مستعد لتقديمه\n\nflags خاصة:\n• tfImmediateOrCancel -> تنفيذ أو إلغاء\n• tfPassive -> مطابقة الأوامر الموجودة فقط\n• tfFillOrKill -> تنفيذ كامل أو لا شيء\n• tfSell -> استلام بقدر كمية TakerGets\n\nOfferCancel -> إلغاء أمر مفتوح",
+        },
+        {
+          title: "Auto-bridging و order book",
+          content: "يمكن للشبكة استخدام XAH كجسر للسيولة\n\nالهدف: إيجاد أفضل مسار تداول متاح بين assets.",
+        },
+      ],
+    },
+    m6l4: {
+      title: "تحكم متقدم في tokens: Freeze و Clawback",
+      theory: `يوفر Xahau لمُصدري tokens أدوات تحكم متقدمة: **Freeze** (التجميد)، **Clawback** (الاسترداد القسري)، **Transfer fees** (رسوم التحويل)، و**Authorized TrustLines** (خطوط الثقة المُصرَّح بها).
+
+### Freeze: تجميد خطوط الثقة
+
+يمكن لمُصدر token تجميد TrustLines لمنع holders من تحويل tokens الخاصة بهم. توجد ثلاثة مستويات:
+
+### Freeze فردي
+يُجمِّد TrustLine محددة بين المُصدر وholder. يتم ذلك باستخدام \`TrustSet\` مع flag \`tfSetFreeze\`. لن يتمكن holder من إرسال أو استقبال ذلك الـtoken أثناء تجميده. لإلغاء التجميد، يُستخدم \`tfClearFreeze\`.
+
+### Global Freeze
+يُجمِّد **جميع** TrustLines الخاصة بـtoken الذي أصدرته. يُفعَّل باستخدام \`AccountSet\` مع \`SetFlag: 7\` (asfGlobalFreeze). يُجمَّد جميع holders في آن واحد. يمكن إلغاء تفعيله بـ\`ClearFlag: 7\`.
+
+### NoFreeze (لا رجعة فيه)
+عند تفعيل \`SetFlag: 6\` (asfNoFreeze) في \`AccountSet\`، يتنازل المُصدر **بشكل دائم** عن القدرة على التجميد. لا يمكن التراجع عن هذا. إنها إشارة ثقة لـholders.
+
+### حالات استخدام Freeze
+- **الامتثال التنظيمي**: تجميد الأموال استجابة لأمر قضائي
+- **خروقات أمنية**: إيقاف التحويلات إذا تم اختراق حساب
+- **حل النزاعات**: تجميد مؤقت أثناء التحقيق
+
+### Clawback: استرداد tokens من holders
+
+يسمح **Clawback** للمُصدر باسترداد tokens من أي holder. إنها أداة قوية يجب ضبطها **قبل** إصدار tokens:
+
+1. تفعيل \`asfAllowTrustLineClawback\` (flag 17) باستخدام \`AccountSet\` **قبل** إنشاء أي TrustLine
+2. بعد التفعيل، استخدم معاملة \`Clawback\` لاسترداد tokens
+3. **لا يمكن الجمع بينها** وبين NoFreeze — إذا تنازلت عن التجميد، لا يمكنك تنفيذ clawback
+
+### Transfer fees: عمولات على التحويلات
+
+يمكن للمُصدر فرض نسبة مئوية على كل تحويل لـtoken الخاص به بين أطراف ثالثة:
+
+- تُضبط عبر حقل \`TransferRate\` في \`AccountSet\`
+- القيمة عدد صحيح: 1000000000 = 0%، 1001000000 = 0.1%، 1010000000 = 1%
+- تُطبَّق فقط على التحويلات بين أطراف ثالثة، وليس عند الإرسال إلى المُصدر
+- مثال: بعمولة 0.1%، عند إرسال 100 token يستلم المستقبل 99.9 (يُخصم 0.1 من المستقبل)
+
+### Authorized TrustLines: RequireAuth
+
+يتطلب flag \`RequireAuth\` (asfRequireAuth) على الحساب المُصدر أن يُصرِّح المُصدر **صراحة** كل TrustLine قبل أن يتمكن holder من استقبال tokens. مفيد لـtokens التي تحتاج KYC أو تحققًا مسبقًا.`,
+      codeTitles: [
+        "إنشاء TrustLine من holder نحو issuer",
+        "تجميد TrustLine لمستخدم محدد",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// ينشئ هذا الكود TrustLine من حساب (holder)
+// نحو مُصدر token. هذا ضروري حتى يتمكن المُصدر
+// لاحقًا من تجميد تلك TrustLine إذا لزم الأمر.
+
+// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 أحرف أو أقل: رمز عملة قياسي
+  if (cur.length <= 3) return cur;
+
+  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+async function createHolderTrustLine() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // الـholder الذي يريد استقبال الـtoken؛ يمكن تجميد TrustLine الخاصة به لاحقًا إذا لزم الأمر
+  const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
+  const issuerAddress = "rIssuerAddress";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
+
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: holder.address,
+    LimitAmount: {
+      currency: token_currency,
+      issuer: issuerAddress,
+      value: "1000000", // الحد الأقصى الذي أقبله
+    },
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = holder.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log("تم إنشاء TrustLine!");
+    console.log("Holder:", holder.address);
+    console.log("المُصدر:", issuerAddress);
+    console.log("\\nيمكن للمُصدر الآن إرسال الـtoken إلى هذا الحساب.");
+    console.log("يمكنه أيضًا تجميد هذه TrustLine إذا لزم الأمر.");
+  }
+
+  await client.disconnect();
+}
+
+createHolderTrustLine();`,
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
+function normalizeCurrency(token_currency) {
+  if (typeof token_currency !== "string") return token_currency;
+
+  const cur = token_currency.trim();
+
+  // 3 أحرف أو أقل: رمز عملة قياسي
+  if (cur.length <= 3) return cur;
+
+  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
+  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
+
+  if (hex.length > 40) {
+    throw new Error(
+      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
+    );
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+async function freezeTrustLine() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
+  const holderAddress = "rHolderAddress";
+  const tokenCurrencyInput = "YourTokenName";
+
+  const token_currency = normalizeCurrency(tokenCurrencyInput);
+
+  // تجميد TrustLine الخاصة بالـtoken مع هذا الـholder
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: issuer.address,
+    LimitAmount: {
+      currency: token_currency,
+      issuer: holderAddress,
+      value: "0", // القيمة لا تهم في حالة التجميد
+    },
+    Flags: 1048576, // tfSetFreeze
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = issuer.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    console.log(\`تم تجميد TrustLine الخاصة بالـtoken لـ \${holderAddress}\`);
+    console.log("لا يمكن لهذا الـholder إرسال أو استقبال هذا الـtoken");
+  }
+
+  await client.disconnect();
+}
+
+freezeTrustLine().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "Freeze: تجميد token",
+          content: "Freeze يسمح للـ issuer بتقييد TrustLine\n\n• تجميد محدد\n• تجميد عام\n• مفيد للامتثال\n• يجب استخدامه بشفافية",
+        },
+        {
+          title: "Clawback: استرداد قسري",
+          content: "Clawback يسمح باسترداد tokens من holder\n\n• يحتاج تفعيل مبكر\n• مناسب لبعض الأصول المنظمة\n• حساس جدا للمستخدمين\n• يجب توضيحه قبل الإصدار",
+        },
+        {
+          title: "Transfer fees و RequireAuth",
+          content: "TransferRate → fee على transfers بين holders\nRequireAuth → issuer يصرح TrustLines\n\nهذه أدوات سياسة token وليست مجرد تفاصيل تقنية.",
+        },
+      ],
+    },
+  },
+};
+
+function applyArabicTranslations(module) {
+  module.title.ar = arabicModuleTranslations.title;
+
+  for (const lesson of module.lessons) {
+    const translation = arabicModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.ar = translation.title;
+    lesson.theory.ar = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.ar = translation.codeTitles[index];
+      block.code.ar = translation.code[index];
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      slide.title.ar = translation.slides[index].title;
+      slide.content.ar = translation.slides[index].content;
+    });
+  }
+}
+
+applyArabicTranslations(moduleData);
+
+const frenchModuleTranslations = {
+  title: "Créer et gérer ses propres tokens",
+  lessons: {
+    m6l1: {
+      title: "TrustLines et modèle de tokens dans Xahau",
+      theory: `Dans Xahau, les tokens fongibles fonctionnent différemment des ERC-20 sur Ethereum. Tu n'as pas besoin de déployer un smart contract pour créer un token. À la place, un système basé sur les **TrustLines** est utilisé.
+
+### Comment ça fonctionne ?
+
+1. **Émetteur (Issuer)** : N'importe quel compte peut émettre un token. Le compte émetteur devient la « banque centrale » de ce token
+2. **TrustLine** : Pour recevoir un token, le destinataire doit d'abord créer une **TrustLine** vers l'émetteur. C'est comme dire « je fais confiance à ce compte jusqu'à X unités de ce token »
+3. **Transfert** : Une fois la TrustLine créée, l'émetteur peut envoyer des tokens au destinataire via un Payment
+
+### Identification des tokens
+
+Chaque token est identifié par deux champs :
+- **currency** : un code de 3 caractères (ex. : « USD », « EUR ») ou un code hexadécimal de 40 caractères pour les noms plus longs
+- **issuer** : l'adresse du compte émetteur
+
+Deux tokens ayant la même \`currency\` mais un \`issuer\` différent sont des **tokens totalement différents**.
+
+### TrustLine vs ERC-20
+
+| Caractéristique | ERC-20 (Ethereum) | TrustLine (Xahau) |
+|---|---|---|
+| Créer un token | Déployer un contrat Solidity | Émettre simplement depuis ton compte |
+| Recevoir un token | Automatique (sans permission) | Nécessite de créer une TrustLine (opt-in) |
+| Limite de quantité | Définie dans le contrat | Définie par le destinataire dans la TrustLine |
+| Transfert | Fonction du contrat | Transaction Payment native |
+| Coût | Gas coûteux | Frais minimes (~12 drops) |
+
+### Réserve de compte
+
+Chaque TrustLine consomme une **réserve de propriétaire** (owner reserve) du compte. Cela signifie que tu dois avoir du XAH supplémentaire bloqué pour chaque TrustLine que tu crées.
+
+### Configurations de l'émetteur lors de la création d'un token
+
+L'un des avantages du système de tokens de Xahau est que le compte émetteur peut configurer diverses propriétés **avant ou après** l'émission des tokens, via des transactions \`AccountSet\`. Ces configurations définissent le comportement du token sur le réseau :
+
+| Configuration | Flag / Champ | Description |
+|---|---|---|
+| **DefaultRipple** | \`SetFlag: 8\` | Permet au token d'être librement transféré entre tiers. Sans ce flag, les tokens ne peuvent qu'aller vers l'émetteur et en revenir |
+| **TransferFee** | \`TransferRate\` | Prélève un pourcentage sur chaque transfert entre tiers (ex. : 0.1 %). Les frais reviennent à l'émetteur |
+| **RequireAuth** | \`SetFlag: 2\` | L'émetteur doit autoriser chaque TrustLine avant qu'un détenteur puisse recevoir des tokens. Idéal pour les tokens avec KYC |
+| **Freeze** | \`SetFlag: 7\` (global) | Permet de geler des TrustLines individuelles ou toutes à la fois, empêchant les transferts |
+| **NoFreeze** | \`SetFlag: 6\` | Renonciation **permanente** et irréversible à la capacité de geler. Signal de confiance |
+| **Clawback** | \`SetFlag: 17\` | Permet à l'émetteur de récupérer des tokens auprès de n'importe quel détenteur. Doit être activé **avant** de créer toute TrustLine |
+
+**Important** : certaines configurations sont irréversibles (\`NoFreeze\`) et d'autres doivent être activées avant d'émettre des tokens (\`Clawback\`). Planifie soigneusement la configuration de ton émetteur avant de commencer à distribuer des tokens.
+
+Nous verrons chacune de ces configurations en détail dans les sections suivantes de ce module.`,
+      codeTitles: ["Créer une TrustLine vers un émetteur de token", "Émettre des tokens vers un compte avec TrustLine"],
+      slides: [
+        ["Modèle de tokens dans Xahau", "Les tokens sont des IOUs émis par un compte\n\n• Pas de contrat ERC-20\n• Une devise + un issuer\n• Le détenteur accepte avec TrustLine\n• Le solde vit sur la ligne de confiance"],
+        ["TrustLine = Opt-in", "Un compte ne reçoit pas un token au hasard\n\nIl crée d'abord une TrustLine avec une limite, puis l'émetteur peut envoyer le token."],
+        ["Système de réserve", "Les objets de ledger consomment de la réserve\n\nUne TrustLine augmente les exigences de réserve du compte qui la crée."],
+      ],
+    },
+    m6l1b: {
+      title: "Processus complet : créer et distribuer ton propre token",
+      theory: `Maintenant que tu comprends le fonctionnement des TrustLines, voyons le processus complet pour créer ton propre token et le distribuer. Contrairement à d'autres blockchains, dans Xahau **tu n'as besoin de déployer aucun contrat**. Le processus se fait entièrement avec des transactions natives.
+
+### Vue d'ensemble du processus
+
+Le flux complet pour créer et distribuer un token est :
+
+1. **Préparer le compte émetteur** : créer (ou utiliser) un compte dédié exclusivement à l'émission du token
+2. **Configurer les flags de l'émetteur** : activer \`DefaultRipple\` pour que le token soit transférable entre tiers
+3. **Préparer le compte de réserve/distribution** : créer (ou utiliser) un second compte qui recevra l'offre initiale et depuis lequel les tokens seront distribués
+4. **Créer une TrustLine depuis le compte de réserve** : le compte de distribution crée une TrustLine vers l'émetteur
+5. **Émettre les tokens** : l'émetteur envoie l'offre totale au compte de réserve via un Payment
+6. **Distribuer** : depuis le compte de réserve, les tokens sont distribués aux utilisateurs finaux (qui doivent au préalable avoir une TrustLine)
+
+### Pourquoi utiliser deux comptes séparés ?
+
+C'est une bonne pratique de séparer le **compte émetteur** du **compte de distribution** :
+
+- **Compte émetteur** : utilisé uniquement pour émettre et configurer le token (freeze, clawback, etc.). Il peut être protégé par multi-signature ou en désactivant la clé maîtresse une fois configuré
+- **Compte de distribution/réserve** : détient l'offre en circulation et sert aux opérations quotidiennes (vente sur le DEX, distribution aux utilisateurs, etc.)
+
+Cette séparation réduit le risque : si le compte de distribution est compromis, l'émetteur peut geler les tokens. Si tout se trouvait sur un seul compte, une faille compromettrait à la fois l'émission et la distribution.
+
+### Code de devise : 3 caractères vs hex
+
+- Les tokens avec un nom de **3 caractères** (ex. : \`USD\`, \`EUR\`, \`EKI\`) sont utilisés directement
+- Les tokens avec un nom **plus long** (ex. : \`EURZ\`, \`MyToken\`) doivent être convertis en un code hexadécimal de 40 caractères
+
+\`\`\`
+// Fonction pour convertir un nom long en hex de 40 caractères
+function currencyToHex(name) {
+  const hex = Buffer.from(name, "ascii").toString("hex").toUpperCase();
+  return hex.padEnd(40, "0");
+}
+
+console.log(currencyToHex("EURZ"));
+
+// "EURZ" -> "4555525A00000000000000000000000000000000"
+\`\`\`
+
+### Résumé des transactions nécessaires
+
+| Étape | Transaction | Compte exécutant |
+|---|---|---|
+| Configurer l'émetteur | \`AccountSet\` (SetFlag: 8) | Émetteur |
+| Créer la TrustLine | \`TrustSet\` | Compte de réserve |
+| Émettre l'offre | \`Payment\` (Amount en IOU) | Émetteur |
+| Distribuer | \`Payment\` (Amount en IOU) | Compte de réserve |`,
+      codeTitles: ["Processus complet : configurer l'émetteur, créer la TrustLine, émettre et distribuer le token"],
+      slides: [
+        ["Processus de création du token", "1. Créer l'émetteur\n2. Créer le détenteur\n3. TrustSet vers l'émetteur\n4. Payment avec Amount IOU\n5. Vérifier account_lines"],
+        ["Deux comptes : issuer + réserve", "L'issuer représente la source du token\n\nLe compte réserve/détenteur accepte le token et peut ensuite le distribuer."],
+        ["Résumé des transactions", "AccountSet pour configurer\nTrustSet pour accepter\nPayment pour émettre\naccount_lines pour vérifier"],
+      ],
+    },
+    m6l2: {
+      title: "Gestion avancée des tokens",
+      theory: `Une fois ton token créé, tu peux gérer plusieurs aspects : consulter les soldes, configurer le compte émetteur et transférer des tokens entre utilisateurs.
+
+### Consulter les TrustLines et les soldes
+
+La commande \`account_lines\` renvoie toutes les TrustLines d'un compte, en indiquant chaque token qu'il détient ou a émis, ainsi que son solde actuel.
+
+### Configuration de l'émetteur
+
+Le compte émetteur peut configurer des flags importants :
+
+- **DefaultRipple** : permet aux tokens d'être transférés entre tiers sans passer par l'émetteur. **Il doit être activé** si tu veux que tes tokens soient librement transférables
+- **RequireAuth** : exige que l'émetteur autorise chaque TrustLine avant que quelqu'un puisse recevoir des tokens
+
+### Transfert entre tiers (Rippling)
+
+Sans le flag **DefaultRipple**, les tokens ne peuvent être transférés que dans un sens, vers l'émetteur. Une fois activé, les tokens peuvent « rippler » — c'est-à-dire se transférer entre comptes ayant une TrustLine avec le même émetteur.
+
+### Codes de devise spéciaux
+
+Pour les noms de tokens de plus de 3 caractères, un code hexadécimal de 40 caractères est utilisé :
+- Format : le nom converti en hex, complété par des zéros
+- Exemple : « EURZ » -> hex -> complété jusqu'à 40 caractères`,
+      codeTitles: ["Consulter les tokens (TrustLines) d'un compte"],
+      slides: [
+        ["Consulter les tokens", "account_lines liste les TrustLines d'un compte\n\nTu peux voir currency, issuer, balance, limit et flags."],
+        ["DefaultRipple", "DefaultRipple permet le rippling par défaut sur les lignes de confiance\n\nÀ activer seulement si ton modèle de token le nécessite."],
+        ["Flags importants pour les issuers", "RequireAuth, Freeze, GlobalFreeze, NoFreeze, TransferRate\n\nChaque option a des implications opérationnelles."],
+      ],
+    },
+    m6l3: {
+      title: "Trading sur le DEX natif",
+      theory: `Xahau intègre un **échange décentralisé (DEX) natif** directement dans le protocole. Tu n'as besoin ni de smart contracts ni de plateformes externes pour échanger des tokens, tout se fait avec des transactions natives.
+
+### OfferCreate : placer des ordres sur le DEX
+
+La transaction \`OfferCreate\` permet de placer un ordre d'achat ou de vente dans le carnet d'ordres du DEX. Elle comporte deux champs clés :
+
+- **TakerPays** : ce que tu veux **recevoir** (ce que le « taker » paie)
+- **TakerGets** : ce que tu es **prêt à donner** (ce que le « taker » obtient)
+
+Par exemple, si tu veux vendre 100 USD contre du XAH, tu configurerais :
+- TakerPays : la quantité de XAH que tu veux recevoir
+- TakerGets : 100 USD (ce que tu donnes)
+
+### OfferCancel : annuler des ordres ouverts
+
+Si tu as un ordre ouvert sur le DEX qui n'a pas encore été exécuté, tu peux l'annuler avec \`OfferCancel\`, en indiquant le \`OfferSequence\` de l'ordre original.
+
+### Comment fonctionne le carnet d'ordres
+
+Le DEX maintient un **carnet d'ordres** (order book) pour chaque paire de tokens :
+- **Bids (ordres d'achat)** : ordres qui veulent acheter un token
+- **Asks (ordres de vente)** : ordres qui veulent vendre un token
+
+Quand un nouvel ordre correspond à un ordre existant (les prix se croisent), il est exécuté automatiquement, totalement ou partiellement.
+
+### Flags spéciaux d'OfferCreate
+
+- **tfImmediateOrCancel** : l'ordre s'exécute immédiatement contre les ordres existants. Ce qui n'est pas rempli est annulé instantanément. Rien ne reste dans le carnet d'ordres
+- **tfPassive** : l'ordre ne s'exécute que contre des ordres existants ayant un prix égal ou meilleur. Il n'est pas placé dans le carnet s'il n'y a pas de correspondance immédiate
+- **tfFillOrKill** : l'ordre est exécuté entièrement ou annulé. Les exécutions partielles ne sont pas autorisées
+- **tfSell** : échange la totalité du montant TakerGets, même si cela signifie obtenir plus que le montant TakerPays en retour
+
+Consulte plus d'informations sur les flags dans la [documentation officielle](https://xahau.network/docs/protocol-reference/transactions/transaction-types/offercreate/#offercreate-flags).
+
+### Consulter le carnet d'ordres : book_offers
+
+La commande \`book_offers\` permet de voir les ordres ouverts pour une paire de tokens. Elle renvoie les meilleures offres triées par prix.
+
+### Auto-bridging via XAH
+
+Le DEX de Xahau peut router automatiquement des échanges multi-sauts via XAH. Si tu veux échanger des USD contre des EUR et qu'il n'y a pas d'offres directes USD/EUR, le DEX peut :
+1. Vendre des USD contre du XAH
+2. Acheter des EUR avec du XAH
+
+Le tout en une seule transaction, de manière transparente. Cela améliore considérablement la liquidité du DEX.`,
+      codeTitles: ["Consulter le carnet d'ordres d'une paire de tokens (USD/XAH)", "Créer une offre sur le DEX (vendre 100 tokens contre XAH)", "Annuler une offre existante sur le DEX"],
+      slides: [
+        ["DEX natif Xahau", "Le DEX est intégré au protocole\n\n• Pas de smart contract externe\n• Offres dans le ledger\n• Carnets consultables par API\n• Règlement atomique"],
+        ["OfferCreate : anatomie d'un ordre", "TakerPays -> ce que tu veux RECEVOIR\nTakerGets -> ce que tu es prêt à DONNER\n\nFlags spéciaux :\n• tfImmediateOrCancel -> exécuter ou annuler\n• tfPassive -> ne correspond qu'aux ordres existants\n• tfFillOrKill -> tout exécuter ou rien\n• tfSell -> recevoir autant que le montant de TakerGets\n\nOfferCancel -> annuler un ordre ouvert"],
+        ["Auto-bridging et carnet d'ordres", "Le protocole peut trouver des chemins de liquidité via XAH ou d'autres actifs selon les offres disponibles."],
+      ],
+    },
+    m6l4: {
+      title: "Contrôle avancé des tokens : Freeze et Clawback",
+      theory: `Xahau offre aux émetteurs de tokens des outils de contrôle avancés : **Freeze** (gel), **Clawback** (récupération forcée), **Transfer fees** (frais de transfert) et **Authorized TrustLines** (TrustLines autorisées).
+
+### Freeze : geler des lignes de confiance
+
+L'émetteur d'un token peut geler des TrustLines pour empêcher les détenteurs de transférer leurs tokens. Il existe trois niveaux :
+
+### Freeze individuel
+Gèle une TrustLine spécifique entre l'émetteur et un détenteur. Cela se fait avec \`TrustSet\` en utilisant le flag \`tfSetFreeze\`. Le détenteur ne pourra ni envoyer ni recevoir ce token tant qu'il est gelé. Pour dégeler, utilise \`tfClearFreeze\`.
+
+### Global Freeze
+Gèle **toutes** les TrustLines de ton token émis. Il s'active avec \`AccountSet\` en utilisant \`SetFlag: 7\` (asfGlobalFreeze). Tous les détenteurs sont gelés simultanément. Il peut être désactivé avec \`ClearFlag: 7\`.
+
+### NoFreeze (irréversible)
+En activant \`SetFlag: 6\` (asfNoFreeze) dans \`AccountSet\`, l'émetteur renonce **définitivement** à la capacité de geler. Cela ne peut pas être annulé. C'est un signal de confiance pour les détenteurs.
+
+### Cas d'usage de Freeze
+- **Conformité réglementaire** : geler des fonds suite à une décision de justice
+- **Failles de sécurité** : arrêter les transferts si un compte est compromis
+- **Résolution de litiges** : geler temporairement pendant une enquête
+
+### Clawback : récupérer des tokens auprès des détenteurs
+
+**Clawback** permet à l'émetteur de récupérer des tokens auprès de n'importe quel détenteur. C'est un outil puissant qui doit être configuré **avant** l'émission des tokens :
+
+1. Activer \`asfAllowTrustLineClawback\` (flag 17) avec \`AccountSet\` **avant** de créer toute TrustLine
+2. Une fois activé, utiliser la transaction \`Clawback\` pour récupérer des tokens
+3. **Ne peut pas être combiné** avec NoFreeze — si tu renonces au gel, tu ne peux pas faire de clawback
+
+### Transfer fees : commissions sur les transferts
+
+L'émetteur peut prélever un pourcentage sur chaque transfert de son token entre tiers :
+
+- Configuré via le champ \`TransferRate\` dans \`AccountSet\`
+- La valeur est un entier : 1000000000 = 0 %, 1001000000 = 0.1 %, 1010000000 = 1 %
+- S'applique uniquement aux transferts entre tiers, pas lors d'un envoi vers l'émetteur
+- Exemple : avec des frais de 0.1 %, l'envoi de 100 tokens fait recevoir 99.9 tokens au destinataire (0.1 est prélevé au destinataire)
+
+### Authorized TrustLines : RequireAuth
+
+Le flag \`RequireAuth\` (asfRequireAuth) sur le compte émetteur exige que l'émetteur **autorise explicitement** chaque TrustLine avant qu'un détenteur puisse recevoir des tokens. Utile pour les tokens nécessitant un KYC ou une vérification préalable.`,
+      codeTitles: ["Créer une TrustLine du détenteur vers l'émetteur", "Geler la TrustLine d'un utilisateur précis"],
+      slides: [
+        ["Freeze : gel de tokens", "Freeze bloque les mouvements sur une ligne de confiance\n\nUtile pour conformité, litiges ou incidents, mais très sensible pour l'utilisateur."],
+        ["Clawback : récupération forcée", "Clawback permet à un issuer de récupérer des tokens émis sous conditions de protocole\n\nÀ utiliser seulement si le token annonce clairement cette règle."],
+        ["Transfer fees et RequireAuth", "TransferRate ajoute des frais de transfert\nRequireAuth oblige l'issuer à autoriser les TrustLines\n\nCes options définissent le modèle économique et de contrôle."],
+      ],
+    },
+  },
+};
+
+function applyFrenchTranslations(module) {
+  module.title.fr = frenchModuleTranslations.title;
+  for (const lesson of module.lessons) {
+    const translation = frenchModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+    lesson.title.fr = translation.title;
+    lesson.theory.fr = translation.theory;
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.fr = translation.codeTitles[index];
+      if (typeof block.code === "string") block.code = { en: block.code };
+      block.code.fr = localizeFrenchCode(
+        `// ${translation.codeTitles[index]}\n// Exemple commenté en français : adapte les adresses, seeds et devises à ton testnet.\n\n${block.code.en ?? block.code.es}`,
+      );
+    });
+    lesson.slides?.forEach((slide, index) => {
+      const slideTranslation = translation.slides[index];
+      if (!slideTranslation) return;
+      slide.title.fr = slideTranslation[0];
+      slide.content.fr = slideTranslation[1];
+    });
+  }
+}
+
+function localizeFrenchCode(code) {
+  return code
+    .split("\n")
+    .map((line) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("//") && !/[éèàùçîô]/i.test(trimmed)) {
+        return `${line.match(/^\s*/)?.[0] ?? ""}// Note : adapte cette étape à tes comptes et paramètres de testnet.`;
+      }
+      if (trimmed.startsWith("#") && /[A-Za-z]{4,}/.test(trimmed) && !/[éèàùçîô]/i.test(trimmed)) {
+        return `${line.match(/^\s*/)?.[0] ?? ""}# Note : adapte cette étape à ton environnement local.`;
+      }
+      return line;
+    })
+    .join("\n");
+}
+
+applyFrenchTranslations(moduleData);
+
+export default moduleData;

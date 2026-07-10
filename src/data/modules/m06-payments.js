@@ -1,4 +1,4 @@
-export default {
+const moduleData = {
   id: "m5",
   icon: "💸",
   title: {
@@ -2069,3 +2069,737 @@ The \`tfPartialPayment\` flag (value: \`0x00020000\`) allows a payment to delive
     },
   ],
 }
+
+const arabicModuleTranslations = {
+  title: "إنشاء واستخدام المدفوعات",
+  lessons: {
+    m5l1: {
+      title: "تشريح معاملة Payment",
+      theory: `معاملة **Payment** هي المعاملة الأساسية الأكثر أهمية في Xahau. تتيح لك إرسال XAH (أو tokens) من حساب إلى حساب آخر.
+
+### حقول معاملة Payment
+
+| الحقل | الوصف |
+|---|---|
+| \`TransactionType\` | دائما \`"Payment"\` |
+| \`Account\` | عنوان المرسل (من يدفع) |
+| \`Destination\` | عنوان المستلم |
+| \`Amount\` | المبلغ المراد إرساله (بوحدة drops لـ XAH الأصلي) |
+| \`Fee\` | تكلفة المعاملة (بوحدة drops) |
+| \`Sequence\` | رقم تسلسل الحساب المرسل |
+| \`NetworkID\` | معرف الشبكة (مطلوب في Xahau) |
+
+### Drops مقابل XAH
+
+تُعبَّر مبالغ XAH الأصلي بوحدة **drops**:
+- 1 XAH = **1,000,000 drops**
+- حقل \`Amount\` لـ XAH الأصلي هو **string** يحتوي عدد الـ drops
+- مثال: \`"10000000"\` = 10 XAH
+
+### Fees (تكاليف المعاملة)
+
+رسوم Xahau منخفضة جدا وقابلة للتنبؤ:
+- الدفعة النموذجية تكلف **12 drops** (0.000012 XAH)
+- يتم **حرق** الرسوم (تدميرها)، ولا تذهب إلى أي مدقق (validator)
+- يمكن لمكتبة \`xahau\` حساب الرسوم تلقائيا باستخدام \`autofill()\`
+
+### إرسال IOUs (tokens) بدلا من XAH الأصلي
+
+عند إرسال XAH الأصلي، يكون حقل \`Amount\` عبارة عن **string** يحتوي المبلغ بوحدة drops. لكن عند إرسال **IOU** (token يصدره حساب ما، مثل USD أو EUR وغيرها)، يصبح \`Amount\` **object** يحتوي ثلاثة حقول:
+
+\`\`\`
+{
+  "currency": "USD",       // رمز العملة (3 أحرف أو hex من 40 حرفا)
+  "issuer": "rIssuerAddress",  // الحساب الذي أصدر التوكن
+  "value": "100"           // المبلغ كـ string
+}
+\`\`\`
+
+**متطلبات إرسال IOUs:**
+- **يجب أن يملك المرسل رصيدا**: يجب أن يمتلك حسابك رصيدا من ذلك IOU. يمكنك الحصول عليه عبر دفعة سابقة، أو صفقة على الـ DEX، أو مباشرة من مُصدر التوكن.
+- **يجب أن يملك المستلم TrustLine**: يجب أن يكون حساب الوجهة قد أنشأ مسبقا TrustLine (\`TrustSet\`) لذلك IOU مع نفس المُصدر. بدون TrustLine، ستفشل الدفعة بخطأ \`tecPATH_DRY\` أو \`tecNO_LINE\`.
+
+### لماذا تحتاج IOUs أو التوكنات غير XAH إلى هذه الحقول؟
+
+من الممكن أن تُصدر عدة جهات نفس نوع IOU. على سبيل المثال، يمكن لبنوك مختلفة إصدار توكن EUR أو USD خاص بها. الطريقة الوحيدة للتمييز بينها هي تحديد المُصدر إذا كانت تشترك في نفس اسم التوكن.
+
+### مزيد من المعلومات حول Payment
+
+تحتوي معاملة Payment على العديد من الحقول الاختيارية والـ flags والأخطاء المحتملة الأخرى التي لم نغطها هنا. للحصول على مرجع كامل، راجع [الوثائق الرسمية](https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/)
+
+ستجد هناك:
+- جميع الحقول الاختيارية (SendMax، DeliverMin، InvoiceID، إلخ)
+- الـ flags المتاحة (tfPartialPayment، tfLimitQuality، إلخ)
+- قائمة كاملة بأكواد الأخطاء وأسبابها
+- حالات خاصة وسلوكيات متقدمة`,
+      codeTitles: [
+        "إرسال دفعة XAH بين حسابين",
+        "إرسال IOU token بين حسابين",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function sendXahPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // اقرأ seed من .env ولا تكتبه مباشرة في الكود
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  const payment = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: process.env.DESTINATION,
+    Amount: xahToDrops("10"), // 10 XAH بوحدة drops
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+sendXahPayment().catch(console.error);`,
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// لن يعمل هذا الكود إلا إذا كان لديك رصيد من هذا IOU وكان للوجهة TrustLine نشطة. عدّل الحقول وفق إعدادات testnet الخاصة بك.
+async function sendIOUPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // محفظة المرسل (استخدم seed الخاص بك في testnet)، إذا كان لديك seed ليس من نوع secp256k1، احذف الجزء ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // لإرسال IOU، يكون Amount عبارة عن object يحتوي currency وissuer وvalue
+  // المتطلبات:
+  //   1. يجب أن يملك المرسل رصيدا من هذا IOU
+  //   2. يجب أن تملك الوجهة TrustLine لهذا IOU
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rRecipientAddress",
+    // هنا يمكنك تعديل currency وissuer وvalue وفق التوكن الذي تريد إرساله
+    Amount: {
+      currency: "USD",
+      issuer: "rTokenIssuerAddress",
+      value: "50", // 50 USD
+    },
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("النتيجة:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("تم إرسال دفعة IOU بنجاح!");
+  } else if (txResult === "tecPATH_DRY") {
+    console.log("خطأ: لا يوجد مسار للدفع. هل تملك الوجهة TrustLine؟");
+  } else if (txResult === "tecUNFUNDED_PAYMENT") {
+    console.log("خطأ: رصيد IOU غير كافٍ.");
+  }
+
+  await client.disconnect();
+}
+
+sendIOUPayment();`,
+      ],
+      slides: [
+        {
+          title: "معاملة Payment",
+          content: "Payment ترسل قيمة من حساب إلى آخر\n\n• XAH أصلي بوحدة drops\n• IOUs كـ object\n• تحتاج توقيع المرسل\n• تستخدم Fee و Sequence مثل أي معاملة",
+        },
+        {
+          title: "إرسال IOUs",
+          content: "IOU Amount يحتوي:\n\n• currency\n• issuer\n• value\n\nالمستلم يحتاج TrustLine نحو issuer قبل الاستلام.",
+        },
+        {
+          title: "الوثائق الرسمية",
+          content: "Payment له حقول و flags إضافية:\n\n• SendMax\n• DeliverMin\n• tfPartialPayment\n• tfLimitQuality\n\nراجع الوثائق الرسمية عند بناء تطبيق إنتاجي.",
+        },
+      ],
+    },
+    m5l2: {
+      title: "مدفوعات مع Destination Tag و Memos",
+      theory: `بعض الحسابات، مثل exchanges أو الخدمات، تستخدم حسابا واحدا لاستقبال مدفوعات كثيرة. لذلك تحتاج إلى **Destination Tag** لمعرفة أي مستخدم يجب أن يحصل على الإيداع.
+
+### Destination Tag
+
+\`DestinationTag\` رقم صغير يضاف إلى Payment. لا يغير العنوان، لكنه يعطي المستلم معلومة إضافية. إذا كان الحساب يطلب tag ولم ترسله، قد تفشل المعاملة.
+
+### Source Tag
+
+\`SourceTag\` يحدد مصدر الدفع من جهة المرسل. يستخدم للتتبع الداخلي.
+
+### Memos
+
+\`Memos\` تسمح بإضافة بيانات اختيارية encoded في المعاملة، مثل مرجع داخلي أو رسالة قصيرة. يجب عدم وضع معلومات حساسة في memo لأنها تظهر على ledger.
+
+### الأمان
+
+عند الدفع إلى exchange، تأكد من العنوان والـ Destination Tag. إرسال XAH للعنوان الصحيح بدون tag قد يجعل الإيداع لا ينسب لحسابك داخل المنصة.`,
+      codeTitles: [
+        "Payment مع Source Tag و Destination Tag و Memos",
+        "التحقق من دفعة مستلمة",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// دالة مساعدة لتحويل النص إلى hexadecimal
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+function hexToString(hex) {
+  if (!hex) return null;
+  return Buffer.from(hex, "hex").toString("utf8");
+}
+
+async function sendPaymentWithMemo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // محفظة المرسل (استخدم seed الخاص بك في testnet)، إذا كان لديك seed ليس من نوع secp256k1، احذف الجزء ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {
+    algorithm: "secp256k1",
+  });
+
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: xahToDrops(5), // 5 XAH
+    SourceTag: 1, // Tag المرسل لتحديد الدفعة
+    DestinationTag: 12345, // Tag الوجهة لتحديد الدفعة
+    Memos: [
+      {
+        Memo: {
+          MemoType: toHex("text/plain"),
+          MemoData: toHex("دفعة كورس Xahau"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("النتيجة:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("تم إرسال الدفعة مع memo!");
+    console.log("Hash:", signed.hash);
+    const lookup = await client.request({
+      command: "tx",
+      transaction: signed.hash,
+    });
+
+    const tx = lookup.result.tx_json ?? lookup.result;
+    console.log("Source Tag:", tx.SourceTag);
+    console.log("Destination Tag:", tx.DestinationTag);
+
+    if (tx.Memos) {
+      tx.Memos.forEach((memoWrapper, index) => {
+        const memo = memoWrapper.Memo;
+
+        const memoType = hexToString(memo.MemoType);
+        const memoData = hexToString(memo.MemoData);
+
+        console.log("MemoType:", memoType);
+        console.log("MemoData:", memoData);
+      });
+    }
+  }
+
+  await client.disconnect();
+}
+
+sendPaymentWithMemo();`,
+        `const { Client, dropsToXah } = require("xahau");
+
+async function verifyPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const hash = "YOUR_TRANSACTION_HASH";
+
+  // tx يعيد المعاملة و metadata الخاصة بها
+  const response = await client.request({
+    command: "tx",
+    transaction: hash,
+  });
+
+  const tx = response.result;
+  console.log("النوع:", tx.TransactionType);
+  console.log("من:", tx.Account);
+  console.log("إلى:", tx.Destination);
+  console.log("DestinationTag:", tx.DestinationTag);
+  console.log("Amount:", dropsToXah(tx.Amount), "XAH");
+  console.log("Result:", tx.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+verifyPayment().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "Destination Tag",
+          content: "DestinationTag يحدد المستلم الداخلي لدى خدمة تستخدم عنوانا واحدا\n\nمثال: exchange يعطيك عنوانا + tag\n\nلا ترسل بدون tag إذا كان مطلوبا.",
+        },
+        {
+          title: "Memos",
+          content: "Memos بيانات اختيارية داخل المعاملة\n\n• encoded كـ hex\n• مفيدة لمراجع داخلية\n• عامة على ledger\n• لا تضع أسرارا فيها",
+        },
+        {
+          title: "أمان Destination Tag",
+          content: "قبل الدفع إلى منصة:\n\n• تحقق من العنوان\n• تحقق من DestinationTag\n• أرسل test صغيرا عند الشك\n• احتفظ بالـ hash للمتابعة",
+        },
+      ],
+    },
+    m5l3: {
+      title: "مدفوعات متعددة العملات و pathfinding",
+      theory: `لا يسمح Xahau فقط بإرسال XAH الأصلي أو tokens من نفس النوع: بل يدعم أيضا **المدفوعات متعددة العملات (cross-currency)**، حيث يرسل المرسل عملة ويستلم المستقبل عملة مختلفة. هذا ممكن بفضل **DEX المدمج** ونظام **pathfinding**.
+
+### المدفوعات متعددة العملات (Cross-currency payments)
+
+تتيح الدفعة متعددة العملات، على سبيل المثال، أن يدفع المرسل بعملة XAH ويستلم المستقبل USD. يبحث Xahau تلقائيا عن أفضل مسار عبر الـ DEX لتحويل العملات.
+
+### نظام Pathfinding
+
+الـ pathfinding هو الآلية التي تجد مسارات التحويل بين العملات:
+- يبحث Xahau عن **مسارات** عبر trust lines وأوامر الـ DEX
+- يمكنه ربط عدة تحويلات وسيطة معا
+- يحاول دائما إيجاد **أفضل سعر** متاح
+
+### الحقول الأساسية في المدفوعات متعددة العملات
+
+| الحقل | الوصف |
+|---|---|
+| \`Amount\` | ما يجب أن يستلمه المستقبل (عملة الوجهة) |
+| \`SendMax\` | الحد الأقصى الذي يرغب المرسل في إنفاقه (عملة المصدر) |
+| \`DeliverMin\` | الحد الأدنى الذي يجب أن يستلمه المستقبل (مع المدفوعات الجزئية) |
+| \`Paths\` | مسارات التحويل التي يجدها pathfinding |
+
+### أمر ripple_path_find
+
+قبل إرسال دفعة متعددة العملات، استخدم \`ripple_path_find\` من أجل:
+- التحقق مما إذا كان هناك مسار بين العملتين
+- الحصول على \`Paths\` اللازمة للمعاملة
+- معرفة التكلفة التقديرية (\`source_amount\`)
+
+### المدفوعات الجزئية (tfPartialPayment)
+
+يسمح flag \`tfPartialPayment\` (القيمة: \`0x00020000\`) للدفعة بتسليم **أقل** مما هو محدد في \`Amount\`:
+- مفيد عندما يمكن أن تتغير السيولة بين الاستعلام والتنفيذ
+- استخدم \`DeliverMin\` لتحديد حد أدنى مقبول
+- **مهم**: عند استلام الدفعات، تحقق دائما من \`delivered_amount\` في الـ metadata، **وليس** من حقل \`Amount\`. يمكن لمهاجم إرسال دفعة جزئية تُظهر \`Amount\` مرتفعا لكنها تسلم أقل بكثير`,
+      codeTitles: [],
+      code: [],
+      slides: [
+        {
+          title: "مدفوعات متعددة العملات",
+          content: "المرسل قد يدفع بأصل\nوالمستلم يحصل على أصل آخر\n\nمثال:\nXAH → USD IOU\n\nيتطلب سيولة ومسارا صالحا.",
+        },
+        {
+          title: "Pathfinding",
+          content: "Pathfinding يبحث عن أفضل مسار تحويل\n\n• TrustLines\n• DEX order books\n• Auto-bridging\n\nالهدف: تسليم الأصل المطلوب للمستلم.",
+        },
+        {
+          title: "Partial payments",
+          content: "Partial payment قد يسلم أقل من Amount\n\nعند الاستقبال:\n• اقرأ delivered_amount\n• لا تعتمد على Amount فقط\n• انتبه لهجمات سوء تفسير المبلغ",
+        },
+      ],
+    },
+  },
+};
+
+function applyArabicTranslations(module) {
+  module.title.ar = arabicModuleTranslations.title;
+
+  for (const lesson of module.lessons) {
+    const translation = arabicModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.ar = translation.title;
+    lesson.theory.ar = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.ar = translation.codeTitles[index];
+      block.code.ar = translation.code[index];
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      slide.title.ar = translation.slides[index].title;
+      slide.content.ar = translation.slides[index].content;
+    });
+  }
+}
+
+applyArabicTranslations(moduleData);
+
+const frenchModuleTranslations = {
+  title: "Créer et utiliser des paiements",
+  lessons: {
+    m5l1: {
+      title: "Anatomie d'une transaction Payment",
+      theory: `Le **Payment** est la transaction la plus fondamentale de Xahau. Elle permet d'envoyer du XAH (ou des tokens) d'un compte à un autre.
+
+### Champs d'une transaction Payment
+
+| Champ | Description |
+|---|---|
+| \`TransactionType\` | Toujours \`"Payment"\` |
+| \`Account\` | Adresse de l'expéditeur (celui qui paie) |
+| \`Destination\` | Adresse du destinataire |
+| \`Amount\` | Montant à envoyer (en drops pour le XAH natif) |
+| \`Fee\` | Coût de la transaction (en drops) |
+| \`Sequence\` | Numéro de séquence du compte expéditeur |
+| \`NetworkID\` | Identifiant du réseau (requis sur Xahau) |
+
+### Drops vs XAH
+
+Les montants de XAH natif sont exprimés en **drops** :
+- 1 XAH = **1 000 000 drops**
+- Le champ \`Amount\` pour le XAH natif est une **string** contenant le nombre de drops
+- Exemple : \`"10000000"\` = 10 XAH
+
+### Fees (coûts de transaction)
+
+Les fees sur Xahau sont extrêmement bas et prévisibles :
+- Un paiement type coûte **12 drops** (0,000012 XAH)
+- Les fees sont **brûlés** (détruits), ils ne vont à aucun validateur
+- La bibliothèque \`xahau\` peut calculer le fee automatiquement avec \`autofill()\`
+
+### Envoyer des IOUs (tokens) au lieu de XAH natif
+
+Quand tu envoies du XAH natif, le champ \`Amount\` est une **string** contenant le montant en drops. Mais quand tu envoies un **IOU** (un token émis par un compte, comme USD, EUR, etc.), \`Amount\` devient un **objet** avec trois champs :
+
+\`\`\`
+{
+  "currency": "USD",       // Code de la devise (3 caractères ou hex de 40 caractères)
+  "issuer": "rIssuerAddress",  // Compte qui a émis le token
+  "value": "100"           // Montant sous forme de string
+}
+\`\`\`
+
+**Prérequis pour envoyer des IOUs :**
+- **L'expéditeur doit avoir des fonds** : ton compte doit détenir un solde de cet IOU. Tu peux l'obtenir via un paiement précédent, un échange sur le DEX, ou directement auprès de l'émetteur du token.
+- **Le destinataire doit avoir une TrustLine** : le compte de destination doit avoir préalablement créé une TrustLine (\`TrustSet\`) pour cet IOU avec le même émetteur. Sans TrustLine, le paiement échouera avec \`tecPATH_DRY\` ou \`tecNO_LINE\`.
+
+### Pourquoi les IOUs ou tokens autres que XAH ont-ils besoin de ces champs ?
+
+Il est possible que plusieurs entités émettent le même type d'IOU. Par exemple, différentes banques pourraient émettre leur propre token EUR ou USD. Le seul moyen de les différencier est de préciser l'émetteur si elles partagent le même nom de token.
+
+### Plus d'informations sur Payment
+
+La transaction Payment comporte bien plus de champs optionnels, de flags et d'erreurs possibles que ce que nous couvrons ici. Pour une référence complète, consulte la [documentation officielle](https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/)
+
+Tu y trouveras :
+- Tous les champs optionnels (SendMax, DeliverMin, InvoiceID, etc.)
+- Les flags disponibles (tfPartialPayment, tfLimitQuality, etc.)
+- La liste complète des codes d'erreur et leurs causes
+- Les cas particuliers et comportements avancés`,
+      codeTitles: ["Envoyer un paiement XAH entre deux comptes", "Envoyer un paiement IOU (token) entre deux comptes"],
+      code: [
+`// Envoyer un paiement XAH
+require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED);
+
+  const tx = {
+    TransactionType: "Payment",
+    Account: wallet.address,
+    Destination: "rDestinationAddressHere",
+    Amount: xahToDrops("1"),
+  };
+
+  const prepared = await client.autofill(tx);
+  const result = await client.submitAndWait(wallet.sign(prepared).tx_blob);
+  console.log("Résultat :", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// Ce code ne fonctionnera pas à moins que tu aies un solde de cet IOU et que la destination ait une TrustLine active. Modifie les champs selon ta configuration testnet.
+async function sendIOUPayment() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Wallet de l'expéditeur (utilise ton seed testnet), si tu as un seed qui n'est pas secp256k1, retire la partie ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Pour envoyer un IOU, Amount est un objet avec currency, issuer et value
+  // Prérequis :
+  //   1. L'expéditeur doit avoir un solde de cet IOU
+  //   2. La destination doit avoir une TrustLine pour cet IOU
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rRecipientAddress",
+    // Ici tu modifierais currency, issuer et value selon le token que tu veux envoyer
+    Amount: {
+      currency: "USD",
+      issuer: "rTokenIssuerAddress",
+      value: "50", // 50 USD
+    },
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Résultat :", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Paiement IOU envoyé avec succès !");
+  } else if (txResult === "tecPATH_DRY") {
+    console.log("Erreur : aucun chemin de paiement. La destination a-t-elle une TrustLine ?");
+  } else if (txResult === "tecUNFUNDED_PAYMENT") {
+    console.log("Erreur : solde IOU insuffisant.");
+  }
+
+  await client.disconnect();
+}
+
+sendIOUPayment();`,
+      ],
+      slides: [
+        ["Transaction Payment", "Transaction native pour transférer de la valeur\n\n• XAH en drops\n• Destination reçoit\n• Account signe\n• Résultat visible dans les métadonnées"],
+        ["Envoyer des IOUs (tokens)", "Amount devient un objet\n\ncurrency : code du token\nissuer : compte émetteur\nvalue : quantité\n\nUne trustline est généralement nécessaire."],
+        ["Documentation officielle", "La documentation du protocole détaille les champs obligatoires, flags et cas avancés\n\nLis-la quand tu ajoutes tags, memos ou paiements multi-devises."],
+      ],
+    },
+    m5l2: {
+      title: "Paiements avec Destination Tag et memos",
+      theory: `En plus du paiement de base, Xahau prend en charge des champs supplémentaires qui permettent d'ajouter du contexte et des fonctionnalités aux paiements.
+
+### Destination Tag
+
+Le **Destination Tag** est un entier qui permet au destinataire d'identifier des paiements individuels. Il est particulièrement utile pour :
+- **Les exchanges** : identifier à quel utilisateur appartient un dépôt
+- **Les services** : associer un paiement à une commande ou une facture
+- Si un compte a le flag \`RequireDestTag\` activé, **tu ne peux pas lui envoyer de paiement sans tag**
+
+Le système autorise jusqu'à 32 bits pour le Destination Tag, ce qui signifie que tu peux utiliser des entiers allant jusqu'à 4 294 967 295. Il est important de toujours vérifier auprès du destinataire quel est le Destination Tag correct avant d'envoyer un paiement, car envoyer un paiement sans tag ou avec un tag incorrect à un compte qui en exige un peut entraîner une perte de fonds.
+
+Il existe aussi le **Source Tag**, qui remplit la même fonction mais pour l'expéditeur. Cependant, le Destination Tag est bien plus courant et largement utilisé en pratique.
+
+### Memos
+
+Les **Memos** permettent d'attacher des données arbitraires à une transaction :
+- \`MemoType\` : type du memo (ex. : "text/plain", "application/json")
+- \`MemoData\` : le contenu du memo
+- Les memos sont encodés en **hexadécimal**
+- Ils sont publics et visibles par tout le monde sur le ledger
+
+### Résultats de transaction
+
+Chaque transaction renvoie un code de résultat :
+- \`tesSUCCESS\` : la transaction a réussi
+- \`tecUNFUNDED_PAYMENT\` : fonds insuffisants
+- \`tecNO_DST\` : le compte de destination n'existe pas
+- \`tecDST_TAG_NEEDED\` : un Destination Tag est requis
+- \`tecNO_DST_INSUF_XAH\` : la destination n'a pas assez de XAH pour la réserve`,
+      codeTitles: ["Payment avec Source Tag, Destination Tag et Memos", "Vérifier un paiement reçu"],
+      code: [
+`require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+// Fonction utilitaire pour convertir du texte en hexadécimal
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+function hexToString(hex) {
+  if (!hex) return null;
+  return Buffer.from(hex, "hex").toString("utf8");
+}
+
+async function sendPaymentWithMemo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // Wallet de l'expéditeur (utilise ton seed testnet), si tu as un seed qui n'est pas secp256k1, retire la partie ", {algorithm: 'secp256k1'}"
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {
+    algorithm: "secp256k1",
+  });
+
+  const payment = {
+    TransactionType: "Payment",
+    Account: sender.address,
+    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
+    Amount: xahToDrops(5), // 5 XAH
+    SourceTag: 1, // Tag de l'expéditeur pour identifier le paiement
+    DestinationTag: 12345, // Tag de destination pour identifier le paiement
+    Memos: [
+      {
+        Memo: {
+          MemoType: toHex("text/plain"),
+          MemoData: toHex("Paiement du cours Xahau"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(payment);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Résultat :", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Paiement avec memo envoyé !");
+    console.log("Hash :", signed.hash);
+    const lookup = await client.request({
+      command: "tx",
+      transaction: signed.hash,
+    });
+
+    const tx = lookup.result.tx_json ?? lookup.result;
+    console.log("Source Tag :", tx.SourceTag);
+    console.log("Destination Tag :", tx.DestinationTag);
+
+    if (tx.Memos) {
+      tx.Memos.forEach((memoWrapper, index) => {
+        const memo = memoWrapper.Memo;
+
+        const memoType = hexToString(memo.MemoType);
+        const memoData = hexToString(memo.MemoData);
+
+        console.log("MemoType :", memoType);
+        console.log("MemoData :", memoData);
+      });
+    }
+  }
+
+  await client.disconnect();
+}
+
+sendPaymentWithMemo();`,
+`// Vérifier une transaction reçue
+const { Client, dropsToXah } = require("xahau");
+
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "tx",
+    transaction: "TRANSACTION_HASH_HERE",
+  });
+
+  const tx = response.result;
+  console.log("Type :", tx.TransactionType);
+  console.log("Destination :", tx.Destination);
+  console.log("DestinationTag :", tx.DestinationTag);
+  console.log("Montant :", dropsToXah(tx.Amount), "XAH");
+  console.log("Résultat :", tx.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
+      ],
+      slides: [
+        ["Destination Tag", "Identifiant numérique pour le destinataire\n\nTrès utilisé par les exchanges et services custodial\n\nSans tag, le service peut ne pas savoir à qui créditer le dépôt."],
+        ["Memos", "Données facultatives dans une transaction\n\n• Encodées en hexadécimal\n• Utiles pour notes ou références\n• Publiques sur le ledger\n\nN'y mets jamais de secret."],
+        ["Sécurité du Destination Tag", "Vérifie toujours :\n\n• Adresse exacte\n• Destination Tag exact\n• Réseau correct\n• Montant correct\n\nUne erreur peut être difficile à récupérer."],
+      ],
+    },
+    m5l3: {
+      title: "Paiements multi-devises et pathfinding",
+      theory: `Xahau ne permet pas seulement d'envoyer du XAH natif ou des tokens du même type : il prend aussi en charge les **paiements multi-devises (cross-currency)**, où l'expéditeur envoie une devise et le destinataire reçoit une devise différente. Cela est possible grâce au **DEX intégré** et au système de **pathfinding**.
+
+### Paiements multi-devises
+
+Un paiement multi-devises permet, par exemple, à l'expéditeur de payer en XAH et au destinataire de recevoir des USD. Xahau trouve automatiquement le meilleur chemin via le DEX pour convertir les devises.
+
+### Le système de pathfinding
+
+Le pathfinding est le mécanisme qui trouve des routes de conversion entre devises :
+- Xahau recherche des **chemins** à travers les trust lines et les ordres du DEX
+- Il peut enchaîner plusieurs conversions intermédiaires
+- Il essaie toujours de trouver le **meilleur taux** disponible
+
+### Champs clés des paiements multi-devises
+
+| Champ | Description |
+|---|---|
+| \`Amount\` | Ce que le destinataire doit recevoir (devise de destination) |
+| \`SendMax\` | Maximum que l'expéditeur est prêt à dépenser (devise source) |
+| \`DeliverMin\` | Minimum que le destinataire doit recevoir (avec les paiements partiels) |
+| \`Paths\` | Routes de conversion trouvées par le pathfinding |
+
+### La commande ripple_path_find
+
+Avant d'envoyer un paiement multi-devises, utilise \`ripple_path_find\` pour :
+- Vérifier s'il existe un chemin entre les deux devises
+- Obtenir le \`Paths\` nécessaire pour la transaction
+- Connaître le coût estimé (\`source_amount\`)
+
+### Paiements partiels (tfPartialPayment)
+
+Le flag \`tfPartialPayment\` (valeur : \`0x00020000\`) permet à un paiement de délivrer **moins** que ce qui est spécifié dans \`Amount\` :
+- Utile quand la liquidité peut varier entre la requête et l'exécution
+- Utilise \`DeliverMin\` pour définir un minimum acceptable
+- **IMPORTANT** : lors de la réception de paiements, vérifie toujours \`delivered_amount\` dans les métadonnées, **pas** le champ \`Amount\`. Un attaquant pourrait envoyer un paiement partiel affichant un \`Amount\` élevé mais délivrant bien moins`,
+      slides: [
+        ["Paiements multi-devises", "L'expéditeur paie avec un actif\nLe destinataire reçoit un autre actif\n\nLe ledger utilise les chemins disponibles pour effectuer la conversion."],
+        ["Pathfinding", "Recherche de chemins de liquidité\n\n• Trustlines\n• Offers\n• Devises intermédiaires\n• Coût et qualité du chemin\n\nLe meilleur chemin dépend de l'état du ledger."],
+        ["Partial payments", "Un partial payment peut livrer moins que Amount\n\nPour créditer un utilisateur, lis toujours delivered_amount dans les métadonnées\n\nNe te fie pas seulement au champ Amount."],
+      ],
+    },
+  },
+};
+
+function applyFrenchTranslations(module) {
+  module.title.fr = frenchModuleTranslations.title;
+
+  for (const lesson of module.lessons) {
+    const translation = frenchModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.fr = translation.title;
+    lesson.theory.fr = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.fr = translation.codeTitles[index];
+      if (typeof block.code === "string") {
+        block.code = { en: block.code };
+      }
+      block.code.fr = translation.code[index];
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      const slideTranslation = translation.slides[index];
+      if (!slideTranslation) return;
+      slide.title.fr = slideTranslation[0];
+      slide.content.fr = slideTranslation[1];
+    });
+  }
+}
+
+applyFrenchTranslations(moduleData);
+
+export default moduleData;

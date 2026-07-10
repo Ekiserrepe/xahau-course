@@ -22,6 +22,8 @@ function IconBtn({ onClick, href, title, children }) {
   return <button onClick={onClick} className={cls} style={style} title={title}>{children}</button>
 }
 
+const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
+
 export default function LessonView({
   module: mod, moduleIdx, lesson, lessonIdx,
   lang, labels, isCompleted, onToggleComplete,
@@ -83,7 +85,7 @@ export default function LessonView({
           <div className="flex items-center gap-2">
             <span className="text-base">{mod.icon}</span>
             <span className="text-sm font-semibold leading-tight" style={{ color: 'var(--color-text-heading)' }}>
-              {mod.title[lang]}
+              {localized(mod.title, lang)}
             </span>
           </div>
         </div>
@@ -111,7 +113,7 @@ export default function LessonView({
                 >
                   {done && !isActive ? '✓' : idx + 1}
                 </span>
-                <span className="flex-1 leading-tight">{l.title[lang]}</span>
+                <span className="flex-1 leading-tight">{localized(l.title, lang)}</span>
                 {isActive && (
                   <span className="shrink-0" style={{ color: 'var(--color-accent)' }}>›</span>
                 )}
@@ -179,11 +181,11 @@ export default function LessonView({
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 text-sm min-w-0 flex-1 lg:flex-none">
               <span className="hidden lg:block" style={{ color: 'var(--color-text-muted)' }}>
-                {mod.title[lang]}
+                {localized(mod.title, lang)}
               </span>
               <span className="hidden lg:block" style={{ color: 'var(--color-text-dim)' }}>/</span>
               <span className="truncate font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-                {lesson.title[lang]}
+                {localized(lesson.title, lang)}
               </span>
             </div>
 
@@ -235,7 +237,7 @@ export default function LessonView({
               >
                 {mod.lessons.map((l, idx) => (
                   <option key={l.id} value={idx}>
-                    {idx + 1}. {l.title[lang]}
+                    {idx + 1}. {localized(l.title, lang)}
                   </option>
                 ))}
               </select>
@@ -295,10 +297,10 @@ export default function LessonView({
               }}
             >
               <h1 className="text-xl font-bold mb-6 pb-4" style={{ color: 'var(--color-text-heading)', borderBottom: '1px solid var(--color-border)' }}>
-                {lesson.title[lang]}
+                {localized(lesson.title, lang)}
               </h1>
               <div className="prose-content">
-                <Markdown text={lesson.theory[lang]} />
+                <Markdown text={localized(lesson.theory, lang)} />
               </div>
             </div>
           )}

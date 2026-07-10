@@ -46,6 +46,11 @@ export default function App() {
     localStorage.setItem('xahau-theme', theme)
   }, [theme])
 
+  useEffect(() => {
+    document.documentElement.setAttribute('lang', lang)
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr')
+  }, [lang])
+
   // Sync browser back/forward buttons with app state
   useEffect(() => {
     const handlePopState = () => {
@@ -63,7 +68,7 @@ export default function App() {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
-  const t = UI_LABELS[lang]
+  const t = UI_LABELS[lang] ?? UI_LABELS.en
   const totalLessons = COURSE_DATA.reduce((acc, m) => acc + m.lessons.length, 0)
   const completedCount = Object.values(completedLessons).filter(Boolean).length
 

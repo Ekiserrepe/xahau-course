@@ -1,4 +1,4 @@
-export default {
+const moduleData = {
   id: "m4",
   icon: "🔍",
   title: {
@@ -2466,3 +2466,824 @@ getObjectsByType("rDk1xiArDMjDqnrR2yWypwQAKg4mKnQYvs", "state");
     },
   ],
 }
+
+const arabicModuleTranslations = {
+  title: "استعلام البيانات من عقدة الشبكة",
+  lessons: {
+    m4l1: {
+      title: "الاتصال بعقد Xahau",
+      theory: `لقراءة بيانات من بلوكتشين Xahau تحتاج إلى الاتصال بـ **عقدة شبكة** عبر **WebSocket**. العقدة تعرض API بنمط JSON-RPC يسمح لك بقراءة معلومات ledger، الحسابات، المعاملات، وobjects.
+
+### أنواع العقد
+
+- **عقد عامة**: متاحة للمطورين ومناسبة للتجارب.
+- **عقد خاصة**: تشغلها بنفسك للحصول على تحكم وموثوقية أعلى.
+
+### Endpoints مهمة
+
+| الشبكة | WebSocket URL |
+|---|---|
+| Mainnet | \`wss://xahau.network\` |
+| Testnet | \`wss://xahau-test.net\` |
+
+### أوامر الاستعلام
+
+تستخدم API أوامر مثل \`server_info\` و \`account_info\` و \`account_lines\` و \`account_objects\` و \`account_tx\` و \`ledger\` و \`tx\`. وللأحداث الحية توجد أوامر \`subscribe\` و \`unsubscribe\`.
+
+### مفاهيم مهمة
+
+\`ledger_index: "validated"\` يعني آخر ledger تم التحقق منه. كميات XAH تظهر غالبا بوحدة drops، حيث 1 XAH = 1,000,000 drops. وعند وجود نتائج كثيرة تستخدم API \`marker\` للصفحات.`,
+      codeTitles: [
+        "الاتصال واستعلام معلومات الخادم",
+        "استعلام معلومات تفصيلية عن حساب",
+      ],
+      code: [
+        `const { Client } = require("xahau");
+
+async function serverInfo() {
+  // الاتصال بعقدة testnet أثناء التطوير
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // server_info يعرض حالة العقدة والشبكة والـ ledger الحالي
+  const response = await client.request({
+    command: "server_info",
+  });
+
+  const info = response.result.info;
+  console.log("الشبكة:", info.network_id);
+  console.log("حالة الخادم:", info.server_state);
+  console.log("الإصدار:", info.build_version);
+  console.log("آخر ledger:", info.validated_ledger?.seq);
+
+  await client.disconnect();
+}
+
+serverInfo().catch(console.error);`,
+        `const { Client, dropsToXah } = require("xahau");
+
+async function accountInfo() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const account = "rYourAddressHere";
+
+  // account_info يرجع AccountRoot إذا كان الحساب مفعلا
+  const response = await client.request({
+    command: "account_info",
+    account,
+    ledger_index: "validated",
+  });
+
+  const data = response.result.account_data;
+  console.log("الحساب:", data.Account);
+  console.log("الرصيد:", dropsToXah(data.Balance), "XAH");
+  console.log("Sequence:", data.Sequence);
+  console.log("OwnerCount:", data.OwnerCount);
+
+  await client.disconnect();
+}
+
+accountInfo().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "الاتصال بـ Xahau",
+          content: "الاتصال يتم عبر WebSocket إلى عقد عامة\n\nMainnet: wss://xahau.network\nTestnet: wss://xahau-test.net\n\nكل الاستعلامات تستخدم JSON-RPC API.",
+        },
+        {
+          title: "الأوامر الرئيسية",
+          content: "• server_info → حالة العقدة\n• account_info → بيانات الحساب\n• account_lines → TrustLines\n• account_objects → Objects الحساب\n• account_tx → تاريخ المعاملات\n• ledger → معلومات ledger",
+        },
+        {
+          title: "أفضل ممارسات الاتصال",
+          content: "• استخدم try/catch\n• افصل الاتصال بعد الانتهاء\n• استخدم testnet للتطوير\n• اقرأ من validated ledger\n• تحقق من الرد قبل معالجة البيانات",
+        },
+      ],
+    },
+    m4l2: {
+      title: "استعلامات متقدمة واشتراكات",
+      theory: `بعد الاستعلامات الأساسية، يمكنك قراءة تاريخ معاملات الحساب، objects المرتبطة به، أو الاشتراك في أحداث حية من الشبكة.
+
+### account_tx
+
+\`account_tx\` يعرض معاملات حساب معين. قد تكون النتائج كثيرة، لذلك تدعم API pagination باستخدام \`marker\`.
+
+### account_objects
+
+\`account_objects\` يعرض objects التي يملكها الحساب مثل Offers، TrustLines، أو HookState حسب نوع الحساب وما أنشأه.
+
+### subscribe
+
+الاشتراك يسمح لك باستقبال أحداث مباشرة مثل إغلاق ledger جديد أو معاملة لحساب معين. هذا مفيد للتطبيقات التي تحتاج مراقبة deposits أو نشاط المستخدمين في الوقت الحقيقي.
+
+### متى تستخدم كل نوع؟
+
+استخدم الاستعلام العادي عندما تحتاج لقطة حالية أو تاريخ. استخدم \`subscribe\` عندما تحتاج إلى متابعة مستمرة بدون polling متكرر.`,
+      codeTitles: [
+        "استعلام تاريخ معاملات حساب",
+        "استعلام account objects والاشتراك في الأحداث",
+      ],
+      code: [
+        `const { Client } = require("xahau");
+
+async function accountTransactions() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const account = "rYourAddressHere";
+
+  // account_tx يعرض تاريخ معاملات الحساب
+  const response = await client.request({
+    command: "account_tx",
+    account,
+    ledger_index_min: -1,
+    ledger_index_max: -1,
+    limit: 10,
+  });
+
+  for (const item of response.result.transactions) {
+    console.log("Hash:", item.tx?.hash || item.tx_json?.hash);
+    console.log("Result:", item.meta?.TransactionResult);
+  }
+
+  await client.disconnect();
+}
+
+accountTransactions().catch(console.error);`,
+        `const { Client } = require("xahau");
+
+async function objectsAndSubscribe() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const account = "rYourAddressHere";
+
+  // قراءة objects الحالية للحساب
+  const objects = await client.request({
+    command: "account_objects",
+    account,
+    ledger_index: "validated",
+  });
+  console.log("عدد objects:", objects.result.account_objects.length);
+
+  // الاشتراك في معاملات هذا الحساب
+  await client.request({
+    command: "subscribe",
+    accounts: [account],
+  });
+
+  client.on("transaction", (event) => {
+    console.log("معاملة جديدة:", event.transaction?.hash);
+  });
+}
+
+objectsAndSubscribe().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "تاريخ المعاملات",
+          content: "account_tx → تاريخ حساب\n\n• pagination باستخدام marker\n• عرض نتيجة المعاملة\n• قراءة metadata\n• مناسب لتتبع deposits أو نشاط المستخدم",
+        },
+        {
+          title: "الوقت الحقيقي",
+          content: "subscribe → أحداث حية\n\n• ledger → إغلاق ledgers\n• transactions → معاملات\n• accounts → معاملات حسابات محددة\n\nمفيد للمراقبة المستمرة.",
+        },
+        {
+          title: "الاشتراكات بالتفصيل",
+          content: "استخدم subscribe ثم استمع للأحداث:\n\nclient.on('transaction', ...)\nclient.on('ledgerClosed', ...)\n\nاستخدم unsubscribe عند التوقف، وحافظ على WebSocket مفتوحا.",
+        },
+      ],
+    },
+    m4l3: {
+      title: "Pagination ومعالجة الأخطاء",
+      theory: `عند العمل مع واجهة Xahau البرمجية (API)، من الضروري إتقان جانبين أساسيين: **pagination** (تقسيم النتائج إلى صفحات) للنتائج الكبيرة، و**معالجة الأخطاء** لبناء تطبيقات مستقرة.
+
+### نظام marker
+
+العديد من أوامر API تُرجع نتائج مقسّمة إلى صفحات. عندما تكون البيانات أكثر مما يتسع في استجابة واحدة، تُضمّن API حقل \`marker\` في النتيجة. للحصول على الصفحة التالية، يجب إرسال نفس الأمر مع تضمين ذلك الـ \`marker\`.
+
+- حقل \`limit\` يتحكم في عدد النتائج لكل صفحة (الحد الأقصى يختلف حسب الأمر، وعادة يكون بين 200 و400)
+- إذا تضمّنت الاستجابة \`marker\`، فهذا يعني أن هناك صفحات إضافية متاحة
+- إذا لم يكن هناك \`marker\` في الاستجابة، فقد وصلت إلى النهاية
+- قيمة \`marker\` غير شفافة (opaque): لا تُعدّلها، فقط مرّرها كما هي
+
+### أخطاء API الشائعة
+
+| الخطأ | المعنى |
+|---|---|
+| \`actNotFound\` | الحساب المطلوب غير موجود في ledger |
+| \`lgrNotFound\` | لم يتم العثور على ledger المطلوب |
+| \`invalidParams\` | معاملات غير صحيحة في الطلب |
+| \`noCurrent\` | الخادم لا يملك ledger حاليا متاحا |
+| \`noNetwork\` | الخادم غير متصل بالشبكة |
+| \`tooBusy\` | الخادم محمّل بشكل زائد |
+
+### أفضل الممارسات
+
+- **لف الطلبات دائما بـ try/catch**: يجب دائما معالجة أخطاء الشبكة وtimeouts وأخطاء API
+- **تنفيذ إعادة المحاولة (retries)**: بالنسبة للأخطاء المؤقتة مثل \`tooBusy\` أو timeout، أعد المحاولة باستخدام exponential backoff
+- **التحقق من صحة الاستجابات**: تأكد من أن \`result.status === "success"\` قبل معالجة البيانات
+- **معالجة الانقطاعات**: استمع لحدث \`disconnected\` الخاص بالعميل وأعد الاتصال تلقائيا
+- **Rate limiting**: قد تحد العقد العامة (public nodes) من الطلبات. أضف فترات انتظار بين الطلبات الكبيرة
+- **Timeouts**: اضبط timeout معقول لمنع تعليق تطبيقك`,
+      codeTitles: [
+        "تصفح كل account objects باستخدام marker",
+      ],
+      code: [
+        `const { Client } = require("xahau");
+
+async function getAllAccountObjects(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  let allObjects = [];
+  let marker = undefined;
+  let page = 1;
+
+  console.log("=== Getting all objects for", address, "===");
+
+  do {
+    const request = {
+      command: "account_objects",
+      account: address,
+      ledger_index: "validated",
+      limit: 100,
+    };
+
+    // تضمين marker فقط إذا كان موجودا (ليس في الطلب الأول)
+    if (marker) {
+      request.marker = marker;
+    }
+
+    const response = await client.request(request);
+    const objects = response.result.account_objects;
+    allObjects = allObjects.concat(objects);
+
+    console.log(\`Page \${page}: \${objects.length} objects received\`);
+
+    // تحديث marker للصفحة التالية
+    marker = response.result.marker;
+    page++;
+
+    // توقف قصير لتجنب إرهاق العقدة (node)
+    if (marker) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  } while (marker);
+
+  console.log(\`Total objects retrieved: \${allObjects.length}\`);
+
+  // تجميع حسب النوع
+  const byType = {};
+  for (const obj of allObjects) {
+    const type = obj.LedgerEntryType;
+    byType[type] = (byType[type] || 0) + 1;
+  }
+
+  console.log("Summary by type:");
+  for (const [type, count] of Object.entries(byType)) {
+    console.log(\`  \${type}: \${count}\`);
+  }
+
+  await client.disconnect();
+}
+//Example account: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
+getAllAccountObjects("rYourAddressHere");`,
+      ],
+      slides: [
+        {
+          title: "Pagination باستخدام marker",
+          content: "الطلبات الكبيرة ترجع على صفحات\n\n1. أرسل limit\n2. اقرأ النتائج\n3. إذا عاد marker، أرسله في الطلب التالي\n4. كرر حتى يختفي marker",
+        },
+        {
+          title: "أخطاء شائعة",
+          content: "actNotFound → الحساب غير موجود\nlgrNotFound → ledger غير متاح\ntooBusy → العقدة مشغولة\nTimeout → مشكلة شبكة\n\nتعامل معها في try/catch.",
+        },
+        {
+          title: "أفضل الممارسات",
+          content: "• لا تستخدم limit كبيرا جدا\n• أضف retries بتدرج زمني\n• اقرأ من validated\n• تحقق من وجود marker\n• افصل الاتصال عند الانتهاء",
+        },
+      ],
+    },
+    m4l4: {
+      title: "العمل مع ledger objects",
+      theory: `الـ ledger في Xahau يحتوي على objects مهيكلة. قراءة هذه objects هي أساس فهم حالة الحسابات والتطبيقات.
+
+### أمثلة objects
+
+- **AccountRoot**: الحساب الأساسي.
+- **RippleState**: TrustLine بين حسابين.
+- **Offer**: أمر في DEX.
+- **URIToken**: token مرتبط بـ URI.
+- **HookState**: بيانات يخزنها Hook.
+
+### التصفية حسب النوع
+
+يمكنك استخدام \`account_objects\` مع حقل \`type\` لتقليل النتائج. مثلا يمكنك طلب offers فقط أو state objects فقط. هذا يجعل الاستعلام أسرع وأسهل في المعالجة.
+
+### لماذا هذا مهم؟
+
+بدلا من البحث في كل بيانات الحساب، يمكنك قراءة النوع الذي يهم تطبيقك فقط: TrustLines لتطبيق tokens، Offers لتطبيق DEX، أو HookState لتطبيقات Hooks.`,
+      codeTitles: [
+        "استعلام account_objects مع تصفية حسب النوع",
+      ],
+      code: [
+        `const { Client } = require("xahau");
+
+async function getObjectsByType(address, type) {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  let allObjects = [];
+  let marker = undefined;
+
+  do {
+    const request = {
+      command: "account_objects",
+      account: address,
+      type: type,
+      ledger_index: "validated",
+      limit: 100,
+    };
+    if (marker) request.marker = marker;
+
+    const response = await client.request(request);
+    allObjects = allObjects.concat(response.result.account_objects);
+    marker = response.result.marker;
+  } while (marker);
+
+  console.log(\`=== \${type.toUpperCase()} for \${address} ===\`);
+  console.log(\`Total found: \${allObjects.length}\`);
+
+  for (const obj of allObjects) {
+    switch (type) {
+      case "state": // RippleState (خطوط الثقة)
+        const currency = obj.Balance.currency;
+        const balance = obj.Balance.value;
+        const peer = obj.HighLimit.issuer === address
+          ? obj.LowLimit.issuer
+          : obj.HighLimit.issuer;
+        console.log(\`  \${currency}: balance \${balance} (peer: \${peer})\`);
+        break;
+
+      case "offer":
+        const pays = typeof obj.TakerPays === "string"
+          ? \`\${Number(obj.TakerPays) / 1_000_000} XAH\`
+          : \`\${obj.TakerPays.value} \${obj.TakerPays.currency}\`;
+        const gets = typeof obj.TakerGets === "string"
+          ? \`\${Number(obj.TakerGets) / 1_000_000} XAH\`
+          : \`\${obj.TakerGets.value} \${obj.TakerGets.currency}\`;
+        console.log(\`  Offer: pays \${pays} → receives \${gets}\`);
+        break;
+
+      case "uri_token":
+        const uri = Buffer.from(obj.URI || "", "hex").toString("utf8");
+        console.log(\`  URIToken: \${uri}\`);
+        console.log(\`    Index: \${obj.index}\`);
+        break;
+
+      default:
+        console.log(\`  \${obj.LedgerEntryType}: \${obj.index}\`);
+    }
+  }
+
+  await client.disconnect();
+}
+
+// أمثلة الاستخدام:
+// عرض trust lines
+getObjectsByType("rDk1xiArDMjDqnrR2yWypwQAKg4mKnQYvs", "state");
+
+// عرض أوامر DEX
+// getObjectsByType("rfmPQz4eSmisCVnWJkKj82hHKQdrUPv3Px", "offer");
+
+// عرض URITokens
+// getObjectsByType("rfPMnDQEzb5StPXj3Dkd34oKY4BVAJCwsn", "uri_token");`,
+      ],
+      slides: [
+        {
+          title: "Ledger objects",
+          content: "حالة Xahau مخزنة في objects typed\n\n• AccountRoot\n• RippleState\n• Offer\n• URIToken\n• HookState\n\nكل نوع له fields محددة.",
+        },
+        {
+          title: "استعلامات حسب النوع",
+          content: "account_objects يمكنه التصفية:\n\n• type: offer\n• type: state\n• type: hook\n\nالفائدة: نتائج أقل ومعالجة أوضح.",
+        },
+      ],
+    },
+  },
+};
+
+function applyArabicTranslations(module) {
+  module.title.ar = arabicModuleTranslations.title;
+
+  for (const lesson of module.lessons) {
+    const translation = arabicModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.ar = translation.title;
+    lesson.theory.ar = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.ar = translation.codeTitles[index];
+      block.code.ar = translation.code[index];
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      slide.title.ar = translation.slides[index].title;
+      slide.content.ar = translation.slides[index].content;
+    });
+  }
+}
+
+applyArabicTranslations(moduleData);
+
+const frenchModuleTranslations = {
+  title: "Consulter les données depuis un noeud du réseau",
+  lessons: {
+    m4l1: {
+      title: "Connexion aux noeuds Xahau",
+      theory: `Pour lire des données de Xahau, ton application se connecte à un noeud via WebSocket. Le noeud expose des commandes comme \`server_info\`, \`account_info\`, \`ledger\` ou \`account_objects\`.
+
+Une requête ne modifie pas le ledger : elle lit l'état validé ou courant. C'est la base pour vérifier un solde, inspecter un compte ou comprendre ce que le réseau voit.
+
+Ferme toujours la connexion quand ton script a terminé, et utilise \`ledger_index: "validated"\` quand tu veux une réponse confirmée.`,
+      codeTitles: ["Se connecter et consulter les informations du serveur", "Consulter les détails d'un compte"],
+      code: [
+`// Connexion à un noeud Xahau et lecture de server_info
+const { Client } = require("xahau");
+
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({ command: "server_info" });
+  console.log("État :", response.result.info.server_state);
+  console.log("Ledger validé :", response.result.info.validated_ledger.seq);
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
+`// Lire les informations détaillées d'un compte
+const { Client, dropsToXah } = require("xahau");
+
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const account = "rYourAddressHere";
+  const response = await client.request({
+    command: "account_info",
+    account,
+    ledger_index: "validated",
+  });
+
+  const data = response.result.account_data;
+  console.log("Adresse :", data.Account);
+  console.log("Solde :", dropsToXah(data.Balance), "XAH");
+  console.log("Sequence :", data.Sequence);
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
+      ],
+      slides: [
+        ["Connexion à Xahau", "Les scripts se connectent à un noeud WebSocket\n\n• wss://xahau-test.net pour testnet\n• Client.connect()\n• client.request(...)\n• client.disconnect()"],
+        ["Commandes principales", "server_info : état du noeud\naccount_info : données d'un compte\nledger : informations du ledger\naccount_objects : objets liés au compte"],
+        ["Bonnes pratiques de connexion", "• Utilise validated pour les données confirmées\n• Ferme la connexion\n• Gère les erreurs réseau\n• Ne fais pas confiance à une seule réponse sans contexte"],
+      ],
+    },
+    m4l2: {
+      title: "Requêtes avancées et abonnements",
+      theory: `Certaines commandes retournent l'historique ou les objets liés à un compte. \`account_tx\` liste les transactions, tandis que \`account_objects\` montre les objets comme trustlines, escrows ou hooks.
+
+Les abonnements permettent de recevoir des événements en temps réel. Au lieu de demander en boucle, tu t'abonnes à un stream et le noeud envoie les nouveaux événements.
+
+C'est utile pour suivre des paiements entrants, surveiller les ledgers ou construire une interface qui réagit dès qu'une transaction est validée.`,
+      codeTitles: ["Consulter l'historique des transactions d'un compte", "Consulter les objets du compte et s'abonner aux événements"],
+      code: [
+`// Lire l'historique des transactions d'un compte
+const { Client } = require("xahau");
+
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const response = await client.request({
+    command: "account_tx",
+    account: "rYourAddressHere",
+    ledger_index_min: -1,
+    ledger_index_max: -1,
+    limit: 10,
+  });
+
+  for (const item of response.result.transactions) {
+    console.log(item.tx.TransactionType, item.tx.hash);
+  }
+
+  await client.disconnect();
+}
+
+main().catch(console.error);`,
+`// Lire les objets d'un compte et s'abonner à ses transactions
+const { Client } = require("xahau");
+
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const address = "rYourAddressHere";
+
+  // Consulter tous les objets du compte
+  const response = await client.request({
+    command: "account_objects",
+    account: address,
+    ledger_index: "validated",
+  });
+
+  console.log("=== Objets du compte ===");
+  for (const obj of response.result.account_objects) {
+    console.log(\`Type : \${obj.LedgerEntryType}\`);
+
+    if (obj.LedgerEntryType === "RippleState") {
+      console.log(\`  Token : \${obj.Balance.currency}\`);
+      console.log(\`  Solde : \${obj.Balance.value}\`);
+    } else if (obj.LedgerEntryType === "URIToken") {
+      console.log(\`  URI : \${obj.URI}\`);
+    }
+  }
+
+  // S'abonner aux transactions de ce compte
+  console.log("Abonné aux transactions du compte...");
+  await client.request({
+    command: "subscribe",
+    accounts: [address],
+  });
+
+  client.on("transaction", (tx) => {
+    console.log("Nouvelle transaction détectée !");
+    console.log("Type :", tx.transaction.TransactionType);
+    console.log("Résultat :", tx.meta.TransactionResult);
+  });
+
+  // Garder la connexion ouverte pendant 60 secondes
+  setTimeout(() => client.disconnect(), 60000);
+}
+
+main().catch(console.error);`,
+      ],
+      slides: [
+        ["Historique de transactions", "account_tx permet de lire les transactions d'un compte\n\nUtilise limit et marker pour parcourir l'historique sans tout charger d'un coup."],
+        ["Temps réel", "subscribe ouvre un flux d'événements\n\n• ledgers fermés\n• transactions\n• comptes suivis\n\nPratique pour dashboards et bots."],
+        ["Les abonnements en détail", "Un abonnement reste actif tant que la connexion WebSocket reste ouverte\n\nPrévois reconnexion et gestion des erreurs pour une application réelle."],
+      ],
+    },
+    m4l3: {
+      title: "Pagination et gestion d'erreurs",
+      theory: `Lorsque tu travailles avec l'API de Xahau, il est essentiel de maîtriser deux aspects : la **pagination** des résultats volumineux et la **gestion des erreurs** pour construire des applications robustes.
+
+### Le système de marker
+
+De nombreuses commandes de l'API retournent des résultats paginés. Lorsqu'il y a plus de données que ce qui tient dans une seule réponse, l'API inclut un champ \`marker\` dans le résultat. Pour obtenir la page suivante, tu dois envoyer la même commande en incluant ce \`marker\`.
+
+- Le champ \`limit\` contrôle le nombre de résultats par page (le maximum varie selon la commande, généralement entre 200 et 400)
+- Si la réponse inclut un \`marker\`, d'autres pages sont disponibles
+- S'il n'y a pas de \`marker\` dans la réponse, tu as atteint la fin
+- La valeur du \`marker\` est opaque : ne la modifie pas, transmets-la telle quelle
+
+### Erreurs courantes de l'API
+
+| Erreur | Signification |
+|---|---|
+| \`actNotFound\` | Le compte demandé n'existe pas dans le ledger |
+| \`lgrNotFound\` | Le ledger demandé n'a pas été trouvé |
+| \`invalidParams\` | Paramètres incorrects dans la requête |
+| \`noCurrent\` | Le serveur n'a pas de ledger actuel disponible |
+| \`noNetwork\` | Le serveur n'est pas connecté au réseau |
+| \`tooBusy\` | Le serveur est surchargé |
+
+### Bonnes pratiques
+
+- **Toujours encapsuler les requêtes dans try/catch** : les erreurs réseau, les timeouts et les erreurs d'API doivent toujours être gérées
+- **Implémenter des tentatives (retries)** : pour les erreurs transitoires comme \`tooBusy\` ou les timeouts, relance avec un backoff exponentiel
+- **Valider les réponses** : vérifie que \`result.status === "success"\` avant de traiter les données
+- **Gérer les déconnexions** : écoute l'événement \`disconnected\` du client et reconnecte-toi automatiquement
+- **Rate limiting** : les noeuds publics peuvent limiter les requêtes. Ajoute des pauses entre les requêtes massives
+- **Timeouts** : configure un timeout raisonnable pour éviter que ton application ne reste bloquée`,
+      codeTitles: ["Paginer tous les objets d'un compte avec marker"],
+      code: [
+`const { Client } = require("xahau");
+
+async function getAllAccountObjects(address) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  let allObjects = [];
+  let marker = undefined;
+  let page = 1;
+
+  console.log("=== Getting all objects for", address, "===");
+
+  do {
+    const request = {
+      command: "account_objects",
+      account: address,
+      ledger_index: "validated",
+      limit: 100,
+    };
+
+    // Inclure le marker seulement s'il existe (pas lors de la première requête)
+    if (marker) {
+      request.marker = marker;
+    }
+
+    const response = await client.request(request);
+    const objects = response.result.account_objects;
+    allObjects = allObjects.concat(objects);
+
+    console.log(\`Page \${page}: \${objects.length} objects received\`);
+
+    // Mettre à jour le marker pour la page suivante
+    marker = response.result.marker;
+    page++;
+
+    // Petite pause pour ne pas surcharger le noeud
+    if (marker) {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  } while (marker);
+
+  console.log(\`Total objects retrieved: \${allObjects.length}\`);
+
+  // Regrouper par type
+  const byType = {};
+  for (const obj of allObjects) {
+    const type = obj.LedgerEntryType;
+    byType[type] = (byType[type] || 0) + 1;
+  }
+
+  console.log("Summary by type:");
+  for (const [type, count] of Object.entries(byType)) {
+    console.log(\`  \${type}: \${count}\`);
+  }
+
+  await client.disconnect();
+}
+//Example account: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
+getAllAccountObjects("rYourAddressHere");`,
+      ],
+      slides: [
+        ["Pagination avec marker", "Si une réponse contient marker, il reste des données\n\nRelance la même commande avec ce marker pour lire la page suivante."],
+        ["Erreurs courantes", "• Adresse invalide\n• Compte non activé\n• Noeud indisponible\n• Limite trop élevée\n• Mauvais type d'objet"],
+        ["Bonnes pratiques", "• Utilise try/catch\n• Affiche des messages clairs\n• Garde les limites raisonnables\n• Prévois les comptes sans objets\n• Ferme toujours la connexion"],
+      ],
+    },
+    m4l4: {
+      title: "Travailler avec les objets de ledger",
+      theory: `Le ledger de Xahau stocke toutes les informations sous forme d'**objets** (ledger entries). Chaque objet possède un type, un index unique (hash) et des champs spécifiques. Dans cette leçon, nous allons apprendre à interroger et manipuler ces objets directement.
+
+### La commande ledger_entry
+
+Avec \`ledger_entry\`, tu peux consulter un objet spécifique du ledger en utilisant son **index** (hash hexadécimal de 64 caractères). C'est utile lorsque tu connais déjà l'identifiant exact de l'objet dont tu as besoin.
+
+### Types d'objets consultables
+
+| Type | Description |
+|---|---|
+| \`AccountRoot\` | Données principales d'un compte |
+| \`RippleState\` | Ligne de confiance (trust line) entre deux comptes |
+| \`Offer\` | Ordre actif sur le DEX |
+| \`URIToken\` | Jeton non fongible (NFT Xahau) |
+| \`Hook\` | Définition d'un Hook installé |
+| \`HookState\` | État stocké par un Hook |
+
+### La commande account_objects avec filtre de type
+
+La commande \`account_objects\` accepte le paramètre \`type\` pour filtrer uniquement les objets d'un type spécifique. Les valeurs valides sont notamment :
+- \`"state"\` → RippleState (trust lines)
+- \`"offer"\` → Offers (ordres du DEX)
+- \`"uri_token"\` → URITokens
+- \`"hook"\` → Hooks installés
+
+### Comprendre les index du ledger
+
+Chaque objet du ledger possède un **index unique** calculé comme un hash SHA-512Half de ses données identifiantes. Par exemple :
+- L'index d'un AccountRoot est calculé à partir de l'adresse du compte
+- L'index d'un RippleState est calculé à partir des deux comptes et de la devise
+
+Ces index sont déterministes : tu peux toujours les recalculer si tu connais les données d'entrée.`,
+      codeTitles: ["Consulter account_objects filtré par type"],
+      code: [
+`const { Client } = require("xahau");
+
+async function getObjectsByType(address, type) {
+  const client = new Client("wss://xahau.network");
+  await client.connect();
+
+  let allObjects = [];
+  let marker = undefined;
+
+  do {
+    const request = {
+      command: "account_objects",
+      account: address,
+      type: type,
+      ledger_index: "validated",
+      limit: 100,
+    };
+    if (marker) request.marker = marker;
+
+    const response = await client.request(request);
+    allObjects = allObjects.concat(response.result.account_objects);
+    marker = response.result.marker;
+  } while (marker);
+
+  console.log(\`=== \${type.toUpperCase()} for \${address} ===\`);
+  console.log(\`Total found: \${allObjects.length}\`);
+
+  for (const obj of allObjects) {
+    switch (type) {
+      case "state": // RippleState (lignes de confiance)
+        const currency = obj.Balance.currency;
+        const balance = obj.Balance.value;
+        const peer = obj.HighLimit.issuer === address
+          ? obj.LowLimit.issuer
+          : obj.HighLimit.issuer;
+        console.log(\`  \${currency}: balance \${balance} (peer: \${peer})\`);
+        break;
+
+      case "offer":
+        const pays = typeof obj.TakerPays === "string"
+          ? \`\${Number(obj.TakerPays) / 1_000_000} XAH\`
+          : \`\${obj.TakerPays.value} \${obj.TakerPays.currency}\`;
+        const gets = typeof obj.TakerGets === "string"
+          ? \`\${Number(obj.TakerGets) / 1_000_000} XAH\`
+          : \`\${obj.TakerGets.value} \${obj.TakerGets.currency}\`;
+        console.log(\`  Offer: pays \${pays} → receives \${gets}\`);
+        break;
+
+      case "uri_token":
+        const uri = Buffer.from(obj.URI || "", "hex").toString("utf8");
+        console.log(\`  URIToken: \${uri}\`);
+        console.log(\`    Index: \${obj.index}\`);
+        break;
+
+      default:
+        console.log(\`  \${obj.LedgerEntryType}: \${obj.index}\`);
+    }
+  }
+
+  await client.disconnect();
+}
+
+// Exemples d'utilisation :
+// Voir les trust lines
+getObjectsByType("rDk1xiArDMjDqnrR2yWypwQAKg4mKnQYvs", "state");
+
+// Voir les ordres DEX
+// getObjectsByType("rfmPQz4eSmisCVnWJkKj82hHKQdrUPv3Px", "offer");
+
+// Voir les URITokens
+// getObjectsByType("rfPMnDQEzb5StPXj3Dkd34oKY4BVAJCwsn", "uri_token");`,
+      ],
+      slides: [
+        ["Objets de ledger", "Le ledger n'est pas seulement une liste de transactions\n\nIl contient des objets persistants qui décrivent l'état actuel du réseau."],
+        ["Requêtes par type", "Filtrer par type aide à inspecter ce qui t'intéresse\n\nTrustlines, escrows, checks, offers ou autres objets selon le cas."],
+      ],
+    },
+  },
+};
+
+function applyFrenchTranslations(module) {
+  module.title.fr = frenchModuleTranslations.title;
+
+  for (const lesson of module.lessons) {
+    const translation = frenchModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.fr = translation.title;
+    lesson.theory.fr = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.fr = translation.codeTitles[index];
+      if (typeof block.code === "string") {
+        block.code = { en: block.code };
+      }
+      block.code.fr = translation.code[index];
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      const slideTranslation = translation.slides[index];
+      if (!slideTranslation) return;
+      slide.title.fr = slideTranslation[0];
+      slide.content.fr = slideTranslation[1];
+    });
+  }
+}
+
+applyFrenchTranslations(moduleData);
+
+export default moduleData;

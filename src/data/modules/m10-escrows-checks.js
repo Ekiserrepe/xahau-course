@@ -457,6 +457,7 @@ There is no \`TransactionType: "IOURewardClaim"\`. You use:
     "issuer": "rTOKEN_ISSUER..."
   }
 }
+
 \`\`\`
 
 ### Fields
@@ -1069,7 +1070,7 @@ const priceOracleDeleteCode = Object.fromEntries(
   Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleDeleteCode(comments)])
 );
 
-export default {
+const moduleData = {
   id: "m10",
   icon: "🔐",
   title: {
@@ -6895,4 +6896,1573 @@ deleteCron();`,
       slides: iouRewardSlides,
     },
   ],
+};
+
+const arabicCode = {
+  m10l1: [
+`require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function createTimeLockedEscrow() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // Ripple Epoch: الثواني منذ 01/01/2000 00:00:00 UTC
+  // الفرق عن Unix Epoch: 946684800 ثانية
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+  const now = Math.floor(Date.now() / 1000);
+
+  // FinishAfter: بعد دقيقتين من الآن
+  const finishAfter = now - RIPPLE_EPOCH_OFFSET + 2 * 60;
+  // CancelAfter: بعد 24 ساعة من الآن (إذا لم يكمله أحد يمكن إلغاؤه)
+  const cancelAfter = now - RIPPLE_EPOCH_OFFSET + 24 * 60 * 60;
+
+  const escrowCreate = {
+    TransactionType: "EscrowCreate",
+    Account: sender.address,
+    Destination: "rDestinationAddress",
+    Amount: xahToDrops(10), // قفل 10 XAH
+    FinishAfter: finishAfter,
+    CancelAfter: cancelAfter,
+  };
+
+  const prepared = await client.autofill(escrowCreate);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== EscrowCreate ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Hash:", signed.hash);
+    console.log("Sequence:", prepared.Sequence);
+    console.log(
+      "FinishAfter:",
+      new Date((finishAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
+    );
+    console.log(
+      "CancelAfter:",
+      new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
+    );
+    console.log("\\Save the Sequence! You need it for EscrowFinish.");
+    console.log(\`Escrow Sequence: \${prepared.Sequence}\`);
+    console.log(\`Your address: \${sender.address}\`);
+
+  }
+
+  await client.disconnect();
 }
+
+createTimeLockedEscrow();`,
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function finishEscrow(ownerAddress, escrowSequence) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // يمكن لأي حساب تنفيذ EscrowFinish
+  const executor = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // أولا، تحقق من وجود الـ Escrow عبر استعلام account_objects
+  const objects = await client.request({
+    command: "account_objects",
+    account: ownerAddress,
+    type: "escrow",
+    ledger_index: "validated",
+  });
+
+  const escrow = objects.result.account_objects.find(
+    (obj) => obj.PreviousTxnLgrSeq !== undefined
+  );
+
+  if (!escrow) {
+    console.log("Escrow not found. It may have already been completed or cancelled.");
+    await client.disconnect();
+    return;
+  }
+
+  console.log("=== Escrow found ===");
+  console.log("Amount:", Number(escrow.Amount) / 1_000_000, "XAH");
+  console.log("Destination:", escrow.Destination);
+
+  // تحقق مما إذا مر وقت FinishAfter بالفعل
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+  const now = Math.floor(Date.now() / 1000);
+  const finishAfterUnix = escrow.FinishAfter + RIPPLE_EPOCH_OFFSET;
+
+  if (now < finishAfterUnix) {
+    const remaining = finishAfterUnix - now;
+    console.log(
+      \`Cannot finish this escrow yet. \${remaining} seconds remaining.\`
+    );
+    console.log(
+      \`Available from: \${new Date(finishAfterUnix * 1000).toISOString()}\`
+    );
+    await client.disconnect();
+    return;
+  }
+
+  console.log("The lock period has passed. Finishing escrow...");
+
+  const escrowFinish = {
+    TransactionType: "EscrowFinish",
+    Account: executor.address,
+    Owner: ownerAddress,
+    OfferSequence: escrowSequence,
+  };
+
+  const prepared = await client.autofill(escrowFinish);
+  const signed = executor.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== EscrowFinish ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Escrow finished! Funds have been delivered.");
+    console.log("Hash:", signed.hash);
+  } else if (txResult === "tecNO_TARGET") {
+    console.log("Escrow not found. It may have been cancelled.");
+  }
+
+  await client.disconnect();
+}
+
+// استخدم عنوان المنشئ و Sequence من EscrowCreate
+finishEscrow("rCreatorAddress", 12345);`,
+  ],
+  m10l2: [
+`require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function checkExample() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const receiverAddress = "rReceiverAddress"; // استبدل بعنوان المستلم واحفظ seed ذلك الحساب في .env باسم CASH_SEED للمثال التالي
+
+  // === 1. إنشاء الشيك ===
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+  const expiration = Math.floor(Date.now() / 1000) - RIPPLE_EPOCH_OFFSET + 7 * 24 * 60 * 60; // تنتهي الصلاحية بعد 7 أيام
+
+  const checkCreate = {
+    TransactionType: "CheckCreate",
+    Account: sender.address,
+    Destination: receiverAddress,
+    SendMax: xahToDrops(50), // حتى 50 XAH
+    Expiration: expiration,
+  };
+
+  const prepared = await client.autofill(checkCreate);
+  const signed = sender.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== CheckCreate ===");
+  console.log("Result:", result.result.meta.TransactionResult);
+
+  if (result.result.meta.TransactionResult === "tesSUCCESS") {
+    // ابحث عن CheckID داخل affected nodes
+    const createdNode = result.result.meta.AffectedNodes.find(
+      (node) => node.CreatedNode && node.CreatedNode.LedgerEntryType === "Check"
+    );
+
+    if (createdNode) {
+      const checkID = createdNode.CreatedNode.LedgerIndex;
+      console.log("CheckID:", checkID);
+      console.log("Save this CheckID to cash the check from your account: " + sender.address);
+    }
+  }
+
+  await client.disconnect();
+}
+
+checkExample();`,
+`require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function cashCheck(checkID) {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // المستلم يصرف الشيك
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'});
+
+  // الخيار 1: صرف مبلغ محدد بالضبط
+  const checkCash = {
+    TransactionType: "CheckCash",
+    Account: receiver.address,
+    CheckID: checkID,
+    Amount: xahToDrops(50), // صرف 50 XAH بالضبط
+  };
+
+  // الخيار 2 (بديل): صرف حد أدنى على الأقل
+  // const checkCash = {
+  //   TransactionType: "CheckCash",
+  //   Account: receiver.address,
+  //   CheckID: checkID,
+  //   DeliverMin: xahToDrops(40), // 40 XAH على الأقل
+  // };
+
+  const prepared = await client.autofill(checkCash);
+  const signed = receiver.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== CheckCash ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Check cashed successfully!");
+    const delivered = result.result.meta.delivered_amount;
+    if (typeof delivered === "string") {
+      console.log("Amount received:", Number(delivered) / 1_000_000, "XAH");
+    } else {
+      console.log("Amount received:", delivered.value, delivered.currency);
+    }
+  } else if (txResult === "tecNO_ENTRY") {
+    console.log("Check not found. It may have been cancelled or already cashed.");
+  } else if (txResult === "tecUNFUNDED") {
+    console.log("The check issuer has insufficient funds.");
+  }
+
+  await client.disconnect();
+}
+
+// استخدم CheckID الذي حصلت عليه عند إنشاء الشيك
+cashCheck("YOUR_CHECK_ID_HERE");`,
+  ],
+  m10l3: [
+`require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function paymentsWithTickets() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+
+  // === الخطوة 1: إنشاء 3 Tickets ===
+  console.log("=== Step 1: Create Tickets ===");
+  const ticketCreate = {
+    TransactionType: "TicketCreate",
+    Account: sender.address,
+    TicketCount: 3, // حجز 3 tickets
+  };
+
+  const prepTicket = await client.autofill(ticketCreate);
+  const signedTicket = sender.sign(prepTicket);
+  const resultTicket = await client.submitAndWait(signedTicket.tx_blob);
+
+  console.log("TicketCreate:", resultTicket.result.meta.TransactionResult);
+
+  if (resultTicket.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error creating tickets.");
+    await client.disconnect();
+    return;
+  }
+
+  // استخراج قيم TicketSequence من العقد المنشأة
+  const ticketSequences = resultTicket.result.meta.AffectedNodes
+    .filter((n) => n.CreatedNode?.LedgerEntryType === "Ticket")
+    .map((n) => n.CreatedNode.NewFields.TicketSequence)
+    .sort((a, b) => a - b);
+
+  console.log("Tickets created:", ticketSequences);
+
+  // === الخطوة 2: استخدام Tickets لإرسال المدفوعات (بأي ترتيب) ===
+  console.log("=== Step 2: Send payments with Tickets ===");
+
+  const destinations = [
+    { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Payment A" },
+    { address: "rDestination2XXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Payment B" },
+    { address: "rDestination3XXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Payment C" },
+  ];
+
+  // يمكن إرسالها بأي ترتيب، وحتى بالتوازي
+  // هنا نرسلها بترتيب معكوس لإظهار هذه المرونة
+  for (let i = destinations.length - 1; i >= 0; i--) {
+    const dest = destinations[i];
+    const ticketSeq = ticketSequences[i];
+
+    const payment = {
+      TransactionType: "Payment",
+      Account: sender.address,
+      Destination: dest.address,
+      Amount: xahToDrops(dest.amount),
+      Sequence: 0,               // لا تستخدم Sequence العادي
+      TicketSequence: ticketSeq,  // استخدم Ticket المحجوز
+    };
+
+    const prepared = await client.autofill(payment);
+    // قد يعيد autofill كتابة Sequence، لذلك نفرضه يدويا
+    prepared.Sequence = 0;
+    prepared.TicketSequence = ticketSeq;
+
+    const signed = sender.sign(prepared);
+    const result = await client.submitAndWait(signed.tx_blob);
+
+    const txResult = result.result.meta.TransactionResult;
+    console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
+  }
+
+  console.log("All payments sent with Tickets!");
+  console.log("Used Tickets have been destroyed and the reserve released.");
+
+  await client.disconnect();
+}
+
+paymentsWithTickets();`,
+  ],
+  m10l4: [
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function claimReward() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // استعلام عن معلومات الحساب قبل المطالبة
+  const accountInfo = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+
+  const balanceBefore = Number(accountInfo.result.account_data.Balance) / 1_000_000;
+  console.log("=== State before claiming ===");
+  console.log("Account:", wallet.address);
+  console.log("Current balance:", balanceBefore, "XAH");
+
+  // إرسال ClaimReward
+  // Issuer: حساب genesis للشبكة (يختلف بين testnet وmainnet)
+  const claimReward = {
+    TransactionType: "ClaimReward",
+    Account: wallet.address,
+    Issuer: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh", // حساب genesis لـ testnet
+  };
+
+  const prepared = await client.autofill(claimReward);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== ClaimReward ===");
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    // استعلام الرصيد بعد المطالبة
+    const accountAfter = await client.request({
+      command: "account_info",
+      account: wallet.address,
+      ledger_index: "validated",
+    });
+
+    const balanceAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
+    console.log("=== State after claiming ===");
+    console.log("New balance:", balanceAfter, "XAH");
+    console.log("Reward received:", (balanceAfter - balanceBefore).toFixed(6), "XAH");
+  }
+
+  await client.disconnect();
+}
+
+claimReward();`,
+  ],
+  m10l5: [
+`// Invoke يستدعي Hook على حساب آخر بدون إرسال دفعة عادية
+import { Client, Wallet, convertStringToHex } from "xahau";
+
+const client = new Client("wss://xahau-test.net");
+await client.connect();
+
+const wallet = Wallet.fromSeed(process.env.SEED);
+
+const tx = {
+  TransactionType: "Invoke",
+  Account: wallet.address,
+  Destination: "rHOOK_ACCOUNT_ADDRESS",
+  Blob: convertStringToHex("رسالة اختيارية للـ Hook"),
+};
+
+const prepared = await client.autofill(tx);
+const result = await client.submitAndWait(wallet.sign(prepared).tx_blob);
+console.log("نتيجة Invoke:", result.result.meta.TransactionResult);
+await client.disconnect();`,
+  ],
+  m10l6: [
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+// يتم التعبير عن RemarkName وRemarkValue بصيغة hexadecimal
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function setAccountRemarks() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // احصل على ObjectID الخاص بـ AccountRoot (حقل "index" من account_info)
+  const info = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+  const objectID = info.result.account_data.index;
+
+  console.log("=== SetRemarks on AccountRoot ===");
+  console.log("Account:", wallet.address);
+  console.log("ObjectID:", objectID);
+
+  const setRemarks = {
+    TransactionType: "SetRemarks",
+    Account: wallet.address,
+    ObjectID: objectID,
+    Remarks: [
+      {
+        Remark: {
+          RemarkName: toHex("name"),
+          RemarkValue: toHex("Learn Xahau Demo"),
+        },
+      },
+      {
+        Remark: {
+          RemarkName: toHex("web"),
+          RemarkValue: toHex("https://learnxahau.inftf.org"),
+        },
+      },
+      {
+        // Remark غير قابلة للتعديل: لا يمكن تعديلها أو حذفها أبدا
+        Remark: {
+          RemarkName: toHex("created"),
+          RemarkValue: toHex(new Date().toISOString()),
+          Flags: 1, // tfImmutable
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setRemarks);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Remarks attached to the AccountRoot.");
+    console.log("Note: the 'created' Remark is immutable and cannot be changed.");
+  }
+
+  await client.disconnect();
+}
+
+setAccountRemarks();`,
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function toHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function deleteRemark() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // احصل على ObjectID الخاص بـ AccountRoot
+  const info = await client.request({
+    command: "account_info",
+    account: wallet.address,
+    ledger_index: "validated",
+  });
+  const objectID = info.result.account_data.index;
+
+  // لحذف Remark: أدرج RemarkName فقط بدون RemarkValue
+  const setRemarks = {
+    TransactionType: "SetRemarks",
+    Account: wallet.address,
+    ObjectID: objectID,
+    Remarks: [
+      {
+        Remark: {
+          RemarkName: toHex("web"), // احذف الـ Remark المسماة "web"
+          // بدون RemarkValue ← يتم حذف الإدخال
+        },
+      },
+      {
+        Remark: {
+          RemarkName: toHex("name"), // حدّث قيمة "name"
+          RemarkValue: toHex("Updated account"),
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(setRemarks);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Delete/update Remarks ===");
+  console.log("Result:", txResult);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("Remark 'web' deleted.");
+    console.log("Remark 'name' updated.");
+  } else if (txResult === "tecIMMUTABLE") {
+    console.log("Cannot modify: one of the Remarks has the tfImmutable flag.");
+  }
+
+  await client.disconnect();
+}
+
+deleteRemark();`,
+  ],
+  m10l7: [
+`require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+function stringToHex(str) {
+  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
+}
+
+async function sendRemit() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // Remit: إرسال 25 XAH + إنشاء URIToken للوجهة
+  const remit = {
+    TransactionType: "Remit",
+    Account: wallet.address,
+    Destination: "rDestinationAddress",
+    // إرسال 25 XAH
+    Amounts: [
+      {
+        AmountEntry: {
+          Amount: xahToDrops(25),
+        },
+      },
+    ],
+    // إنشاء URIToken مباشرة في حساب الوجهة
+    MintURIToken: {
+      URI: stringToHex("ipfs://bafybeieza5w4rkes55paw7jgpo4kzsbyywhw7ildltk3kjx2ttkmt7texa/106.json"),
+      Digest: "A".repeat(64), // hash بصيغة SHA-256 للمحتوى (64 حرف hex)
+      Flags: 1, // tfBurnable: يمكن لـ issuer حرق التوكن
+    },
+  };
+
+  const prepared = await client.autofill(remit);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("=== Remit ===");
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("In a single transaction:");
+    console.log("- 25 XAH sent to the destination");
+    console.log("- URIToken minted directly in the destination account");
+    console.log("- Reserve fees covered automatically");
+  }
+
+  await client.disconnect();
+}
+
+sendRemit();`,
+  ],
+  m10l8: [
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function setupCron() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("Account:", wallet.address);
+
+  // === الخطوة 1: تفعيل TSH Collect على الحساب ===
+  // مطلوب حتى تتمكن الشبكة من تشغيل Hook تلقائيا
+  console.log("=== Step 1: Enable TSH Collect (asfTshCollect) ===");
+
+  const accountSet = {
+    TransactionType: "AccountSet",
+    Account: wallet.address,
+    SetFlag: 11, // asfTshCollect
+  };
+
+  const prepAccountSet = await client.autofill(accountSet);
+  const signedAccountSet = wallet.sign(prepAccountSet);
+  const resultAccountSet = await client.submitAndWait(signedAccountSet.tx_blob);
+
+  console.log("AccountSet result:", resultAccountSet.result.meta.TransactionResult);
+
+  if (resultAccountSet.result.meta.TransactionResult !== "tesSUCCESS") {
+    console.log("Error enabling TSH Collect.");
+    await client.disconnect();
+    return;
+  }
+
+  // === الخطوة 2: إنشاء CronSet ===
+  // يجب تثبيت Hook مع hsfCOLLECT قبل هذه الخطوة
+  console.log("=== Step 2: Create CronSet ===");
+
+  // Ripple Epoch: الثواني منذ 01/01/2000 00:00:00 UTC
+  const RIPPLE_EPOCH_OFFSET = 946684800;
+
+  const cronSet = {
+    TransactionType: "CronSet",
+    Account: wallet.address,
+    StartTime: 0,       // 0 = يبدأ من أقرب ledger صالح
+    DelaySeconds: 3600, // ينفذ كل ساعة واحدة (3600 ثانية)
+    RepeatCount: 24,    // ينفذ 24 مرة إجمالا (= 24 ساعة)
+  };
+
+  const prepCron = await client.autofill(cronSet);
+  const signedCron = wallet.sign(prepCron);
+  const resultCron = await client.submitAndWait(signedCron.tx_blob);
+
+  const txResult = resultCron.result.meta.TransactionResult;
+  console.log("CronSet result:", txResult);
+  console.log("Hash:", signedCron.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("CronSet created successfully!");
+    console.log("The Hook will run automatically every 1 hour for 24 hours.");
+    console.log("Make sure the Hook is installed with the hsfCOLLECT flag.");
+  }
+
+  await client.disconnect();
+}
+
+setupCron();`,
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function deleteCron() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  console.log("=== Delete active CronSet ===");
+  console.log("Account:", wallet.address);
+
+  // لحذف cron: احذف كل حقول الجدولة
+  // وأضف Flags: 1 (tfCronUnset)
+  const cronDelete = {
+    TransactionType: "CronSet",
+    Account: wallet.address,
+    Flags: 1, // tfCronUnset — يحذف cron النشط
+  };
+
+  const prepared = await client.autofill(cronDelete);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  const txResult = result.result.meta.TransactionResult;
+  console.log("Result:", txResult);
+  console.log("Hash:", signed.hash);
+
+  if (txResult === "tesSUCCESS") {
+    console.log("CronSet deleted. The Hook will no longer run automatically.");
+  } else {
+    console.log("No active CronSet found for this account.");
+  }
+
+  await client.disconnect();
+}
+
+deleteCron();`,
+  ],
+  m10l9: [
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function toHex(value) {
+  return Buffer.from(value, "utf8").toString("hex").toUpperCase();
+}
+
+async function setOraclePrice() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // يوقّع هذا الـ seed كمزود Oracle الذي ينشر الأسعار.
+  const oracle = Wallet.fromSeed(process.env.ORACLE_SEED, { algorithm: "secp256k1" });
+
+  const oracleSet = {
+    TransactionType: "OracleSet",
+    Account: oracle.address,
+    OracleDocumentID: 1, // معرف فريد لمستند Oracle داخل هذا الحساب
+    Provider: toHex("CourseOracle"), // اسم المزود مرمّز بصيغة hex
+    AssetClass: toHex("currency"), // فئة الأصل مرمّزة بصيغة hex
+    LastUpdateTime: Math.floor(Date.now() / 1000), // يتطلب OracleSet طابعا زمنيا حديثا
+    PriceDataSeries: [
+      {
+        PriceData: {
+          BaseAsset: "XAH", // الأصل الذي يتم نشر سعره
+          QuoteAsset: "USD", // العملة المستخدمة للتعبير عن السعر
+          AssetPrice: 74560,
+          Scale: 4, // 74560 * 10^-4 = 7.456 USD
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(oracleSet);
+  const signed = oracle.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== OracleSet ===");
+  console.log("Account:", oracle.address);
+  console.log("Result:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+setOraclePrice().catch(console.error);`,
+`const { Client } = require("xahau");
+
+async function queryAggregatePrice() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // هذه عناوين Oracle عامة منشورة مسبقا في مثال Learning Xahau.
+  // يحسب get_aggregate_price الوسيط/المتوسط من عدة مزودين.
+  const response = await client.request({
+    command: "get_aggregate_price",
+    ledger_index: "current",
+    base_asset: "XAH",
+    quote_asset: "USD",
+    trim: 20, // يقص القيم الشاذة قبل حساب المتوسط المقصوص
+    time_threshold: 300, // يتجاهل التحديثات القديمة جدا
+    oracles: [
+      { account: "rEhZSNh9pVRTcA79tQjYezg9V44HfcToR1", oracle_document_id: 1 },
+      { account: "rD1rh9ffewxVb9QBqkr5ph98QXqCM1xsEP", oracle_document_id: 1 },
+      { account: "r35gjkjZL4mhqyrabpxVUE9K9T5JW1nng9", oracle_document_id: 1 },
+    ],
+  });
+
+  console.log("=== Aggregate Price ===");
+  console.log("Median:", response.result.median);
+  console.log("Mean:", response.result.entire_set?.mean);
+  console.log("Trimmed mean:", response.result.trimmed_set?.mean);
+  console.log("Oracle count:", response.result.entire_set?.size);
+
+  await client.disconnect();
+}
+
+queryAggregatePrice().catch(console.error);`,
+`// OracleDelete يحذف مستند Oracle لم يعد مستخدما
+import { Client, Wallet } from "xahau";
+
+const client = new Client("wss://xahau-test.net");
+await client.connect();
+
+const wallet = Wallet.fromSeed(process.env.SEED);
+
+const tx = {
+  TransactionType: "OracleDelete",
+  Account: wallet.address,
+  OracleDocumentID: 1,
+};
+
+const prepared = await client.autofill(tx);
+const result = await client.submitAndWait(wallet.sign(prepared).tx_blob);
+console.log("نتيجة OracleDelete:", result.result.meta.TransactionResult);
+await client.disconnect();`,
+  ],
+  m10l10: [
+`// هذا المثال يستخدم توكن RWD موجودا مسبقا من Learning Xahau
+// يجب إنشاء Trustline نحو issuer التوكن قبل المطالبة بالمكافأة
+import { Client, Wallet } from "xahau";
+
+const client = new Client("wss://xahau-test.net");
+await client.connect();
+
+const holder = Wallet.fromSeed(process.env.HOLDER_SEED);
+const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
+
+const tx = {
+  TransactionType: "TrustSet",
+  Account: holder.address,
+  LimitAmount: {
+    currency: "RWD",
+    issuer: tokenIssuer,
+    value: "1000000",
+  },
+};
+
+const prepared = await client.autofill(tx);
+const result = await client.submitAndWait(holder.sign(prepared).tx_blob);
+console.log("نتيجة TrustSet:", result.result.meta.TransactionResult);
+await client.disconnect();`,
+`require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function normalizeCurrency(currency) {
+  if (currency.length <= 3) return currency;
+
+  const hex = Buffer.from(currency, "utf8").toString("hex").toUpperCase();
+  if (hex.length > 40) {
+    throw new Error("رمز العملة طويل جدا لصيغة IOU الخاصة بـ Xahau.");
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+async function claimIouReward() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
+
+  // يشير هذا التمرين إلى توكن RWD المنشأ مسبقا في مثال Learning Xahau.
+  // يستدعي ClaimReward حساب RESERVE الذي يملك بالفعل Hook برنامج المكافآت مثبتا.
+  const rewardIssuer = "rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm";
+  const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
+  const currency = normalizeCurrency("RWD");
+
+  const claimReward = {
+    TransactionType: "ClaimReward",
+    Account: holder.address,
+    Issuer: rewardIssuer, // الحساب الذي يملك Hook المكافآت مثبتا
+    ClaimCurrency: {
+      currency,
+      issuer: tokenIssuer, // issuer الحقيقي لتوكن RWD
+    },
+  };
+
+  const prepared = await client.autofill(claimReward);
+  const signed = holder.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== IOU Reward Claim ===");
+  console.log("Holder:", holder.address);
+  console.log("Reward issuer:", rewardIssuer);
+  console.log("Token issuer:", tokenIssuer);
+  console.log("Currency:", currency);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+claimIouReward().catch(console.error);`,
+`// فحص Trustline لمعرفة رصيد RWD بعد المطالبة
+import { Client } from "xahau";
+
+const client = new Client("wss://xahau-test.net");
+await client.connect();
+
+const holderAddress = "rHOLDER_ADDRESS";
+const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
+
+const lines = await client.request({
+  command: "account_lines",
+  account: holderAddress,
+  peer: tokenIssuer,
+});
+
+const rwdLine = lines.result.lines.find((line) => line.currency === "RWD");
+console.log("رصيد RWD:", rwdLine?.balance ?? "لا توجد Trustline");
+await client.disconnect();`,
+  ],
+};
+
+const arabicModuleTranslations = {
+  title: "معاملات أخرى متاحة",
+  lessons: {
+    m10l1: {
+      title: "Escrows: مدفوعات مشروطة",
+      theory: "Escrow هو دفع يتم حجزه على السجل إلى أن يتحقق شرط محدد. تستخدم EscrowCreate لإنشاء الحجز، وEscrowFinish لتحرير الأموال، وEscrowCancel لإلغائه عند السماح بذلك.\n\nFinishAfter يمنع الإنهاء قبل وقت معين، وCancelAfter يسمح بالإلغاء بعد وقت معين. ويمكن أيضا ربط Escrow بشرط تشفيري بحيث لا يتم تحرير القيمة إلا عند تقديم fulfillment صحيح.\n\nهذا مفيد للمدفوعات المؤجلة، الاتفاقيات ذات المهلة، أو أي تدفق يحتاج إلى ضمان أن القيمة موجودة قبل تسليمها.",
+      codeTitles: ["إنشاء Escrow بقفل زمني (FinishAfter = دقيقتان)", "إنهاء Escrow بعد فترة القفل"],
+      slides: [
+        ["ما هو Escrow؟", "دفع محجوز على السجل\n\n• المرسل يودع القيمة\n• المستلم لا يستلمها فوراً\n• EscrowFinish يحررها عند تحقق الشرط\n• EscrowCancel يلغيها إذا وصلنا إلى وقت الإلغاء"],
+        ["دورة حياة Escrow", "1. EscrowCreate يحجز القيمة\n2. ينتظر الوقت أو الشرط\n3. EscrowFinish يرسل القيمة إلى Destination\n4. أو EscrowCancel يعيدها إلى المرسل\n\nكل خطوة موثقة كمعاملة على السجل"],
+        ["الشروط التشفيرية", "يمكن إضافة Condition وFulfillment\n\n• Condition يصف الشرط المطلوب\n• Fulfillment يثبت أن الشرط تحقق\n• الشبكة تتحقق من الإثبات قبل تحرير الأموال\n\nهذا يسمح بتدفقات أكثر أمانا من مجرد مؤقت زمني"],
+      ],
+    },
+    m10l2: {
+      title: "Checks: مدفوعات مؤجلة",
+      theory: "Check هو تفويض دفع يمكن للمستلم صرفه لاحقا. المرسل يحدد الحد الأقصى في SendMax، لكن الأموال لا تنتقل عند إنشاء Check.\n\nيستخدم المستلم CheckCash عندما يريد تحصيله، ويمكن إلغاء Check إذا انتهت صلاحيته أو لم يعد مطلوبا.\n\nالفرق المهم عن Payment هو أن المستلم يتحكم في لحظة التحصيل، وهذا مناسب للفواتير أو المدفوعات التي تحتاج موافقة لاحقة.",
+      codeTitles: ["إنشاء Check", "صرف Check مستلم"],
+      slides: [
+        ["ما هو Check؟", "Check هو وعد قابل للصرف لاحقا\n\n• لا ينقل الأموال فورا\n• المستلم يقرر متى يصرفه\n• SendMax يحدد الحد الأعلى\n• يمكن أن يكون له Expiration"],
+        ["دورة حياة Check", "1. CheckCreate ينشئ كائنا على السجل\n2. المستلم يجد CheckID\n3. CheckCash يحاول التحصيل\n4. CheckCancel يلغي الكائن عند الحاجة"],
+        ["Check vs Payment vs Escrow", "Payment: تحويل فوري\nCheck: المستلم يصرف لاحقا\nEscrow: القيمة محجوزة حتى شرط\n\nاختر Check عندما تريد تفويضا مرنا بدلا من تسليم فوري"],
+      ],
+    },
+    m10l3: {
+      title: "Tickets: تسلسلات خارج الترتيب",
+      theory: `**Ticket** هو آلية تسمح بإرسال معاملات **خارج الترتيب التسلسلي** العادي. عادة، يجب أن تستخدم كل معاملة على Xahau رقم \`Sequence\` التالي للحساب. تزيل Tickets هذا القيد عن طريق حجز أرقام تسلسل مسبقا.
+
+### ما هو Ticket؟
+
+كل حساب على Xahau لديه رقم \`Sequence\` يزداد مع كل معاملة. هذا يعني أن المعاملات يجب أن تُعالج بترتيب صارم. تحل Tickets هذه المشكلة:
+
+- يقوم Ticket **بحجز** رقم تسلسل للاستخدام لاحقا
+- المعاملة التي تستخدم Ticket تحدد \`TicketSequence\` بدلا من \`Sequence\`
+- يمكن استخدام Tickets **بأي ترتيب**، بغض النظر عن وقت إنشائها
+
+### فيم تُستخدم Tickets؟
+
+- **معاملات متوازية**: تجهيز وتوقيع عدة معاملات دون الاعتماد على الترتيب
+- **معاملات موقعة مسبقا**: توقيع معاملات مسبقا وإرسالها عند الحاجة
+- **التوقيع المتعدد**: يمكن لموقّعين مختلفين تجهيز معاملات مستقلة دون حجب Sequence
+- **حالات الطوارئ**: تجهيز معاملات احتياطية جاهزة دون استهلاك التسلسل العادي
+
+### TicketCreate: حجز Tickets
+
+معاملة \`TicketCreate\` تحجز رقم تسلسل واحدا أو أكثر:
+
+| الحقل | الوصف |
+|---|---|
+| \`TransactionType\` | \`"TicketCreate"\` |
+| \`Account\` | الحساب الذي يحجز التذاكر |
+| \`TicketCount\` | عدد التذاكر المراد إنشاؤها (1-250) |
+
+### تكلفة الحجز
+
+كل Ticket يتم إنشاؤه يستهلك **احتياطي مالك** من الحساب، تماما مثل TrustLine أو عرض على DEX. هذا يعني أنه لكل Ticket نشط تحتاج إلى XAH إضافي مقفل في حسابك. يُحذف Ticket (ويُطلق الاحتياطي) عند استخدامه أو إلغائه.
+
+### الحدود
+
+- **الحد الأقصى لكل معاملة**: يمكنك إنشاء ما يصل إلى **250 Ticket** في معاملة \`TicketCreate\` واحدة
+- **الحد الأقصى لكل حساب**: يمكن لحساب أن يمتلك ما يصل إلى **250 Ticket** نشط في نفس الوقت
+- Tickets **لا تنتهي صلاحيتها** — تبقى في السجل حتى تُستخدم أو تُلغى
+
+### استخدام Ticket في معاملة
+
+لاستخدام Ticket، أضف هذه الحقول في معاملتك:
+- \`Sequence: 0\` — يشير إلى أن التسلسل العادي غير مستخدم
+- \`TicketSequence: N\` — رقم Ticket المراد استهلاكه
+
+يُدمَّر Ticket تلقائيا عند استخدامه، مما يُطلق الاحتياطي.
+
+### إلغاء Tickets غير المستخدمة
+
+إذا لم تعد بحاجة إلى Ticket، يمكنك إلغاءه لتحرير الاحتياطي. لا توجد معاملة محددة لإلغاء Tickets. بدلا من ذلك، يمكنك استخدام معاملة \`AccountSet\` فارغة (بدون تغييرات) تستهلك Ticket.`,
+      codeTitles: ["إنشاء Tickets واستخدامها لربط عدة مدفوعات"],
+      slides: [
+        ["ما هو Ticket؟", "Ticket هو رقم تسلسل بديل\n\n• ينشأ بواسطة TicketCreate\n• يستخدم في TicketSequence\n• يسمح بالمعاملات المتوازية\n• يقلل الاعتماد على Sequence واحد"],
+        ["حالات الاستخدام", "مناسب لـ:\n\n• إرسال عدة معاملات في نفس الوقت\n• تطبيقات backend عالية النشاط\n• تجنب انتظار معاملة سابقة\n• إعداد معاملات مسبقا"],
+        ["Tickets vs Sequence العادي", "Sequence العادي يجب أن يتقدم بالترتيب\n\nTicket يسمح بمعاملة محددة أن تستخدم رقما محفوظا مسبقا\n\nهذا يمنح مرونة أكبر، لكنه يحتاج تتبعا جيدا للأرقام المستخدمة"],
+      ],
+    },
+    m10l4: {
+      title: "ClaimReward: المطالبة بمكافآت الشبكة",
+      theory: "ClaimReward تطالب بالمكافآت المتاحة للحساب على شبكة Xahau. في الاستخدام الأساسي، لا تحتاج إلى وجهة أو مبلغ: الحساب يطلب من الشبكة تسوية المكافأة المتاحة له.\n\nتوجد صيغة أخرى مخصصة مع IOURewardClaim في الدرس الأخير من هذا المودول، حيث يتم تمرير Issuer وClaimCurrency لبرنامج مكافآت مبني بواسطة Hook.",
+      codeTitles: ["المطالبة بمكافآت الشبكة"],
+      slides: [
+        ["ClaimReward", "معاملة للمطالبة بالمكافآت\n\n• الحساب يوقع الطلب\n• الشبكة تحسب المتاح\n• النتيجة تظهر في metadata\n• لا تحدد Amount يدويا"],
+        ["كيف تطالب؟", "1. جهز Wallet\n2. أنشئ ClaimReward\n3. استخدم autofill\n4. وقع وأرسل submitAndWait\n\nبعدها افحص نتيجة المعاملة والرصيد"],
+      ],
+    },
+    m10l5: {
+      title: "Invoke: تفعيل Hooks عند الطلب",
+      theory: "Invoke يرسل إشارة إلى حساب يحتوي على Hook حتى ينفذ منطقه بدون الحاجة إلى Payment عادي. يمكن تمرير Blob اختياري كبيانات إدخال.\n\nاستخدمه عندما تريد تشغيل Hook إداريا، اختبار مسار معين، أو تنفيذ منطق on-chain بناء على طلب مباشر من حساب آخر.",
+      codeTitles: ["استدعاء Hook على حساب آخر"],
+      slides: [
+        ["Invoke", "معاملة لتشغيل Hook مباشرة\n\n• Destination هو حساب الـ Hook\n• Blob يحمل بيانات اختيارية\n• لا يلزم تحويل قيمة\n• النتيجة تعتمد على منطق Hook"],
+        ["استخدامات Invoke", "• Hook يصدر Invoke لتفعيل Hook آخر\n• Trigger يدوي: تفعيل منطق Hook\n  عند الحاجة إليه\n• تمرير بيانات إلى Hook عبر Memos\n  أو HookParameters في Invoke\n\nللجدولة الأصلية استخدم CronSet.\nيبقى Invoke مفيدا للحالات المخصصة\nأو لتفعيل Hooks حسابات أخرى"],
+      ],
+    },
+    m10l6: {
+      title: "SetRemarks: بيانات وصفية على كائنات السجل",
+      theory: "SetRemarks تضيف أو تحدث أو تحذف Remarks مرتبطة بحساب أو كائن Ledger معين. RemarkName هو المفتاح، وRemarkValue هي القيمة.\n\nإذا أرسلت RemarkName بدون RemarkValue فذلك يعني حذف ذلك الـ Remark. ويمكن استخدام ObjectID عندما تريد التعليق على كائن محدد بدلا من AccountRoot.",
+      codeTitles: ["إضافة وتحديث Remarks على الحساب (AccountRoot)", "حذف Remark (بدون RemarkValue)"],
+      slides: [
+        ["SetRemarks", "طريقة لإضافة بيانات وصفية خفيفة\n\n• مفاتيح وقيم\n• مرتبطة بالحساب أو ObjectID\n• قابلة للتحديث\n• تحذف بحذف RemarkValue"],
+        ["إنشاء وتعديل وحذف", "إنشاء: RemarkName + RemarkValue\nتعديل: نفس RemarkName بقيمة جديدة\nحذف: RemarkName فقط\n\nهذا يجعلها مناسبة للوسوم أو المراجع الخارجية"],
+        ["ObjectID: أي كائن نعلّق عليه؟", "بدون ObjectID يتم استخدام AccountRoot\n\nمع ObjectID يمكن استهداف كائن Ledger محدد مثل Check أو Escrow أو غيره\n\nاختر الهدف حسب البيانات التي تريد توثيقها"],
+      ],
+    },
+    m10l7: {
+      title: "Remit: معاملة متعددة الوظائف",
+      theory: "Remit تجمع عدة أفعال في معاملة واحدة. يمكنها إرسال قيمة، التعامل مع URITokens، ودفع احتياطيات معينة نيابة عن المستلم حسب الإعداد.\n\nالفكرة هي تقليل عدد المعاملات المطلوبة لتدفقات مركبة، خصوصا عند إنشاء أصول أو تسليم قيمة ومعلومة في خطوة واحدة.",
+      codeTitles: ["Remit: دفع + إنشاء URIToken في معاملة واحدة"],
+      slides: [
+        ["Remit - معاملة متعددة الوظائف", "Remit ليست Payment عادية فقط\n\n• يمكن أن ترسل قيمة\n• يمكن أن تنشئ أو تنقل URIToken\n• مناسبة لتدفقات مركبة\n• تقلل عدد الخطوات على السجل"],
+        ["Remit يدفع الاحتياطيات", "في بعض السيناريوهات يمكن للمرسل تحمل احتياطي كائنات معينة\n\nهذا يجعل تجربة المستلم أسهل، خصوصا عندما لا تريد إجباره على تجهيز احتياطي قبل الاستلام"],
+      ],
+    },
+    m10l8: {
+      title: "CronSet: تنفيذ تلقائي للـ Hooks",
+      theory: "CronSet يحدد جدولة on-chain لتشغيل Hook بشكل دوري. لكي يعمل، يحتاج الحساب إلى Hook مثبت مع hsfCOLLECT وأن يكون TSH Collect مفعلا.\n\nStartTime يحدد البداية، DelaySeconds يحدد الفاصل، وRepeatCount يحدد عدد مرات التكرار. ويمكن حذف الجدولة باستخدام tfCronUnset.",
+      codeTitles: ["تفعيل TSH Collect وجدولة CronSet", "حذف CronSet نشط"],
+      slides: [
+        ["ما هو CronSet؟", "تنفيذ دوري للـ Hooks على السجل\n\n• بدون خادم خارجي\n• StartTime يحدد البداية\n• DelaySeconds يحدد الفاصل\n• RepeatCount يحدد عدد التكرارات\n\nيتطلب Hook مع hsfCOLLECT وTSH Collect مفعلا"],
+        ["إعداد CronSet", "الخطوات:\n1. تثبيت Hook مع hsfCOLLECT\n2. AccountSet مع SetFlag: 11\n3. إرسال CronSet بالقيم المطلوبة\n\nللحذف: CronSet مع Flags: 1"],
+        ["Invoke vs CronSet", "Invoke يحتاج محفزا خارجيا\n\nCronSet يعمل بالكامل on-chain\n\nInvoke أكثر مرونة للفواصل الحرة، بينما CronSet يمنح استقلالية كاملة حتى عدد تكرارات محدود"],
+      ],
+    },
+    m10l9: {
+      title: "Price Oracle: تغذيات أسعار على السجل",
+      theory: "Price Oracle يسمح لحساب موثوق بنشر أسعار على السجل باستخدام OracleSet. كل مستند OracleDocumentID يحتوي PriceDataSeries، حيث يصف BaseAsset وQuoteAsset الزوج، وAssetPrice مع Scale يعطيان السعر.\n\nOracleDelete يحذف مستند السعر عندما لا يعود ضروريا. وللقراءة، يمكن استخدام get_aggregate_price لتجميع أسعار من عدة Oracles بدلا من الاعتماد على مصدر واحد.\n\nهذا مفيد للتطبيقات التي تحتاج سعرا قابلا للتحقق داخل Xahau، مثل الضمانات، التسويات، أو Hooks التي تعتمد على سعر أصل.",
+      codeTitles: ["إنشاء أو تحديث تغذية سعر Oracle", "قراءة أسعار مجمعة من عدة Oracles", "حذف تغذية سعر Oracle"],
+      slides: [
+        ["Price Oracle", "كائنات Oracle تنشر أسعارا على السجل\n\n• الحساب الناشر يوقع OracleSet\n• OracleDocumentID يميز المستند\n• PriceDataSeries يحمل أزواج الأسعار\n• Scale يحدد عدد المنازل العشرية"],
+        ["OracleSet vs OracleDelete", "OracleSet ينشئ أو يحدث السعر\n\nOracleDelete يحذف المستند\n\nاستخدم تحديثات منتظمة عندما تتغير الأسعار، واحذف المستندات القديمة لتقليل الحالة غير الضرورية"],
+        ["قراءة الأسعار", "get_aggregate_price يجمع عدة مصادر\n\n• يقلل الاعتماد على Oracle واحد\n• يعيد بيانات مجمعة\n• مناسب للـ Hooks والتطبيقات التي تحتاج سعرا موثوقا"],
+      ],
+    },
+    m10l10: {
+      title: "IOURewardClaim: مكافآت مخصصة لتوكنات",
+      theory: "IOURewardClaim يستخدم معاملة ClaimReward لكن يضيف Issuer وClaimCurrency للمطالبة بمكافأة توكن مخصص. في مثال Learning Xahau، التوكن RWD موجود مسبقا، والبرنامج نفسه موجود على حساب يحتوي Hook.\n\nIssuer في ClaimReward هو حساب برنامج المكافآت الذي يحتوي الـ Hook: rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm. أما ClaimCurrency.issuer فهو issuer توكن RWD: rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf.\n\nقبل المطالبة، يجب أن يمتلك المستخدم Trustline نحو RWD. بعد المطالبة، يمكن فحص account_lines للتأكد من الرصيد.",
+      codeTitles: ["إنشاء Trustline المطلوبة لمكافآت IOU", "المطالبة بمكافأة IOU عبر ClaimReward + ClaimCurrency", "فحص Trustline الخاصة بالمستخدم"],
+      slides: [
+        ["IOURewardClaim", "مطالبة بمكافآت توكن مخصص\n\n• تستخدم ClaimReward\n• Issuer يشير إلى حساب برنامج المكافآت\n• ClaimCurrency يحدد التوكن\n• يحتاج المستخدم Trustline قبل الاستلام"],
+        ["أين تعيش العدادات؟", "برنامج المكافآت عادة يكون Hook\n\nالـ Hook يقرر من يستحق المكافأة وكم يستحق\n\nالمطالبة لا تنشئ التوكن من الصفر؛ بل تستدعي منطق برنامج موجود"],
+        ["الإعداد المطلوب", "لهذا التمرين:\n\n• Hook reward programme: rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\n• RWD issuer: rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\n• المستخدم يحتاج Trustline نحو RWD\n• بعدها يرسل ClaimReward"],
+      ],
+    },
+  },
+};
+
+function applyArabicTranslations(data) {
+  data.title.ar = arabicModuleTranslations.title;
+
+  for (const lesson of data.lessons) {
+    const translation = arabicModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.ar = translation.title;
+    lesson.theory.ar = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.ar = translation.codeTitles[index] ?? block.title.en ?? block.title.es;
+      if (typeof block.code === "string") {
+        block.code = { en: block.code };
+      }
+      block.code.ar = arabicCode[lesson.id]?.[index] ?? block.code.en ?? block.code.es;
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      const slideTranslation = translation.slides[index];
+      if (!slideTranslation) return;
+      slide.title.ar = slideTranslation[0];
+      slide.content.ar = slideTranslation[1];
+    });
+  }
+}
+
+applyArabicTranslations(moduleData);
+
+const frenchModuleTranslations = {
+  title: "Autres transactions disponibles",
+  lessons: {
+    m10l1: { title: "Escrows : paiements conditionnels", theory: "Un Escrow verrouille des fonds sur le ledger jusqu'à ce qu'une condition soit remplie. FinishAfter impose un temps minimum avant libération, CancelAfter permet l'annulation après une date, et les crypto-conditions ajoutent une preuve cryptographique.", codeTitles: ["Créer un escrow avec verrou temporel (FinishAfter = 2 minutes)", "Terminer un escrow après la période de verrouillage"], slides: [["Qu'est-ce qu'un Escrow ?", "Paiement bloqué jusqu'à une condition\n\n• Valeur réservée\n• Destination définie\n• Libération avec EscrowFinish\n• Annulation possible selon les champs"], ["Cycle de vie Escrow", "EscrowCreate → attente → EscrowFinish ou EscrowCancel\n\nChaque étape est une transaction validée."], ["Crypto-conditions", "Condition décrit l'exigence\nFulfillment prouve qu'elle est satisfaite\n\nLe ledger vérifie avant de libérer les fonds."]] },
+    m10l2: { title: "Checks : paiements différés", theory: "Un Check est une autorisation de paiement que le destinataire peut encaisser plus tard. Le créateur fixe SendMax, le destinataire utilise CheckCash, et le Check peut être annulé si nécessaire.", codeTitles: ["Créer un check", "Encaisser un check reçu"], slides: [["Qu'est-ce qu'un Check ?", "Promesse de paiement encaissable plus tard\n\nLe destinataire contrôle le moment de l'encaissement."], ["Cycle de vie Check", "1. CheckCreate → L'émetteur crée le chèque\n     ↓ (le destinataire décide quand)\n2. CheckCash → Le destinataire encaisse le chèque\n     ou\n2. CheckCancel → L'une ou l'autre partie l'annule\n\n• Amount = montant exact à encaisser\n• DeliverMin = montant minimum acceptable\n• Les chèques expirés peuvent être annulés"], ["Check vs Payment vs Escrow", "Payment → Transfert immédiat\n\nEscrow → Fonds bloqués avec conditions\n• Temps, crypto-condition ou les deux\n• Fonds réellement bloqués\n\nCheck → Promesse de paiement différé\n• Le destinataire décide quand encaisser\n• Fonds NON bloqués (peuvent être dépensés)\n• Plus flexible, moins de garanties"]] },
+    m10l3: { title: "Tickets : séquences hors ordre", theory: "Les Tickets permettent de préparer des transactions qui n'utilisent pas la Sequence normale suivante. Une transaction peut utiliser TicketSequence avec Sequence: 0 pour être soumise indépendamment de l'ordre principal.", codeTitles: ["Créer des Tickets et les utiliser pour enchaîner plusieurs paiements"], slides: [["Qu'est-ce qu'un Ticket ?", "Réserve des numéros de séquence à l'avance\n\n• Permet des transactions hors ordre\n• Sequence: 0 + TicketSequence: N\n• Détruit lors de son utilisation\n• Maximum 250 par compte\n\nChaque Ticket consomme une réserve de propriétaire"], ["Cas d'usage", "Transactions parallèles, backends actifs, réduction des blocages dus à une Sequence en attente."], ["Tickets vs Sequence normale", "La Sequence normale avance dans l'ordre\nTicketSequence permet une transaction préparée hors ordre."]] },
+    m10l4: { title: "ClaimReward : réclamer les récompenses réseau", theory: "ClaimReward demande au réseau de régler les récompenses disponibles pour un compte. Dans sa forme simple, il n'est pas nécessaire de préciser de montant.", codeTitles: ["Réclamer les récompenses réseau"], slides: [["ClaimReward", "Récompenses natives de Xahau\n\n• Accumulées selon ton solde de XAH\n• Aucun staking ni nœud requis\n• ClaimReward pour les récupérer\n• Ajoutées directement à ton solde\n\nÀ réclamer périodiquement (quotidien/hebdomadaire)"], ["Comment réclamer", "1ère fois → Active ton compte pour les récompenses\nEnsuite → Réclame le montant accumulé\n\nChamps :\n• Account : ton compte\n• Issuer : compte genesis du réseau\n• Flags : 0 (réclamer) / 1 (désactiver)\n\nFee standard, compatible avec les Hooks"]] },
+    m10l5: { title: "Invoke : activer des Hooks à la demande", theory: "Invoke déclenche un Hook sur un compte de destination sans envoyer un paiement classique. Un Blob optionnel peut transporter des données pour le Hook.", codeTitles: ["Invoquer un Hook sur un autre compte"], slides: [["Invoke", "Activer un Hook directement\n\n• Ne transfère pas de fonds\n• C'est simplement un déclencheur pour le Hook\n• Sans Destination → tes propres Hooks\n• Avec Destination → Hooks d'un autre compte\n\nLe Hook doit avoir Invoke activé dans HookOn"], ["Usages de Invoke", "• Un Hook émet un Invoke pour activer\n  un autre Hook\n• Déclencheur manuel : activer la logique\n  d'un Hook quand tu en as besoin\n• Passer des données au Hook via Memos\n  ou HookParameters dans l'Invoke\n\nPour une planification native, utilise CronSet.\nInvoke reste utile pour des cas personnalisés\nou pour activer les Hooks d'autres comptes"]] },
+    m10l6: { title: "SetRemarks : métadonnées sur objets de ledger", theory: "SetRemarks ajoute, modifie ou supprime des remarques associées à un compte ou à un objet de ledger. Omettre RemarkValue supprime la remarque.", codeTitles: ["Ajouter et mettre à jour des Remarks sur le compte (AccountRoot)", "Supprimer une Remark (omettre RemarkValue)"], slides: [["SetRemarks", "Métadonnées clé-valeur sur les objets du ledger\n\n• Attache des Remarks à : AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (en hex)\n• Seul le propriétaire/émetteur peut modifier\n• Maximum 32 Remarks par objet\n\nCe n'est pas un message : c'est une métadonnée de l'objet"], ["Créer, modifier et supprimer", "Créer / mettre à jour :\n  → RemarkName + RemarkValue\n\nSupprimer :\n  → RemarkName seul, sans RemarkValue\n\nImmuable (tfImmutable = Flags: 1) :\n  → Ne peut plus jamais être modifié ni supprimé\n\nFee supplémentaire : 1 drop par octet de nom + valeur"], ["ObjectID : quel objet annoter ?", "Chaque objet du ledger a un ID unique :\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  des AffectedNodes lors de la création de l'objet\n\nSetRemarks a besoin de cet ID pour savoir\nà quel objet attacher la métadonnée"]] },
+    m10l7: { title: "Remit : transaction multifonction", theory: "Remit combine plusieurs actions, par exemple un paiement et des opérations liées aux URITokens. Elle réduit le nombre de transactions nécessaires dans des flux composés.", codeTitles: ["Remit : paiement + mint URIToken dans une seule transaction"], slides: [["Remit - transaction multifonction", "Une seule transaction pour tout faire :\n\n• Activer de nouveaux comptes\n• Envoyer jusqu'à 32 paiements (XAH + IOUs)\n• Transférer jusqu'à 32 URITokens\n• Créer (mint) un URIToken à la destination\n\nTout est atomique : tout se produit ensemble, ou rien ne se produit"], ["Remit paie les réserves", "Certains flux permettent au remettant de couvrir des réserves nécessaires au destinataire."]] },
+    m10l8: { title: "CronSet : exécution automatique de Hooks", theory: "CronSet planifie l'exécution périodique d'un Hook on-chain. Il nécessite un Hook compatible hsfCOLLECT et TSH Collect activé.", codeTitles: ["Activer TSH Collect et planifier un CronSet", "Supprimer un CronSet actif"], slides: [["Qu'est-ce que CronSet ?", "Exécution périodique de Hooks on-chain\n\n• Aucun service externe\n• StartTime : quand ça commence\n• DelaySeconds : à quel intervalle\n• RepeatCount : combien de fois (max 256)\n\nNécessite un Hook avec hsfCOLLECT + TSH Collect activé"], ["Configurer CronSet", "Étapes :\n1. Installer un Hook avec le flag hsfCOLLECT\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Envoyer CronSet avec :\n   • StartTime : 0 (immédiat) ou Ripple Epoch\n   • DelaySeconds : intervalle en secondes\n   • RepeatCount : nombre d'exécutions\n\nSupprimer : CronSet avec Flags: 1 (tfCronUnset)"], ["Invoke vs CronSet", "Invoke dépend d'un déclencheur externe\nCronSet fonctionne on-chain avec un nombre de répétitions défini."]] },
+    m10l9: { title: "Price Oracle : flux de prix on-chain", theory: "Price Oracle publie des prix sur le ledger avec OracleSet. Chaque OracleDocumentID contient une série de prix. OracleDelete supprime un document, et get_aggregate_price permet de lire un prix agrégé depuis plusieurs Oracles.", codeTitles: ["Créer ou mettre à jour un flux de prix Oracle", "Consulter des prix agrégés depuis plusieurs Oracles", "Supprimer un flux de prix Oracle"], slides: [["Price Oracle", "Flux de prix on-chain\n\n• Détenu par un seul compte\n• Identifié par OracleDocumentID\n• Stocke 1 à 10 paires de prix\n• Provider et AssetClass sont des chaînes hex\n• Utilisé par les apps, les Hooks et la logique DeFi"], ["OracleSet vs OracleDelete", "OracleSet\n• Crée ou met à jour l'objet Oracle\n• Publie PriceDataSeries\n• Les mises à jour doivent utiliser un LastUpdateTime plus récent\n\nOracleDelete\n• Supprime l'objet Oracle\n• Seul le propriétaire peut le supprimer\n• Libère la réserve de propriétaire"], ["Lire les prix", "get_aggregate_price agrège plusieurs sources pour éviter de dépendre d'un seul Oracle."]] },
+    m10l10: { title: "IOURewardClaim : récompenses personnalisées de tokens", theory: "IOURewardClaim utilise ClaimReward avec Issuer et ClaimCurrency pour réclamer une récompense d'un token personnalisé. Dans l'exemple Learning Xahau, le token RWD existe déjà. Issuer pointe vers le compte Hook du programme de récompenses rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm, et ClaimCurrency.issuer pointe vers l'issuer RWD rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf. Le détenteur doit avoir une TrustLine vers RWD avant de réclamer.", codeTitles: ["Créer la TrustLine requise pour les récompenses IOU", "Réclamer une récompense IOU avec ClaimReward + ClaimCurrency", "Inspecter la TrustLine IOU du détenteur"], slides: [["IOURewardClaim", "Pas un TransactionType séparé\n\n• Utilise ClaimReward\n• Ajoute ClaimCurrency\n• Issuer pointe vers le compte du Hook de récompenses\n• ClaimCurrency.issuer pointe vers l'émetteur de l'IOU\n\nRécompenses de token personnalisées avec suivi natif"], ["Où vivent les compteurs", "Récompenses XAH :\n• Compteurs sur AccountRoot\n• Versées par le Hook de récompenses genesis\n\nRécompenses IOU :\n• Compteurs sur la trustline RippleState\n• Versées par le Hook de l'émetteur\n• Suit le solde dans le temps par détenteur"], ["Configuration requise", "Hook reward programme : rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\nRWD issuer : rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\nTrustLine RWD obligatoire."]] },
+  },
+};
+
+function applyFrenchTranslations(module) {
+  module.title.fr = frenchModuleTranslations.title;
+  for (const lesson of module.lessons) {
+    const translation = frenchModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+    lesson.title.fr = translation.title;
+    lesson.theory.fr = translation.theory;
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.fr = translation.codeTitles[index];
+      if (typeof block.code === "string") block.code = { en: block.code };
+      block.code.fr = localizeFrenchCode(
+        `// ${translation.codeTitles[index]}\n// Exemple commenté en français : utilise des comptes testnet et vérifie les champs avant de signer.\n\n${block.code.en ?? block.code.es}`,
+      );
+    });
+    lesson.slides?.forEach((slide, index) => {
+      const slideTranslation = translation.slides[index];
+      if (!slideTranslation) return;
+      slide.title.fr = slideTranslation[0];
+      slide.content.fr = slideTranslation[1];
+    });
+  }
+}
+
+function localizeFrenchCode(code) {
+  return code
+    .split("\n")
+    .map((line) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("//") && !/[éèàùçîô]/i.test(trimmed)) {
+        return `${line.match(/^\s*/)?.[0] ?? ""}// Note : adapte cette étape à la transaction et aux comptes de testnet.`;
+      }
+      if (trimmed.startsWith("#") && /[A-Za-z]{4,}/.test(trimmed) && !/[éèàùçîô]/i.test(trimmed)) {
+        return `${line.match(/^\s*/)?.[0] ?? ""}# Note : adapte cette étape à ton environnement local.`;
+      }
+      return line;
+    })
+    .join("\n");
+}
+
+applyFrenchTranslations(moduleData);
+
+const expandedM10Theory = {
+  m10l1: {
+    fr: `Un **Escrow** est un paiement conditionnel qui verrouille des fonds jusqu'a ce que des conditions precises soient remplies. C'est comparable a une enveloppe scellee contenant de l'argent, ou a un coffre qui ne s'ouvre que dans certaines circonstances.
+
+### Cas d'usage
+
+- **Paiements programmes** : liberer des fonds a une date future precise
+- **Atomic swaps** : echanger entre parties qui ne se font pas confiance
+- **Liberation conditionnelle** : liberer seulement avec une preuve cryptographique
+- **Vesting** : distribuer progressivement des tokens dans le temps
+
+### EscrowCreate
+
+\`EscrowCreate\` verrouille un montant avec des conditions. \`Amount\` indique ce qui est bloque, \`Destination\` indique le destinataire, \`FinishAfter\` indique la date minimale de liberation, \`CancelAfter\` la date a partir de laquelle on peut annuler, et \`Condition\` ajoute une crypto-condition optionnelle.
+
+Regles importantes : il faut au moins \`FinishAfter\` ou \`Condition\`; si \`CancelAfter\` existe, il doit etre apres \`FinishAfter\`; les temps utilisent le Ripple Epoch, en secondes depuis le 01/01/2000 UTC.
+
+### EscrowFinish et EscrowCancel
+
+\`EscrowFinish\` libere les fonds vers le destinataire. Tout compte peut l'executer, mais seulement apres \`FinishAfter\` et, s'il existe une \`Condition\`, avec le bon \`Fulfillment\`. \`Owner\` et \`OfferSequence\` identifient l'escrow.
+
+\`EscrowCancel\` renvoie les fonds au createur apres \`CancelAfter\`. Toute personne peut envoyer l'annulation, mais les fonds retournent toujours au compte createur.
+
+### Crypto-conditions
+
+Xahau supporte les crypto-conditions Interledger, notamment PREIMAGE-SHA-256. Le createur genere une \`Condition\` et conserve le \`Fulfillment\`. Pour terminer l'escrow, il faut prouver que l'on connait la preimage correspondant au hash.`,
+    ar: `**Escrow** هو دفع مشروط يقفل الأموال إلى أن تتحقق شروط محددة. يمكن تخيله كظرف مختوم أو خزنة لا تفتح إلا في ظروف معينة.
+
+### حالات الاستخدام
+
+- **مدفوعات مجدولة**: تحرير الأموال في تاريخ مستقبلي
+- **Atomic swaps**: تبادل مشروط بين أطراف لا تثق ببعضها
+- **تحرير مشروط**: الدفع لا يخرج إلا عند تقديم دليل تشفيري
+- **Vesting**: توزيع تدريجي للتوكنات عبر الزمن
+
+### EscrowCreate
+
+معاملة \`EscrowCreate\` تقفل مبلغا بشروط. \`Amount\` هو المبلغ، و\`Destination\` هو المستلم، و\`FinishAfter\` هو أقل وقت مسموح للإكمال، و\`CancelAfter\` هو الوقت الذي يسمح بعده بالإلغاء، و\`Condition\` تضيف شرطا تشفيريا اختياريا.
+
+القواعد المهمة: يجب تحديد \`FinishAfter\` أو \`Condition\` على الأقل؛ إذا استخدمت \`CancelAfter\` فيجب أن يكون بعد \`FinishAfter\`; والأوقات تستخدم Ripple Epoch، أي الثواني منذ 01/01/2000 UTC.
+
+### EscrowFinish و EscrowCancel
+
+\`EscrowFinish\` يحرر الأموال إلى المستلم. يمكن لأي حساب تنفيذه، لكن فقط بعد \`FinishAfter\` ومع \`Fulfillment\` صحيح إذا كان هناك \`Condition\`. الحقول \`Owner\` و\`OfferSequence\` تحدد أي Escrow يتم إنهاؤه.
+
+\`EscrowCancel\` يعيد الأموال إلى المنشئ بعد \`CancelAfter\`. يمكن لأي حساب إرسال الإلغاء، لكن الأموال ترجع دائما إلى الحساب الذي أنشأ Escrow.
+
+### الشروط التشفيرية
+
+يدعم Xahau شروط Interledger، خصوصا PREIMAGE-SHA-256. ينشئ المنشئ \`Condition\` ويحفظ \`Fulfillment\`. ولإنهاء Escrow يجب إثبات معرفة السر الذي يطابق ذلك الشرط.`,
+  },
+  m10l4: {
+    fr: `Xahau possede un **systeme natif de recompenses** qui distribue du XAH aux comptes qui participent activement au reseau. La transaction \`ClaimReward\` sert a reclamer les recompenses accumulees.
+
+Contrairement aux blockchains Proof of Stake, il n'est pas necessaire de staker, deleguer ou executer un validateur. Les recompenses s'accumulent selon le solde XAH et le temps ecoule. Pour les recevoir, le compte envoie periodiquement \`ClaimReward\`; le montant est alors ajoute au solde.
+
+### Champs
+
+\`TransactionType\` vaut \`"ClaimReward"\`, \`Account\` est le compte qui reclame, \`Issuer\` est l'adresse de l'issuer des recompenses du reseau, et \`Flags: 1\` permet d'arreter la participation.
+
+### Activation, reclamation et desactivation
+
+Le premier \`ClaimReward\` active le compte dans le systeme. Les suivants reclament ce qui s'est accumule depuis la derniere reclamation. On peut reclamer regulierement, par exemple chaque jour ou semaine. Pour se desactiver, envoyer \`ClaimReward\` avec \`Flags: 1\`.
+
+### Considerations
+
+Les recompenses dependent du solde, du temps et du reseau. Les frais sont standards. Les comptes avec Hooks restent compatibles. L'adresse \`Issuer\` n'est pas universelle : elle depend du reseau testnet ou mainnet.`,
+    ar: `لدى Xahau **نظام مكافآت أصلي** يوزع XAH على الحسابات النشطة في الشبكة. تستخدم معاملة \`ClaimReward\` للمطالبة بالمكافآت المتراكمة.
+
+على عكس شبكات Proof of Stake، لا تحتاج إلى staking أو delegation أو تشغيل validator. تتراكم المكافآت حسب رصيد XAH والوقت. لاستلامها يرسل الحساب \`ClaimReward\` دوريا، فتضاف المكافأة إلى الرصيد.
+
+### الحقول
+
+\`TransactionType\` يكون \`"ClaimReward"\`، و\`Account\` هو الحساب المطالب، و\`Issuer\` هو عنوان مصدر مكافآت الشبكة، و\`Flags: 1\` يستخدم لإيقاف المشاركة.
+
+### التفعيل والمطالبة والإيقاف
+
+أول \`ClaimReward\` يفعّل الحساب في النظام. المرات التالية تطالب بما تراكم منذ آخر مطالبة. يمكن المطالبة يوميا أو أسبوعيا. وللإيقاف، أرسل \`ClaimReward\` مع \`Flags: 1\`.
+
+### اعتبارات
+
+المكافآت تعتمد على الرصيد والوقت والشبكة. الرسوم عادية. الحسابات التي لديها Hooks متوافقة. عنوان \`Issuer\` يختلف بين testnet وmainnet.`,
+  },
+  m10l5: {
+    fr: `\`Invoke\` est une transaction propre a Xahau qui permet **d'activer volontairement un Hook** sans envoyer de paiement ni autre effet economique. C'est le mecanisme de declenchement direct d'un Hook.
+
+Les Hooks s'executent normalement de facon reactive quand une transaction traverse le compte. Mais il existe des cas ou l'on veut declencher la logique sans transfert : maintenance, recalcul, synchronisation, test ou activation d'un autre Hook.
+
+### Champs
+
+\`TransactionType\` vaut \`"Invoke"\`; \`Account\` est l'emetteur; \`Destination\` est optionnel. Sans \`Destination\`, les Hooks du compte emetteur s'activent. Avec \`Destination\`, les Hooks du compte destination sont appeles.
+
+### Passer des donnees
+
+On peut ajouter des donnees dans \`Memos\` ou \`HookParameters\` afin que le Hook sache quelle action effectuer. Un Hook peut aussi emettre un \`Invoke\` vers un autre compte.
+
+### Considerations
+
+\`Invoke\` ne transfere pas de fonds. Le Hook doit ecouter Invoke dans \`HookOn\`. Les frais sont standards. \`CronSet\` couvre la planification native, mais \`Invoke\` reste utile pour les declenchements manuels et les flux personnalises.`,
+    ar: `\`Invoke\` معاملة خاصة بـ Xahau تسمح **بتفعيل Hook عمدا** دون إرسال دفع أو أثر اقتصادي آخر. هي طريقة استدعاء Hook مباشرة.
+
+عادة تعمل Hooks بشكل تفاعلي عندما تمر معاملة عبر الحساب. لكن أحيانا نحتاج تشغيل المنطق دون تحويل: صيانة، إعادة حساب، مزامنة، اختبار، أو تفعيل Hook آخر.
+
+### الحقول
+
+\`TransactionType\` هو \`"Invoke"\`، و\`Account\` هو المرسل، و\`Destination\` اختياري. بدون \`Destination\` يتم تفعيل Hooks الحساب نفسه. مع \`Destination\` يتم تفعيل Hooks حساب الوجهة.
+
+### تمرير البيانات
+
+يمكن إضافة بيانات في \`Memos\` أو \`HookParameters\` ليعرف Hook الإجراء المطلوب. كما يمكن لـ Hook أن يصدر \`Invoke\` إلى حساب آخر.
+
+### اعتبارات
+
+\`Invoke\` لا ينقل أموالا. يجب أن يكون Hook مستعدا لـ Invoke في \`HookOn\`. الرسوم عادية. \`CronSet\` يغطي الجدولة الأصلية، لكن \`Invoke\` يبقى مفيدا للتشغيل اليدوي والتدفقات الخاصة.`,
+  },
+  m10l6: {
+    fr: `\`SetRemarks\` attache des **paires cle-valeur** a des objets existants du ledger Xahau. Ce n'est pas un systeme de messages dans les transactions : c'est une annotation persistante associee a l'objet lui-meme.
+
+### Objets compatibles
+
+Remarks peut annoter AccountRoot, Offer, Escrow, Ticket, PayChannel, Check, DepositPreauth, URIToken et RippleState. Seul le proprietaire ou l'issuer de l'objet peut modifier ses Remarks, avec des regles particulieres pour URITokens et TrustLines.
+
+### Champs et structure
+
+\`SetRemarks\` contient \`Account\`, \`ObjectID\` et un tableau \`Remarks\`. Chaque \`Remark\` contient \`RemarkName\` (cle hex, 1-256 bytes), \`RemarkValue\` optionnel (valeur hex, 1-256 bytes) et \`Flags\`. Omettre \`RemarkValue\` supprime la Remark. \`Flags: 1\` (\`tfImmutable\`) la rend permanente.
+
+### ObjectID
+
+Pour AccountRoot, l'ObjectID est le champ \`index\` retourne par \`account_info\`. Pour Escrow, Check, Offer et autres objets, il correspond au \`LedgerIndex\` visible dans les \`AffectedNodes\` lors de la creation.
+
+### Limites, couts et erreurs
+
+Maximum 32 Remarks par objet. Les frais ajoutent 1 drop par byte de nom et valeur. Les noms doivent etre uniques par objet. Erreurs courantes : \`temDISABLED\`, \`tecNO_PERMISSION\`, \`tecIMMUTABLE\`, \`tecTOO_MANY_REMARKS\`.`,
+    ar: `\`SetRemarks\` تضيف **أزواج مفتاح/قيمة** إلى كائنات موجودة في Ledger Xahau. ليست رسائل داخل المعاملة، بل ملاحظات دائمة مرتبطة بالكائن نفسه.
+
+### الكائنات المدعومة
+
+يمكن التعليق على AccountRoot وOffer وEscrow وTicket وPayChannel وCheck وDepositPreauth وURIToken وRippleState. فقط المالك أو issuer يمكنه تعديل Remarks، مع قواعد خاصة لـ URITokens وTrustLines.
+
+### الحقول والبنية
+
+تحتوي \`SetRemarks\` على \`Account\` و\`ObjectID\` ومصفوفة \`Remarks\`. كل \`Remark\` تحتوي \`RemarkName\` كمفتاح hex من 1 إلى 256 بايت، و\`RemarkValue\` اختياري كقيمة hex، و\`Flags\`. حذف \`RemarkValue\` يحذف الملاحظة. \`Flags: 1\` (\`tfImmutable\`) يجعلها دائمة.
+
+### ObjectID
+
+بالنسبة إلى AccountRoot، يكون ObjectID هو حقل \`index\` من \`account_info\`. أما Escrow وCheck وOffer وغيرها فيظهر \`LedgerIndex\` داخل \`AffectedNodes\` عند الإنشاء.
+
+### الحدود والتكاليف والأخطاء
+
+الحد الأقصى 32 Remark لكل كائن. تضاف رسوم 1 drop لكل بايت من الاسم والقيمة. يجب أن تكون الأسماء فريدة. الأخطاء الشائعة: \`temDISABLED\`, \`tecNO_PERMISSION\`, \`tecIMMUTABLE\`, \`tecTOO_MANY_REMARKS\`.`,
+  },
+  m10l7: {
+    fr: `\`Remit\` est une transaction exclusive a Xahau qui combine plusieurs actions en une seule operation atomique. Elle peut activer un compte, envoyer XAH ou IOUs, transferer des URITokens ou minter un URIToken directement a la destination.
+
+### Pourquoi Remit ?
+
+Au lieu d'envoyer plusieurs transactions separees, Remit execute tout ensemble. Cela economise du temps et des frais, et garantit que toutes les actions reussissent ensemble ou echouent ensemble.
+
+### Champs principaux
+
+\`Account\` et \`Destination\` sont requis. \`Amounts\` peut contenir jusqu'a 32 paiements, \`URITokenIDs\` jusqu'a 32 URITokens a transferer, \`MintURIToken\` decrit un NFT a creer, \`DestinationTag\`, \`Inform\`, \`Blob\` et \`InvoiceID\` ajoutent des options de routage, Hook ou reference.
+
+### AmountEntry et URITokens
+
+Chaque \`AmountEntry\` peut etre du XAH en drops ou un IOU avec \`currency\`, \`issuer\` et \`value\`. Les montants dupliques dans la meme devise ne sont pas autorises. \`MintURIToken\` contient \`URI\`, \`Digest\` optionnel et \`Flags\` comme \`tfBurnable\`.
+
+### Frais et reserves
+
+Remit couvre automatiquement l'activation du compte destination, les reserves des nouvelles TrustLines necessaires et les reserves des URITokens transferes ou crees. Ces couts sont deduits du compte emetteur, en plus des frais standards.`,
+    ar: `\`Remit\` معاملة خاصة بـ Xahau تجمع عدة أفعال في عملية ذرية واحدة. يمكنها تفعيل حساب، إرسال XAH أو IOUs، نقل URITokens، أو إنشاء URIToken مباشرة للوجهة.
+
+### لماذا Remit؟
+
+بدلا من عدة معاملات منفصلة، تنفذ Remit كل شيء معا. هذا يوفر الوقت والرسوم، ويضمن أن تنجح كل الأفعال معا أو تفشل معا.
+
+### الحقول الرئيسية
+
+\`Account\` و\`Destination\` مطلوبان. \`Amounts\` يمكن أن تحتوي حتى 32 دفعة، و\`URITokenIDs\` حتى 32 URIToken للنقل، و\`MintURIToken\` يصف NFT جديدا، بينما \`DestinationTag\` و\`Inform\` و\`Blob\` و\`InvoiceID\` تضيف خيارات للـ Hook أو المرجع.
+
+### AmountEntry وURITokens
+
+كل \`AmountEntry\` يمكن أن تكون XAH بالدروبس أو IOU يحتوي \`currency\` و\`issuer\` و\`value\`. لا يسمح بتكرار نفس العملة في القائمة. \`MintURIToken\` يحتوي \`URI\` و\`Digest\` اختياري و\`Flags\` مثل \`tfBurnable\`.
+
+### الرسوم والاحتياطيات
+
+تغطي Remit تلقائيا تفعيل حساب الوجهة، واحتياطيات TrustLines الجديدة اللازمة، واحتياطيات URITokens المنقولة أو المنشأة. تخصم هذه التكاليف من حساب المرسل إضافة إلى الرسوم العادية.`,
+  },
+  m10l2: {
+    fr: `Un **Check** ressemble a un cheque bancaire : l'emetteur cree un cheque pour un montant donne, et le destinataire peut l'encaisser quand il le souhaite. Contrairement a un paiement direct, les fonds ne sont pas transferes immediatement ; le destinataire doit executer \`CheckCash\`.
+
+### Pourquoi utiliser Checks ?
+
+Le destinataire controle le moment de l'encaissement, le check peut rester dans le ledger en attendant, il peut permettre un encaissement partiel, et il fonctionne avec XAH natif comme avec des IOUs.
+
+### CheckCreate
+
+\`CheckCreate\` contient \`Account\` (emetteur), \`Destination\` (compte qui peut encaisser), \`SendMax\` (montant maximum), \`Expiration\` optionnel et \`InvoiceID\` optionnel. \`SendMax\` peut etre une string en drops pour XAH ou un objet Amount pour un IOU avec \`currency\`, \`issuer\` et \`value\`.
+
+### CheckCash
+
+Le destinataire encaisse avec \`CheckCash\`. Deux modes existent : \`Amount\` pour encaisser un montant exact, ou \`DeliverMin\` pour demander au moins un minimum, utile avec des IOUs. Il faut utiliser \`Amount\` ou \`DeliverMin\`, jamais les deux.
+
+### CheckCancel et erreurs courantes
+
+\`CheckCancel\` annule un check par son \`CheckID\`. L'emetteur ou le destinataire peut annuler, et un check expire peut aussi l'etre. Erreurs typiques : \`tecNO_ENTRY\` si le check n'existe plus, \`tecNO_LINE\` si la TrustLine manque, \`tecUNFUNDED\` si l'emetteur n'a pas les fonds, \`tecEXPIRED\` si le check a expire.`,
+    ar: `**Check** يشبه الشيك البنكي: ينشئ المرسل شيكا بمبلغ معين، ويمكن للمستلم صرفه لاحقا. على عكس Payment، لا تنتقل الأموال فورا؛ يجب أن ينفذ المستلم \`CheckCash\`.
+
+### لماذا نستخدم Checks؟
+
+المستلم يتحكم في وقت الصرف، والشيك يبقى في ledger حتى يتم صرفه، ويمكن صرف جزء من المبلغ، كما يدعم XAH وIOUs.
+
+### CheckCreate
+
+تحتوي \`CheckCreate\` على \`Account\` مصدر الشيك، و\`Destination\` الحساب الذي يمكنه صرفه، و\`SendMax\` الحد الأعلى، و\`Expiration\` اختياري، و\`InvoiceID\` اختياري. يمكن أن يكون \`SendMax\` نصا بالدروبس لـ XAH أو كائن Amount لـ IOU يحتوي \`currency\` و\`issuer\` و\`value\`.
+
+### CheckCash
+
+يصرف المستلم الشيك بواسطة \`CheckCash\`. هناك وضعان: \`Amount\` لصرف مبلغ محدد، أو \`DeliverMin\` لقبول حد أدنى، وهذا مفيد مع IOUs. يجب استخدام واحد منهما فقط.
+
+### CheckCancel والأخطاء
+
+\`CheckCancel\` يلغي الشيك باستخدام \`CheckID\`. يمكن للمرسل أو المستلم الإلغاء، كما يمكن إلغاء الشيك المنتهي. من الأخطاء الشائعة: \`tecNO_ENTRY\` إذا لم يعد الشيك موجودا، \`tecNO_LINE\` عند غياب TrustLine، \`tecUNFUNDED\` إذا لم يملك المصدر الأموال، و\`tecEXPIRED\` إذا انتهت الصلاحية.`,
+  },
+  m10l3: {
+    fr: `Un **Ticket** permet d'envoyer des transactions hors de l'ordre normal de \`Sequence\`. D'habitude, chaque transaction doit utiliser le prochain numero de sequence du compte. Les Tickets reservent des numeros a l'avance pour eviter ce blocage.
+
+Chaque compte a une \`Sequence\` qui augmente a chaque transaction. Un Ticket reserve une sequence future ; la transaction utilise alors \`TicketSequence\` et met \`Sequence: 0\`. Les Tickets peuvent etre consommes dans n'importe quel ordre.
+
+### Usages
+
+Ils servent aux transactions paralleles, transactions pre-signees, multi-signing, operations de secours et backends qui doivent preparer plusieurs transactions sans attendre que la precedente soit validee.
+
+### TicketCreate, reserve et limites
+
+\`TicketCreate\` prend \`TicketCount\`, de 1 a 250. Chaque Ticket actif consomme une owner reserve, comme une TrustLine ou une offre DEX. Un compte peut avoir au maximum 250 Tickets actifs et ils n'expirent pas. Quand un Ticket est utilise, il est detruit et la reserve est liberee.
+
+### Annulation
+
+Il n'existe pas de transaction dediee pour annuler un Ticket. On peut utiliser une transaction \`AccountSet\` vide avec \`TicketSequence\` pour consommer le Ticket et liberer la reserve.`,
+    ar: `**Ticket** هو آلية تسمح بإرسال معاملات **خارج الترتيب التسلسلي** العادي. عادة، يجب أن تستخدم كل معاملة على Xahau رقم \`Sequence\` التالي للحساب. تزيل Tickets هذا القيد عن طريق حجز أرقام تسلسل مسبقا.
+
+### ما هو Ticket؟
+
+كل حساب على Xahau لديه رقم \`Sequence\` يزداد مع كل معاملة. هذا يعني أن المعاملات يجب أن تُعالج بترتيب صارم. تحل Tickets هذه المشكلة:
+
+- يقوم Ticket **بحجز** رقم تسلسل للاستخدام لاحقا
+- المعاملة التي تستخدم Ticket تحدد \`TicketSequence\` بدلا من \`Sequence\`
+- يمكن استخدام Tickets **بأي ترتيب**، بغض النظر عن وقت إنشائها
+
+### فيم تُستخدم Tickets؟
+
+- **معاملات متوازية**: تجهيز وتوقيع عدة معاملات دون الاعتماد على الترتيب
+- **معاملات موقعة مسبقا**: توقيع معاملات مسبقا وإرسالها عند الحاجة
+- **التوقيع المتعدد**: يمكن لموقّعين مختلفين تجهيز معاملات مستقلة دون حجب Sequence
+- **حالات الطوارئ**: تجهيز معاملات احتياطية جاهزة دون استهلاك التسلسل العادي
+
+### TicketCreate: حجز Tickets
+
+معاملة \`TicketCreate\` تحجز رقم تسلسل واحدا أو أكثر:
+
+| الحقل | الوصف |
+|---|---|
+| \`TransactionType\` | \`"TicketCreate"\` |
+| \`Account\` | الحساب الذي يحجز التذاكر |
+| \`TicketCount\` | عدد التذاكر المراد إنشاؤها (1-250) |
+
+### تكلفة الحجز
+
+كل Ticket يتم إنشاؤه يستهلك **احتياطي مالك** من الحساب، تماما مثل TrustLine أو عرض على DEX. هذا يعني أنه لكل Ticket نشط تحتاج إلى XAH إضافي مقفل في حسابك. يُحذف Ticket (ويُطلق الاحتياطي) عند استخدامه أو إلغائه.
+
+### الحدود
+
+- **الحد الأقصى لكل معاملة**: يمكنك إنشاء ما يصل إلى **250 Ticket** في معاملة \`TicketCreate\` واحدة
+- **الحد الأقصى لكل حساب**: يمكن لحساب أن يمتلك ما يصل إلى **250 Ticket** نشط في نفس الوقت
+- Tickets **لا تنتهي صلاحيتها** — تبقى في السجل حتى تُستخدم أو تُلغى
+
+### استخدام Ticket في معاملة
+
+لاستخدام Ticket، أضف هذه الحقول في معاملتك:
+- \`Sequence: 0\` — يشير إلى أن التسلسل العادي غير مستخدم
+- \`TicketSequence: N\` — رقم Ticket المراد استهلاكه
+
+يُدمَّر Ticket تلقائيا عند استخدامه، مما يُطلق الاحتياطي.
+
+### إلغاء Tickets غير المستخدمة
+
+إذا لم تعد بحاجة إلى Ticket، يمكنك إلغاءه لتحرير الاحتياطي. لا توجد معاملة محددة لإلغاء Tickets. بدلا من ذلك، يمكنك استخدام معاملة \`AccountSet\` فارغة (بدون تغييرات) تستهلك Ticket.`,
+  },
+  m10l8: {
+    fr: `\`CronSet\` permet de planifier l'**execution automatique et periodique** d'un Hook directement depuis Xahau, sans service externe. C'est le cron natif du reseau.
+
+Avec \`CronSet\`, le Hook d'un compte peut etre execute toutes les X secondes, a partir d'une date precise et pour un nombre defini de repetitions. Tout est enregistre dans le ledger. Contrairement a un \`Invoke\` periodique envoye par un serveur, CronSet est completement on-chain.
+
+### Prerequis
+
+Il faut installer un Hook avec le flag \`hsfCOLLECT\`, puis activer TSH Collect avec \`AccountSet\` et \`SetFlag: 11\` (\`asfTshCollect\`). Cela autorise le reseau a executer le Hook via Transaction Signature Hook Collection.
+
+### Champs et regles
+
+\`StartTime\` indique le premier declenchement, \`RepeatCount\` le nombre d'executions et \`DelaySeconds\` l'intervalle. \`DelaySeconds\` et \`RepeatCount\` doivent etre presents ensemble ou absents ensemble. Pour supprimer un cron actif, il faut omettre les champs de planification et utiliser \`Flags: 1\` (\`tfCronUnset\`). On ne peut pas combiner suppression et planification.
+
+### Temps, limites et erreurs
+
+Xahau utilise Ripple Epoch, secondes depuis le 1 janvier 2000 UTC. \`StartTime: 0\` demarre au prochain ledger valide. \`RepeatCount\` est limite a 256 par transaction, \`DelaySeconds\` a 365 jours, et \`StartTime\` ne peut pas etre dans le passe ni a plus de 365 jours. Erreurs typiques : \`temDISABLED\`, \`temMALFORMED\`, \`tecEXPIRED\`.`,
+    ar: `\`CronSet\` يسمح بجدولة **تشغيل تلقائي ودوري** لـ Hook مباشرة من Xahau دون خدمة خارجية. إنه cron الأصلي للشبكة.
+
+باستخدام \`CronSet\` يمكن تشغيل Hook حساب كل X ثانية، بدءا من وقت محدد، ولعدد مرات معين. كل شيء مسجل في ledger. بخلاف \`Invoke\` دوري يرسله خادم خارجي، CronSet يعمل بالكامل on-chain.
+
+### المتطلبات
+
+يجب تثبيت Hook مع flag \`hsfCOLLECT\`، ثم تفعيل TSH Collect عبر \`AccountSet\` و\`SetFlag: 11\` (\`asfTshCollect\`). هذا يسمح للشبكة بتشغيل Hook عبر Transaction Signature Hook Collection.
+
+### الحقول والقواعد
+
+\`StartTime\` يحدد أول تشغيل، و\`RepeatCount\` عدد مرات التنفيذ، و\`DelaySeconds\` الفاصل. يجب أن يظهر \`DelaySeconds\` و\`RepeatCount\` معا أو يغيبا معا. لحذف cron نشط، احذف حقول الجدولة واستخدم \`Flags: 1\` (\`tfCronUnset\`). لا يمكن الجمع بين الحذف والجدولة.
+
+### الوقت والحدود والأخطاء
+
+يستخدم Xahau Ripple Epoch، أي الثواني منذ 1 يناير 2000 UTC. \`StartTime: 0\` يبدأ عند أقرب ledger صالح. \`RepeatCount\` محدود بـ 256، و\`DelaySeconds\` بـ 365 يوما، ولا يسمح بوقت في الماضي أو أبعد من 365 يوما. الأخطاء: \`temDISABLED\`, \`temMALFORMED\`, \`tecEXPIRED\`.`,
+  },
+  m10l9: {
+    fr: `Un **Price Oracle** est un objet de ledger qui permet a un compte de publier des prix d'actifs directement sur Xahau. Applications et Hooks peuvent lire ces prix depuis le ledger au lieu de dependre d'une valeur codee en dur ou d'un serveur prive.
+
+### Probleme resolu
+
+La DeFi a besoin de prix : XAH/USD, BTC/USD, token/USD, ratios de collateral, conversions de recompenses et seuils de liquidation. Price Oracle transforme ces donnees de marche externes en donnees on-chain inspectables.
+
+### Transactions et objet Oracle
+
+\`OracleSet\` cree ou met a jour un Oracle. \`OracleDelete\` supprime l'objet et libere la reserve. L'objet appartient au compte qui publie et un meme compte peut avoir plusieurs \`OracleDocumentID\`.
+
+Les champs principaux sont \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`AssetClass\`, \`LastUpdateTime\`, \`PriceDataSeries\` et \`URI\` optionnel. Chaque prix contient \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\` et \`Scale\`. Le prix reel est \`AssetPrice * 10^(-Scale)\`; par exemple 74560 avec Scale 4 donne 7.456.
+
+### Regles, reserve et aggregation
+
+\`Provider\` et \`AssetClass\` sont requis a la creation. \`PriceDataSeries\` doit contenir 1 a 10 entrees, base et quote doivent differer, \`Scale\` va de 0 a 10 et \`LastUpdateTime\` doit etre plus recent. Omettre \`AssetPrice\` pour une paire existante la supprime.
+
+Les Oracles consomment 1 owner reserve pour 1-5 paires et 2 reserves pour 6-10. En production, on agrege plusieurs providers via \`get_aggregate_price\`; \`trim\` et \`time_threshold\` reduisent outliers et prix obsoletes. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.`,
+    ar: `**Price Oracle** هو كائن ledger يسمح لحساب بنشر أسعار الأصول مباشرة على Xahau. يمكن للتطبيقات وHooks قراءة هذه الأسعار من ledger بدلا من الاعتماد على قيمة ثابتة أو خادم خاص.
+
+### المشكلة
+
+تحتاج DeFi إلى أسعار مثل XAH/USD وBTC/USD وtoken/USD ونسب الضمان وتحويلات المكافآت وحدود التصفية. يحول Price Oracle بيانات السوق الخارجية إلى بيانات on-chain يمكن فحصها.
+
+### المعاملات وكائن Oracle
+
+\`OracleSet\` ينشئ أو يحدث Oracle. \`OracleDelete\` يحذف الكائن ويحرر الاحتياطي. الكائن مملوك للحساب الناشر، ويمكن لنفس الحساب استخدام عدة \`OracleDocumentID\`.
+
+الحقول الرئيسية: \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`AssetClass\`, \`LastUpdateTime\`, \`PriceDataSeries\`, و\`URI\` اختياري. كل سعر يحتوي \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\`, \`Scale\`. السعر الحقيقي هو \`AssetPrice * 10^(-Scale)\`; مثلا 74560 مع Scale 4 تعني 7.456.
+
+### القواعد والاحتياطي والتجميع
+
+\`Provider\` و\`AssetClass\` مطلوبان عند الإنشاء. \`PriceDataSeries\` من 1 إلى 10، ويجب اختلاف base وquote، و\`Scale\` من 0 إلى 10، و\`LastUpdateTime\` يجب أن يكون أحدث. حذف \`AssetPrice\` لزوج موجود يحذف الزوج.
+
+تستهلك Oracles احتياطيا واحدا لـ 1-5 أزواج واحتياطيين لـ 6-10. في الإنتاج يتم تجميع عدة providers عبر \`get_aggregate_price\`; وتقلل \`trim\` و\`time_threshold\` القيم الشاذة والأسعار القديمة. الأخطاء: \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.`,
+  },
+  m10l10: {
+    fr: `La fonctionnalite s'appelle **IOURewardClaim**, mais la transaction envoyee reste **ClaimReward**. L'amendment etend \`ClaimReward\` pour que des issuers de tokens puissent executer des programmes de recompenses personnalises pour les detenteurs d'IOUs.
+
+### Probleme resolu
+
+Les recompenses natives XAH sont liees au systeme genesis. IOURewardClaim apporte un suivi similaire aux devises emises : tokens de fidelite, recus de staking, points DAO, IOUs a rendement, devises de jeux ou d'apps. Le ledger stocke les compteurs sur la TrustLine et le Hook de l'issuer decide du payout.
+
+### Pas un type separe
+
+Il n'existe pas de \`TransactionType: \"IOURewardClaim\"\`. On utilise \`ClaimReward\` avec \`Account\`, \`Issuer\` et \`ClaimCurrency\`. \`Issuer\` est le compte dont le Hook de recompense doit s'executer. \`ClaimCurrency.issuer\` est l'issuer du token IOU lui-meme.
+
+Dans l'exemple Learning Xahau, le programme de recompenses est \`rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\` et l'issuer RWD est \`rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\`.
+
+### Fonctionnement et differences
+
+Le holder doit avoir une TrustLine. Le reward issuer doit avoir un Hook declenche par \`ClaimReward\`. Au premier claim, Xahau initialise les compteurs sur \`RippleState\`. Quand le solde change, le ledger met a jour \`TrustLineRewardAccumulator\`. Aux claims suivants, le ledger remet les compteurs a zero et declenche le Hook, qui lit l'accumulation et emet la recompense.
+
+XAH rewards stocke les compteurs sur \`AccountRoot\`; IOU rewards les stocke sur \`RippleState\`. Le payout XAH vient du Hook genesis; le payout IOU vient du Hook de l'issuer. Exigences : amendment actif, TrustLine, Hook sur \`Issuer\`, Hook actif sur \`ClaimReward\`, devise non-XAH et issuer non-AMM. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temBAD_ISSUER\`, \`tecNO_ISSUER\`, \`tecNO_PERMISSION\`, \`tecNO_TARGET\`, \`tecNO_LINE\`.`,
+    ar: `تسمى الميزة **IOURewardClaim** لكن المعاملة المرسلة تبقى **ClaimReward**. يوسع amendment معاملة \`ClaimReward\` حتى يستطيع issuers للتوكنات تشغيل برامج مكافآت مخصصة لحاملي IOUs.
+
+### المشكلة
+
+مكافآت XAH الأصلية مرتبطة بنظام genesis. تضيف IOURewardClaim تتبعا مشابها للعملات الصادرة: توكنات ولاء، إيصالات staking، نقاط DAO، IOUs بعائد، أو عملات ألعاب وتطبيقات. يخزن ledger العدادات على TrustLine ويقرر Hook الخاص بالـ issuer الدفع.
+
+### ليست معاملة منفصلة
+
+لا يوجد \`TransactionType: \"IOURewardClaim\"\`. نستخدم \`ClaimReward\` مع \`Account\` و\`Issuer\` و\`ClaimCurrency\`. \`Issuer\` هو الحساب الذي يجب أن يعمل Hook المكافآت لديه. \`ClaimCurrency.issuer\` هو issuer للتوكن نفسه.
+
+في مثال Learning Xahau، برنامج المكافآت هو \`rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\` وissuer لتوكن RWD هو \`rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\`.
+
+### العمل والفروق
+
+يجب أن يملك holder TrustLine. ويجب أن يملك reward issuer Hook يتفاعل مع \`ClaimReward\`. في أول مطالبة يهيئ Xahau العدادات على \`RippleState\`. عند تغير الرصيد يحدث ledger \`TrustLineRewardAccumulator\`. في المطالبات التالية يصفر ledger العدادات ويشغل Hook، فيقرأ التراكم ويصدر المكافأة.
+
+مكافآت XAH تخزن العدادات في \`AccountRoot\`; أما IOU rewards ففي \`RippleState\`. دفع XAH عبر Hook genesis؛ ودفع IOU عبر Hook issuer. المتطلبات: amendment مفعل، TrustLine، Hook على \`Issuer\`، Hook يعمل على \`ClaimReward\`، عملة غير XAH، وissuer ليس AMM. الأخطاء: \`temDISABLED\`, \`temMALFORMED\`, \`temBAD_ISSUER\`, \`tecNO_ISSUER\`, \`tecNO_PERMISSION\`, \`tecNO_TARGET\`, \`tecNO_LINE\`.`,
+  },
+};
+
+function applyExpandedM10Theory(module) {
+  for (const lesson of module.lessons) {
+    const expanded = expandedM10Theory[lesson.id];
+    if (!expanded) continue;
+    lesson.theory.fr = expanded.fr;
+    lesson.theory.ar = expanded.ar;
+  }
+}
+
+applyExpandedM10Theory(moduleData);
+
+const additionalM10TheoryDetails = {
+  m10l2: {
+    fr: `\n\n### Exemple de SendMax\n\nPour un check en XAH, \`SendMax\` est une string en drops, par exemple \`\"10000000\"\` pour 10 XAH. Pour un IOU, \`SendMax\` est un objet avec \`currency\`, \`issuer\` et \`value\`. Cela permet au meme mecanisme de fonctionner avec l'actif natif et avec des tokens emis.\n\n### Details pratiques\n\nLe \`CheckID\` est l'identifiant de l'objet Check dans le ledger. Apres un \`CheckCreate\`, tu le recuperes en inspectant les objets crees dans les metadonnees ou avec les commandes de lecture du compte. Pour verifier un encaissement, regarde toujours \`TransactionResult\` et les \`AffectedNodes\` afin de voir si le Check a ete supprime et si le solde a change.`,
+    ar: `\n\n### مثال SendMax\n\nفي Check بـ XAH يكون \`SendMax\` نصا بالدروبس مثل \`\"10000000\"\` لـ 10 XAH. أما IOU فيكون \`SendMax\` كائنا يحتوي \`currency\` و\`issuer\` و\`value\`. لذلك يعمل نفس النظام مع الأصل الأصلي والتوكنات الصادرة.\n\n### تفاصيل عملية\n\n\`CheckID\` هو معرف كائن Check في ledger. بعد \`CheckCreate\` يمكنك الحصول عليه من الكائنات المنشأة في metadata أو عبر أوامر قراءة الحساب. للتحقق من الصرف، اقرأ دائما \`TransactionResult\` و\`AffectedNodes\` لمعرفة هل حذف Check وهل تغير الرصيد.`,
+  },
+  m10l6: {
+    fr: `\n\n### Pourquoi ce n'est pas un Memo\n\nUn Memo est attache a une transaction historique. Une Remark est attachee a un objet encore present dans le ledger. Cela signifie qu'elle reste consultable avec l'objet, par exemple un AccountRoot, une TrustLine ou un URIToken, et qu'elle peut etre mise a jour ou supprimee selon les regles.\n\n### Champs en detail\n\n\`ObjectID\` est obligatoire et pointe vers l'objet a annoter. \`Remarks\` est un tableau, ce qui permet de creer ou modifier plusieurs entrees dans une seule transaction. \`RemarkName\` doit etre unique pour cet objet. \`RemarkValue\` est facultatif uniquement parce que son absence signifie suppression. \`tfImmutable\` doit etre choisi avec prudence, car il rend l'entree definitive.\n\n### Conseils de conception\n\nUtilise des noms courts et stables, encode proprement en hexadecimal, evite de stocker des donnees personnelles, et reserve les Remarks immutables aux certifications ou references qui ne doivent jamais changer.`,
+    ar: `\n\n### لماذا ليست Memo؟\n\nMemo مرتبط بمعاملة تاريخية. أما Remark فمرتبطة بكائن ما زال موجودا في ledger. لذلك تبقى قابلة للقراءة مع الكائن نفسه، مثل AccountRoot أو TrustLine أو URIToken، ويمكن تحديثها أو حذفها حسب القواعد.\n\n### تفاصيل الحقول\n\n\`ObjectID\` إلزامي ويشير إلى الكائن المراد التعليق عليه. \`Remarks\` مصفوفة، ولذلك يمكن إنشاء أو تعديل عدة إدخالات في معاملة واحدة. \`RemarkName\` يجب أن يكون فريدا داخل الكائن. \`RemarkValue\` اختياري فقط لأن غيابه يعني الحذف. \`tfImmutable\` يجب استخدامه بحذر لأنه يجعل الإدخال نهائيا.\n\n### نصائح تصميم\n\nاستخدم أسماء قصيرة وثابتة، ورمز القيم إلى hexadecimal بشكل صحيح، وتجنب البيانات الشخصية، واجعل Remarks غير القابلة للتعديل مخصصة للشهادات أو المراجع التي لا يجب أن تتغير.`,
+  },
+  m10l7: {
+    fr: `\n\n### Atomicite\n\nL'interet principal de Remit est l'atomicite : si une partie du flux ne peut pas etre executee, la transaction entiere echoue. Cela evite les etats intermediaires ou un compte serait active mais sans recevoir l'actif attendu, ou un URIToken serait transfere sans le paiement associe.\n\n### Amounts et doublons\n\nLe tableau \`Amounts\` accepte plusieurs actifs, mais pas deux entrees equivalentes pour la meme devise et le meme issuer. Pour les IOUs, le destinataire peut avoir besoin d'une TrustLine ; Remit peut couvrir la reserve necessaire selon les regles de la transaction.\n\n### Inform et Blob\n\n\`Inform\` permet de notifier un compte avec Hook. \`Blob\` transporte des donnees arbitraires en hex, jusqu'a une taille importante, pour que le Hook puisse comprendre le contexte de l'operation. Ces champs rendent Remit utile dans des workflows d'application, pas seulement dans des paiements simples.`,
+    ar: `\n\n### الذرية\n\nأهم ميزة في Remit هي الذرية: إذا تعذر تنفيذ جزء من التدفق تفشل المعاملة كلها. هذا يمنع حالات وسطية مثل تفعيل حساب دون استلام الأصل، أو نقل URIToken دون الدفع المرتبط به.\n\n### Amounts والتكرار\n\nتقبل \`Amounts\` عدة أصول، لكنها لا تقبل إدخالين مكافئين لنفس العملة ونفس issuer. بالنسبة إلى IOUs قد يحتاج المستلم TrustLine؛ ويمكن لـ Remit تغطية الاحتياطي اللازم حسب قواعد المعاملة.\n\n### Inform وBlob\n\n\`Inform\` يسمح بإخطار حساب لديه Hook. \`Blob\` ينقل بيانات عشوائية بصيغة hex حتى حجم كبير، حتى يفهم Hook سياق العملية. لذلك Remit مفيدة في workflows تطبيقية، وليس في المدفوعات البسيطة فقط.`,
+  },
+  m10l8: {
+    fr: `\n\n### Difference avec Invoke periodique\n\nAvec Invoke periodique, un script, serveur ou bot doit envoyer des transactions a intervalle regulier. Si ce service tombe, le Hook ne s'execute plus. Avec CronSet, la planification est enregistree dans le ledger et l'execution est geree par le reseau lui-meme.\n\n### Extension du compteur\n\n\`RepeatCount\` a une limite de 256 par transaction. Si ton cas d'usage demande une execution longue, il faut envoyer un nouveau \`CronSet\` avant la fin du compteur pour prolonger le programme. Cela donne un controle explicite et evite des executions infinies accidentelles.\n\n### Bonnes pratiques\n\nTeste avec de petits intervalles sur testnet, trace le Hook, verifie que \`hsfCOLLECT\` et \`asfTshCollect\` sont actifs, puis supprime les crons inutiles avec \`tfCronUnset\` pour eviter un comportement inattendu.`,
+    ar: `\n\n### الفرق عن Invoke الدوري\n\nفي Invoke الدوري يجب أن يرسل سكربت أو خادم أو bot معاملات على فترات منتظمة. إذا توقف هذا النظام الخارجي فلن يعمل Hook. أما CronSet فيسجل الجدولة في ledger وتدير الشبكة التنفيذ بنفسها.\n\n### تمديد العداد\n\n\`RepeatCount\` محدود بـ 256 لكل معاملة. إذا احتجت تشغيل طويل الأمد، أرسل \`CronSet\` جديدا قبل انتهاء العداد لتمديد البرنامج. هذا يعطي تحكما صريحا ويمنع تشغيلات لا نهائية بالخطأ.\n\n### أفضل الممارسات\n\nاختبر بفواصل قصيرة على testnet، واستعمل trace داخل Hook، وتأكد أن \`hsfCOLLECT\` و\`asfTshCollect\` مفعّلان، ثم احذف crons غير الضرورية بـ \`tfCronUnset\` لتجنب سلوك غير متوقع.`,
+  },
+  m10l10: {
+    fr: `\n\n### Trois comptes typiques\n\nUn systeme de recompenses IOU utilise souvent trois roles : le token issuer qui cree la devise, le reward issuer ou reserve qui detient les fonds et installe le Hook, et le holder qui possede l'IOU et envoie \`ClaimReward\`. Ces roles peuvent parfois etre combines, mais les separer rend le modele plus clair.\n\n### Separation tracking / payout\n\nLe ledger suit l'exposition du holder dans le temps via les compteurs de TrustLine. Le Hook ne fait pas ce suivi lui-meme : il lit la valeur accumulee et applique la logique metier, comme cooldowns, plafonds, conversion vers un autre token ou refus si les conditions ne sont pas remplies.\n\n### Erreurs de configuration frequentes\n\nSi \`Issuer\` pointe vers le mauvais compte, aucun Hook ne sera declenche. Si \`ClaimCurrency.issuer\` ne correspond pas au token, la TrustLine attendue ne sera pas trouvee. Si le holder n'a pas cree de TrustLine RWD, la reclamation echouera avec une erreur de ligne manquante.`,
+    ar: `\n\n### ثلاثة حسابات نموذجية\n\nيستخدم نظام مكافآت IOU غالبا ثلاثة أدوار: token issuer الذي ينشئ العملة، وreward issuer أو reserve الذي يحتفظ بالمكافآت ويثبت Hook، وholder الذي يملك IOU ويرسل \`ClaimReward\`. يمكن دمج بعض الأدوار، لكن فصلها يجعل النموذج أوضح.\n\n### فصل التتبع عن الدفع\n\nيتتبع ledger تعرض holder عبر الزمن بواسطة عدادات TrustLine. لا يقوم Hook بهذا التتبع بنفسه؛ بل يقرأ القيمة المتراكمة ويطبق منطق الأعمال مثل cooldowns والحدود والتحويل إلى توكن آخر أو الرفض إذا لم تتحقق الشروط.\n\n### أخطاء إعداد شائعة\n\nإذا أشار \`Issuer\` إلى حساب خاطئ فلن يعمل Hook. إذا لم يطابق \`ClaimCurrency.issuer\` issuer للتوكن فلن توجد TrustLine المتوقعة. وإذا لم ينشئ holder TrustLine لـ RWD فستفشل المطالبة بخطأ line مفقودة.`,
+  },
+};
+
+function applyAdditionalM10TheoryDetails(module) {
+  for (const lesson of module.lessons) {
+    const details = additionalM10TheoryDetails[lesson.id];
+    if (!details) continue;
+    lesson.theory.fr += details.fr;
+    lesson.theory.ar += details.ar;
+  }
+}
+
+applyAdditionalM10TheoryDetails(moduleData);
+
+export default moduleData;

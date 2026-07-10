@@ -1,4 +1,4 @@
-export default {
+const moduleData = {
   id: "m7",
   icon: "🎨",
   title: {
@@ -1669,3 +1669,464 @@ URI 是指向 NFT 内容或元数据的链接，常见选择包括：
     },
   ],
 }
+
+const arabicModuleTranslations = {
+  title: "إنشاء واستخدام NFTs",
+  lessons: {
+    m7l1: {
+      title: "URITokens: NFTs أصلية في Xahau",
+      theory: `في Xahau، تمثل NFTs كـ **URITokens**: objects أصلية في ledger تحتوي URI يشير إلى metadata أو المحتوى المرتبط بالـ NFT.
+
+### ما هو URIToken؟
+
+URIToken هو object فريد يحتوي عادة على:
+
+- **ID / LedgerIndex**: معرف فريد.
+- **URI**: رابط إلى metadata أو صورة أو JSON.
+- **Digest**: hash اختياري للتحقق من سلامة المحتوى.
+- **Owner**: المالك الحالي.
+- **Issuer**: الحساب الذي أنشأ token.
+
+### URIToken مقابل ERC-721
+
+في ERC-721 تحتاج غالبا إلى smart contract. في Xahau، mint و sale و buy و burn هي معاملات أصلية مثل \`URITokenMint\` و\`URITokenBuy\`. هذا يقلل التعقيد والرسوم.
+
+### عمليات URIToken
+
+يمكنك mint، burn، إنشاء sell offer، إلغاء offer، أو شراء token معروض للبيع. الحقول المهمة هي URI وDigest والـ flags مثل \`tfBurnable\`.`,
+      codeTitles: [
+        "إنشاء Mint لـ URIToken",
+        "استعلام URITokens لحساب",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet, convertStringToHex } = require("xahau");
+
+async function mintUriToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+
+  // URI يشير إلى metadata أو ملف مرتبط بالـ NFT
+  const tx = {
+    TransactionType: "URITokenMint",
+    Account: wallet.address,
+    URI: convertStringToHex("ipfs://example-metadata.json"),
+    Flags: 1, // tfBurnable: يسمح للـ issuer بحرق token لاحقا
+  };
+
+  const prepared = await client.autofill(tx);
+  const signed = wallet.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+mintUriToken().catch(console.error);`,
+        `const { Client } = require("xahau");
+
+async function queryUriTokens() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const account = "rYourAddressHere";
+
+  // account_objects مع type يعرض URITokens التي يملكها الحساب
+  const response = await client.request({
+    command: "account_objects",
+    account,
+    type: "uri_token",
+    ledger_index: "validated",
+  });
+
+  console.log("URITokens:", response.result.account_objects.length);
+  console.log(response.result.account_objects);
+
+  await client.disconnect();
+}
+
+queryUriTokens().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "URITokens في Xahau",
+          content: "NFTs أصلية في ledger\n\n• URI للmetadata\n• Digest للتحقق\n• Owner و Issuer\n• لا تحتاج ERC-721 contract",
+        },
+        {
+          title: "عمليات URIToken",
+          content: "• URITokenMint\n• URITokenBurn\n• URITokenCreateSellOffer\n• URITokenCancelSellOffer\n• URITokenBuy",
+        },
+        {
+          title: "URIToken مقابل ERC-721",
+          content: "ERC-721 يحتاج contract\nURIToken يستخدم معاملات أصلية\n\n• رسوم أقل\n• بنية أبسط\n• URI و Digest داخل ledger object",
+        },
+      ],
+    },
+    m7l2: {
+      title: "شراء وبيع URITokens",
+      theory: `بيع URIToken يتم عبر إنشاء sell offer. المالك يحدد token والسعر، والمشتري يستخدم \`URITokenBuy\` لقبول العرض.
+
+### تدفق البيع
+
+1. المالك يملك URIToken.
+2. ينشئ \`URITokenCreateSellOffer\` بسعر معين.
+3. يظهر token كمعروض للبيع.
+4. المشتري يرسل \`URITokenBuy\`.
+5. تنتقل الملكية ويدفع السعر.
+
+### Burn
+
+\`URITokenBurn\` يحذف token من ledger. إذا كان token burnable، يمكن للـ issuer حرقه حتى لو لم يعد هو المالك. هذه خاصية حساسة ويجب توضيحها للمستخدمين.
+
+### Transfer
+
+الشراء هو طريقة نقل الملكية عند وجود offer. لذلك البيع والشراء جزء من نموذج النقل الأصلي للـ URITokens.`,
+      codeTitles: [
+        "عرض URIToken للبيع",
+        "شراء URIToken معروض للبيع",
+      ],
+      code: [
+        `require("dotenv").config();
+const { Client, Wallet, xahToDrops } = require("xahau");
+
+async function listUriTokenForSale() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const seller = Wallet.fromSeed(process.env.SELLER_SEED, { algorithm: "secp256k1" });
+
+  const tx = {
+    TransactionType: "URITokenCreateSellOffer",
+    Account: seller.address,
+    URITokenID: process.env.URI_TOKEN_ID,
+    Amount: xahToDrops("25"), // سعر البيع بـ XAH
+  };
+
+  const prepared = await client.autofill(tx);
+  const signed = seller.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+listUriTokenForSale().catch(console.error);`,
+        `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function buyUriToken() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const buyer = Wallet.fromSeed(process.env.BUYER_SEED, { algorithm: "secp256k1" });
+
+  const tx = {
+    TransactionType: "URITokenBuy",
+    Account: buyer.address,
+    URITokenID: process.env.URI_TOKEN_ID,
+  };
+
+  const prepared = await client.autofill(tx);
+  const signed = buyer.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+  console.log("النتيجة:", result.result.meta.TransactionResult);
+
+  await client.disconnect();
+}
+
+buyUriToken().catch(console.error);`,
+      ],
+      slides: [
+        {
+          title: "تدفق البيع",
+          content: "1. المالك يملك URIToken\n2. ينشئ sell offer\n3. المشتري ينفذ URITokenBuy\n4. تنتقل الملكية\n5. يدفع السعر",
+        },
+        {
+          title: "Transfer و Burn",
+          content: "URITokenBuy ينقل الملكية عند وجود offer\n\nURITokenBurn يحذف token من ledger\n\nإذا كان burnable، قد يستطيع issuer حرقه لاحقا.",
+        },
+        {
+          title: "حرق URITokens بالتفصيل",
+          content: "Burn يعني حذف NFT نهائيا\n\nاستخدمه بحذر:\n• تحقق من URITokenID\n• افهم صلاحيات issuer\n• اشرح خاصية burnable للمستخدم",
+        },
+      ],
+    },
+    m7l3: {
+      title: "Metadata ومعايير URITokens",
+      theory: `Metadata هو المفتاح لجعل NFT مفيدا وقابلا للتحقق. في Xahau، تستخدم URITokens حقلي **URI** و**Digest** للربط بالمحتوى المرتبط والتحقق منه.
+
+### حقل URI: ماذا نضع فيه
+
+الـ URI هو رابط يشير إلى محتوى أو metadata الـ NFT. هناك عدة خيارات:
+
+- **روابط IPFS** (\`ipfs://QmXxx...\`): تخزين لامركزي. المحتوى غير قابل للتغيير ومعنون بواسطة hash. هذا هو الخيار **الموصى به** للإنتاج
+- **روابط HTTPS** (\`https://my-server.com/metadata/1.json\`): تخزين مركزي. سهل التنفيذ لكنه يعتمد على توفر الخادم
+
+### حقل Digest: التحقق من السلامة
+
+**Digest** هو hash من نوع SHA-256 للمحتوى الذي يشير إليه URI. يسمح لأي شخص بالتحقق من أن المحتوى لم يتغير منذ إنشاء NFT. يُخزَّن كسلسلة hexadecimal مكونة من 64 حرفا على ledger.
+
+### معيار JSON Metadata
+
+باتباع معيار مشابه لـ ERC-721، عادة ما تتضمن JSON metadata لـ URIToken:
+
+\`\`\`json
+{
+    "content": {
+        "url": "ipfs://bafybeign6w3zkxxqohchtxyv4qot6zrwcrvosmmrz2c6ayijl67h42s3km/106.png"
+    },
+    "details": {
+        "title": "Your NFT Name",
+        "categories": [
+            "0001"
+        ],
+        "publisher": {
+            "name": "Your name",
+            "url": "https://www.yourwebsite.com",
+            "email": "youremail@gmail.com"
+        },
+        "group": {
+            "title": "Your Collection Title"
+        }
+    }
+}
+\`\`\`
+
+### خيارات التخزين
+
+| الخيار | المزايا | العيوب |
+|---|---|---|
+| **IPFS** | لامركزي، غير قابل للتغيير، معنون بواسطة hash | يتطلب pinning للاستمرارية |
+| **خادم مركزي** | بسيط وسريع | نقطة فشل واحدة، وقابل للتغيير |
+
+### أفضل الممارسات
+
+- **حدد Digest دائما**: يسمح بالتحقق من سلامة المحتوى في أي وقت
+- **استخدم IPFS للإنتاج**: عدم القابلية للتغيير واللامركزية يحميان قيمة NFT
+- **حافظ على اتساق JSON**: اتبع معيار metadata للتوافق مع marketplaces والمستكشفات
+- **لا تضع بيانات حساسة في URI**: كل شيء عام على ledger`,
+      codeTitles: [],
+      code: [],
+      slides: [
+        {
+          title: "حقل URI: خيارات الروابط",
+          content: "URI يمكن أن يشير إلى:\n\n• HTTPS JSON\n• IPFS metadata\n• صورة أو ملف\n• API خاص بالتطبيق\n\nالأفضل أن يكون المحتوى ثابتا وقابلا للتحقق.",
+        },
+        {
+          title: "Digest: التحقق من السلامة",
+          content: "Digest = hash للمحتوى\n\nيساعد على كشف تغيير metadata أو الملف\n\nمفيد عندما يكون URI خارج ledger.",
+        },
+        {
+          title: "معيار JSON Metadata",
+          content: "مثال حقول مفيدة:\n\n• name\n• description\n• image\n• attributes\n• external_url\n\nاجعل metadata سهلة القراءة للتطبيقات.",
+        },
+      ],
+    },
+  },
+};
+
+function applyArabicTranslations(module) {
+  module.title.ar = arabicModuleTranslations.title;
+
+  for (const lesson of module.lessons) {
+    const translation = arabicModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+
+    lesson.title.ar = translation.title;
+    lesson.theory.ar = translation.theory;
+
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.ar = translation.codeTitles[index];
+      block.code.ar = translation.code[index];
+    });
+
+    lesson.slides?.forEach((slide, index) => {
+      slide.title.ar = translation.slides[index].title;
+      slide.content.ar = translation.slides[index].content;
+    });
+  }
+}
+
+applyArabicTranslations(moduleData);
+
+const frenchModuleTranslations = {
+  title: "Créer et utiliser des NFTs",
+  lessons: {
+    m7l1: {
+      title: "URITokens : NFTs natifs sur Xahau",
+      theory: `Sur Xahau, les NFTs sont implémentés sous forme de **URITokens**, des objets natifs du ledger qui représentent des tokens non fongibles avec une URI associée.
+
+### Qu'est-ce qu'un URIToken ?
+
+Un URIToken est un objet **unique** sur le ledger qui contient :
+- **ID** : Identifiant unique du token (LedgerIndex)
+- **URI** : Un lien vers les métadonnées ou le contenu du NFT (image, JSON, etc.)
+- **Digest** : Hash optionnel du contenu pointé par l'URI (pour vérifier son intégrité)
+- **Owner** : Le compte propriétaire actuel
+- **Issuer** : Le compte qui l'a créé à l'origine
+
+### URIToken vs ERC-721
+
+| Caractéristique | ERC-721 (Ethereum) | URIToken (Xahau) |
+|---|---|---|
+| Créer une collection | Déployer un contrat Solidity | Non nécessaire |
+| Mint du NFT | Fonction du contrat | Transaction \`URITokenMint\` |
+| Transfert | Fonction du contrat | Transaction \`URITokenBuy\` |
+| Métadonnées | tokenURI dans le contrat | URI native sur l'objet |
+| Coût | Gas coûteux | Frais minimes (~12 drops) |
+| Vérification | Dépend du contrat | Digest natif sur le ledger |
+
+### Transactions liées aux URITokens
+
+- **URITokenMint** : Crée un nouveau URIToken
+- **URITokenBurn** : Détruit un URIToken
+- **URITokenCreateSellOffer** : Met un URIToken en vente
+- **URITokenCancelSellOffer** : Annule une offre de vente
+- **URITokenBuy** : Achète un URIToken mis en vente
+
+### Flags de URITokenMint
+
+- **tfBurnable (1)** : Permet à l'émetteur de brûler le token même s'il n'en est plus le propriétaire`,
+      codeTitles: ["Créer (mint) un URIToken", "Consulter les URITokens d'un compte"],
+      slides: [
+        ["URITokens sur Xahau", "NFT natif représenté par une URI\n\n• Transaction URITokenMint\n• Objet de ledger\n• Propriétaire identifiable\n• Pas de smart contract ERC-721"],
+        ["Opérations URIToken", "Mint, vendre, acheter, transférer et brûler\n\nChaque action passe par une transaction native."],
+        ["URIToken vs ERC-721", "ERC-721 dépend d'un contrat\nURIToken est intégré au protocole\n\nLe modèle est plus direct et plus structuré côté ledger."],
+      ],
+    },
+    m7l2: {
+      title: "Acheter et vendre des URITokens",
+      theory: `Xahau inclut un système natif pour l'achat et la vente de URITokens, sans nécessiter de marketplaces externes ni de smart contracts.
+
+### Flux de vente
+
+1. Le propriétaire crée une **offre de vente** avec \`URITokenCreateSellOffer\`, en précisant le prix en XAH ou dans une autre devise.
+2. N'importe qui peut **acheter** le URIToken avec \`URITokenBuy\`, en payant le prix indiqué
+3. Le propriétaire peut **annuler** l'offre avec \`URITokenCancelSellOffer\`
+
+### Vente à un destinataire spécifique
+
+Tu peux créer une offre de vente destinée à un compte spécifique en utilisant le champ \`Destination\`. Seul ce compte pourra acheter le URIToken.
+
+### Transfert gratuit
+
+Pour transférer un URIToken sans frais (comme un cadeau), tu peux créer une offre de vente avec \`Amount: "0"\` et un \`Destination\` spécifique.
+
+### Brûler un URIToken
+
+Le propriétaire actuel peut toujours brûler (détruire) son URIToken avec \`URITokenBurn\`. Si le token a été créé avec le flag \`tfBurnable\`, l'émetteur d'origine peut également le brûler.`,
+      codeTitles: ["Mettre un URIToken en vente", "Acheter un URIToken listé à la vente"],
+      slides: [
+        ["Flux de vente", "1. Le propriétaire liste l'URIToken\n2. L'acheteur envoie l'achat\n3. Le ledger transfère l'objet\n4. Le paiement est réglé"],
+        ["Transférer et brûler", "Un URIToken peut être transféré à un autre compte ou détruit si le protocole et les règles de propriété le permettent."],
+        ["Burn des URITokens en détail", "Burn supprime l'objet du ledger\n\nÀ utiliser quand l'actif ne doit plus circuler ou lorsque le cycle de vie est terminé."],
+      ],
+    },
+    m7l3: {
+      title: "Métadonnées et standards pour URITokens",
+      theory: `Les métadonnées sont la clé pour rendre un NFT utile et vérifiable. Sur Xahau, les URITokens utilisent les champs **URI** et **Digest** pour lier et vérifier le contenu associé.
+
+### Le champ URI : que mettre dedans
+
+L'URI est un lien qui pointe vers le contenu ou les métadonnées du NFT. Plusieurs options existent :
+
+- **Liens IPFS** (\`ipfs://QmXxx...\`) : Stockage décentralisé. Le contenu est immuable et adressé par hash. C'est l'option **recommandée** en production
+- **Liens HTTPS** (\`https://my-server.com/metadata/1.json\`) : Stockage centralisé. Facile à mettre en œuvre mais dépend de la disponibilité du serveur
+
+### Le champ Digest : vérification de l'intégrité
+
+Le **Digest** est un hash SHA-256 du contenu pointé par l'URI. Il permet à quiconque de vérifier que le contenu n'a pas été altéré depuis la création du NFT. Il est stocké sous forme de chaîne hexadécimale de 64 caractères sur le ledger.
+
+### Standard de métadonnées JSON
+
+En suivant un standard similaire à ERC-721, les métadonnées JSON d'un URIToken incluent généralement :
+
+\`\`\`json
+{
+    "content": {
+        "url": "ipfs://bafybeign6w3zkxxqohchtxyv4qot6zrwcrvosmmrz2c6ayijl67h42s3km/106.png"
+    },
+    "details": {
+        "title": "Your NFT Name",
+        "categories": [
+            "0001"
+        ],
+        "publisher": {
+            "name": "Your name",
+            "url": "https://www.yourwebsite.com",
+            "email": "youremail@gmail.com"
+        },
+        "group": {
+            "title": "Your Collection Title"
+        }
+    }
+}
+\`\`\`
+
+### Options de stockage
+
+| Option | Avantages | Inconvénients |
+|---|---|---|
+| **IPFS** | Décentralisé, immuable, adressé par hash | Nécessite un pinning pour la persistance |
+| **Serveur centralisé** | Simple, rapide | Point de défaillance unique, modifiable |
+
+### Bonnes pratiques
+
+- **Toujours définir le Digest** : Permet de vérifier l'intégrité du contenu à tout moment
+- **Utiliser IPFS en production** : L'immuabilité et la décentralisation protègent la valeur du NFT
+- **Garder le JSON cohérent** : Suis le standard de métadonnées pour la compatibilité avec les marketplaces et les explorateurs
+- **Ne pas mettre de données sensibles dans l'URI** : Tout est public sur le ledger`,
+      slides: [
+        ["Champ URI : options de lien", "L'URI peut pointer vers IPFS, HTTPS ou un autre système de stockage\n\nChoisis un stockage durable si l'actif doit rester consultable."],
+        ["Digest : vérification d'intégrité", "Un digest permet de vérifier que le contenu référencé correspond à ce qui était attendu au moment du mint."],
+        ["Standard JSON de métadonnées", "Champs courants :\n\nname\ndescription\nimage\nattributes\nexternal_url\n\nGarde un format lisible par les wallets et explorateurs."],
+      ],
+    },
+  },
+};
+
+function applyFrenchTranslations(module) {
+  module.title.fr = frenchModuleTranslations.title;
+  for (const lesson of module.lessons) {
+    const translation = frenchModuleTranslations.lessons[lesson.id];
+    if (!translation) continue;
+    lesson.title.fr = translation.title;
+    lesson.theory.fr = translation.theory;
+    lesson.codeBlocks?.forEach((block, index) => {
+      block.title.fr = translation.codeTitles[index];
+      if (typeof block.code === "string") block.code = { en: block.code };
+      block.code.fr = localizeFrenchCode(
+        `// ${translation.codeTitles[index]}\n// Exemple commenté en français : remplace les valeurs par celles de ton compte testnet.\n\n${block.code.en ?? block.code.es}`,
+      );
+    });
+    lesson.slides?.forEach((slide, index) => {
+      const slideTranslation = translation.slides[index];
+      if (!slideTranslation) return;
+      slide.title.fr = slideTranslation[0];
+      slide.content.fr = slideTranslation[1];
+    });
+  }
+}
+
+function localizeFrenchCode(code) {
+  return code
+    .split("\n")
+    .map((line) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("//") && !/[éèàùçîô]/i.test(trimmed)) {
+        return `${line.match(/^\s*/)?.[0] ?? ""}// Note : adapte cette étape à ton compte testnet et à ton URIToken.`;
+      }
+      if (trimmed.startsWith("#") && /[A-Za-z]{4,}/.test(trimmed) && !/[éèàùçîô]/i.test(trimmed)) {
+        return `${line.match(/^\s*/)?.[0] ?? ""}# Note : adapte cette étape à ton environnement local.`;
+      }
+      return line;
+    })
+    .join("\n");
+}
+
+applyFrenchTranslations(moduleData);
+
+export default moduleData;

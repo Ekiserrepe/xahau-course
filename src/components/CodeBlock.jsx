@@ -105,6 +105,8 @@ export default function CodeBlock({ block, lang, labels, theme }) {
           margin: 0,
           padding: '1rem',
           background: 'transparent',
+          direction: 'ltr',
+          textAlign: 'left',
           fontSize: '13.5px',
           lineHeight: '1.65',
           overflowX: 'auto',

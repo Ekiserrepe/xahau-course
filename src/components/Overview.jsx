@@ -6,6 +6,8 @@ const MODULE_ACCENT_COLORS = [
   '#20c997', '#f06595', '#74c0fc', '#a9e34b',
 ]
 
+const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
+
 export default function Overview({ courseData, lang, labels, completedLessons, onOpenLesson }) {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
@@ -60,7 +62,7 @@ export default function Overview({ courseData, lang, labels, completedLessons, o
                     className="text-base font-bold leading-tight truncate"
                     style={{ color: 'var(--color-text-heading)' }}
                   >
-                    {mod.title[lang]}
+                    {localized(mod.title, lang)}
                   </h3>
                   <div className="flex items-center gap-2 mt-1.5">
                     <div
@@ -119,7 +121,7 @@ export default function Overview({ courseData, lang, labels, completedLessons, o
                         className="text-sm flex-1 truncate"
                         style={{ color: done ? 'var(--color-text-secondary)' : 'var(--color-text-secondary)' }}
                       >
-                        {lesson.title[lang]}
+                        {localized(lesson.title, lang)}
                       </span>
                       <span
                         className="text-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0"

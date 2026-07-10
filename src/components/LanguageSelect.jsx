@@ -2,11 +2,13 @@ import React from 'react'
 
 const LANGUAGES = [
   { code: 'en', label: 'English', short: 'EN' },
+  { code: 'fr', label: 'Français', short: 'FR' },
   { code: 'es', label: 'Español', short: 'ES' },
   { code: 'pt', label: 'Português (Brasil)', short: 'PT-BR' },
   { code: 'jp', label: '日本語', short: '日本語' },
   { code: 'ko', label: '한국어', short: '한국어' },
   { code: 'zh', label: '中文', short: '中文' },
+  { code: 'ar', label: 'العربية', short: 'AR' },
 ]
 
 export default function LanguageSelect({ lang, setLang, label = 'Language', compact = false }) {

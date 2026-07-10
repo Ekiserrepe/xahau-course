@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 
+const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
+
 export default function SlideViewer({ slides, lang, labels, onExit, theme }) {
   const [current, setCurrent] = useState(0)
 
@@ -54,13 +56,13 @@ export default function SlideViewer({ slides, lang, labels, onExit, theme }) {
             className="text-2xl sm:text-4xl font-black mb-4 sm:mb-8 tracking-tight font-mono"
             style={{ color: 'var(--color-text-heading)' }}
           >
-            {slide.title[lang]}
+            {localized(slide.title, lang)}
           </h2>
           <div
             className="text-base sm:text-xl leading-relaxed whitespace-pre-line"
             style={{ color: 'var(--color-text-secondary)' }}
           >
-            {slide.content[lang]}
+            {localized(slide.content, lang)}
           </div>
         </div>
       </div>
