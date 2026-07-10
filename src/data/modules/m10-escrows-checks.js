@@ -1,3 +1,1074 @@
+const allLanguages = (value) => ({
+  es: value,
+  pt: value,
+  en: value,
+  jp: value,
+  ko: value,
+  zh: value,
+});
+
+const priceOracleLessonTitle = {
+  es: "Price Oracle: fuentes de precios on-chain",
+  pt: "Price Oracle: feeds de preço on-chain",
+  en: "Price Oracle: On-Chain Price Feeds",
+  jp: "Price Oracle：オンチェーン価格フィード",
+  ko: "Price Oracle: 온체인 가격 피드",
+  zh: "Price Oracle：链上价格源",
+};
+
+const priceOracleCodeTitles = {
+  set: {
+    es: "Crear o actualizar un feed de precios Oracle",
+    pt: "Criar ou atualizar um feed de preço Oracle",
+    en: "Create or update an Oracle price feed",
+    jp: "Oracle価格フィードを作成または更新",
+    ko: "Oracle 가격 피드 생성 또는 업데이트",
+    zh: "创建或更新 Oracle 价格源",
+  },
+  query: {
+    es: "Consultar precios agregados de varios Oracles",
+    pt: "Consultar preços agregados de vários Oracles",
+    en: "Query aggregate prices from several Oracles",
+    jp: "複数Oracleの集約価格を照会",
+    ko: "여러 Oracle의 집계 가격 조회",
+    zh: "查询多个 Oracle 的聚合价格",
+  },
+  delete: {
+    es: "Eliminar un feed de precios Oracle",
+    pt: "Excluir um feed de preço Oracle",
+    en: "Delete an Oracle price feed",
+    jp: "Oracle価格フィードを削除",
+    ko: "Oracle 가격 피드 삭제",
+    zh: "删除 Oracle 价格源",
+  },
+};
+
+const priceOracleTheory = {
+  es: `Un **Price Oracle** es un objeto del ledger que permite a una cuenta publicar precios de activos directamente en Xahau. Las aplicaciones y los Hooks pueden leer esos precios desde el ledger, sin depender de un valor fijo en el código ni de un único servidor privado.
+
+### ¿Qué problema resuelve?
+
+Las aplicaciones DeFi necesitan precios para pares como XAH/USD, BTC/USD, token/USD, ratios de colateral, conversiones de recompensas o umbrales de liquidación. Un Price Oracle convierte esos datos externos de mercado en un dato on-chain que otra lógica puede inspeccionar.
+
+La enmienda PriceOracle añade dos transacciones principales:
+
+| Transacción | Propósito |
+|---|---|
+| \`OracleSet\` | Crear o actualizar un objeto Oracle del ledger |
+| \`OracleDelete\` | Eliminar un objeto Oracle y liberar su reserva de propietario |
+
+### Objeto Oracle
+
+El objeto Oracle pertenece a la cuenta que envió \`OracleSet\`. La misma cuenta puede publicar varios documentos usando distintos valores de \`OracleDocumentID\`.
+
+Campos clave:
+
+| Campo | Descripción |
+|---|---|
+| \`Owner\` | Cuenta propietaria del objeto Oracle |
+| \`OracleDocumentID\` | Identificador único dentro de esa cuenta |
+| \`Provider\` | Nombre del proveedor codificado en hexadecimal |
+| \`AssetClass\` | Categoría del activo codificada en hexadecimal, por ejemplo \`currency\` |
+| \`LastUpdateTime\` | Marca temporal de la última actualización |
+| \`PriceDataSeries\` | Lista de 1 a 10 pares de precio |
+| \`URI\` | URI opcional en hexadecimal con contexto off-chain |
+
+Cada entrada de \`PriceDataSeries\` incluye \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\` y \`Scale\`. El precio real se interpreta como:
+
+\`\`\`
+AssetPrice * 10^(-Scale)
+\`\`\`
+
+Por ejemplo, \`AssetPrice: 74560\` y \`Scale: 4\` significa \`7.456\`.
+
+### OracleSet y OracleDelete
+
+\`OracleSet\` crea un Oracle nuevo o actualiza uno existente si se usa la misma cuenta y el mismo \`OracleDocumentID\`. Al crear, \`Provider\` y \`AssetClass\` son obligatorios; \`PriceDataSeries\` debe tener entre 1 y 10 entradas; \`BaseAsset\` y \`QuoteAsset\` deben ser distintos; \`Scale\` debe estar entre 0 y 10; y una actualización debe usar un \`LastUpdateTime\` más reciente. Si se omite \`AssetPrice\` para un par existente, ese par se elimina.
+
+\`OracleDelete\` elimina el Oracle identificado por \`Account\` y \`OracleDocumentID\`. Solo puede hacerlo la cuenta propietaria, y al eliminarlo se libera la reserva de propietario.
+
+### Reserva y agregación
+
+Un Oracle consume 1 reserva de propietario si guarda entre 1 y 5 pares, y 2 reservas si guarda entre 6 y 10. En producción no conviene depender de un único proveedor: Xahau expone \`get_aggregate_price\` para consultar varias cuentas Oracle y documentos, y calcular valores como mediana y media. Las opciones \`trim\` y \`time_threshold\` ayudan a reducir valores extremos o feeds desactualizados.
+
+### Errores comunes
+
+- \`temDISABLED\`: la enmienda PriceOracle no está activa
+- \`temMALFORMED\`: proveedor, clase de activo, escala o par base/cotización no válido
+- \`temARRAY_EMPTY\`: no se enviaron pares de precio
+- \`temARRAY_TOO_LARGE\`: se enviaron más de 10 pares
+- \`tecINVALID_UPDATE_TIME\`: la marca temporal no es más reciente
+- \`tecINSUFFICIENT_RESERVE\`: la cuenta no tiene reserva suficiente
+- \`tecNO_ENTRY\`: el Oracle no existe al intentar eliminarlo`,
+  pt: `Um **Price Oracle** é um objeto do ledger que permite que uma conta publique preços de ativos diretamente na Xahau. Aplicações e Hooks podem ler esses preços do ledger, sem depender de um valor fixo no código nem de um único servidor privado.
+
+### Que problema ele resolve?
+
+Aplicações DeFi precisam de preços como XAH/USD, BTC/USD, token/USD, índices de colateral, conversões de recompensas e limites de liquidação. Um Price Oracle transforma esses dados externos de mercado em um dado on-chain que outras lógicas podem consultar.
+
+A emenda PriceOracle adiciona duas transações principais:
+
+| Transação | Objetivo |
+|---|---|
+| \`OracleSet\` | Criar ou atualizar um objeto Oracle do ledger |
+| \`OracleDelete\` | Remover um objeto Oracle e liberar sua reserva de proprietário |
+
+### Objeto Oracle
+
+O objeto Oracle pertence à conta que enviou \`OracleSet\`. A mesma conta pode publicar vários documentos usando valores diferentes de \`OracleDocumentID\`.
+
+Campos principais:
+
+| Campo | Descrição |
+|---|---|
+| \`Owner\` | Conta dona do objeto Oracle |
+| \`OracleDocumentID\` | ID único dentro dessa conta |
+| \`Provider\` | Nome do provedor codificado em hexadecimal |
+| \`AssetClass\` | Categoria do ativo em hexadecimal, como \`currency\` |
+| \`LastUpdateTime\` | Timestamp da última atualização |
+| \`PriceDataSeries\` | Lista de 1 a 10 pares de preço |
+| \`URI\` | URI opcional em hexadecimal com contexto off-chain |
+
+Cada item de \`PriceDataSeries\` inclui \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\` e \`Scale\`. O preço real é interpretado assim:
+
+\`\`\`
+AssetPrice * 10^(-Scale)
+\`\`\`
+
+Por exemplo, \`AssetPrice: 74560\` e \`Scale: 4\` significa \`7.456\`.
+
+### OracleSet e OracleDelete
+
+\`OracleSet\` cria um novo Oracle ou atualiza um existente quando a mesma conta e o mesmo \`OracleDocumentID\` são usados. Ao criar, \`Provider\` e \`AssetClass\` são obrigatórios; \`PriceDataSeries\` deve ter entre 1 e 10 entradas; \`BaseAsset\` e \`QuoteAsset\` devem ser diferentes; \`Scale\` deve ficar entre 0 e 10; e uma atualização deve usar um \`LastUpdateTime\` mais recente. Se \`AssetPrice\` for omitido para um par existente, esse par é removido.
+
+\`OracleDelete\` remove o Oracle identificado por \`Account\` e \`OracleDocumentID\`. Só a conta proprietária pode removê-lo, e a reserva de proprietário é liberada.
+
+### Reserva e agregação
+
+Um Oracle consome 1 reserva de proprietário quando armazena de 1 a 5 pares, e 2 reservas quando armazena de 6 a 10. Em produção, o ideal é consultar vários provedores: a Xahau expõe \`get_aggregate_price\` para passar contas Oracle e IDs de documentos e calcular valores como mediana e média. As opções \`trim\` e \`time_threshold\` ajudam a reduzir outliers ou feeds desatualizados.
+
+### Erros comuns
+
+- \`temDISABLED\`: a emenda PriceOracle não está ativa
+- \`temMALFORMED\`: provedor, classe de ativo, escala ou par base/cotação inválido
+- \`temARRAY_EMPTY\`: nenhum par de preço foi enviado
+- \`temARRAY_TOO_LARGE\`: mais de 10 pares foram enviados
+- \`tecINVALID_UPDATE_TIME\`: o timestamp não é mais recente
+- \`tecINSUFFICIENT_RESERVE\`: a conta não tem reserva suficiente
+- \`tecNO_ENTRY\`: o Oracle não existe ao tentar removê-lo`,
+  en: `A **Price Oracle** is a ledger object that lets an account publish asset prices directly on Xahau. Applications and Hooks can then read those prices from the ledger instead of trusting a hard-coded value or a single private server.
+
+### What problem does it solve?
+
+DeFi applications often need prices: XAH/USD, BTC/USD, token/USD, collateral ratios, reward conversions, liquidation thresholds, and more. A Price Oracle turns that external market data into an on-chain data point that other logic can inspect.
+
+The PriceOracle amendment adds two main transaction types:
+
+| Transaction | Purpose |
+|---|---|
+| \`OracleSet\` | Create or update an Oracle ledger object |
+| \`OracleDelete\` | Delete an Oracle object and release its owner reserve |
+
+### Oracle object
+
+An Oracle object is owned by the account that submitted \`OracleSet\`. The same account can publish multiple oracle documents by using different \`OracleDocumentID\` values.
+
+Key fields include \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`AssetClass\`, \`LastUpdateTime\`, \`PriceDataSeries\`, and optional \`URI\`.
+
+Each \`PriceDataSeries\` entry includes \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\`, and \`Scale\`. The real price is:
+
+\`\`\`
+AssetPrice * 10^(-Scale)
+\`\`\`
+
+For example, \`AssetPrice: 74560\` and \`Scale: 4\` means \`7.456\`.
+
+### OracleSet and OracleDelete
+
+\`OracleSet\` creates a new Oracle object if it does not exist yet, or updates an existing one if the same account and \`OracleDocumentID\` are used again. \`Provider\` and \`AssetClass\` are required when creating; \`PriceDataSeries\` must contain 1 to 10 entries; \`BaseAsset\` and \`QuoteAsset\` must be different; \`Scale\` must be between 0 and 10; and updates must use a newer \`LastUpdateTime\`. Omitting \`AssetPrice\` for an existing pair deletes that pair.
+
+\`OracleDelete\` removes the Oracle object identified by \`Account\` and \`OracleDocumentID\`. Only the owner can delete it, and the owner reserve is released.
+
+### Reserve and aggregation
+
+Oracle objects consume 1 owner reserve for 1-5 price pairs, and 2 owner reserves for 6-10 pairs. Production systems usually query several providers and aggregate them. Xahau exposes \`get_aggregate_price\`, where you pass oracle accounts and document IDs, then the node computes values such as median and mean. \`trim\` and \`time_threshold\` help reduce outliers or stale feeds.
+
+### Common errors
+
+- \`temDISABLED\`: PriceOracle amendment is not enabled
+- \`temMALFORMED\`: invalid provider, asset class, duplicate pair, invalid scale, or invalid base/quote combination
+- \`temARRAY_EMPTY\`: no price pairs were provided
+- \`temARRAY_TOO_LARGE\`: more than 10 price pairs were provided
+- \`tecINVALID_UPDATE_TIME\`: update timestamp is invalid or not newer
+- \`tecINSUFFICIENT_RESERVE\`: the account does not have enough reserve
+- \`tecNO_ENTRY\`: the Oracle object does not exist when trying to delete it`,
+  jp: `**Price Oracle** は、アカウントが資産価格をXahau上へ直接公開できるledgerオブジェクトです。アプリケーションやHooksは、コードに固定された値や単一の非公開サーバーではなく、ledger上の価格を参照できます。
+
+### 何を解決するのか？
+
+DeFiアプリケーションでは、XAH/USD、BTC/USD、token/USD、担保比率、報酬換算、清算しきい値などの価格が必要になります。Price Oracleは外部マーケットデータを、他のロジックが検証できるオンチェーンデータに変換します。
+
+PriceOracle amendmentは主に2つのトランザクションを追加します。
+
+| トランザクション | 目的 |
+|---|---|
+| \`OracleSet\` | Oracle ledgerオブジェクトを作成または更新する |
+| \`OracleDelete\` | Oracleオブジェクトを削除し、owner reserveを解放する |
+
+### Oracleオブジェクト
+
+Oracleオブジェクトは \`OracleSet\` を送信したアカウントが所有します。同じアカウントでも、異なる \`OracleDocumentID\` を使えば複数のOracleドキュメントを公開できます。
+
+主なフィールドは \`Owner\`、\`OracleDocumentID\`、\`Provider\`、\`AssetClass\`、\`LastUpdateTime\`、\`PriceDataSeries\`、任意の \`URI\` です。
+
+\`PriceDataSeries\` の各エントリには \`BaseAsset\`、\`QuoteAsset\`、\`AssetPrice\`、\`Scale\` が含まれます。実際の価格は次の式で解釈します。
+
+\`\`\`
+AssetPrice * 10^(-Scale)
+\`\`\`
+
+例：\`AssetPrice: 74560\`、\`Scale: 4\` は \`7.456\` を意味します。
+
+### OracleSetとOracleDelete
+
+\`OracleSet\` は、まだ存在しない場合は新しいOracleを作成し、同じアカウントと \`OracleDocumentID\` が使われた場合は既存のOracleを更新します。作成時には \`Provider\` と \`AssetClass\` が必須です。\`PriceDataSeries\` は1から10件、\`BaseAsset\` と \`QuoteAsset\` は別の値、\`Scale\` は0から10、更新時の \`LastUpdateTime\` は保存済みの値より新しい必要があります。既存ペアで \`AssetPrice\` を省略すると、そのペアは削除されます。
+
+\`OracleDelete\` は \`Account\` と \`OracleDocumentID\` で特定されるOracleを削除します。削除できるのは所有者だけで、削除後にowner reserveが解放されます。
+
+### 予約金と集約
+
+Oracleは価格ペア1から5件でowner reserveを1つ、6から10件で2つ消費します。本番環境では複数プロバイダーを問い合わせて集約するのが一般的です。Xahauの \`get_aggregate_price\` はOracleアカウントとドキュメントIDを受け取り、中央値や平均値を計算できます。\`trim\` と \`time_threshold\` は外れ値や古いfeedの影響を減らします。
+
+### よくあるエラー
+
+- \`temDISABLED\`: PriceOracle amendmentが有効ではない
+- \`temMALFORMED\`: provider、asset class、scale、base/quoteの組み合わせなどが不正
+- \`temARRAY_EMPTY\`: 価格ペアが指定されていない
+- \`temARRAY_TOO_LARGE\`: 価格ペアが10件を超えている
+- \`tecINVALID_UPDATE_TIME\`: 更新時刻が新しくない
+- \`tecINSUFFICIENT_RESERVE\`: 予約金が不足している
+- \`tecNO_ENTRY\`: 削除対象のOracleが存在しない`,
+  ko: `**Price Oracle**는 계정이 자산 가격을 Xahau에 직접 게시할 수 있게 해 주는 ledger 객체입니다. 애플리케이션과 Hooks는 코드에 고정된 값이나 단일 사설 서버 대신 ledger의 가격을 읽을 수 있습니다.
+
+### 어떤 문제를 해결하나요?
+
+DeFi 애플리케이션은 XAH/USD, BTC/USD, token/USD, 담보 비율, 보상 환산, 청산 기준 같은 가격 정보가 필요합니다. Price Oracle은 외부 시장 데이터를 다른 로직이 확인할 수 있는 온체인 데이터로 바꿉니다.
+
+PriceOracle amendment는 두 가지 주요 트랜잭션을 추가합니다.
+
+| 트랜잭션 | 목적 |
+|---|---|
+| \`OracleSet\` | Oracle ledger 객체 생성 또는 업데이트 |
+| \`OracleDelete\` | Oracle 객체 삭제 및 owner reserve 반환 |
+
+### Oracle 객체
+
+Oracle 객체는 \`OracleSet\` 을 제출한 계정이 소유합니다. 같은 계정도 서로 다른 \`OracleDocumentID\` 를 사용해 여러 Oracle 문서를 게시할 수 있습니다.
+
+주요 필드는 \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`AssetClass\`, \`LastUpdateTime\`, \`PriceDataSeries\`, 선택 사항인 \`URI\` 입니다.
+
+\`PriceDataSeries\` 의 각 항목에는 \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\`, \`Scale\` 이 들어갑니다. 실제 가격은 다음처럼 해석합니다.
+
+\`\`\`
+AssetPrice * 10^(-Scale)
+\`\`\`
+
+예를 들어 \`AssetPrice: 74560\`, \`Scale: 4\` 는 \`7.456\` 을 의미합니다.
+
+### OracleSet과 OracleDelete
+
+\`OracleSet\` 은 Oracle이 없으면 새로 만들고, 같은 계정과 \`OracleDocumentID\` 를 다시 사용하면 기존 Oracle을 업데이트합니다. 생성 시 \`Provider\` 와 \`AssetClass\` 는 필수이고, \`PriceDataSeries\` 는 1개에서 10개 항목이어야 하며, \`BaseAsset\` 과 \`QuoteAsset\` 은 서로 달라야 합니다. \`Scale\` 은 0에서 10 사이이고, 업데이트의 \`LastUpdateTime\` 은 저장된 값보다 최신이어야 합니다. 기존 쌍에서 \`AssetPrice\` 를 생략하면 해당 쌍이 삭제됩니다.
+
+\`OracleDelete\` 는 \`Account\` 와 \`OracleDocumentID\` 로 식별되는 Oracle을 삭제합니다. 소유자만 삭제할 수 있고, 삭제하면 owner reserve가 반환됩니다.
+
+### 예치금과 집계
+
+Oracle은 가격 쌍 1-5개에 owner reserve 1개, 6-10개에 owner reserve 2개를 사용합니다. 운영 환경에서는 보통 여러 제공자를 조회해 집계합니다. Xahau의 \`get_aggregate_price\` 는 Oracle 계정과 문서 ID 목록을 받아 중앙값과 평균 같은 값을 계산합니다. \`trim\` 과 \`time_threshold\` 는 이상치나 오래된 feed의 영향을 줄이는 데 도움이 됩니다.
+
+### 흔한 오류
+
+- \`temDISABLED\`: PriceOracle amendment가 활성화되지 않음
+- \`temMALFORMED\`: provider, asset class, scale, base/quote 조합 등이 잘못됨
+- \`temARRAY_EMPTY\`: 가격 쌍이 없음
+- \`temARRAY_TOO_LARGE\`: 가격 쌍이 10개를 초과함
+- \`tecINVALID_UPDATE_TIME\`: 업데이트 시간이 더 최신이 아님
+- \`tecINSUFFICIENT_RESERVE\`: reserve가 부족함
+- \`tecNO_ENTRY\`: 삭제하려는 Oracle이 존재하지 않음`,
+  zh: `**Price Oracle** 是一种 ledger 对象，允许账户直接在 Xahau 上发布资产价格。应用和 Hooks 可以从 ledger 读取这些价格，而不必依赖代码里的固定值或单个私有服务器。
+
+### 它解决什么问题？
+
+DeFi 应用经常需要 XAH/USD、BTC/USD、token/USD、抵押率、奖励换算、清算阈值等价格。Price Oracle 会把外部市场数据变成其他逻辑可以检查的链上数据点。
+
+PriceOracle amendment 增加了两种主要交易：
+
+| 交易 | 用途 |
+|---|---|
+| \`OracleSet\` | 创建或更新 Oracle ledger 对象 |
+| \`OracleDelete\` | 删除 Oracle 对象并释放 owner reserve |
+
+### Oracle 对象
+
+Oracle 对象由提交 \`OracleSet\` 的账户拥有。同一个账户可以使用不同的 \`OracleDocumentID\` 发布多个 Oracle 文档。
+
+关键字段包括 \`Owner\`、\`OracleDocumentID\`、\`Provider\`、\`AssetClass\`、\`LastUpdateTime\`、\`PriceDataSeries\`，以及可选的 \`URI\`。
+
+\`PriceDataSeries\` 的每个条目包含 \`BaseAsset\`、\`QuoteAsset\`、\`AssetPrice\` 和 \`Scale\`。真实价格按下面的公式解释：
+
+\`\`\`
+AssetPrice * 10^(-Scale)
+\`\`\`
+
+例如，\`AssetPrice: 74560\` 且 \`Scale: 4\` 表示 \`7.456\`。
+
+### OracleSet 和 OracleDelete
+
+\`OracleSet\` 会在 Oracle 不存在时创建新对象；如果再次使用同一账户和同一个 \`OracleDocumentID\`，则更新已有对象。创建时 \`Provider\` 和 \`AssetClass\` 必填；\`PriceDataSeries\` 必须有 1 到 10 个条目；\`BaseAsset\` 和 \`QuoteAsset\` 必须不同；\`Scale\` 必须在 0 到 10 之间；更新时 \`LastUpdateTime\` 必须比已存值更新。如果对已有价格对省略 \`AssetPrice\`，该价格对会被删除。
+
+\`OracleDelete\` 删除由 \`Account\` 和 \`OracleDocumentID\` 标识的 Oracle。只有所有者可以删除，删除后会释放 owner reserve。
+
+### Reserve 与聚合
+
+Oracle 存储 1 到 5 个价格对时消耗 1 个 owner reserve，存储 6 到 10 个价格对时消耗 2 个。生产系统通常会查询多个提供者并聚合结果。Xahau 提供 \`get_aggregate_price\` RPC 方法，可以传入 Oracle 账户和文档 ID，然后由节点计算中位数、平均值等。\`trim\` 和 \`time_threshold\` 可以减少异常值或过期 feed 的影响。
+
+### 常见错误
+
+- \`temDISABLED\`: PriceOracle amendment 未启用
+- \`temMALFORMED\`: provider、asset class、scale 或 base/quote 组合无效
+- \`temARRAY_EMPTY\`: 没有提供价格对
+- \`temARRAY_TOO_LARGE\`: 价格对超过 10 个
+- \`tecINVALID_UPDATE_TIME\`: 更新时间不是更新的时间
+- \`tecINSUFFICIENT_RESERVE\`: 账户 reserve 不足
+- \`tecNO_ENTRY\`: 删除时 Oracle 对象不存在`,
+};
+
+const iouRewardLessonTitle = {
+  es: "IOURewardClaim: recompensas personalizadas para tokens",
+  pt: "IOURewardClaim: recompensas personalizadas para tokens",
+  en: "IOURewardClaim: Custom Token Rewards",
+  jp: "IOURewardClaim：カスタムトークン報酬",
+  ko: "IOURewardClaim: 맞춤형 토큰 보상",
+  zh: "IOURewardClaim：自定义代币奖励",
+};
+
+const iouRewardCodeTitles = {
+  trustline: {
+    es: "Crear la TrustLine del holder necesaria para recompensas IOU",
+    pt: "Criar a TrustLine do holder necessária para recompensas IOU",
+    en: "Create the holder trustline required for IOU rewards",
+    jp: "IOU報酬に必要なholderのTrustLineを作成",
+    ko: "IOU 보상에 필요한 holder TrustLine 생성",
+    zh: "创建 IOU 奖励所需的 holder TrustLine",
+  },
+  claim: {
+    es: "Reclamar una recompensa IOU con ClaimReward y ClaimCurrency",
+    pt: "Resgatar uma recompensa IOU com ClaimReward e ClaimCurrency",
+    en: "Claim an IOU reward with ClaimReward + ClaimCurrency",
+    jp: "ClaimRewardとClaimCurrencyでIOU報酬を請求",
+    ko: "ClaimReward와 ClaimCurrency로 IOU 보상 청구",
+    zh: "使用 ClaimReward 和 ClaimCurrency 领取 IOU 奖励",
+  },
+  inspect: {
+    es: "Inspeccionar la TrustLine IOU del holder",
+    pt: "Inspecionar a TrustLine IOU do holder",
+    en: "Inspect the holder's IOU trustline",
+    jp: "holderのIOU TrustLineを確認",
+    ko: "holder의 IOU trustline 확인",
+    zh: "检查 holder 的 IOU trustline",
+  },
+};
+
+const iouRewardClaimTheory = {
+  es: `La funcionalidad se llama **IOURewardClaim**, pero la transacción que se envía sigue siendo **ClaimReward**. La enmienda extiende \`ClaimReward\` para que los emisores de tokens puedan ejecutar programas de recompensas personalizados para holders de IOUs.
+
+### ¿Qué problema resuelve?
+
+Las recompensas nativas de XAH están ligadas a XAH y al sistema de recompensas génesis. IOURewardClaim lleva un mecanismo similar de seguimiento de recompensas a monedas emitidas: tokens de fidelización, recibos de staking, puntos DAO, IOUs con rendimiento o monedas de juego.
+
+No existe \`TransactionType: "IOURewardClaim"\`. Se usa \`ClaimReward\` con \`ClaimCurrency\`. El campo \`Issuer\` apunta a la cuenta que ejecuta el Hook del programa de recompensas; \`ClaimCurrency.issuer\` apunta al emisor real del IOU.
+
+En muchos programas intervienen tres cuentas:
+
+| Cuenta | Rol |
+|---|---|
+| Emisor del token | Crea la moneda IOU |
+| Emisor de recompensas / reserva | Tiene el Hook instalado y paga la recompensa |
+| Holder | Mantiene el IOU y envía \`ClaimReward\` |
+
+### Cómo funciona
+
+El holder debe tener una trustline para el IOU. La cuenta de recompensas debe tener un Hook que se dispare con \`ClaimReward\`. En el primer claim, Xahau inicializa contadores de recompensa en el objeto \`RippleState\` de la trustline. A medida que cambia el balance, el ledger actualiza \`TrustLineRewardAccumulator\`. En claims posteriores, el ledger resetea los contadores y dispara el Hook del issuer. El Hook lee el valor acumulado y emite el pago real.
+
+Esto separa el **seguimiento** de la **lógica de pago**: el ledger mide balance por tiempo; el Hook decide cuánto pagar, con qué token, cooldowns, límites y reglas de negocio.
+
+### Requisitos y errores comunes
+
+Necesitas la enmienda \`IOURewardClaim\` activa, una trustline entre \`Account\` y \`ClaimCurrency.issuer\`, un Hook instalado en \`Issuer\`, que ese Hook se dispare en \`ClaimReward\`, y \`ClaimCurrency\` no puede ser XAH. Errores habituales: \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\` y \`tecNO_LINE\`.`,
+  pt: `O recurso se chama **IOURewardClaim**, mas a transação enviada continua sendo **ClaimReward**. A emenda estende \`ClaimReward\` para que emissores de tokens possam criar programas de recompensa personalizados para holders de IOUs.
+
+### Que problema ele resolve?
+
+As recompensas nativas de XAH são ligadas ao XAH e ao sistema de recompensas genesis. IOURewardClaim leva um mecanismo parecido de rastreamento de recompensas para moedas emitidas: tokens de fidelidade, recibos de staking, pontos de DAO, IOUs com rendimento ou moedas de jogos.
+
+Não existe \`TransactionType: "IOURewardClaim"\`. Você usa \`ClaimReward\` com \`ClaimCurrency\`. O campo \`Issuer\` aponta para a conta que executa o Hook do programa de recompensas; \`ClaimCurrency.issuer\` aponta para o emissor real do IOU.
+
+Muitos programas usam três contas:
+
+| Conta | Papel |
+|---|---|
+| Emissor do token | Cria a moeda IOU |
+| Emissor de recompensas / reserva | Tem o Hook instalado e paga a recompensa |
+| Holder | Mantém o IOU e envia \`ClaimReward\` |
+
+### Como funciona
+
+O holder precisa ter uma trustline para o IOU. A conta de recompensas precisa ter um Hook que dispare em \`ClaimReward\`. No primeiro claim, a Xahau inicializa contadores de recompensa no objeto \`RippleState\` da trustline. Conforme o saldo muda, o ledger atualiza \`TrustLineRewardAccumulator\`. Em claims posteriores, o ledger reinicia os contadores e dispara o Hook do issuer. O Hook lê o valor acumulado e emite o pagamento real.
+
+Isso separa **rastreamento** de **lógica de pagamento**: o ledger mede saldo ao longo do tempo; o Hook decide quanto pagar, com qual token, cooldowns, limites e regras de negócio.
+
+### Requisitos e erros comuns
+
+Você precisa da emenda \`IOURewardClaim\` ativa, uma trustline entre \`Account\` e \`ClaimCurrency.issuer\`, um Hook instalado em \`Issuer\`, esse Hook disparando em \`ClaimReward\`, e \`ClaimCurrency\` não pode ser XAH. Erros comuns: \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\` e \`tecNO_LINE\`.`,
+  en: `The feature is called **IOURewardClaim**, but the transaction you submit is still **ClaimReward**. The amendment extends \`ClaimReward\` so token issuers can run custom reward programs for IOU holders.
+
+### What problem does it solve?
+
+Native XAH balance rewards are tied to XAH and the genesis reward system. IOURewardClaim brings a similar reward-tracking mechanism to issued currencies:
+
+- Loyalty tokens
+- Staking receipt tokens
+- DAO participation points
+- Yield-bearing IOUs
+- Game or app reward currencies
+
+Instead of building a separate off-chain tracker, the ledger stores reward counters on the trustline and the issuer's Hook decides what payout to send.
+
+### Not a separate transaction type
+
+There is no \`TransactionType: "IOURewardClaim"\`. You use:
+
+\`\`\`json
+{
+  "TransactionType": "ClaimReward",
+  "Account": "rHOLDER...",
+  "Issuer": "rREWARD_PROGRAM...",
+  "ClaimCurrency": {
+    "currency": "RWD",
+    "issuer": "rTOKEN_ISSUER..."
+  }
+}
+\`\`\`
+
+### Fields
+
+| Field | Description |
+|---|---|
+| \`TransactionType\` | Always \`"ClaimReward"\` |
+| \`Account\` | The holder claiming the reward |
+| \`Issuer\` | The account running the reward program Hook |
+| \`ClaimCurrency\` | The IOU currency being claimed for |
+
+The \`Issuer\` field is easy to misunderstand. For IOU rewards, it is the account whose Hook should run. It can be the token issuer, but it can also be a separate reserve, treasury, or rewards account.
+
+\`ClaimCurrency.issuer\` identifies the issuer of the IOU itself. In many reward systems, you use three accounts:
+
+| Account | Role |
+|---|---|
+| Token issuer | Creates the IOU currency |
+| Reward issuer / reserve | Holds reward supply and has the Hook installed |
+| Holder | Holds the IOU and submits \`ClaimReward\` |
+
+### How IOU rewards work
+
+1. A holder must have a trustline for the IOU currency.
+2. The reward issuer account must have a Hook that fires on \`ClaimReward\`.
+3. The holder submits \`ClaimReward\` with \`ClaimCurrency\`.
+4. On the first claim, Xahau initializes reward-tracking counters on the \`RippleState\` trustline object.
+5. As the trustline balance changes over time, the ledger updates the \`TrustLineRewardAccumulator\`.
+6. On later claims, the ledger resets the counters and fires the issuer's Hook.
+7. The Hook reads the accumulated value and emits the actual reward payment.
+
+This separates **tracking** from **payout logic**. The ledger tracks balance over time; the Hook decides how much to pay, which token to pay with, cooldowns, caps, and any business rules.
+
+### Key differences from XAH rewards
+
+| XAH genesis rewards | IOU rewards |
+|---|---|
+| Counters live on \`AccountRoot\` | Counters live on \`RippleState\` trustlines |
+| Payout is handled by the genesis reward Hook | Payout is handled by the issuer's Hook |
+| Uses XAH balance | Uses IOU trustline balance |
+| Issuer is the genesis account | Issuer can be any non-AMM account with the right Hook |
+
+### Requirements
+
+- \`IOURewardClaim\` amendment enabled
+- A trustline between \`Account\` and \`ClaimCurrency.issuer\`
+- A Hook installed on \`Issuer\`
+- That Hook must fire on \`ClaimReward\`
+- \`ClaimCurrency\` cannot be XAH
+- The issuer account cannot be an AMM account
+
+### Common errors
+
+- \`temDISABLED\`: required amendment is not enabled
+- \`temMALFORMED\`: invalid \`ClaimCurrency\`, XAH used as \`ClaimCurrency\`, or issuer equals account
+- \`temBAD_ISSUER\`: invalid genesis-account combination for IOU rewards
+- \`tecNO_ISSUER\`: the \`Issuer\` account does not exist
+- \`tecNO_PERMISSION\`: the issuer is an AMM account
+- \`tecNO_TARGET\`: issuer has no Hook, or no Hook fires on \`ClaimReward\`
+- \`tecNO_LINE\`: no trustline exists for the requested IOU`,
+  jp: `この機能の名前は **IOURewardClaim** ですが、送信するトランザクションは **ClaimReward** のままです。このamendmentは \`ClaimReward\` を拡張し、トークン発行者がIOU holder向けのカスタム報酬プログラムを実行できるようにします。
+
+### 何を解決するのか？
+
+ネイティブXAHの報酬はXAHとgenesis報酬システムに結び付いています。IOURewardClaimは、同様の報酬トラッキングを発行通貨へ持ち込みます。ロイヤルティトークン、staking receipt、DAO参加ポイント、利回り付きIOU、ゲーム内通貨などに使えます。
+
+\`TransactionType: "IOURewardClaim"\` は存在しません。\`ClaimReward\` に \`ClaimCurrency\` を付けて使います。\`Issuer\` は報酬プログラムのHookを実行するアカウントを指し、\`ClaimCurrency.issuer\` はIOUそのものの発行者を指します。
+
+多くの報酬システムでは3つのアカウントを使います。
+
+| アカウント | 役割 |
+|---|---|
+| トークン発行者 | IOU通貨を作成する |
+| 報酬issuer / reserve | Hookを持ち、報酬を支払う |
+| Holder | IOUを保持し \`ClaimReward\` を送信する |
+
+### 仕組み
+
+holderにはIOUのtrustlineが必要です。報酬issuerアカウントには \`ClaimReward\` で発火するHookが必要です。最初のclaimで、Xahauはtrustlineの \`RippleState\` オブジェクトに報酬カウンターを初期化します。trustline残高が時間とともに変化すると、ledgerは \`TrustLineRewardAccumulator\` を更新します。次回以降のclaimでは、ledgerがカウンターをリセットしてissuerのHookを発火します。Hookは蓄積値を読み、実際の報酬支払いを発行します。
+
+これにより **トラッキング** と **支払いロジック** が分離されます。ledgerは時間あたりの残高を追跡し、Hookは支払額、支払いトークン、cooldown、上限、ビジネスルールを決めます。
+
+### 要件とよくあるエラー
+
+\`IOURewardClaim\` amendment、\`Account\` と \`ClaimCurrency.issuer\` のtrustline、\`Issuer\` にインストールされたHook、そのHookが \`ClaimReward\` で発火すること、そして \`ClaimCurrency\` がXAHではないことが必要です。よくあるエラーは \`temDISABLED\`、\`temMALFORMED\`、\`tecNO_ISSUER\`、\`tecNO_TARGET\`、\`tecNO_LINE\` です。`,
+  ko: `이 기능의 이름은 **IOURewardClaim** 이지만, 제출하는 트랜잭션은 여전히 **ClaimReward** 입니다. 이 amendment는 토큰 발행자가 IOU holder를 위한 맞춤형 보상 프로그램을 실행할 수 있도록 \`ClaimReward\` 를 확장합니다.
+
+### 어떤 문제를 해결하나요?
+
+네이티브 XAH 보상은 XAH와 genesis 보상 시스템에 연결되어 있습니다. IOURewardClaim은 비슷한 보상 추적 메커니즘을 발행 통화로 가져옵니다. 로열티 토큰, staking receipt 토큰, DAO 참여 포인트, 수익형 IOU, 게임 또는 앱 보상 통화에 사용할 수 있습니다.
+
+\`TransactionType: "IOURewardClaim"\` 은 없습니다. \`ClaimReward\` 에 \`ClaimCurrency\` 를 추가해 사용합니다. \`Issuer\` 필드는 보상 프로그램 Hook을 실행할 계정을 가리키고, \`ClaimCurrency.issuer\` 는 IOU 자체의 발행자를 가리킵니다.
+
+많은 보상 시스템은 세 계정을 사용합니다.
+
+| 계정 | 역할 |
+|---|---|
+| 토큰 발행자 | IOU 통화를 생성 |
+| 보상 issuer / reserve | Hook이 설치되어 있고 보상을 지급 |
+| Holder | IOU를 보유하고 \`ClaimReward\` 제출 |
+
+### 작동 방식
+
+holder는 IOU 통화에 대한 trustline이 있어야 합니다. 보상 issuer 계정에는 \`ClaimReward\` 에서 실행되는 Hook이 있어야 합니다. 첫 claim에서 Xahau는 trustline의 \`RippleState\` 객체에 보상 추적 카운터를 초기화합니다. trustline 잔액이 시간에 따라 바뀌면 ledger는 \`TrustLineRewardAccumulator\` 를 업데이트합니다. 이후 claim에서는 ledger가 카운터를 재설정하고 issuer의 Hook을 실행합니다. Hook은 누적 값을 읽고 실제 보상 지급을 발생시킵니다.
+
+이 구조는 **추적** 과 **지급 로직** 을 분리합니다. ledger는 시간에 따른 잔액을 추적하고, Hook은 지급량, 지급 토큰, cooldown, 한도, 비즈니스 규칙을 결정합니다.
+
+### 요구 사항과 흔한 오류
+
+\`IOURewardClaim\` amendment 활성화, \`Account\` 와 \`ClaimCurrency.issuer\` 사이의 trustline, \`Issuer\` 에 설치된 Hook, 그 Hook이 \`ClaimReward\` 에서 실행되는 것, 그리고 \`ClaimCurrency\` 가 XAH가 아니어야 합니다. 흔한 오류는 \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\`, \`tecNO_LINE\` 입니다.`,
+  zh: `这个功能叫 **IOURewardClaim**，但实际提交的交易仍然是 **ClaimReward**。该 amendment 扩展了 \`ClaimReward\`，让代币发行方可以为 IOU holder 运行自定义奖励程序。
+
+### 它解决什么问题？
+
+原生 XAH 奖励与 XAH 和 genesis 奖励系统绑定。IOURewardClaim 把类似的奖励跟踪机制带到已发行货币中，例如忠诚度代币、staking receipt、DAO 参与积分、收益型 IOU、游戏或应用奖励货币。
+
+不存在 \`TransactionType: "IOURewardClaim"\`。你使用的是带有 \`ClaimCurrency\` 的 \`ClaimReward\`。\`Issuer\` 字段指向运行奖励程序 Hook 的账户；\`ClaimCurrency.issuer\` 指向 IOU 本身的发行方。
+
+很多奖励系统会使用三个账户：
+
+| 账户 | 角色 |
+|---|---|
+| 代币发行方 | 创建 IOU 货币 |
+| 奖励 issuer / reserve | 安装 Hook 并支付奖励 |
+| Holder | 持有 IOU 并提交 \`ClaimReward\` |
+
+### 工作方式
+
+holder 必须拥有该 IOU 的 trustline。奖励 issuer 账户必须安装一个会在 \`ClaimReward\` 时触发的 Hook。第一次 claim 时，Xahau 会在 trustline 的 \`RippleState\` 对象上初始化奖励计数器。随着 trustline 余额随时间变化，ledger 会更新 \`TrustLineRewardAccumulator\`。之后再次 claim 时，ledger 会重置计数器并触发 issuer 的 Hook。Hook 读取累计值并发出实际奖励支付。
+
+这把 **跟踪** 和 **支付逻辑** 分开了：ledger 负责按时间跟踪余额，Hook 决定支付多少、用哪种 token、冷却时间、上限和业务规则。
+
+### 要求与常见错误
+
+需要启用 \`IOURewardClaim\` amendment；\`Account\` 和 \`ClaimCurrency.issuer\` 之间需要 trustline；\`Issuer\` 上需要安装 Hook；该 Hook 必须在 \`ClaimReward\` 时触发；且 \`ClaimCurrency\` 不能是 XAH。常见错误包括 \`temDISABLED\`、\`temMALFORMED\`、\`tecNO_ISSUER\`、\`tecNO_TARGET\` 和 \`tecNO_LINE\`。`,
+};
+
+const priceOracleSlides = [
+  {
+    title: { es: "Price Oracle", pt: "Price Oracle", en: "Price Oracle", jp: "Price Oracle", ko: "Price Oracle", zh: "Price Oracle" },
+    content: {
+      es: "Feed de precios on-chain\n\n• Propiedad de una cuenta\n• Identificado por OracleDocumentID\n• Guarda 1-10 pares de precio\n• Provider y AssetClass van en hexadecimal\n• Útil para apps, Hooks y lógica DeFi",
+      pt: "Feed de preço on-chain\n\n• Pertence a uma conta\n• Identificado por OracleDocumentID\n• Armazena 1-10 pares de preço\n• Provider e AssetClass vão em hexadecimal\n• Usado por apps, Hooks e lógica DeFi",
+      en: "On-chain price feed\n\n• Owned by one account\n• Identified by OracleDocumentID\n• Stores 1-10 price pairs\n• Provider and AssetClass are hex strings\n• Used by apps, Hooks, and DeFi logic",
+      jp: "オンチェーン価格フィード\n\n• 1つのアカウントが所有\n• OracleDocumentIDで識別\n• 1-10件の価格ペアを保存\n• ProviderとAssetClassはhex文字列\n• アプリ、Hooks、DeFiロジックで使用",
+      ko: "온체인 가격 피드\n\n• 한 계정이 소유\n• OracleDocumentID로 식별\n• 1-10개의 가격 쌍 저장\n• Provider와 AssetClass는 hex 문자열\n• 앱, Hooks, DeFi 로직에서 사용",
+      zh: "链上价格源\n\n• 由一个账户拥有\n• 通过 OracleDocumentID 标识\n• 存储 1-10 个价格对\n• Provider 和 AssetClass 是十六进制字符串\n• 可用于应用、Hooks 和 DeFi 逻辑",
+    },
+    visual: "📈",
+  },
+  {
+    title: { es: "OracleSet vs OracleDelete", pt: "OracleSet vs OracleDelete", en: "OracleSet vs OracleDelete", jp: "OracleSet vs OracleDelete", ko: "OracleSet vs OracleDelete", zh: "OracleSet vs OracleDelete" },
+    content: {
+      es: "OracleSet\n• Crea o actualiza el objeto Oracle\n• Publica PriceDataSeries\n• Las actualizaciones necesitan un LastUpdateTime más reciente\n\nOracleDelete\n• Elimina el objeto Oracle\n• Solo puede hacerlo el propietario\n• Libera la reserva de propietario",
+      pt: "OracleSet\n• Cria ou atualiza o objeto Oracle\n• Publica PriceDataSeries\n• Atualizações precisam de LastUpdateTime mais recente\n\nOracleDelete\n• Remove o objeto Oracle\n• Só o proprietário pode remover\n• Libera a reserva de proprietário",
+      en: "OracleSet\n• Creates or updates the Oracle object\n• Publishes PriceDataSeries\n• Updates must use newer LastUpdateTime\n\nOracleDelete\n• Removes the Oracle object\n• Only owner can delete\n• Releases owner reserve",
+      jp: "OracleSet\n• Oracleオブジェクトを作成または更新\n• PriceDataSeriesを公開\n• 更新にはより新しいLastUpdateTimeが必要\n\nOracleDelete\n• Oracleオブジェクトを削除\n• 所有者だけが削除可能\n• owner reserveを解放",
+      ko: "OracleSet\n• Oracle 객체 생성 또는 업데이트\n• PriceDataSeries 게시\n• 업데이트에는 더 최신 LastUpdateTime 필요\n\nOracleDelete\n• Oracle 객체 삭제\n• 소유자만 삭제 가능\n• owner reserve 반환",
+      zh: "OracleSet\n• 创建或更新 Oracle 对象\n• 发布 PriceDataSeries\n• 更新必须使用更新的 LastUpdateTime\n\nOracleDelete\n• 删除 Oracle 对象\n• 只有所有者可以删除\n• 释放 owner reserve",
+    },
+    visual: "🛰️",
+  },
+  {
+    title: { es: "Leer precios", pt: "Ler preços", en: "Reading prices", jp: "価格を読む", ko: "가격 읽기", zh: "读取价格" },
+    content: {
+      es: "Formato del precio:\nAssetPrice * 10^(-Scale)\n\nEjemplo:\n74560 con Scale 4 = 7.456\n\nEn producción:\n• Consulta varios proveedores\n• Usa get_aggregate_price\n• Recorta outliers\n• Filtra feeds antiguos con time_threshold",
+      pt: "Formato do preço:\nAssetPrice * 10^(-Scale)\n\nExemplo:\n74560 com Scale 4 = 7.456\n\nEm produção:\n• Consulte vários provedores\n• Use get_aggregate_price\n• Remova outliers\n• Filtre feeds antigos com time_threshold",
+      en: "Price format:\nAssetPrice * 10^(-Scale)\n\nExample:\n74560 with Scale 4 = 7.456\n\nFor production:\n• Query multiple providers\n• Use get_aggregate_price\n• Trim outliers\n• Filter stale updates with time_threshold",
+      jp: "価格形式：\nAssetPrice * 10^(-Scale)\n\n例：\nScale 4で74560 = 7.456\n\n本番環境：\n• 複数プロバイダーを照会\n• get_aggregate_priceを使用\n• 外れ値をtrim\n• time_thresholdで古い更新を除外",
+      ko: "가격 형식:\nAssetPrice * 10^(-Scale)\n\n예:\nScale 4에서 74560 = 7.456\n\n운영 환경:\n• 여러 제공자 조회\n• get_aggregate_price 사용\n• 이상치 제거\n• time_threshold로 오래된 업데이트 필터링",
+      zh: "价格格式：\nAssetPrice * 10^(-Scale)\n\n示例：\nScale 为 4 时 74560 = 7.456\n\n生产环境：\n• 查询多个提供者\n• 使用 get_aggregate_price\n• 裁剪异常值\n• 用 time_threshold 过滤过期更新",
+    },
+    visual: "🧮",
+  },
+];
+
+const iouRewardSlides = [
+  {
+    title: { es: "IOURewardClaim", pt: "IOURewardClaim", en: "IOURewardClaim", jp: "IOURewardClaim", ko: "IOURewardClaim", zh: "IOURewardClaim" },
+    content: {
+      es: "No es un TransactionType separado\n\n• Usa ClaimReward\n• Añade ClaimCurrency\n• Issuer apunta a la cuenta con el Hook de recompensas\n• ClaimCurrency.issuer apunta al emisor del IOU\n\nRecompensas personalizadas con seguimiento nativo",
+      pt: "Não é um TransactionType separado\n\n• Usa ClaimReward\n• Adiciona ClaimCurrency\n• Issuer aponta para a conta com o Hook de recompensas\n• ClaimCurrency.issuer aponta para o emissor do IOU\n\nRecompensas personalizadas com rastreamento nativo",
+      en: "Not a separate TransactionType\n\n• Uses ClaimReward\n• Adds ClaimCurrency\n• Issuer points to the reward Hook account\n• ClaimCurrency.issuer points to the IOU issuer\n\nCustom token rewards with native tracking",
+      jp: "別のTransactionTypeではない\n\n• ClaimRewardを使用\n• ClaimCurrencyを追加\n• Issuerは報酬Hookアカウントを指す\n• ClaimCurrency.issuerはIOU発行者を指す\n\nネイティブ追跡によるカスタムトークン報酬",
+      ko: "별도의 TransactionType이 아님\n\n• ClaimReward 사용\n• ClaimCurrency 추가\n• Issuer는 보상 Hook 계정을 가리킴\n• ClaimCurrency.issuer는 IOU 발행자를 가리킴\n\n네이티브 추적 기반 맞춤형 토큰 보상",
+      zh: "不是单独的 TransactionType\n\n• 使用 ClaimReward\n• 添加 ClaimCurrency\n• Issuer 指向奖励 Hook 账户\n• ClaimCurrency.issuer 指向 IOU 发行方\n\n带原生跟踪的自定义代币奖励",
+    },
+    visual: "🎁",
+  },
+  {
+    title: { es: "Dónde viven los contadores", pt: "Onde ficam os contadores", en: "Where Counters Live", jp: "カウンターの保存場所", ko: "카운터가 저장되는 위치", zh: "计数器存在哪里" },
+    content: {
+      es: "Recompensas XAH:\n• Contadores en AccountRoot\n• Pago por el Hook de recompensas génesis\n\nRecompensas IOU:\n• Contadores en la trustline RippleState\n• Pago por el Hook del issuer\n• Sigue el balance en el tiempo por holder",
+      pt: "Recompensas XAH:\n• Contadores em AccountRoot\n• Pagamento pelo Hook de recompensas genesis\n\nRecompensas IOU:\n• Contadores na trustline RippleState\n• Pagamento pelo Hook do issuer\n• Rastreia saldo ao longo do tempo por holder",
+      en: "XAH rewards:\n• Counters on AccountRoot\n• Payout by genesis reward Hook\n\nIOU rewards:\n• Counters on RippleState trustline\n• Payout by issuer Hook\n• Tracks balance over time per token holder",
+      jp: "XAH報酬：\n• カウンターはAccountRoot上\n• genesis報酬Hookが支払い\n\nIOU報酬：\n• カウンターはRippleState trustline上\n• issuer Hookが支払い\n• holderごとの残高を時間で追跡",
+      ko: "XAH 보상:\n• 카운터는 AccountRoot에 저장\n• genesis 보상 Hook이 지급\n\nIOU 보상:\n• 카운터는 RippleState trustline에 저장\n• issuer Hook이 지급\n• holder별 잔액을 시간에 따라 추적",
+      zh: "XAH 奖励：\n• 计数器在 AccountRoot 上\n• 由 genesis 奖励 Hook 支付\n\nIOU 奖励：\n• 计数器在 RippleState trustline 上\n• 由 issuer Hook 支付\n• 按 holder 跟踪余额随时间变化",
+    },
+    visual: "📊",
+  },
+  {
+    title: { es: "Configuración necesaria", pt: "Configuração necessária", en: "Required Setup", jp: "必要なセットアップ", ko: "필수 설정", zh: "所需配置" },
+    content: {
+      es: "1. Enmienda IOURewardClaim activa\n2. El holder tiene trustline del token\n3. La cuenta Issuer tiene un Hook\n4. El Hook se dispara con ClaimReward\n5. El holder envía ClaimReward con ClaimCurrency\n\nEl Hook define las reglas de pago",
+      pt: "1. Emenda IOURewardClaim ativa\n2. O holder tem trustline do token\n3. A conta Issuer tem um Hook\n4. O Hook dispara com ClaimReward\n5. O holder envia ClaimReward com ClaimCurrency\n\nO Hook define as regras de pagamento",
+      en: "1. IOURewardClaim amendment enabled\n2. Holder has token trustline\n3. Issuer account has a Hook\n4. Hook fires on ClaimReward\n5. Holder submits ClaimReward with ClaimCurrency\n\nThe Hook defines the payout rules",
+      jp: "1. IOURewardClaim amendmentが有効\n2. holderにtoken trustlineがある\n3. IssuerアカウントにHookがある\n4. HookがClaimRewardで発火する\n5. holderがClaimCurrency付きClaimRewardを送信\n\nHookが支払いルールを定義する",
+      ko: "1. IOURewardClaim amendment 활성화\n2. holder가 token trustline 보유\n3. Issuer 계정에 Hook 설치\n4. Hook이 ClaimReward에서 실행\n5. holder가 ClaimCurrency와 함께 ClaimReward 제출\n\nHook이 지급 규칙을 정의",
+      zh: "1. 启用 IOURewardClaim amendment\n2. holder 拥有 token trustline\n3. Issuer 账户安装 Hook\n4. Hook 会在 ClaimReward 时触发\n5. holder 提交带 ClaimCurrency 的 ClaimReward\n\nHook 定义支付规则",
+    },
+    visual: "🔧",
+  },
+];
+
+const makeIouRewardClaimCode = (comments) => `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function normalizeCurrency(currency) {
+  if (currency.length <= 3) return currency;
+
+  const hex = Buffer.from(currency, "utf8").toString("hex").toUpperCase();
+  if (hex.length > 40) {
+    throw new Error("Currency code is too long for Xahau IOU format.");
+  }
+
+  return hex.padEnd(40, "0");
+}
+
+async function claimIouReward() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
+
+  // ${comments.existingToken}
+  // ${comments.existingHook}
+  const rewardIssuer = "rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm";
+  const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
+  const currency = normalizeCurrency("RWD");
+
+  const claimReward = {
+    TransactionType: "ClaimReward",
+    Account: holder.address,
+    Issuer: rewardIssuer, // ${comments.rewardIssuer}
+    ClaimCurrency: {
+      currency,
+      issuer: tokenIssuer, // ${comments.tokenIssuer}
+    },
+  };
+
+  const prepared = await client.autofill(claimReward);
+  const signed = holder.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== IOU Reward Claim ===");
+  console.log("Holder:", holder.address);
+  console.log("Reward issuer:", rewardIssuer);
+  console.log("Token issuer:", tokenIssuer);
+  console.log("Currency:", currency);
+  console.log("Result:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+claimIouReward().catch(console.error);`;
+
+const makeIouRewardTrustlineCode = (comments) => `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function createRewardTrustline() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
+
+  // ${comments.trustline}
+  const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
+
+  const trustSet = {
+    TransactionType: "TrustSet",
+    Account: holder.address,
+    LimitAmount: {
+      currency: "RWD",
+      issuer: tokenIssuer, // ${comments.tokenIssuer}
+      value: "1000000",
+    },
+  };
+
+  const prepared = await client.autofill(trustSet);
+  const signed = holder.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== Reward TrustLine ===");
+  console.log("Result:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+createRewardTrustline().catch(console.error);`;
+
+const makeIouRewardInspectCode = (comments) => `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function inspectRewardTrustline() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
+  // ${comments.inspect}
+  const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
+  const currency = "RWD";
+
+  const response = await client.request({
+    command: "account_lines",
+    account: holder.address,
+    ledger_index: "validated",
+  });
+
+  const line = response.result.lines.find(
+    (item) => item.account === tokenIssuer && item.currency === currency
+  );
+
+  if (!line) {
+    console.log("No trustline found for this token.");
+  } else {
+    console.log("=== TrustLine ===");
+    console.log("Balance:", line.balance, line.currency);
+    console.log("Issuer:", line.account);
+    console.log("Limit:", line.limit);
+  }
+
+  await client.disconnect();
+}
+
+inspectRewardTrustline().catch(console.error);`;
+
+const iouRewardComments = {
+  es: {
+    existingToken: "Este ejercicio apunta al token RWD ya creado en el ejemplo de Learning Xahau.",
+    existingHook: "El ClaimReward llama a una cuenta RESERVE que ya tiene instalado el Hook de reward programme.",
+    rewardIssuer: "cuenta con el Hook de recompensas instalado",
+    tokenIssuer: "issuer real del token RWD",
+    trustline: "El holder necesita una TrustLine hacia el issuer real del token RWD antes de reclamar.",
+    inspect: "Consultamos la TrustLine del holder contra el issuer real de RWD.",
+  },
+  pt: {
+    existingToken: "Este exercicio aponta para o token RWD ja criado no exemplo Learning Xahau.",
+    existingHook: "O ClaimReward chama uma conta RESERVE que ja tem o Hook de reward programme instalado.",
+    rewardIssuer: "conta com o Hook de recompensas instalado",
+    tokenIssuer: "issuer real do token RWD",
+    trustline: "O holder precisa de uma TrustLine para o issuer real do token RWD antes de reclamar.",
+    inspect: "Consultamos a TrustLine do holder contra o issuer real de RWD.",
+  },
+  en: {
+    existingToken: "This exercise points to the RWD token already created in the Learning Xahau example.",
+    existingHook: "ClaimReward calls a RESERVE account that already has the reward programme Hook installed.",
+    rewardIssuer: "account with the reward Hook installed",
+    tokenIssuer: "real issuer of the RWD token",
+    trustline: "The holder needs a TrustLine to the real RWD token issuer before claiming.",
+    inspect: "We query the holder TrustLine against the real RWD issuer.",
+  },
+  jp: {
+    existingToken: "この演習は Learning Xahau の例で作成済みの RWD トークンを参照します。",
+    existingHook: "ClaimReward は reward programme Hook がすでにインストールされた RESERVE アカウントを呼び出します。",
+    rewardIssuer: "reward Hook がインストールされたアカウント",
+    tokenIssuer: "RWD トークンの実際の issuer",
+    trustline: "claim する前に、holder は RWD の実 issuer への TrustLine が必要です。",
+    inspect: "holder の TrustLine を RWD の実 issuer に対して確認します。",
+  },
+  ko: {
+    existingToken: "이 예제는 Learning Xahau 예제에서 이미 생성된 RWD 토큰을 가리킵니다.",
+    existingHook: "ClaimReward는 reward programme Hook이 이미 설치된 RESERVE 계정을 호출합니다.",
+    rewardIssuer: "reward Hook이 설치된 계정",
+    tokenIssuer: "RWD 토큰의 실제 issuer",
+    trustline: "claim 전에 holder는 실제 RWD 토큰 issuer와 TrustLine이 필요합니다.",
+    inspect: "holder의 TrustLine을 실제 RWD issuer 기준으로 조회합니다.",
+  },
+  zh: {
+    existingToken: "本练习指向 Learning Xahau 示例中已经创建好的 RWD token。",
+    existingHook: "ClaimReward 会调用已经安装 reward programme Hook 的 RESERVE 账户。",
+    rewardIssuer: "已安装 reward Hook 的账户",
+    tokenIssuer: "RWD token 的真实 issuer",
+    trustline: "claim 之前，holder 需要先建立指向真实 RWD issuer 的 TrustLine。",
+    inspect: "查询 holder 与真实 RWD issuer 之间的 TrustLine。",
+  },
+};
+
+const iouRewardClaimCode = Object.fromEntries(
+  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardClaimCode(comments)])
+);
+const iouRewardTrustlineCode = Object.fromEntries(
+  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardTrustlineCode(comments)])
+);
+const iouRewardInspectCode = Object.fromEntries(
+  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardInspectCode(comments)])
+);
+
+const makePriceOracleSetCode = (comments) => `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+function toHex(value) {
+  return Buffer.from(value, "utf8").toString("hex").toUpperCase();
+}
+
+async function setOraclePrice() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // ${comments.oracleSeed}
+  const oracle = Wallet.fromSeed(process.env.ORACLE_SEED, { algorithm: "secp256k1" });
+
+  const oracleSet = {
+    TransactionType: "OracleSet",
+    Account: oracle.address,
+    OracleDocumentID: 1, // ${comments.documentId}
+    Provider: toHex("CourseOracle"), // ${comments.provider}
+    AssetClass: toHex("currency"), // ${comments.assetClass}
+    LastUpdateTime: Math.floor(Date.now() / 1000), // ${comments.updateTime}
+    PriceDataSeries: [
+      {
+        PriceData: {
+          BaseAsset: "XAH", // ${comments.baseAsset}
+          QuoteAsset: "USD", // ${comments.quoteAsset}
+          AssetPrice: 74560,
+          Scale: 4, // ${comments.scale}
+        },
+      },
+    ],
+  };
+
+  const prepared = await client.autofill(oracleSet);
+  const signed = oracle.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== OracleSet ===");
+  console.log("Account:", oracle.address);
+  console.log("Result:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+setOraclePrice().catch(console.error);`;
+
+const makePriceOracleQueryCode = (comments) => `const { Client } = require("xahau");
+
+async function queryAggregatePrice() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // ${comments.knownOracles}
+  // ${comments.aggregate}
+  const response = await client.request({
+    command: "get_aggregate_price",
+    ledger_index: "current",
+    base_asset: "XAH",
+    quote_asset: "USD",
+    trim: 20, // ${comments.trim}
+    time_threshold: 300, // ${comments.timeThreshold}
+    oracles: [
+      { account: "rEhZSNh9pVRTcA79tQjYezg9V44HfcToR1", oracle_document_id: 1 },
+      { account: "rD1rh9ffewxVb9QBqkr5ph98QXqCM1xsEP", oracle_document_id: 1 },
+      { account: "r35gjkjZL4mhqyrabpxVUE9K9T5JW1nng9", oracle_document_id: 1 },
+    ],
+  });
+
+  console.log("=== Aggregate Price ===");
+  console.log("Median:", response.result.median);
+  console.log("Mean:", response.result.entire_set?.mean);
+  console.log("Trimmed mean:", response.result.trimmed_set?.mean);
+  console.log("Oracle count:", response.result.entire_set?.size);
+
+  await client.disconnect();
+}
+
+queryAggregatePrice().catch(console.error);`;
+
+const makePriceOracleDeleteCode = (comments) => `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
+
+async function deleteOracle() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+
+  // ${comments.onlyOwner}
+  const oracle = Wallet.fromSeed(process.env.ORACLE_SEED, { algorithm: "secp256k1" });
+
+  const oracleDelete = {
+    TransactionType: "OracleDelete",
+    Account: oracle.address,
+    OracleDocumentID: 1, // ${comments.documentId}
+  };
+
+  const prepared = await client.autofill(oracleDelete);
+  const signed = oracle.sign(prepared);
+  const result = await client.submitAndWait(signed.tx_blob);
+
+  console.log("=== OracleDelete ===");
+  console.log("Result:", result.result.meta.TransactionResult);
+  console.log("Hash:", signed.hash);
+
+  await client.disconnect();
+}
+
+deleteOracle().catch(console.error);`;
+
+const priceOracleComments = {
+  es: {
+    oracleSeed: "Esta seed firma como proveedor del Oracle que publica los precios.",
+    documentId: "ID unico del documento Oracle dentro de esta cuenta",
+    provider: "nombre del proveedor codificado en hex",
+    assetClass: "categoria del activo codificada en hex",
+    updateTime: "OracleSet exige un timestamp reciente",
+    baseAsset: "activo cuyo precio se publica",
+    quoteAsset: "moneda en la que expresamos el precio",
+    scale: "74560 * 10^-4 = 7.456 USD",
+    knownOracles: "Estas son direcciones publicas de Oracles ya publicados en el ejemplo Learning Xahau.",
+    aggregate: "get_aggregate_price calcula mediana/media a partir de varios proveedores.",
+    trim: "recorta outliers antes de calcular el promedio recortado",
+    timeThreshold: "ignora updates demasiado antiguos",
+    onlyOwner: "Solo la cuenta que creo el Oracle puede borrarlo.",
+  },
+  pt: {
+    oracleSeed: "Esta seed assina como provedor do Oracle que publica os precos.",
+    documentId: "ID unico do documento Oracle dentro desta conta",
+    provider: "nome do provedor codificado em hex",
+    assetClass: "categoria do ativo codificada em hex",
+    updateTime: "OracleSet exige um timestamp recente",
+    baseAsset: "ativo cujo preco e publicado",
+    quoteAsset: "moeda em que expressamos o preco",
+    scale: "74560 * 10^-4 = 7.456 USD",
+    knownOracles: "Estas sao direcoes publicas de Oracles ja publicados no exemplo Learning Xahau.",
+    aggregate: "get_aggregate_price calcula mediana/media a partir de varios provedores.",
+    trim: "remove outliers antes de calcular a media aparada",
+    timeThreshold: "ignora updates antigos demais",
+    onlyOwner: "Apenas a conta que criou o Oracle pode apaga-lo.",
+  },
+  en: {
+    oracleSeed: "This seed signs as the Oracle provider that publishes prices.",
+    documentId: "unique Oracle document ID within this account",
+    provider: "provider name encoded as hex",
+    assetClass: "asset category encoded as hex",
+    updateTime: "OracleSet requires a recent timestamp",
+    baseAsset: "asset whose price is being published",
+    quoteAsset: "currency used to express the price",
+    scale: "74560 * 10^-4 = 7.456 USD",
+    knownOracles: "These are public Oracle addresses already published in the Learning Xahau example.",
+    aggregate: "get_aggregate_price calculates median/mean from several providers.",
+    trim: "trims outliers before calculating the trimmed mean",
+    timeThreshold: "ignores updates that are too old",
+    onlyOwner: "Only the account that created the Oracle can delete it.",
+  },
+  jp: {
+    oracleSeed: "この seed は価格を公開する Oracle provider として署名します。",
+    documentId: "このアカウント内で一意の Oracle document ID",
+    provider: "hex エンコードされた provider 名",
+    assetClass: "hex エンコードされた asset category",
+    updateTime: "OracleSet には新しい timestamp が必要です",
+    baseAsset: "価格を公開する対象 asset",
+    quoteAsset: "価格表示に使う通貨",
+    scale: "74560 * 10^-4 = 7.456 USD",
+    knownOracles: "Learning Xahau の例で公開済みの Oracle アドレスです。",
+    aggregate: "get_aggregate_price は複数 provider から median/mean を計算します。",
+    trim: "trimmed mean の前に outlier を除外します",
+    timeThreshold: "古すぎる update を無視します",
+    onlyOwner: "Oracle を削除できるのは作成したアカウントだけです。",
+  },
+  ko: {
+    oracleSeed: "이 seed는 가격을 게시하는 Oracle provider로 서명합니다.",
+    documentId: "이 계정 안에서 고유한 Oracle document ID",
+    provider: "hex로 인코딩된 provider 이름",
+    assetClass: "hex로 인코딩된 asset category",
+    updateTime: "OracleSet에는 최근 timestamp가 필요합니다",
+    baseAsset: "가격을 게시하는 asset",
+    quoteAsset: "가격을 표시하는 currency",
+    scale: "74560 * 10^-4 = 7.456 USD",
+    knownOracles: "Learning Xahau 예제에서 이미 게시된 공개 Oracle 주소입니다.",
+    aggregate: "get_aggregate_price는 여러 provider에서 median/mean을 계산합니다.",
+    trim: "trimmed mean 계산 전에 outlier를 제거합니다",
+    timeThreshold: "너무 오래된 update를 무시합니다",
+    onlyOwner: "Oracle을 만든 계정만 삭제할 수 있습니다.",
+  },
+  zh: {
+    oracleSeed: "这个 seed 会作为发布价格的 Oracle provider 签名。",
+    documentId: "该账户内唯一的 Oracle document ID",
+    provider: "用 hex 编码的 provider 名称",
+    assetClass: "用 hex 编码的 asset category",
+    updateTime: "OracleSet 需要较新的 timestamp",
+    baseAsset: "正在发布价格的 asset",
+    quoteAsset: "用来表示价格的 currency",
+    scale: "74560 * 10^-4 = 7.456 USD",
+    knownOracles: "这些是 Learning Xahau 示例中已经发布的公开 Oracle 地址。",
+    aggregate: "get_aggregate_price 会根据多个 provider 计算 median/mean。",
+    trim: "计算 trimmed mean 前先裁剪 outlier",
+    timeThreshold: "忽略过旧的 update",
+    onlyOwner: "只有创建 Oracle 的账户可以删除它。",
+  },
+};
+
+const priceOracleSetCode = Object.fromEntries(
+  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleSetCode(comments)])
+);
+const priceOracleQueryCode = Object.fromEntries(
+  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleQueryCode(comments)])
+);
+const priceOracleDeleteCode = Object.fromEntries(
+  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleDeleteCode(comments)])
+);
+
 export default {
   id: "m10",
   icon: "🔐",
@@ -5776,6 +6847,52 @@ deleteCron();`,
           visual: "⚖️",
         },
       ],
+    },
+    {
+      id: "m10l9",
+      title: priceOracleLessonTitle,
+      theory: priceOracleTheory,
+      codeBlocks: [
+        {
+          title: priceOracleCodeTitles.set,
+          language: "javascript",
+          code: priceOracleSetCode,
+        },
+        {
+          title: priceOracleCodeTitles.query,
+          language: "javascript",
+          code: priceOracleQueryCode,
+        },
+        {
+          title: priceOracleCodeTitles.delete,
+          language: "javascript",
+          code: priceOracleDeleteCode,
+        },
+      ],
+      slides: priceOracleSlides,
+    },
+    {
+      id: "m10l10",
+      title: iouRewardLessonTitle,
+      theory: iouRewardClaimTheory,
+      codeBlocks: [
+        {
+          title: iouRewardCodeTitles.trustline,
+          language: "javascript",
+          code: iouRewardTrustlineCode,
+        },
+        {
+          title: iouRewardCodeTitles.claim,
+          language: "javascript",
+          code: iouRewardClaimCode,
+        },
+        {
+          title: iouRewardCodeTitles.inspect,
+          language: "javascript",
+          code: iouRewardInspectCode,
+        },
+      ],
+      slides: iouRewardSlides,
     },
   ],
 }
