@@ -28,7 +28,9 @@ function buildURL(view, mIdx, lIdx) {
 // ────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [lang, setLang] = useState('en')
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('xahau-lang') || 'en'
+  })
   const [showSlides, setShowSlides] = useState(false)
   const [completedLessons, setCompletedLessons] = useState({})
   const [theme, setTheme] = useState(() => {
@@ -49,6 +51,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('lang', lang)
     document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr')
+    localStorage.setItem('xahau-lang', lang)
   }, [lang])
 
   // Sync browser back/forward buttons with app state
