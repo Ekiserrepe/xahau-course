@@ -493,17 +493,24 @@ samp {
 .x-hero-map {
   opacity: 1;
 
-  /* Two masks, intersected: a radial clearing so the headline never sits on
-     a continent, and a vertical fade so the map dissolves into the canvas
-     instead of being cut off by the header and the curriculum card. */
-  -webkit-mask-image:
-    radial-gradient(115% 78% at 50% 40%, transparent 0%, transparent 30%, #000 76%),
-    linear-gradient(to bottom, transparent 0%, #000 20%, #000 78%, transparent 100%);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    radial-gradient(115% 78% at 50% 40%, transparent 0%, transparent 30%, #000 76%),
-    linear-gradient(to bottom, transparent 0%, #000 20%, #000 78%, transparent 100%);
-  mask-composite: intersect;
+  /* Only a vertical fade, so the map dissolves into the canvas instead of
+     being cut off by the header and the curriculum card. There used to be a
+     radial clearing behind the headline too — at 13% the type needs no such
+     protection, and the hole read as a blotch. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 80%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    #000 18%,
+    #000 80%,
+    transparent 100%
+  );
 }
 
 [data-theme='dark'] .x-hero-map {
