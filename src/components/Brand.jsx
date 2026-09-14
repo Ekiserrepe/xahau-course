@@ -15,20 +15,20 @@ import React from 'react'
 ──────────────────────────────────────────────────────────────────────────── */
 
 export const MODULE_THEMES = [
-  { key: 'green', tint: '#e6f2ea', line: '#c8e0cf', ink: '#00622a' },
-  { key: 'teal',  tint: '#e0f2f6', line: '#b8dde6', ink: '#005f75' },
-  { key: 'sand',  tint: '#fdf1e3', line: '#f0dcc1', ink: '#8a5a12' },
-  { key: 'sage',  tint: '#eef4f0', line: '#d0e2d5', ink: '#3a6b53' },
+  { name: 'green', tint: '#e6f2ea', line: '#c8e0cf', ink: '#00622a' },
+  { name: 'teal',  tint: '#e0f2f6', line: '#b8dde6', ink: '#005f75' },
+  { name: 'sand',  tint: '#fdf1e3', line: '#f0dcc1', ink: '#8a5a12' },
+  { name: 'sage',  tint: '#eef4f0', line: '#d0e2d5', ink: '#3a6b53' },
 ]
 
 export const moduleTheme = (idx) => MODULE_THEMES[idx % MODULE_THEMES.length]
 
 /* Dark mode needs its own tints — the pastels turn to muddy fog on ink. */
 export const DARK_MODULE_THEMES = [
-  { key: 'green', tint: 'rgba(93,228,140,0.12)',  line: 'rgba(93,228,140,0.26)',  ink: '#7ceba4' },
-  { key: 'teal',  tint: 'rgba(0,196,232,0.12)',   line: 'rgba(0,196,232,0.26)',   ink: '#6fdcf2' },
-  { key: 'sand',  tint: 'rgba(250,215,174,0.12)', line: 'rgba(250,215,174,0.26)', ink: '#f3cf9f' },
-  { key: 'sage',  tint: 'rgba(163,206,181,0.12)', line: 'rgba(163,206,181,0.26)', ink: '#a9d6bd' },
+  { name: 'green', tint: 'rgba(93,228,140,0.12)',  line: 'rgba(93,228,140,0.26)',  ink: '#7ceba4' },
+  { name: 'teal',  tint: 'rgba(0,196,232,0.12)',   line: 'rgba(0,196,232,0.26)',   ink: '#6fdcf2' },
+  { name: 'sand',  tint: 'rgba(250,215,174,0.12)', line: 'rgba(250,215,174,0.26)', ink: '#f3cf9f' },
+  { name: 'sage',  tint: 'rgba(163,206,181,0.12)', line: 'rgba(163,206,181,0.26)', ink: '#a9d6bd' },
 ]
 
 export const themeFor = (idx, theme) =>

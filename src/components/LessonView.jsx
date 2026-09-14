@@ -76,6 +76,7 @@ export default function LessonView({
   onPrev,
   onNext,
   onGoToLesson,
+  onOpenSearch,
   hasPrev,
   hasNext,
   theme,
@@ -117,6 +118,7 @@ export default function LessonView({
         totalLessons={totalLessons}
         theme={theme}
         onToggleTheme={onToggleTheme}
+        onOpenSearch={onOpenSearch}
         onBrandClick={onBack}
         compact
       >

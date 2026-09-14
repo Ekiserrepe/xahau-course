@@ -1,7 +1,24 @@
 import React, { useState } from 'react'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import javascript from 'react-syntax-highlighter/dist/esm/languages/prism/javascript'
+import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash'
+import cLang from 'react-syntax-highlighter/dist/esm/languages/prism/c'
+import json from 'react-syntax-highlighter/dist/esm/languages/prism/json'
+import markup from 'react-syntax-highlighter/dist/esm/languages/prism/markup'
 import { CheckIcon } from './Brand'
+
+/**
+ * The default `Prism` export bundles every language Prism ships — roughly 300
+ * of them — for a course that uses five. PrismLight registers only these.
+ * Adding a new `language:` to a lesson means adding it here too.
+ */
+SyntaxHighlighter.registerLanguage('javascript', javascript)
+SyntaxHighlighter.registerLanguage('bash', bash)
+SyntaxHighlighter.registerLanguage('sh', bash)
+SyntaxHighlighter.registerLanguage('c', cLang)
+SyntaxHighlighter.registerLanguage('json', json)
+SyntaxHighlighter.registerLanguage('html', markup)
 
 /**
  * Language badges — a monospace tag rather than a coloured chip, so a page

@@ -516,3 +516,76 @@ const REDESIGN_LABELS = {
 for (const code of Object.keys(UI_LABELS)) {
   Object.assign(UI_LABELS[code], REDESIGN_LABELS.en, REDESIGN_LABELS[code] ?? {})
 }
+
+/* Labels added with the progress/search pass. Merged the same way. */
+
+const V2_LABELS = {
+  en: {
+    search: "Search",
+    searchPlaceholder: "Search lessons and theory…",
+    searchEmpty: "No matches",
+    searchHint: "to open",
+    resetConfirm: "Reset your progress? This cannot be undone.",
+    continueAt: "Continue where you left off",
+  },
+  es: {
+    search: "Buscar",
+    searchPlaceholder: "Busca en lecciones y teoría…",
+    searchEmpty: "Sin resultados",
+    searchHint: "para abrir",
+    resetConfirm: "¿Reiniciar tu progreso? No se puede deshacer.",
+    continueAt: "Continúa donde lo dejaste",
+  },
+  fr: {
+    search: "Rechercher",
+    searchPlaceholder: "Rechercher dans les leçons et la théorie…",
+    searchEmpty: "Aucun résultat",
+    searchHint: "pour ouvrir",
+    resetConfirm: "Réinitialiser votre progression ? Action irréversible.",
+    continueAt: "Reprenez où vous vous êtes arrêté",
+  },
+  pt: {
+    search: "Buscar",
+    searchPlaceholder: "Buscar nas lições e na teoria…",
+    searchEmpty: "Nenhum resultado",
+    searchHint: "para abrir",
+    resetConfirm: "Reiniciar seu progresso? Isso não pode ser desfeito.",
+    continueAt: "Continue de onde parou",
+  },
+  jp: {
+    search: "検索",
+    searchPlaceholder: "レッスンと理論を検索…",
+    searchEmpty: "該当なし",
+    searchHint: "で開く",
+    resetConfirm: "進捗をリセットしますか？元に戻せません。",
+    continueAt: "続きから再開",
+  },
+  ko: {
+    search: "검색",
+    searchPlaceholder: "강의와 이론 검색…",
+    searchEmpty: "결과 없음",
+    searchHint: "열기",
+    resetConfirm: "진행도를 초기화할까요? 되돌릴 수 없습니다.",
+    continueAt: "이어서 학습하기",
+  },
+  zh: {
+    search: "搜索",
+    searchPlaceholder: "搜索课程与理论…",
+    searchEmpty: "无匹配结果",
+    searchHint: "打开",
+    resetConfirm: "重置学习进度？此操作无法撤销。",
+    continueAt: "从上次的位置继续",
+  },
+  ar: {
+    search: "بحث",
+    searchPlaceholder: "ابحث في الدروس والنظرية…",
+    searchEmpty: "لا توجد نتائج",
+    searchHint: "للفتح",
+    resetConfirm: "إعادة ضبط تقدّمك؟ لا يمكن التراجع عن ذلك.",
+    continueAt: "تابع من حيث توقفت",
+  },
+}
+
+for (const code of Object.keys(UI_LABELS)) {
+  Object.assign(UI_LABELS[code], V2_LABELS.en, V2_LABELS[code] ?? {})
+}

@@ -1,19 +1,10 @@
 import React from 'react'
 import { ChevronDownIcon } from './Brand'
+import { LOCALES, localeOf } from '../data/locales'
 
-const LANGUAGES = [
-  { code: 'en', label: 'English', short: 'EN' },
-  { code: 'fr', label: 'Français', short: 'FR' },
-  { code: 'es', label: 'Español', short: 'ES' },
-  { code: 'pt', label: 'Português (Brasil)', short: 'PT' },
-  { code: 'jp', label: '日本語', short: 'JA' },
-  { code: 'ko', label: '한국어', short: 'KO' },
-  { code: 'zh', label: '中文', short: 'ZH' },
-  { code: 'ar', label: 'العربية', short: 'AR' },
-]
 
 export default function LanguageSelect({ lang, setLang, label = 'Language' }) {
-  const active = LANGUAGES.find((item) => item.code === lang) || LANGUAGES[0]
+  const active = localeOf(lang)
 
   return (
     <label
@@ -59,7 +50,7 @@ export default function LanguageSelect({ lang, setLang, label = 'Language' }) {
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         aria-label={label}
       >
-        {LANGUAGES.map((item) => (
+        {LOCALES.map((item) => (
           <option key={item.code} value={item.code}>
             {item.label}
           </option>

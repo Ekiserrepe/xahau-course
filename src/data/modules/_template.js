@@ -8,14 +8,21 @@
  *
  * Tips:
  * - Theory supports basic markdown: **bold**, `code`, ###headings, - lists, [links](url)
- * - Code blocks: use language "c", "javascript", "bash", or "python"
+ * - Code blocks: use language "javascript", "bash", "c", "json" or "html".
+ *   Anything else must first be registered in src/components/CodeBlock.jsx —
+ *   the highlighter only loads the languages the course actually uses.
  * - Slides: keep content short, use \n for line breaks, visual is a single emoji
  * - Each lesson needs a unique id (e.g., "m5l1", "m5l2")
+ * - Module icon: the card and sidebar draw a line icon from the set in
+ *   src/components/Brand.jsx, matched on this module's `id`. Add an entry to
+ *   ICON_PATHS there for a new module; the `icon` emoji below is only the
+ *   fallback used when no entry matches.
+ * - Add new locales in src/data/locales.js, not here.
  */
 
 export default {
   id: "mXX",           // Unique module id
-  icon: "🔮",          // Emoji icon for the module card
+  icon: "🔮",          // Fallback only — see note below
   title: {
     es: "Título del Módulo",
     pt: "Título do Módulo",

@@ -454,7 +454,7 @@ samp {
    tracking instead.
 ─────────────────────────────────────────────────────────────────────────── */
 
-:root:is([lang='ar'], [lang='jp'], [lang='ko'], [lang='zh'])
+:root:is([lang='ar'], [lang^='ja'], [lang^='ko'], [lang^='zh'])
   :is(.x-act-label, .x-chip) {
   font-family: 'Onest', system-ui, sans-serif;
   letter-spacing: 0.02em;

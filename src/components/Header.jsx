@@ -50,6 +50,7 @@ export default function Header({
   totalLessons,
   theme,
   onToggleTheme,
+  onOpenSearch,
   onBrandClick,
   children,
   compact = false,
@@ -111,6 +112,35 @@ export default function Header({
               </div>
             </div>
           </div>
+
+          {/* Search — a button on phones, a hinted field from sm up */}
+          {onOpenSearch && (
+            <button
+              type="button"
+              onClick={onOpenSearch}
+              title={labels.search}
+              aria-label={labels.search}
+              className="x-icon-btn sm:w-auto sm:px-2.5 sm:gap-2"
+            >
+              <svg
+                width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"
+              >
+                <circle cx="10.5" cy="10.5" r="6.75" />
+                <path d="m15.5 15.5 5 5" />
+              </svg>
+              <kbd
+                className="hidden sm:inline font-mono text-[10px] px-1.5 py-0.5 rounded"
+                style={{
+                  background: 'var(--color-surface-alt)',
+                  border: '1px solid var(--color-border-subtle)',
+                  color: 'var(--color-text-dim)',
+                }}
+              >
+                ⌘K
+              </kbd>
+            </button>
+          )}
 
           <LanguageSelect lang={lang} setLang={setLang} label={labels.language} />
 

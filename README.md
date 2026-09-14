@@ -13,7 +13,8 @@ A free, open-source **basic course on Xahau**, in eight languages — from your 
 - 💻 **Code Blocks** — Copyable code examples with syntax highlighting (C, JavaScript, Bash)
 - 📊 **Presentation Mode** — Fullscreen slides with keyboard navigation
 - 🌐 **Multilingual** — English, Spanish, French, Portuguese, Japanese, Korean, Simplified Chinese and Arabic (RTL)
-- 📈 **Progress Tracking** — Mark lessons as completed
+- 🔎 **Search** — Full-text across every lesson title and body (⌘K / Ctrl-K)
+- 📈 **Progress Tracking** — Marked lessons persist in the browser
 - 🔌 **Modular** — Easy to add new modules and lessons
 
 
@@ -45,8 +46,10 @@ Shared primitives (`.x-card`, `.x-btn`, `.x-chip`, `.x-act-label`) and the token
 src/
 ├── components/     # React UI components
 │   └── Brand.jsx   # Wordmark, icon set, module colour themes
+├── scripts/        # make-og-image.py regenerates the social card
 ├── data/
 │   ├── i18n.js     # UI translations
+│   ├── locales.js  # Language registry (internal code -> BCP-47 tag)
 │   ├── courses.js  # Module index
 │   └── modules/    # Individual course modules
 └── styles/         # Global CSS

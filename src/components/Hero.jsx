@@ -6,7 +6,16 @@ import { ActLabel, Chip } from './Brand'
  * a faint world map behind centred type, two 6px-radius buttons, and a row
  * of monospace chips carrying the hard facts.
  */
-export default function Hero({ labels, stats, onStart }) {
+export default function Hero({
+  labels,
+  stats,
+  completedCount = 0,
+  totalLessons = 0,
+  onStart,
+  onReset,
+}) {
+  const started = completedCount > 0
+  const pct = totalLessons === 0 ? 0 : Math.round((completedCount / totalLessons) * 100)
   return (
     <section className="relative overflow-hidden">
       {/* World map — the brand's quiet backdrop */}
@@ -37,7 +46,7 @@ export default function Hero({ labels, stats, onStart }) {
 
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <button type="button" onClick={onStart} className="x-btn x-btn-primary">
-              {labels.heroStart}
+              {started ? labels.continueLesson : labels.heroStart}
             </button>
             <a
               href="https://docs.xahau.network"
@@ -48,6 +57,36 @@ export default function Hero({ labels, stats, onStart }) {
               {labels.heroDocs} ↗
             </a>
           </div>
+
+          {/* Returning learner: say where they are, and offer a way back to zero */}
+          {started && (
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <span className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+                {labels.continueAt} — {completedCount}/{totalLessons} ({pct}%)
+              </span>
+              <button
+                type="button"
+                onClick={onReset}
+                className="text-[13px] underline underline-offset-2 transition-colors"
+                style={{
+                  color: 'var(--color-text-dim)',
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  cursor: 'pointer',
+                  font: 'inherit',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-text-heading)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--color-text-dim)'
+                }}
+              >
+                {labels.resetProgress}
+              </button>
+            </div>
+          )}
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
             <Chip>
