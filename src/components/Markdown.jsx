@@ -1,5 +1,37 @@
 import React from 'react'
 
+/**
+ * Stable, URL-safe id for a heading. Shared with LessonView, which builds the
+ * "on this page" rail from the same text, so both sides agree on the anchor.
+ */
+export function slugify(text) {
+  return String(text)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\u0600-\u06ff\u3000-\u9fff]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+/**
+ * Pull the section headings out of a lesson body, in order.
+ *
+ * The curriculum writes its sections as `###` — there isn't a single `##` in
+ * the twelve modules — so both levels count, and the level is kept so the
+ * rail can indent if a lesson ever mixes them.
+ */
+export function headingsOf(text) {
+  const out = []
+  for (const line of String(text ?? '').split('\n')) {
+    const m = line.match(/^(#{2,3}) (.+)$/)
+    if (!m) continue
+    const label = m[2].replace(/[*`]/g, '').trim()
+    if (!label) continue
+    out.push({ label, id: slugify(label), level: m[1].length })
+  }
+  return out
+}
+
 function renderInline(text) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g)
   return parts.map((part, i) => {
@@ -143,9 +175,19 @@ export default function Markdown({ text }) {
     }
 
     if (line.startsWith('## ')) {
-      elements.push(<h2 key={i}>{renderInline(line.slice(3))}</h2>)
+      const raw = line.slice(3)
+      elements.push(
+        <h2 key={i} id={slugify(raw.replace(/[*`]/g, '').trim())}>
+          {renderInline(raw)}
+        </h2>,
+      )
     } else if (line.startsWith('### ')) {
-      elements.push(<h3 key={i}>{renderInline(line.slice(4))}</h3>)
+      const raw = line.slice(4)
+      elements.push(
+        <h3 key={i} id={slugify(raw.replace(/[*`]/g, '').trim())}>
+          {renderInline(raw)}
+        </h3>,
+      )
     } else if (line.startsWith('- ')) {
       elements.push(
         <div key={i} style={{ display: 'flex', gap: '12px', marginBottom: '8px', marginInlineStart: '2px' }}>

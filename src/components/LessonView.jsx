@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react'
-import Markdown from './Markdown'
+import React, { useState, useEffect, useMemo } from 'react'
+import Markdown, { headingsOf } from './Markdown'
 import CodeBlock from './CodeBlock'
+import Quiz from './Quiz'
+import { hasQuiz } from '../data/quizzes'
 import Header from './Header'
 import {
   ActLabel,
@@ -8,6 +10,7 @@ import {
   CheckIcon,
   ChevronDownIcon,
   ModuleIcon,
+  Spinner,
   themeFor,
 } from './Brand'
 
@@ -90,23 +93,60 @@ export default function LessonView({
   const [activeTab, setActiveTab] = useState('theory')
   const mt = themeFor(moduleIdx, theme)
 
+  // `mod` is manifest metadata and is always present; `lesson` is the loaded
+  // content, which is null for as long as the module chunk is in flight.
+  const meta = mod.lessons[lessonIdx]
+  const ready = !!lesson
+
+  // A new lesson always opens on Theory. Adjusting during render beats an
+  // effect that would paint the previous lesson's tab for one frame first.
+  const lessonKey = `${moduleIdx}:${lessonIdx}`
+  const [tabFor, setTabFor] = useState(lessonKey)
+  if (tabFor !== lessonKey) {
+    setTabFor(lessonKey)
+    setActiveTab('theory')
+  }
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
-    setActiveTab('theory')
-  }, [lesson.id])
+  }, [moduleIdx, lessonIdx])
 
   const tabs = [
     { key: 'theory', label: labels.theory, disabled: false },
-    { key: 'code', label: labels.code, disabled: !lesson.codeBlocks?.length },
-    { key: 'slides', label: labels.slides, disabled: !lesson.slides?.length },
+    { key: 'code', label: labels.code, disabled: !meta?.hasCode },
+    { key: 'slides', label: labels.slides, disabled: !meta?.hasSlides },
   ]
 
   const handleTab = (tab) => {
-    if (tab.key === 'slides' && lesson.slides?.length) onShowSlides()
+    if (tab.key === 'slides' && meta?.hasSlides) onShowSlides()
     else if (!tab.disabled) setActiveTab(tab.key)
   }
 
+  const [copied, setCopied] = useState(false)
+
+  const headings = useMemo(
+    () => (ready ? headingsOf(localized(lesson.theory, lang)) : []),
+    [ready, lesson, lang],
+  )
+
+  const mixedLevels = headings.some((h) => h.level === 2) && headings.some((h) => h.level === 3)
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
   const doneInModule = mod.lessons.filter((l) => completedLessons[l.id]).length
+
+  // The module check belongs at the end of the module, so it shows under the
+  // last lesson's theory — and only for modules that declare one.
+  const showQuiz =
+    activeTab === 'theory' &&
+    ready &&
+    lessonIdx === mod.lessons.length - 1 &&
+    hasQuiz(mod.id)
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg)' }}>
@@ -141,7 +181,7 @@ export default function LessonView({
           </button>
           <span style={{ color: 'var(--color-text-faint)' }}>/</span>
           <span className="truncate font-semibold" style={{ color: 'var(--color-text-heading)' }}>
-            {localized(lesson.title, lang)}
+            {localized(meta?.title, lang)}
           </span>
         </div>
       </Header>
@@ -332,6 +372,27 @@ export default function LessonView({
                 </span>
               </div>
 
+              <button
+                type="button"
+                onClick={copyLink}
+                className="x-icon-btn"
+                title={copied ? labels.linkCopied : labels.copyLink}
+                aria-label={copied ? labels.linkCopied : labels.copyLink}
+                style={copied ? { color: 'var(--color-accent)', borderColor: 'var(--color-accent-border)' } : undefined}
+              >
+                {copied ? (
+                  <CheckIcon size={13} />
+                ) : (
+                  <svg
+                    width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                  >
+                    <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
+                    <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
+                  </svg>
+                )}
+              </button>
+
               <span
                 className="hidden sm:inline-flex items-center font-mono text-[10.5px] font-bold tracking-[0.1em] px-2.5 h-[34px] rounded-md"
                 style={{
@@ -347,8 +408,9 @@ export default function LessonView({
             </div>
           </div>
 
-          {/* Content */}
-          <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          {/* Content + "on this page" rail */}
+          <div className="flex-1 w-full max-w-6xl mx-auto flex gap-10 px-4 sm:px-6">
+          <main className="flex-1 min-w-0 max-w-3xl mx-auto w-full py-8 sm:py-12">
             {activeTab === 'theory' && (
               <article className="x-card px-5 py-8 sm:px-12 sm:py-12">
                 <ActLabel color={mt.ink}>
@@ -365,15 +427,32 @@ export default function LessonView({
                     borderBottom: '1px solid var(--color-border-subtle)',
                   }}
                 >
-                  {localized(lesson.title, lang)}
+                  {localized(meta?.title, lang)}
                 </h1>
-                <div className="prose-content">
-                  <Markdown text={localized(lesson.theory, lang)} />
-                </div>
+                {ready ? (
+                  <div className="prose-content">
+                    <Markdown text={localized(lesson.theory, lang)} />
+                  </div>
+                ) : (
+                  <div className="py-12 flex justify-center">
+                    <Spinner size={26} />
+                  </div>
+                )}
               </article>
             )}
 
-            {activeTab === 'code' && lesson.codeBlocks && (
+            {showQuiz && (
+              <Quiz
+                key={mod.id}
+                moduleId={mod.id}
+                moduleIdx={moduleIdx}
+                lang={lang}
+                labels={labels}
+                theme={theme}
+              />
+            )}
+
+            {activeTab === 'code' && ready && lesson.codeBlocks && (
               <div className="flex flex-col gap-5">
                 <ActLabel color={mt.ink}>{labels.code}</ActLabel>
                 {lesson.codeBlocks.map((block, idx) => (
@@ -420,6 +499,38 @@ export default function LessonView({
               </button>
             </div>
           </main>
+
+          {/* On this page — only worth the space when there's something to list */}
+          {activeTab === 'theory' && headings.length > 1 && (
+            <aside
+              className="hidden xl:block w-52 shrink-0 py-12"
+              aria-label={labels.onThisPage}
+            >
+              <div className="sticky" style={{ top: 130 }}>
+                <ActLabel color={mt.ink}>{labels.onThisPage}</ActLabel>
+                <ul className="mt-4 list-none m-0 p-0 flex flex-col gap-2.5">
+                  {headings.map((h) => (
+                    <li key={h.id} style={mixedLevels && h.level === 3 ? { paddingInlineStart: 12 } : undefined}>
+                      <a
+                        href={`#${h.id}`}
+                        className="block text-[12.5px] leading-snug no-underline transition-colors"
+                        style={{ color: 'var(--color-text-muted)' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = mt.ink
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--color-text-muted)'
+                        }}
+                      >
+                        {h.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          )}
+          </div>
         </div>
       </div>
     </div>

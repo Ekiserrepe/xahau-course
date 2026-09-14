@@ -241,6 +241,34 @@ export function Chip({ children }) {
   return <span className="x-chip">{children}</span>
 }
 
+/**
+ * Spinner — shown while a module's content is being fetched. Modules load on
+ * demand now, so this is the only thing standing between a click and a lesson.
+ */
+export function Spinner({ size = 22, label }) {
+  return (
+    <span className="inline-flex items-center gap-3" role="status" aria-live="polite">
+      <svg
+        width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"
+        style={{ animation: 'x-spin 0.7s linear infinite' }}
+      >
+        <circle cx="12" cy="12" r="9" stroke="var(--color-border)" strokeWidth="2.5" />
+        <path
+          d="M21 12a9 9 0 0 0-9-9"
+          stroke="var(--color-accent)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      </svg>
+      {label && (
+        <span className="text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+          {label}
+        </span>
+      )}
+    </span>
+  )
+}
+
 /* ── Icons ──────────────────────────────────────────────────────────────── */
 
 export function GitHubIcon({ size = 16 }) {

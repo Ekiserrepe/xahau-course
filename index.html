@@ -40,6 +40,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Theme bootstrap: React applies data-theme in an effect, which is one
+         paint too late — dark-mode readers saw a white flash on every load.
+         Runs before the app script so the first paint is already correct. -->
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('xahau-theme')
+          document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light')
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      })()
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

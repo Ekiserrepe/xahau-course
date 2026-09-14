@@ -141,3 +141,8 @@ vite.config.ts.timestamp-*
 #Claude
 .claude/
 CLAUDE.md
+
+# Derived from the course modules by scripts/build-course-data.mjs
+src/data/generated/
+public/search/
+public/sitemap.xml

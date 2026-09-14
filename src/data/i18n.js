@@ -589,3 +589,125 @@ const V2_LABELS = {
 for (const code of Object.keys(UI_LABELS)) {
   Object.assign(UI_LABELS[code], V2_LABELS.en, V2_LABELS[code] ?? {})
 }
+
+/* Labels added with the navigation pass. */
+
+const V3_LABELS = {
+  en: {
+    onThisPage: "On this page",
+    copyLink: "Copy link",
+    linkCopied: "Link copied",
+  },
+  es: {
+    onThisPage: "En esta página",
+    copyLink: "Copiar enlace",
+    linkCopied: "Enlace copiado",
+  },
+  fr: {
+    onThisPage: "Sur cette page",
+    copyLink: "Copier le lien",
+    linkCopied: "Lien copié",
+  },
+  pt: {
+    onThisPage: "Nesta página",
+    copyLink: "Copiar link",
+    linkCopied: "Link copiado",
+  },
+  jp: {
+    onThisPage: "このページの内容",
+    copyLink: "リンクをコピー",
+    linkCopied: "コピーしました",
+  },
+  ko: {
+    onThisPage: "이 페이지의 목차",
+    copyLink: "링크 복사",
+    linkCopied: "링크 복사됨",
+  },
+  zh: {
+    onThisPage: "本页内容",
+    copyLink: "复制链接",
+    linkCopied: "已复制链接",
+  },
+  ar: {
+    onThisPage: "في هذه الصفحة",
+    copyLink: "نسخ الرابط",
+    linkCopied: "تم نسخ الرابط",
+  },
+}
+
+for (const code of Object.keys(UI_LABELS)) {
+  Object.assign(UI_LABELS[code], V3_LABELS.en, V3_LABELS[code] ?? {})
+}
+
+/* Labels added with the module check pass. */
+
+const V4_LABELS = {
+  en: {
+    checkTitle: "Check your understanding",
+    checkIntro: "A few questions on this module. Nothing is recorded — they're for you.",
+    checkCorrect: "Correct",
+    checkWrong: "Not quite",
+    checkScore: "correct",
+    checkRetry: "Try again",
+  },
+  es: {
+    checkTitle: "Comprueba lo aprendido",
+    checkIntro: "Unas preguntas sobre este módulo. No se guarda nada: son para ti.",
+    checkCorrect: "Correcto",
+    checkWrong: "No exactamente",
+    checkScore: "aciertos",
+    checkRetry: "Reintentar",
+  },
+  fr: {
+    checkTitle: "Vérifiez vos acquis",
+    checkIntro: "Quelques questions sur ce module. Rien n'est enregistré : elles sont pour vous.",
+    checkCorrect: "Correct",
+    checkWrong: "Pas tout à fait",
+    checkScore: "bonnes réponses",
+    checkRetry: "Réessayer",
+  },
+  pt: {
+    checkTitle: "Teste o que aprendeu",
+    checkIntro: "Algumas perguntas sobre este módulo. Nada é registrado: são para você.",
+    checkCorrect: "Correto",
+    checkWrong: "Não exatamente",
+    checkScore: "acertos",
+    checkRetry: "Tentar de novo",
+  },
+  jp: {
+    checkTitle: "理解度チェック",
+    checkIntro: "このモジュールに関する質問です。記録は残りません。",
+    checkCorrect: "正解",
+    checkWrong: "惜しい",
+    checkScore: "正解",
+    checkRetry: "もう一度",
+  },
+  ko: {
+    checkTitle: "이해도 확인",
+    checkIntro: "이 모듈에 대한 몇 가지 질문입니다. 기록되지 않습니다.",
+    checkCorrect: "정답",
+    checkWrong: "아쉽네요",
+    checkScore: "정답",
+    checkRetry: "다시 풀기",
+  },
+  zh: {
+    checkTitle: "检验你的理解",
+    checkIntro: "关于本模块的几个问题。不会记录，仅供自测。",
+    checkCorrect: "正确",
+    checkWrong: "不太对",
+    checkScore: "答对",
+    checkRetry: "再试一次",
+  },
+  ar: {
+    checkTitle: "اختبر فهمك",
+    checkIntro: "بعض الأسئلة حول هذه الوحدة. لا يتم تسجيل شيء، فهي لك وحدك.",
+    checkCorrect: "إجابة صحيحة",
+    checkWrong: "ليس تمامًا",
+    checkScore: "إجابات صحيحة",
+    checkRetry: "حاول مرة أخرى",
+  },
+}
+
+for (const code of Object.keys(UI_LABELS)) {
+  Object.assign(UI_LABELS[code], V4_LABELS.en, V4_LABELS[code] ?? {})
+}

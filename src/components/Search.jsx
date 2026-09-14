@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { ModuleIcon, themeFor } from './Brand'
 
-const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
-
 /** Fold case and strip diacritics so "codigo" finds "código". */
 const fold = (s) =>
   s
@@ -11,54 +9,78 @@ const fold = (s) =>
     .toLowerCase()
 
 /**
- * Build a flat, foldable index of every lesson for the active language.
- * The whole curriculum is already in memory — courses.js imports all twelve
- * modules eagerly — so this costs one pass, not a fetch.
+ * Fetch the pre-built index for a language.
+ *
+ * The curriculum is no longer held in memory — modules load on demand — so
+ * search reads a generated index instead (scripts/build-course-data.mjs).
+ * One file per language, fetched the first time search opens and kept for
+ * the session, so the initial page load pays nothing for it.
  */
-function buildIndex(courseData, lang) {
-  const entries = []
-  courseData.forEach((mod, mIdx) => {
-    const moduleTitle = localized(mod.title, lang)
-    mod.lessons.forEach((lesson, lIdx) => {
-      const lessonTitle = localized(lesson.title, lang)
-      const theory = localized(lesson.theory, lang)
-      entries.push({
-        mIdx,
-        lIdx,
-        mod,
-        moduleTitle,
-        lessonTitle,
-        theory,
-        haystack: fold(`${moduleTitle} ${lessonTitle} ${theory}`),
-        titleHaystack: fold(`${moduleTitle} ${lessonTitle}`),
-      })
+const indexCache = new Map()
+
+function fetchIndex(lang) {
+  if (indexCache.has(lang)) return indexCache.get(lang)
+  const promise = fetch(`${import.meta.env.BASE_URL}search/${lang}.json`)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
+    .then((docs) =>
+      docs.map((d) => ({
+        mIdx: d.m,
+        lIdx: d.l,
+        moduleTitle: d.mt,
+        lessonTitle: d.lt,
+        body: d.b,
+        haystack: fold(`${d.mt} ${d.lt} ${d.b}`),
+        titleHaystack: fold(`${d.mt} ${d.lt}`),
+      })),
+    )
+    .catch(() => {
+      indexCache.delete(lang) // let a later open retry
+      return []
     })
-  })
-  return entries
+  indexCache.set(lang, promise)
+  return promise
 }
 
-/** A short window of theory around the first hit, for context in the result. */
-function snippetFor(theory, needle) {
-  const at = fold(theory).indexOf(needle)
+/** A short window of body text around the first hit, for context. */
+function snippetFor(body, needle) {
+  const at = fold(body).indexOf(needle)
   if (at < 0) return ''
-  const start = Math.max(0, at - 40)
-  const raw = theory
-    .slice(start, at + needle.length + 110)
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // [label](url) -> label
-    .replace(/https?:\/\/\S+/g, '')            // bare URLs add noise, not meaning
-    .replace(/[#*`|>]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
+  const start = Math.max(0, at - 45)
+  const raw = body.slice(start, at + needle.length + 110).trim()
   return (start > 0 ? '… ' : '') + raw + ' …'
 }
 
-export default function Search({ open, onClose, courseData, lang, labels, theme, onOpenLesson }) {
+/**
+ * Mounted only while open (see App), so every field starts clean and there's
+ * no reset effect fighting the render.
+ */
+export default function Search({ onClose, courseMeta, lang, labels, theme, onOpenLesson }) {
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
+  const [activeFor, setActiveFor] = useState('')
+  const [index, setIndex] = useState([])
+  const [loading, setLoading] = useState(true)
   const inputRef = useRef(null)
   const listRef = useRef(null)
+  const dialogRef = useRef(null)
 
-  const index = useMemo(() => buildIndex(courseData, lang), [courseData, lang])
+  useEffect(() => {
+    let live = true
+    fetchIndex(lang).then((docs) => {
+      if (!live) return
+      setIndex(docs)
+      setLoading(false)
+    })
+    return () => {
+      live = false
+    }
+  }, [lang])
+
+  // Re-highlight the first row whenever the query changes
+  if (activeFor !== query) {
+    setActiveFor(query)
+    setActive(0)
+  }
 
   const results = useMemo(() => {
     const q = fold(query.trim())
@@ -68,23 +90,26 @@ export default function Search({ open, onClose, courseData, lang, labels, theme,
     const inBody = []
     for (const e of index) {
       if (e.titleHaystack.includes(q)) inTitle.push({ ...e, snippet: '' })
-      else if (e.haystack.includes(q)) inBody.push({ ...e, snippet: snippetFor(e.theory, q) })
+      else if (e.haystack.includes(q)) inBody.push({ ...e, snippet: snippetFor(e.body, q) })
     }
     return [...inTitle, ...inBody].slice(0, 24)
   }, [query, index])
 
   useEffect(() => {
-    setActive(0)
-  }, [query])
+    // Focus after paint, or the dialog steals it back
+    requestAnimationFrame(() => inputRef.current?.focus())
 
-  useEffect(() => {
-    if (open) {
-      setQuery('')
-      setActive(0)
-      // Focus after paint, or the dialog steals it back
-      requestAnimationFrame(() => inputRef.current?.focus())
+    // Hand focus back to whatever opened the dialog when it closes
+    const opener = document.activeElement
+    // The page behind must not scroll while a modal is up
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = prevOverflow
+      if (opener instanceof HTMLElement) opener.focus()
     }
-  }, [open])
+  }, [])
 
   // Keep the highlighted row in view while arrowing through
   useEffect(() => {
@@ -92,14 +117,29 @@ export default function Search({ open, onClose, courseData, lang, labels, theme,
     el?.scrollIntoView({ block: 'nearest' })
   }, [active])
 
-  if (!open) return null
-
   const choose = (r) => {
     onOpenLesson(r.mIdx, r.lIdx)
     onClose()
   }
 
   const onKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      // Trap: a role="dialog" that lets Tab reach the page behind it isn't modal
+      const focusable = dialogRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+      return
+    }
     if (e.key === 'Escape') {
       e.preventDefault()
       onClose()
@@ -124,6 +164,7 @@ export default function Search({ open, onClose, courseData, lang, labels, theme,
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={labels.search}
@@ -166,8 +207,11 @@ export default function Search({ open, onClose, courseData, lang, labels, theme,
         </div>
 
         {/* Results */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {query.trim().length >= 2 ? `${results.length}` : ''}
+        </p>
         <div ref={listRef} className="flex-1 overflow-y-auto p-2">
-          {query.trim().length >= 2 && results.length === 0 && (
+          {query.trim().length >= 2 && results.length === 0 && !loading && (
             <p className="px-4 py-8 text-center text-sm" style={{ color: 'var(--color-text-muted)' }}>
               {labels.searchEmpty}
             </p>
@@ -175,6 +219,7 @@ export default function Search({ open, onClose, courseData, lang, labels, theme,
 
           {results.map((r, i) => {
             const mt = themeFor(r.mIdx, theme)
+            const mod = courseMeta[r.mIdx]
             const isActive = i === active
             return (
               <button
@@ -200,7 +245,7 @@ export default function Search({ open, onClose, courseData, lang, labels, theme,
                     color: mt.ink,
                   }}
                 >
-                  <ModuleIcon module={r.mod} size={14} />
+                  <ModuleIcon module={mod} size={14} />
                 </span>
 
                 <span className="min-w-0 flex-1">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { UI_LABELS } from './data/i18n'
-import { COURSE_DATA } from './data/courses'
+import { COURSE_META, loadModule, peekModule, prefetchModule } from './data/courses'
 import { LOCALES, DEFAULT_LOCALE, localeOf } from './data/locales'
 import Header from './components/Header'
 import Hero from './components/Hero'
@@ -9,11 +9,12 @@ import Footer from './components/Footer'
 import LessonView from './components/LessonView'
 import SlideViewer from './components/SlideViewer'
 import Search from './components/Search'
+import { Spinner } from './components/Brand'
 
 // Course-wide figures, derived once — the hero and the stats strip share them
 const COURSE_STATS = {
-  modules: COURSE_DATA.length,
-  lessons: COURSE_DATA.reduce((acc, m) => acc + m.lessons.length, 0),
+  modules: COURSE_META.length,
+  lessons: COURSE_META.reduce((acc, m) => acc + m.lessons.length, 0),
   languages: LOCALES.length,
 }
 
@@ -61,10 +62,10 @@ function getStateFromURL() {
   const m = parseInt(params.get('m') ?? '-1', 10)
   const l = parseInt(params.get('l') ?? '0', 10)
   const slides = params.get('s') === '1'
-  if (m >= 0 && m < COURSE_DATA.length) {
-    const mod = COURSE_DATA[m]
+  if (m >= 0 && m < COURSE_META.length) {
+    const mod = COURSE_META[m]
     const lIdx = l >= 0 && l < mod.lessons.length ? l : 0
-    const hasSlides = !!mod.lessons[lIdx]?.slides?.length
+    const hasSlides = !!mod.lessons[lIdx]?.hasSlides
     return {
       view: 'lesson',
       activeModuleIdx: m,
@@ -100,6 +101,34 @@ export default function App() {
   const [activeModuleIdx, setActiveModuleIdx] = useState(initialState.activeModuleIdx)
   const [activeLessonIdx, setActiveLessonIdx] = useState(initialState.activeLessonIdx)
   const [showSlides, setShowSlides] = useState(initialState.showSlides)
+
+  // The open module's full content. Metadata renders immediately from the
+  // manifest; this is the megabyte of theory, code and slides behind it.
+  //
+  // Read straight from the loader's cache during render — no effect, no
+  // setState, so no cascading render when a module is already in memory.
+  // `loadedTick` exists only to re-render once an async load lands.
+  const [loadedTick, setLoadedTick] = useState(0)
+  const moduleContent = view === 'lesson' ? peekModule(activeModuleIdx) : undefined
+
+  useEffect(() => {
+    if (view !== 'lesson' || peekModule(activeModuleIdx)) return undefined
+    let live = true
+    loadModule(activeModuleIdx).then(() => {
+      if (live) setLoadedTick((n) => n + 1)
+    })
+    return () => {
+      live = false
+    }
+  }, [view, activeModuleIdx, loadedTick])
+
+  // Once a module is open, the next one is the likeliest thing to be wanted
+  const hasContent = !!moduleContent
+  useEffect(() => {
+    if (view !== 'lesson' || !hasContent) return undefined
+    const id = setTimeout(() => prefetchModule(activeModuleIdx + 1), 1200)
+    return () => clearTimeout(id)
+  }, [view, activeModuleIdx, hasContent])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -160,8 +189,8 @@ export default function App() {
   const totalLessons = COURSE_STATS.lessons
   const completedCount = Object.keys(completedLessons).length
 
-  const currentModule = COURSE_DATA[activeModuleIdx]
-  const currentLesson = currentModule?.lessons[activeLessonIdx]
+  const currentMeta = COURSE_META[activeModuleIdx]
+  const currentLesson = moduleContent?.lessons?.[activeLessonIdx]
 
   // Central navigation: updates state AND pushes a browser history entry
   const navigate = useCallback((nextView, mIdx, lIdx, slides = false) => {
@@ -192,8 +221,8 @@ export default function App() {
 
   /** First lesson not yet marked done — where "Continue" should land. */
   const nextUp = (() => {
-    for (let m = 0; m < COURSE_DATA.length; m++) {
-      const lessons = COURSE_DATA[m].lessons
+    for (let m = 0; m < COURSE_META.length; m++) {
+      const lessons = COURSE_META[m].lessons
       for (let l = 0; l < lessons.length; l++) {
         if (!completedLessons[lessons[l].id]) return { mIdx: m, lIdx: l }
       }
@@ -203,10 +232,10 @@ export default function App() {
 
   // Navigate to next lesson, crossing module boundaries
   const goNext = () => {
-    const mod = COURSE_DATA[activeModuleIdx]
+    const mod = COURSE_META[activeModuleIdx]
     if (activeLessonIdx < mod.lessons.length - 1) {
       navigate('lesson', activeModuleIdx, activeLessonIdx + 1)
-    } else if (activeModuleIdx < COURSE_DATA.length - 1) {
+    } else if (activeModuleIdx < COURSE_META.length - 1) {
       navigate('lesson', activeModuleIdx + 1, 0)
     }
   }
@@ -216,21 +245,20 @@ export default function App() {
     if (activeLessonIdx > 0) {
       navigate('lesson', activeModuleIdx, activeLessonIdx - 1)
     } else if (activeModuleIdx > 0) {
-      const prevMod = COURSE_DATA[activeModuleIdx - 1]
+      const prevMod = COURSE_META[activeModuleIdx - 1]
       navigate('lesson', activeModuleIdx - 1, prevMod.lessons.length - 1)
     }
   }
 
   const isFirst = activeModuleIdx === 0 && activeLessonIdx === 0
   const isLast =
-    activeModuleIdx === COURSE_DATA.length - 1 &&
-    activeLessonIdx === currentModule.lessons.length - 1
+    activeModuleIdx === COURSE_META.length - 1 &&
+    activeLessonIdx === currentMeta.lessons.length - 1
 
-  const searchPanel = (
+  const searchPanel = searchOpen && (
     <Search
-      open={searchOpen}
       onClose={() => setSearchOpen(false)}
-      courseData={COURSE_DATA}
+      courseMeta={COURSE_META}
       lang={lang}
       labels={t}
       theme={theme}
@@ -238,8 +266,18 @@ export default function App() {
     />
   )
 
-  // Slides mode
-  if (showSlides && currentLesson?.slides) {
+  // Slides mode — only once the module's content has arrived
+  if (showSlides && currentMeta.lessons[activeLessonIdx]?.hasSlides) {
+    if (!currentLesson?.slides) {
+      return (
+        <div
+          className="fixed inset-0 flex items-center justify-center"
+          style={{ background: 'var(--color-bg)' }}
+        >
+          <Spinner size={26} />
+        </div>
+      )
+    }
     return (
       <SlideViewer
         slides={currentLesson.slides}
@@ -275,7 +313,7 @@ export default function App() {
             onReset={resetProgress}
           />
           <Overview
-            courseData={COURSE_DATA}
+            courseData={COURSE_META}
             lang={lang}
             labels={t}
             completedLessons={completedLessons}
@@ -298,14 +336,14 @@ export default function App() {
   return (
     <>
       <LessonView
-        module={currentModule}
+        module={currentMeta}
         moduleIdx={activeModuleIdx}
         lesson={currentLesson}
         lessonIdx={activeLessonIdx}
         lang={lang}
         labels={t}
-        isCompleted={!!completedLessons[currentLesson.id]}
-        onToggleComplete={() => toggleComplete(currentLesson.id)}
+        isCompleted={!!completedLessons[currentMeta.lessons[activeLessonIdx].id]}
+        onToggleComplete={() => toggleComplete(currentMeta.lessons[activeLessonIdx].id)}
         onShowSlides={() => navigate('lesson', activeModuleIdx, activeLessonIdx, true)}
         onBack={() => navigate('overview', 0, 0)}
         onPrev={goPrev}
@@ -316,7 +354,7 @@ export default function App() {
         hasNext={!isLast}
         theme={theme}
         onToggleTheme={toggleTheme}
-        totalModules={COURSE_DATA.length}
+        totalModules={COURSE_META.length}
         setLang={setLang}
         completedLessons={completedLessons}
         completedCount={completedCount}

@@ -62,6 +62,11 @@
   --color-inline-code-bg: #eef4f5;
   --color-inline-code-fg: #005c2e;
 
+  /* Missed quiz answer — the brand's warm secondary, not an alarm red */
+  --color-miss-bg:     #fdf1e3;
+  --color-miss-border: #eccfa6;
+  --color-miss-ink:    #8a5a12;
+
   /* ── Feedback states ──────────────────────────────────────────────────── */
   --color-done-bg:         #e6f2ea;
   --color-done-border:     #c8e0cf;
@@ -133,6 +138,10 @@
   --color-code-text:      #d8e6e8;
   --color-inline-code-bg: #133038;
   --color-inline-code-fg: #8af0ae;
+
+  --color-miss-bg:     rgba(250, 215, 174, 0.12);
+  --color-miss-border: rgba(250, 215, 174, 0.3);
+  --color-miss-ink:    #f3cf9f;
 
   --color-done-bg:         rgba(93, 228, 140, 0.1);
   --color-done-border:     rgba(93, 228, 140, 0.24);
@@ -227,6 +236,12 @@ samp {
 /* ═══════════════════════════════════════════════════════════════════════════
    BRAND PRIMITIVES — the vocabulary reused across every screen
 ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes x-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* Wordmark (black SVG, inverted in dark mode) */
 .x-logo {
@@ -393,6 +408,11 @@ samp {
 }
 .prose-content h2:first-child {
   margin-top: 0;
+}
+/* Anchor links from the "on this page" rail must clear the two sticky bars */
+.prose-content h2[id],
+.prose-content h3[id] {
+  scroll-margin-top: 130px;
 }
 .prose-content h3 {
   font-size: 1.075rem;
