@@ -35,14 +35,16 @@ Shared primitives (`.x-card`, `.x-btn`, `.x-chip`, `.x-act-label`) and the token
 `src/components/Brand.jsx`. Light is the default; a dark counterpart built on the brand's
 `#0f2328` ink is available from the header toggle.
 
-## Before going live
+## Deployment
 
-`site.config.js` holds a placeholder URL. Replace `SITE_URL` with the real
-host — it feeds the canonical link, the Open Graph and Twitter image URLs,
-`robots.txt` and `sitemap.xml`, and all four are wrong until you do.
+`site.config.js` holds `SITE_URL`, currently `https://learnxahau.inftf.org`.
+It feeds the canonical link, the Open Graph and Twitter image URLs,
+`robots.txt` and `sitemap.xml` — moving the site means changing that one
+line and rebuilding, nothing else hardcodes it.
 
 `.github/workflows/deploy.yml` is manual-trigger only until someone confirms
-GitHub Pages is the right target.
+GitHub Pages is the right target. If it is, and the custom domain stays,
+the repo will also need a `public/CNAME` containing the bare hostname.
 
 ## Tech Stack
 

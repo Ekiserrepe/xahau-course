@@ -6,8 +6,8 @@
  * the real host: the canonical link, the Open Graph and Twitter image URLs
  * (social platforms reject relative paths), robots.txt, and sitemap.xml.
  *
- * ▸ PLACEHOLDER — replace before going live.
- *   No trailing slash. It is injected into index.html by vite.config.js and
- *   read by scripts/build-course-data.mjs; nothing else should hardcode it.
+ * No trailing slash. It is injected into index.html by vite.config.js and
+ * read by scripts/build-course-data.mjs; nothing else should hardcode it, so
+ * moving the site is this one line.
  */
-export const SITE_URL = 'https://example.invalid'
+export const SITE_URL = 'https://learnxahau.inftf.org'
