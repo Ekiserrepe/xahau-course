@@ -419,13 +419,25 @@ samp {
 .prose-content a:hover {
   color: var(--color-text-heading);
 }
-.prose-content code {
-  font-size: 0.85em;
-  padding: 0.15em 0.45em;
-  border-radius: 4px;
-  background: var(--color-inline-code-bg);
+/* Inline code — a colour shift, not a highlight. The boxed version stacked a
+   tinted pill and a border onto every `token` in a sentence, which chopped the
+   line into fragments; monospace plus the brand green is distinction enough. */
+.prose-content :not(pre) > code {
+  font-size: 0.92em;
+  font-weight: 500;
   color: var(--color-inline-code-fg);
-  border: 1px solid var(--color-border-subtle);
+  overflow-wrap: break-word;
+}
+
+/* Code inside a fenced block sits on the ink panel and takes its colour from
+   it. Without this the rule above used to box every single line. */
+.prose-content pre code {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
 }
 
 /* RTL: keep code and tables left-aligned */

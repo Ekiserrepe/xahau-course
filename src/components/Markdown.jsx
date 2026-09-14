@@ -4,7 +4,9 @@ function renderInline(text) {
   const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g)
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>
+      // Recurse: the bold branch swallows the whole run, so `code` and links
+      // nested inside it would otherwise render their markers literally.
+      return <strong key={i}>{renderInline(part.slice(2, -2))}</strong>
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return <code key={i}>{part.slice(1, -1)}</code>
