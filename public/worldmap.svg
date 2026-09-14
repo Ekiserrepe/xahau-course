@@ -1,5 +1,16 @@
+<!--
+  Vendored from xahau-web (src/assets/worldmap.svg), with two changes:
+
+  1. The continents group was opacity="0.03". On xahau.network it sits behind
+     a short hero; here it was effectively invisible, so it's raised below.
+  2. The gradients ran from #1959FF (blue) to black. At 3% that reads as a
+     neutral wash, but at a visible opacity the blue fights the green/teal
+     palette, so the stops are the brand ink #0F2328 instead.
+
+  Re-syncing from upstream means re-applying both.
+-->
 <svg viewBox="0 0 1613 918" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-      <g opacity="0.03">
+      <g opacity="0.13">
         <path d="M724.129 648.029C724.129 655.056 718.179 660.759 710.854 660.759H682.879C675.554 660.759 669.604 655.056 669.604 648.029V642.229C669.604 635.249 675.554 629.549 682.879 629.549H710.854C718.179 629.549 724.129 635.252 724.129 642.229V648.029Z" fill="url(#paint0_linear_1_14)"/>
         <path d="M602.449 598.782H600.089C592.764 598.782 586.814 604.485 586.814 611.462V628.961C586.814 635.941 590.206 641.641 596.059 641.641H597.534C603.878 641.641 602.452 647.344 602.452 654.32V662.48C602.452 669.558 608.352 675.16 615.727 675.16H636.031C643.356 675.16 649.306 669.558 649.306 662.48V641.641V611.462C649.306 604.482 643.356 598.782 636.031 598.782H602.449Z" fill="url(#paint1_linear_1_14)"/>
         <path d="M767.49 492.079C761.248 492.079 755.839 496.256 754.511 502.057L747.089 534.742C745.811 540.59 740.352 544.72 734.11 544.72H650.876C643.551 544.72 637.554 550.423 637.554 557.4V567.034C637.554 574.014 643.551 579.667 650.876 579.667H653.579C660.954 579.667 666.901 585.37 666.901 592.397V598.688C666.901 605.668 672.851 611.368 680.176 611.368H783.223C789.465 611.368 794.874 607.238 796.202 601.39L817.736 507.467C818.62 503.73 817.588 499.798 815.131 496.851C812.573 493.853 808.788 492.082 804.757 492.082H767.49V492.079Z" fill="url(#paint2_linear_1_14)"/>
@@ -115,43 +126,43 @@
           <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_14" result="shape"/>
         </filter>
         <linearGradient id="paint0_linear_1_14" x1="696.867" y1="629.549" x2="696.867" y2="660.759" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint1_linear_1_14" x1="618.06" y1="598.782" x2="618.06" y2="675.16" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint2_linear_1_14" x1="727.801" y1="492.079" x2="727.801" y2="611.368" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint3_linear_1_14" x1="811.666" y1="407.784" x2="811.666" y2="474.825" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint4_linear_1_14" x1="730.396" y1="751.241" x2="730.396" y2="913.732" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint5_linear_1_14" x1="338.992" y1="802.753" x2="338.992" y2="882.619" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint6_linear_1_14" x1="1320.43" y1="0.339844" x2="1320.43" y2="917.664" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint7_linear_1_14" x1="103.39" y1="90.6741" x2="103.39" y2="210.256" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint8_linear_1_14" x1="30.1368" y1="162.43" x2="30.1368" y2="210.255" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
         <linearGradient id="paint9_linear_1_14" x1="468.871" y1="0.33667" x2="468.871" y2="887.343" gradientUnits="userSpaceOnUse">
-          <stop stop-color="#1959FF"/>
+          <stop stop-color="#0F2328"/>
           <stop offset="1"/>
         </linearGradient>
       </defs>

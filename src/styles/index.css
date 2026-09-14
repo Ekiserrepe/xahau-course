@@ -491,24 +491,27 @@ samp {
 ═══════════════════════════════════════════════════════════════════════════ */
 
 .x-hero-map {
-  opacity: 0.5;
-  -webkit-mask-image: radial-gradient(
-    120% 85% at 50% 42%,
-    transparent 0%,
-    transparent 26%,
-    #000 68%
-  );
-  mask-image: radial-gradient(
-    120% 85% at 50% 42%,
-    transparent 0%,
-    transparent 26%,
-    #000 68%
-  );
+  opacity: 1;
+
+  /* Two masks, intersected: a radial clearing so the headline never sits on
+     a continent, and a vertical fade so the map dissolves into the canvas
+     instead of being cut off by the header and the curriculum card. */
+  -webkit-mask-image:
+    radial-gradient(115% 78% at 50% 40%, transparent 0%, transparent 30%, #000 76%),
+    linear-gradient(to bottom, transparent 0%, #000 20%, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(115% 78% at 50% 40%, transparent 0%, transparent 30%, #000 76%),
+    linear-gradient(to bottom, transparent 0%, #000 20%, #000 78%, transparent 100%);
+  mask-composite: intersect;
 }
 
 [data-theme='dark'] .x-hero-map {
-  filter: invert(1);
-  opacity: 0.28;
+  /* Inverting alone flips the brand green nodes to magenta. The extra
+     hue-rotate puts the hue back where it started while keeping the
+     luminance inverted; neutrals are unaffected by it. */
+  filter: invert(1) hue-rotate(180deg);
+  opacity: 0.5;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
