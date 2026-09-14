@@ -2,118 +2,165 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ═══════════════════════════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   XAHAU ACADEMY — DESIGN TOKENS
+   Mirrors the xahau.network editorial system: light canvas (#f7f7f7),
+   white cards with a soft lifted shadow, Onest type, monospace micro-labels
+   and a restrained green/teal accent family.
+═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Surfaces — zinc neutral, not blue-navy */
-  --color-bg:             #0f0f10;
-  --color-surface:        #18181b;
-  --color-surface-alt:    #1c1c1f;
-  --color-surface-raised: #27272a;
+  /* ── Brand primitives ─────────────────────────────────────────────────── */
+  --xahau-green:        #5de48c;
+  --xahau-green-dark:   #007b3d;
+  --xahau-secondary:    #fad7ae;
 
-  /* Borders */
-  --color-border:         #3f3f46;
-  --color-border-subtle:  #27272a;
-
-  /* Text — zinc scale */
-  --color-text:           #d4d4d8;
-  --color-text-heading:   #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-text-muted:     #71717a;
-  --color-text-dim:       #52525b;
-  --color-text-faint:     #3f3f46;
-
-  /* Accent — Xahau lime */
-  --color-accent:         #c8ff00;
-  --color-accent-dim:     #a8d800;
-  --color-accent-bg:      rgba(200,255,0,0.07);
-  --color-accent-border:  rgba(200,255,0,0.18);
-
-  /* UI elements */
-  --color-icon-bg:            #27272a;
-  --color-button-bg:          #27272a;
-  --color-button-hover:       #3f3f46;
-  --color-button-disabled-bg: #18181b;
-
-  /* Code */
-  --color-code-bg:        #09090b;
-  --color-code-header:    #131316;
-  --color-code-text:      #d4d4d8;
-  --color-inline-code-bg: #1c1c1f;
-
-  /* Misc */
-  --color-scrollbar-track: #0f0f10;
-  --color-scrollbar-thumb: #3f3f46;
-  --color-overlay:         rgba(0,0,0,0.6);
-  --color-header-gradient: rgba(200,255,0,0.03);
-  --color-done-bg:         rgba(200,255,0,0.06);
-  --color-done-border:     rgba(200,255,0,0.14);
-  --color-hover-bg:        rgba(255,255,255,0.04);
-  --color-complete-bg:     rgba(200,255,0,0.08);
-  --color-complete-border: rgba(200,255,0,0.2);
-  --color-copy-active-bg:  #1a2d10;
-  --color-sidebar-bg:      #0c0c0e;
-  --sidebar-width:         260px;
-}
-
-[data-theme="light"] {
-  /* Surfaces — clean white/zinc */
-  --color-bg:             #f4f4f5;
+  /* ── Canvas & surfaces ────────────────────────────────────────────────── */
+  --color-bg:             #f7f7f7;
+  --color-bg-deep:        #eef1f1;
   --color-surface:        #ffffff;
-  --color-surface-alt:    #fafafa;
-  --color-surface-raised: #f4f4f5;
+  --color-surface-alt:    #f4f7f7;
+  --color-surface-raised: #e8eff0;
+  --color-sidebar-bg:     #ffffff;
 
-  /* Borders */
-  --color-border:         #e4e4e7;
-  --color-border-subtle:  #f4f4f5;
+  /* ── Borders ──────────────────────────────────────────────────────────── */
+  --color-border:        #d0dde0;
+  --color-border-subtle: #e4edef;
+  --color-border-strong: #cdd7dc;
 
-  /* Text — zinc scale */
-  --color-text:           #3f3f46;
-  --color-text-heading:   #09090b;
-  --color-text-secondary: #52525b;
-  --color-text-muted:     #71717a;
-  --color-text-dim:       #a1a1aa;
-  --color-text-faint:     #e4e4e7;
+  /* ── Ink scale ────────────────────────────────────────────────────────── */
+  --color-text-heading:   #0f2328;
+  --color-text:           #2d3e44;
+  --color-text-secondary: #445258;
+  --color-text-muted:     #556068;
+  --color-text-dim:       #8b979c;
+  --color-text-faint:     #c2ced2;
 
-  /* Accent — lime-600 profesional sobre blanco */
-  --color-accent:         #65a30d;
-  --color-accent-dim:     #4d7c0f;
-  --color-accent-bg:      rgba(101,163,13,0.08);
-  --color-accent-border:  rgba(101,163,13,0.22);
+  /* ── Accent (Xahau green) ─────────────────────────────────────────────── */
+  --color-accent:         #007a28;
+  --color-accent-strong:  #004d18;
+  --color-accent-dim:     #3f8f5c;
+  --color-accent-on:      #ffffff;
+  --color-accent-bg:      #e6f2ea;
+  --color-accent-border:  #c8e0cf;
 
-  /* UI elements — zinc limpio, sin tinte azul */
-  --color-icon-bg:            #f4f4f5;
-  --color-button-bg:          #f4f4f5;
-  --color-button-hover:       #e4e4e7;
-  --color-button-disabled-bg: #fafafa;
+  /* ── Secondary accent (teal) ──────────────────────────────────────────── */
+  --color-teal:        #006f87;
+  --color-teal-bg:     #e0f2f6;
+  --color-teal-border: #b8dde6;
 
-  /* Code */
-  --color-code-bg:        #f4f4f5;
-  --color-code-header:    #e4e4e7;
-  --color-code-text:      #18181b;
-  --color-inline-code-bg: #f4f4f5;
+  /* ── Interactive chrome ───────────────────────────────────────────────── */
+  --color-button-bg:          #ffffff;
+  --color-button-hover:       #eef4f5;
+  --color-button-disabled-bg: #f4f7f7;
 
-  /* Misc */
-  --color-scrollbar-track: #f4f4f5;
-  --color-scrollbar-thumb: #d4d4d8;
-  --color-overlay:         rgba(0,0,0,0.08);
-  --color-header-gradient: rgba(101,163,13,0.03);
-  --color-done-bg:         rgba(101,163,13,0.07);
-  --color-done-border:     rgba(101,163,13,0.2);
-  --color-hover-bg:        rgba(0,0,0,0.035);
-  --color-complete-bg:     rgba(101,163,13,0.08);
-  --color-complete-border: rgba(101,163,13,0.22);
-  --color-copy-active-bg:  #f0fde4;
-  --color-sidebar-bg:      #fafafa;
+  /* ── Code surfaces (always dark — code reads better on ink) ───────────── */
+  --color-code-bg:        #0f2328;
+  --color-code-header:    #16323a;
+  --color-code-border:    #1f424b;
+  --color-code-text:      #e4edef;
+  --color-inline-code-bg: #eef4f5;
+  --color-inline-code-fg: #005c2e;
+
+  /* ── Feedback states ──────────────────────────────────────────────────── */
+  --color-done-bg:         #e6f2ea;
+  --color-done-border:     #c8e0cf;
+  --color-complete-bg:     #e6f2ea;
+  --color-complete-border: #a8cfb7;
+  --color-hover-bg:        #f2f6f7;
+  --color-copy-active-bg:  #12463a;
+
+  /* ── Elevation ────────────────────────────────────────────────────────── */
+  --shadow-card:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 20px 64px -24px rgba(15, 35, 40, 0.13);
+  --shadow-soft:
+    0 1px 2px rgba(15, 35, 40, 0.05),
+    0 8px 24px -16px rgba(15, 35, 40, 0.18);
+  --shadow-bar: 0 1px 0 rgba(15, 35, 40, 0.06);
+
+  /* ── Misc ─────────────────────────────────────────────────────────────── */
+  --color-scrollbar-track: transparent;
+  --color-scrollbar-thumb: #c6d4d8;
+  --color-overlay:         rgba(15, 35, 40, 0.06);
+  --radius-card:           24px;
+  --sidebar-width:         272px;
+  --logo-filter:           none;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   BASE
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   DARK COUNTERPART — same system, inverted ground.
+   Ink surfaces derived from the brand's #0f2328 rather than a neutral black.
+═══════════════════════════════════════════════════════════════════════════ */
 
-*, *::before, *::after {
+[data-theme='dark'] {
+  --color-bg:             #08161a;
+  --color-bg-deep:        #061114;
+  --color-surface:        #0f2328;
+  --color-surface-alt:    #133038;
+  --color-surface-raised: #173a43;
+  --color-sidebar-bg:     #0b1d22;
+
+  --color-border:        #21454e;
+  --color-border-subtle: #17343b;
+  --color-border-strong: #2b555f;
+
+  --color-text-heading:   #f2f8f8;
+  --color-text:           #c3d5d8;
+  --color-text-secondary: #a6bdc2;
+  --color-text-muted:     #86a0a6;
+  --color-text-dim:       #5f7c83;
+  --color-text-faint:     #35606a;
+
+  --color-accent:         #5de48c;
+  --color-accent-strong:  #8af0ae;
+  --color-accent-dim:     #3fae6b;
+  --color-accent-on:      #04291a;
+  --color-accent-bg:      rgba(93, 228, 140, 0.12);
+  --color-accent-border:  rgba(93, 228, 140, 0.28);
+
+  --color-teal:        #58d6f0;
+  --color-teal-bg:     rgba(0, 196, 232, 0.12);
+  --color-teal-border: rgba(0, 196, 232, 0.28);
+
+  --color-button-bg:          #143137;
+  --color-button-hover:       #1b414a;
+  --color-button-disabled-bg: #0f2328;
+
+  --color-code-bg:        #061114;
+  --color-code-header:    #0d2429;
+  --color-code-border:    #1a3d45;
+  --color-code-text:      #d8e6e8;
+  --color-inline-code-bg: #133038;
+  --color-inline-code-fg: #8af0ae;
+
+  --color-done-bg:         rgba(93, 228, 140, 0.1);
+  --color-done-border:     rgba(93, 228, 140, 0.24);
+  --color-complete-bg:     rgba(93, 228, 140, 0.14);
+  --color-complete-border: rgba(93, 228, 140, 0.34);
+  --color-hover-bg:        rgba(255, 255, 255, 0.04);
+  --color-copy-active-bg:  #123c2a;
+
+  --shadow-card:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 24px 64px -28px rgba(0, 0, 0, 0.7);
+  --shadow-soft:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 10px 28px -18px rgba(0, 0, 0, 0.7);
+  --shadow-bar: 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  --color-scrollbar-thumb: #2b555f;
+  --color-overlay:         rgba(0, 0, 0, 0.55);
+  --logo-filter:           invert(1) brightness(1.9);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -122,72 +169,329 @@ html {
 }
 
 body {
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Onest', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--color-bg);
   color: var(--color-text);
   margin: 0;
   font-size: 15px;
-  line-height: 1.65;
+  line-height: 1.68;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background 0.25s ease, color 0.25s ease;
 }
 
-code, pre, kbd, samp {
-  font-family: 'Fira Code', 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+code,
+pre,
+kbd,
+samp {
+  font-family: 'Fira Code', ui-monospace, 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
 }
 
-/* ═══════════════════════════════════════════════════════════════
+::selection {
+  background: var(--color-accent-bg);
+  color: var(--color-text-heading);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    SCROLLBAR
-═══════════════════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════════════════════════════ */
 
-::-webkit-scrollbar        { width: 5px; height: 5px; }
-::-webkit-scrollbar-track  { background: var(--color-scrollbar-track); }
-::-webkit-scrollbar-thumb  { background: var(--color-scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar-thumb);
+  border-radius: 999px;
+}
 
-/* ═══════════════════════════════════════════════════════════════
-   PROSE (Markdown content)
-═══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════════════
+   BRAND PRIMITIVES — the vocabulary reused across every screen
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Wordmark (black SVG, inverted in dark mode) */
+.x-logo {
+  filter: var(--logo-filter);
+}
+
+/* White editorial card — the signature container of xahau.network */
+.x-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* Monospace micro-label with a coloured pip, e.g. "● CURRICULUM" */
+.x-act-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: ui-monospace, 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.x-pip {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--color-accent);
+}
+
+/* Monospace pill chip */
+.x-chip {
+  font-family: ui-monospace, 'Fira Code', monospace;
+  font-size: 11px;
+  padding: 5px 13px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+/* Buttons — 6px radius, never pills */
+.x-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  padding: 0 26px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, opacity 0.18s;
+}
+.x-btn-primary {
+  background: var(--color-accent);
+  color: var(--color-accent-on);
+}
+.x-btn-primary:hover {
+  background: var(--color-accent-strong);
+}
+.x-btn-secondary {
+  background: var(--color-surface-raised);
+  color: var(--color-text-heading);
+  border-color: var(--color-border-subtle);
+}
+.x-btn-secondary:hover {
+  background: var(--color-button-hover);
+  border-color: var(--color-border);
+}
+.x-btn-ghost {
+  background: var(--color-button-bg);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.x-btn-ghost:hover:not(:disabled) {
+  background: var(--color-button-hover);
+  color: var(--color-text-heading);
+}
+.x-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Small square icon button */
+.x-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-button-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.16s, color 0.16s, border-color 0.16s;
+}
+.x-icon-btn:hover {
+  background: var(--color-button-hover);
+  color: var(--color-text-heading);
+  border-color: var(--color-border-strong);
+}
+
+/* Gradient display heading (teal→ink), used once per screen at most */
+.x-gradient-ink {
+  background: linear-gradient(140deg, #003d50 10%, #0098b7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+[data-theme='dark'] .x-gradient-ink {
+  background: linear-gradient(140deg, #9fe8f5 10%, #5de48c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Display type scale */
+.x-display {
+  font-size: clamp(34px, 5.2vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  color: var(--color-text-heading);
+  margin: 0;
+}
+.x-title {
+  font-size: clamp(26px, 3.4vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: var(--color-text-heading);
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROSE (lesson markdown)
+═══════════════════════════════════════════════════════════════════════════ */
 
 .prose-content {
-  font-size: 15.5px;
-  line-height: 1.75;
+  font-size: 16px;
+  line-height: 1.78;
   color: var(--color-text);
 }
 .prose-content h2 {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 800;
   color: var(--color-text-heading);
-  margin: 2rem 0 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--color-border);
-  letter-spacing: -0.01em;
+  margin: 2.5rem 0 0.85rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.prose-content h2:first-child {
+  margin-top: 0;
 }
 .prose-content h3 {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.075rem;
+  font-weight: 700;
   color: var(--color-text-heading);
-  margin: 1.5rem 0 0.5rem;
+  margin: 1.75rem 0 0.5rem;
+  letter-spacing: -0.01em;
 }
 .prose-content p {
-  margin: 0 0 0.875rem;
+  margin: 0 0 1rem;
 }
 .prose-content strong {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-heading);
 }
 .prose-content a {
   color: var(--color-accent);
   text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: opacity 0.15s;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  font-weight: 600;
+  transition: color 0.15s;
 }
-.prose-content a:hover { opacity: 0.75; }
+.prose-content a:hover {
+  color: var(--color-text-heading);
+}
 .prose-content code {
   font-size: 0.85em;
   padding: 0.15em 0.45em;
   border-radius: 4px;
   background: var(--color-inline-code-bg);
-  color: var(--color-accent);
+  color: var(--color-inline-code-fg);
   border: 1px solid var(--color-border-subtle);
+}
+
+/* RTL: keep code and tables left-aligned */
+[dir='rtl'] .prose-content pre,
+[dir='rtl'] .prose-content table {
+  direction: ltr;
+  text-align: left;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HERO WORLD MAP — the brand's backdrop, treated as texture.
+   A radial mask clears the centre so the headline never sits on top of a
+   continent, and the whole thing is dialled back to a whisper.
+═══════════════════════════════════════════════════════════════════════════ */
+
+.x-hero-map {
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(
+    120% 85% at 50% 42%,
+    transparent 0%,
+    transparent 26%,
+    #000 68%
+  );
+  mask-image: radial-gradient(
+    120% 85% at 50% 42%,
+    transparent 0%,
+    transparent 26%,
+    #000 68%
+  );
+}
+
+[data-theme='dark'] .x-hero-map {
+  filter: invert(1);
+  opacity: 0.28;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STATS STRIP — the 9-column tile grid from xahau.network, collapsed in two
+   steps so the tiles never fall below a readable width.
+═══════════════════════════════════════════════════════════════════════════ */
+
+.x-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .x-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .x-stats-grid > * {
+    grid-column: span 2 !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .x-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* Two tiles per row — the CTA takes the fourth slot so the grid stays square */
+  .x-stats-grid > * {
+    grid-column: span 1 !important;
+    min-height: 112px;
+  }
+  .x-stats-grid .x-stats-cta-label {
+    font-size: 15px;
+  }
 }

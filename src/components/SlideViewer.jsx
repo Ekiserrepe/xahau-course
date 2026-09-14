@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react'
+import { ActLabel } from './Brand'
 
 const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
 
-export default function SlideViewer({ slides, lang, labels, onExit, theme }) {
+/**
+ * SlideViewer — presentation mode.
+ *
+ * Same editorial grammar as the rest of the course: the brand canvas behind,
+ * one white card holding the slide, and the chrome pushed to the extremes of
+ * the screen so the room only ever looks at the content.
+ */
+export default function SlideViewer({ slides, lang, labels, onExit }) {
   const [current, setCurrent] = useState(0)
 
   useEffect(() => {
@@ -19,48 +27,60 @@ export default function SlideViewer({ slides, lang, labels, onExit, theme }) {
   }, [slides.length, onExit])
 
   const slide = slides[current]
-  const isLight = theme === 'light'
+  const pct = ((current + 1) / slides.length) * 100
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col"
-      style={{
-        background: isLight
-          ? 'linear-gradient(135deg, #f0f1f5 0%, #e8eaf0 50%, #f0f1f5 100%)'
-          : 'linear-gradient(135deg, #080818 0%, #0d0d2b 50%, #0a0a1f 100%)',
-      }}
-    >
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3" style={{ background: 'var(--color-overlay)' }}>
-        <span className="text-xs sm:text-sm font-mono" style={{ color: 'var(--color-text-muted)' }}>
-          {current + 1} {labels.slideOf} {slides.length}
-        </span>
-        <button
-          onClick={onExit}
-          className="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium"
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'var(--color-bg)' }}>
+      {/* Thin progress rail across the very top */}
+      <div style={{ height: 3, background: 'var(--color-border-subtle)' }}>
+        <div
           style={{
-            background: 'var(--color-button-bg)',
-            color: 'var(--color-text-muted)',
-            border: '1px solid var(--color-border)',
+            height: '100%',
+            width: `${pct}%`,
+            background: 'var(--color-accent)',
+            transition: 'width 0.35s ease',
           }}
-        >
-          {labels.exitSlides} <span className="hidden sm:inline">(Esc)</span>
-        </button>
+        />
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-8 overflow-y-auto py-4">
-        <div className="text-center w-full max-w-4xl">
-          <div className="text-5xl sm:text-7xl mb-4 sm:mb-8">{slide.visual}</div>
+      {/* Top bar */}
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-8 py-3.5">
+        <ActLabel>{labels.slideMode}</ActLabel>
+
+        <div className="flex items-center gap-3">
+          <span
+            className="font-mono text-[11px] tabular-nums tracking-[0.1em]"
+            style={{ color: 'var(--color-text-dim)' }}
+          >
+            {String(current + 1).padStart(2, '0')} {labels.slideOf}{' '}
+            {String(slides.length).padStart(2, '0')}
+          </span>
+          <button type="button" onClick={onExit} className="x-btn x-btn-ghost" style={{ height: 34, padding: '0 14px', fontSize: 12.5 }}>
+            {labels.exitSlides}
+            <span className="hidden sm:inline" style={{ opacity: 0.6 }}>Esc</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Slide */}
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4 sm:px-8 pb-4">
+        <div
+          className="x-card w-full max-w-4xl h-full flex flex-col items-center justify-center text-center px-6 py-10 sm:px-16 sm:py-14 overflow-y-auto"
+        >
+          {slide.visual && (
+            <div className="text-6xl sm:text-7xl mb-8 leading-none" aria-hidden="true">
+              {slide.visual}
+            </div>
+          )}
           <h2
-            className="text-2xl sm:text-4xl font-black mb-4 sm:mb-8 tracking-tight font-mono"
-            style={{ color: 'var(--color-text-heading)' }}
+            className="x-title max-w-[20ch]"
+            style={{ fontSize: 'clamp(28px, 4.6vw, 48px)' }}
           >
             {localized(slide.title, lang)}
           </h2>
           <div
-            className="text-base sm:text-xl leading-relaxed whitespace-pre-line"
-            style={{ color: 'var(--color-text-secondary)' }}
+            className="mt-7 text-base sm:text-xl leading-relaxed whitespace-pre-line max-w-[60ch]"
+            style={{ color: 'var(--color-text)' }}
           >
             {localized(slide.content, lang)}
           </div>
@@ -68,42 +88,44 @@ export default function SlideViewer({ slides, lang, labels, onExit, theme }) {
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-center gap-3 sm:gap-4 pb-5 sm:pb-6 px-4">
+      <div className="flex items-center justify-center gap-4 px-4 pb-6">
         <button
+          type="button"
           onClick={() => setCurrent((c) => Math.max(c - 1, 0))}
           disabled={current === 0}
-          className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm"
-          style={{
-            background: current === 0 ? 'var(--color-button-disabled-bg)' : 'var(--color-button-bg)',
-            color: current === 0 ? 'var(--color-text-faint)' : 'var(--color-text-secondary)',
-            border: '1px solid var(--color-border)',
-          }}
+          className="x-btn x-btn-ghost"
+          style={{ height: 42 }}
         >
-          ← {labels.prev}
+          ← <span className="hidden sm:inline">{labels.prev}</span>
         </button>
-        <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
+
+        <div className="flex gap-1.5 flex-wrap justify-center max-w-[40vw]">
           {slides.map((_, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => setCurrent(idx)}
-              className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all"
+              aria-label={`${idx + 1}`}
+              className="rounded-full transition-all"
               style={{
+                width: idx === current ? 22 : 8,
+                height: 8,
                 background: idx === current ? 'var(--color-accent)' : 'var(--color-border)',
-                transform: idx === current ? 'scale(1.3)' : 'scale(1)',
+                border: 0,
+                cursor: 'pointer',
               }}
             />
           ))}
         </div>
+
         <button
+          type="button"
           onClick={() => setCurrent((c) => Math.min(c + 1, slides.length - 1))}
           disabled={current === slides.length - 1}
-          className="px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg font-medium transition-all text-sm"
-          style={{
-            background: current === slides.length - 1 ? 'var(--color-button-disabled-bg)' : 'var(--color-accent)',
-            color: current === slides.length - 1 ? 'var(--color-text-faint)' : '#000',
-          }}
+          className="x-btn x-btn-primary"
+          style={{ height: 42 }}
         >
-          {labels.next} →
+          <span className="hidden sm:inline">{labels.next}</span> →
         </button>
       </div>
     </div>

@@ -2,9 +2,18 @@ import React, { useState, useEffect } from 'react'
 import { UI_LABELS } from './data/i18n'
 import { COURSE_DATA } from './data/courses'
 import Header from './components/Header'
+import Hero from './components/Hero'
 import Overview from './components/Overview'
+import Footer from './components/Footer'
 import LessonView from './components/LessonView'
 import SlideViewer from './components/SlideViewer'
+
+// Course-wide figures, derived once — the hero and the stats strip share them
+const COURSE_STATS = {
+  modules: COURSE_DATA.length,
+  lessons: COURSE_DATA.reduce((acc, m) => acc + m.lessons.length, 0),
+  languages: Object.keys(UI_LABELS).length,
+}
 
 // ── URL helpers ──────────────────────────────────────────────────────────────
 
@@ -34,7 +43,8 @@ export default function App() {
   const [showSlides, setShowSlides] = useState(false)
   const [completedLessons, setCompletedLessons] = useState({})
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('xahau-theme') || 'dark'
+    // Light is the brand default — the same canvas as xahau.network
+    return localStorage.getItem('xahau-theme') || 'light'
   })
 
   // Initialise navigation state from URL so deep links and refreshes work
@@ -124,7 +134,6 @@ export default function App() {
         lang={lang}
         labels={t}
         onExit={() => setShowSlides(false)}
-        theme={theme}
       />
     )
   }
@@ -132,7 +141,7 @@ export default function App() {
   // Overview
   if (view === 'overview') {
     return (
-      <div className="min-h-screen" style={{ background: 'var(--color-bg)' }}>
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg)' }}>
         <Header
           lang={lang}
           setLang={setLang}
@@ -141,13 +150,24 @@ export default function App() {
           totalLessons={totalLessons}
           theme={theme}
           onToggleTheme={toggleTheme}
+          onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         />
-        <Overview
-          courseData={COURSE_DATA}
-          lang={lang}
+        <main className="flex-1">
+          <Hero labels={t} stats={COURSE_STATS} onStart={() => openLesson(0, 0)} />
+          <Overview
+            courseData={COURSE_DATA}
+            lang={lang}
+            labels={t}
+            completedLessons={completedLessons}
+            onOpenLesson={openLesson}
+            theme={theme}
+            stats={COURSE_STATS}
+          />
+        </main>
+        <Footer
           labels={t}
-          completedLessons={completedLessons}
-          onOpenLesson={openLesson}
+          onOpenModules={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          onStart={() => openLesson(0, 0)}
         />
       </div>
     )
@@ -176,6 +196,8 @@ export default function App() {
       totalModules={COURSE_DATA.length}
       setLang={setLang}
       completedLessons={completedLessons}
+      completedCount={completedCount}
+      totalLessons={totalLessons}
     />
   )
 }

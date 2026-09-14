@@ -1,29 +1,35 @@
 import React from 'react'
+import { ChevronDownIcon } from './Brand'
 
 const LANGUAGES = [
   { code: 'en', label: 'English', short: 'EN' },
   { code: 'fr', label: 'Français', short: 'FR' },
   { code: 'es', label: 'Español', short: 'ES' },
-  { code: 'pt', label: 'Português (Brasil)', short: 'PT-BR' },
-  { code: 'jp', label: '日本語', short: '日本語' },
-  { code: 'ko', label: '한국어', short: '한국어' },
-  { code: 'zh', label: '中文', short: '中文' },
+  { code: 'pt', label: 'Português (Brasil)', short: 'PT' },
+  { code: 'jp', label: '日本語', short: 'JA' },
+  { code: 'ko', label: '한국어', short: 'KO' },
+  { code: 'zh', label: '中文', short: 'ZH' },
   { code: 'ar', label: 'العربية', short: 'AR' },
 ]
 
-export default function LanguageSelect({ lang, setLang, label = 'Language', compact = false }) {
+export default function LanguageSelect({ lang, setLang, label = 'Language' }) {
   const active = LANGUAGES.find((item) => item.code === lang) || LANGUAGES[0]
 
   return (
     <label
-      className={`relative flex items-center gap-1.5 rounded-lg transition-all ${compact ? 'h-8 px-2' : 'h-9 px-2.5'}`}
+      className="relative flex items-center gap-1.5 h-[34px] px-2.5 rounded-md cursor-pointer transition-colors"
       style={{
         background: 'var(--color-button-bg)',
         border: '1px solid var(--color-border)',
-        color: 'var(--color-text)',
+        color: 'var(--color-text-muted)',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--color-button-hover)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'var(--color-button-bg)'
       }}
       title={label}
-      aria-label={label}
     >
       <svg
         aria-hidden="true"
@@ -33,29 +39,20 @@ export default function LanguageSelect({ lang, setLang, label = 'Language', comp
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className={compact ? 'w-4 h-4' : 'w-[18px] h-[18px]'}
+        className="w-4 h-4"
       >
         <circle cx="12" cy="12" r="10" />
         <path d="M2 12h20" />
         <path d="M12 2a15.3 15.3 0 0 1 0 20" />
         <path d="M12 2a15.3 15.3 0 0 0 0 20" />
       </svg>
-      <span className="text-xs font-bold whitespace-nowrap" style={{ color: 'var(--color-text-secondary)' }}>
+      <span
+        className="font-mono text-[11px] font-bold tracking-[0.08em]"
+        style={{ color: 'var(--color-text-secondary)' }}
+      >
         {active.short}
       </span>
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        className="w-3 h-3"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        <path
-          fillRule="evenodd"
-          d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
-          clipRule="evenodd"
-        />
-      </svg>
+      <ChevronDownIcon size={11} />
       <select
         value={lang}
         onChange={(event) => setLang(event.target.value)}
