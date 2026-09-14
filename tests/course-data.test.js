@@ -176,17 +176,38 @@ describe('translations', () => {
 })
 
 describe('quizzes', () => {
-  it('answers point at a real option', async () => {
-    const quizzes = import.meta.glob('../src/data/quizzes/*.js')
+  const quizzes = import.meta.glob('../src/data/quizzes/*.js')
+
+  it('is named after a module that exists', () => {
+    const ids = new Set(modules.map(({ mod }) => mod.id))
+    for (const file of Object.keys(quizzes)) {
+      const id = file.split('/').pop().replace('.js', '')
+      // A quiz whose filename doesn't match a module id silently never shows.
+      expect(ids, `${file} matches no module id`).toContain(id)
+    }
+  })
+
+  it('is fully translated and every answer points at a real option', async () => {
     for (const [file, load] of Object.entries(quizzes)) {
       const questions = (await load()).default
       expect(Array.isArray(questions), `${file} must default-export an array`).toBe(true)
+      expect(questions.length, `${file} is empty`).toBeGreaterThan(0)
+
+      const seen = new Set()
       for (const q of questions) {
+        expect(seen.has(q.id), `${file} repeats question id ${q.id}`).toBe(false)
+        seen.add(q.id)
+
         expect(q.options.length, `${file} ${q.id} needs options`).toBeGreaterThan(1)
         expect(q.answer, `${file} ${q.id} answer out of range`).toBeLessThan(q.options.length)
         expect(q.answer).toBeGreaterThanOrEqual(0)
+
         for (const { code } of LOCALES) {
           expect(q.question?.[code], `${file} ${q.id} has no ${code} question`).toBeTruthy()
+          expect(q.explain?.[code], `${file} ${q.id} has no ${code} explanation`).toBeTruthy()
+          q.options.forEach((opt, i) => {
+            expect(opt?.[code], `${file} ${q.id} option ${i} has no ${code}`).toBeTruthy()
+          })
         }
       }
     }

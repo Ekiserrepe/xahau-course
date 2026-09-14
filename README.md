@@ -14,7 +14,7 @@ A free, open-source **basic course on Xahau**, in eight languages — from your 
 - 📊 **Presentation Mode** — Fullscreen slides with keyboard navigation
 - 🌐 **Multilingual** — English, Spanish, French, Portuguese, Japanese, Korean, Simplified Chinese and Arabic (RTL)
 - 🔎 **Search** — Full-text across every lesson title and body (⌘K / Ctrl-K)
-- ✅ **Module checks** — Optional self-assessment at the end of a module
+- ✅ **Module checks** — Self-assessment at the end of every module, in all eight languages
 - 📈 **Progress Tracking** — Marked lessons persist in the browser
 - 🔌 **Modular** — Easy to add new modules and lessons
 
@@ -73,7 +73,9 @@ Result: the index page loads one ~100 KB script instead of 3.1 MB.
 1. Create `src/data/modules/mXX-your-slug.js` (copy `_template.js`)
 2. Register the filename in `src/data/module-list.js`
 3. Add a line icon for its `id` to `ICON_PATHS` in `src/components/Brand.jsx`
-4. Optionally add `src/data/quizzes/<module id>.js` for an end-of-module check
+4. Optionally add `src/data/quizzes/<module id>.js` for an end-of-module check.
+   Questions must be answerable from that module's own lesson text — the point
+   is to check comprehension, not to introduce new material.
 
 `npm run dev` regenerates everything derived.
 
