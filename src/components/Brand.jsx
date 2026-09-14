@@ -76,6 +76,156 @@ export function XahauLockup({ label, compact = false, href = '/' }) {
   )
 }
 
+
+/* ── Module icon set ────────────────────────────────────────────────────────
+   Line icons drawn on one grid — 24px box, 1.6 stroke, round caps, no fill —
+   so twelve modules read as one family. Emoji never could: every vendor draws
+   them differently and they carry their own colour, which fights the tints.
+
+   Keyed by module id. A module without an entry falls back to its `icon`
+   emoji from the data file, so adding a module never renders nothing.
+─────────────────────────────────────────────────────────────────────────── */
+
+const ICON_PATHS = {
+  // m0 — Setting up the development environment
+  m0: (
+    <>
+      <rect x="2.5" y="4" width="19" height="16" rx="2.5" />
+      <path d="M2.5 8.5h19" />
+      <path d="M7 12.5 9.5 15 7 17.5" />
+      <path d="M12.75 17.5h4.25" />
+    </>
+  ),
+  // m1 — Architecture of a non-EVM blockchain
+  m1: (
+    <>
+      <path d="M12 2.75 3 7.25l9 4.5 9-4.5-9-4.5Z" />
+      <path d="m3 12 9 4.5 9-4.5" />
+      <path d="m3 16.5 9 4.5 9-4.5" />
+    </>
+  ),
+  // m2 — Consensus
+  m2: (
+    <>
+      <circle cx="12" cy="5" r="2.5" />
+      <circle cx="5" cy="17.5" r="2.5" />
+      <circle cx="19" cy="17.5" r="2.5" />
+      <path d="M10.7 7.2 6.3 15.3" />
+      <path d="m13.3 7.2 4.4 8.1" />
+      <path d="M7.5 17.5h9" />
+    </>
+  ),
+  // m3 — Your first wallet
+  m3: (
+    <>
+      <path d="M3 8V6.5A1.5 1.5 0 0 1 4.5 5h12" />
+      <rect x="3" y="8" width="18" height="11" rx="2.5" />
+      <circle cx="16.5" cy="13.5" r="1.15" />
+    </>
+  ),
+  // m4 — Querying data from a node
+  m4: (
+    <>
+      <circle cx="10.5" cy="10.5" r="6.75" />
+      <path d="m15.5 15.5 5 5" />
+      <path d="M7.75 10.5h5.5" />
+      <path d="M10.5 7.75v5.5" />
+    </>
+  ),
+  // m5b — Anatomy of a transaction
+  m5b: (
+    <>
+      <rect x="4" y="2.75" width="16" height="18.5" rx="2.5" />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h4.5" />
+    </>
+  ),
+  // m5 — Payments
+  m5: (
+    <>
+      <path d="M3.5 8.75h14" />
+      <path d="m14 5.25 3.5 3.5-3.5 3.5" />
+      <path d="M20.5 15.25h-14" />
+      <path d="m10 11.75-3.5 3.5 3.5 3.5" />
+    </>
+  ),
+  // m6 — Tokens
+  m6: (
+    <>
+      <circle cx="12" cy="12" r="8.75" />
+      <circle cx="12" cy="12" r="3.5" />
+    </>
+  ),
+  // m7 — NFTs
+  m7: (
+    <>
+      <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
+      <circle cx="8.5" cy="9.75" r="1.75" />
+      <path d="m3.5 16.5 4.75-4.75 4 4 3-3 5.25 5.25" />
+    </>
+  ),
+  // m8 — Smart contracts (Hooks) — a literal fish hook: eye, shank, barb.
+  // Xahau's signature feature deserves its own shape, not a generic bracket.
+  m8: (
+    <>
+      <circle cx="14.25" cy="3.75" r="1.75" />
+      <path d="M14.25 5.5V13a4.5 4.5 0 0 1-9 0v-2" />
+      <path d="m5.25 11 2 2.25" />
+    </>
+  ),
+  // m10 — Escrows, checks and the other transactions
+  m10: (
+    <>
+      <rect x="3.75" y="10" width="16.5" height="10.5" rx="2.5" />
+      <path d="M7.75 10V7.5a4.25 4.25 0 0 1 8.5 0V10" />
+      <path d="M12 14v2.75" />
+    </>
+  ),
+  // m11 — Xaman integration (XUMM SDK)
+  m11: (
+    <>
+      <circle cx="7.75" cy="16.25" r="4.25" />
+      <path d="m10.75 13.25 8.5-8.5" />
+      <path d="m15.5 8.5 2.5 2.5" />
+      <path d="m17.75 6.25 2.5 2.5" />
+    </>
+  ),
+}
+
+/**
+ * ModuleIcon — resolves a module to its line icon, falling back to whatever
+ * `icon` the data file declares (an emoji, today) when the id is unknown.
+ */
+export function ModuleIcon({ module: mod, size = 22, className = '' }) {
+  const paths = ICON_PATHS[mod?.id]
+
+  if (!paths) {
+    return (
+      <span aria-hidden="true" style={{ fontSize: size * 0.95, lineHeight: 1 }}>
+        {mod?.icon}
+      </span>
+    )
+  }
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      {paths}
+    </svg>
+  )
+}
+
 /* ── Editorial primitives ───────────────────────────────────────────────── */
 
 export function ActLabel({ children, color = 'var(--color-accent)', className = '' }) {

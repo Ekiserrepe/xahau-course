@@ -67,8 +67,22 @@ export default function SlideViewer({ slides, lang, labels, onExit }) {
         <div
           className="x-card w-full max-w-4xl h-full flex flex-col items-center justify-center text-center px-6 py-10 sm:px-16 sm:py-14 overflow-y-auto"
         >
+          {/* Slide emoji come from the lesson content, so they stay — but they
+              sit in a brand tile at a civil size rather than towering over the
+              headline the way a 72px emoji did. */}
           {slide.visual && (
-            <div className="text-6xl sm:text-7xl mb-8 leading-none" aria-hidden="true">
+            <div
+              className="flex items-center justify-center rounded-2xl mb-8"
+              style={{
+                width: 64,
+                height: 64,
+                fontSize: 30,
+                lineHeight: 1,
+                background: 'var(--color-surface-alt)',
+                border: '1px solid var(--color-border-subtle)',
+              }}
+              aria-hidden="true"
+            >
               {slide.visual}
             </div>
           )}

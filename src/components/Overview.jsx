@@ -1,5 +1,5 @@
 import React from 'react'
-import { ActLabel, CheckIcon, themeFor } from './Brand'
+import { ActLabel, CheckIcon, ModuleIcon, themeFor } from './Brand'
 
 const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
 
@@ -113,16 +113,16 @@ function ModuleCard({ mod, mIdx, lang, labels, completedLessons, onOpenLesson, t
         style={{ borderBottom: '1px solid var(--color-border-subtle)' }}
       >
         <div
-          className="flex items-center justify-center shrink-0 rounded-xl text-2xl"
+          className="flex items-center justify-center shrink-0 rounded-xl"
           style={{
             width: 48,
             height: 48,
             background: mt.tint,
             border: `1px solid ${mt.line}`,
+            color: mt.ink,
           }}
-          aria-hidden="true"
         >
-          {mod.icon}
+          <ModuleIcon module={mod} size={22} />
         </div>
 
         <div className="min-w-0 flex-1">

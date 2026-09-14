@@ -435,6 +435,23 @@ samp {
   text-align: left;
 }
 
+/* ── Non-Latin scripts ──────────────────────────────────────────────────────
+   The micro-label look (monospace, 0.2em tracking, uppercase) is a Latin
+   device. Arabic shaping breaks outright when letters are spaced apart, and
+   CJK just looks loose, so those locales get the normal face and tight
+   tracking instead.
+─────────────────────────────────────────────────────────────────────────── */
+
+:root:is([lang='ar'], [lang='jp'], [lang='ko'], [lang='zh'])
+  :is(.x-act-label, .x-chip) {
+  font-family: 'Onest', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+:root[lang='ar'] .x-act-label {
+  text-transform: none;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    HERO WORLD MAP — the brand's backdrop, treated as texture.
    A radial mask clears the centre so the headline never sits on top of a

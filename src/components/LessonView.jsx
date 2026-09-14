@@ -7,6 +7,7 @@ import {
   ArrowLeftIcon,
   CheckIcon,
   ChevronDownIcon,
+  ModuleIcon,
   themeFor,
 } from './Brand'
 
@@ -179,8 +180,17 @@ export default function LessonView({
               {labels.module} {String(moduleIdx).padStart(2, '0')}
             </ActLabel>
             <div className="flex items-start gap-2.5 mt-3">
-              <span className="text-lg leading-none mt-0.5" aria-hidden="true">
-                {mod.icon}
+              <span
+                className="flex items-center justify-center shrink-0 rounded-lg mt-0.5"
+                style={{
+                  width: 28,
+                  height: 28,
+                  background: mt.tint,
+                  border: `1px solid ${mt.line}`,
+                  color: mt.ink,
+                }}
+              >
+                <ModuleIcon module={mod} size={15} />
               </span>
               <span
                 className="text-[14.5px] font-bold leading-snug"

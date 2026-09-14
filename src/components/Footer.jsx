@@ -128,7 +128,6 @@ export default function Footer({ labels, onOpenModules, onStart }) {
               links={[
                 { label: labels.heroDocs, href: 'https://docs.xahau.network' },
                 { label: labels.footerNetwork, href: 'https://xahau.network' },
-                { label: labels.footerExplorer, href: 'https://xahauexplorer.com' },
               ]}
             />
             <Column

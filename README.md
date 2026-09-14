@@ -1,6 +1,6 @@
 # ⬡ Learn Xahau
 
-Open-source, multilingual training portal for learning Xahau blockchain development.
+A free, open-source **basic course on Xahau**, in eight languages — from your first wallet to your first Hook.
 
 [https://learnxahau.inftf.org](https://learnxahau.inftf.org).
 
