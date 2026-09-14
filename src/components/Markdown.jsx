@@ -58,6 +58,13 @@ function renderInline(text) {
 export default function Markdown({ text }) {
   if (!text) return null
   const lines = text.split('\n')
+
+  // The lesson title is an <h1>, so its sections must be <h2> or the document
+  // skips a level. The curriculum writes them as `###` — there isn't a single
+  // `##` in the twelve modules — so the shallowest level present is promoted
+  // to h2, and anything below it follows. A lesson that mixes both still
+  // nests correctly.
+  const hasH2 = lines.some((l) => l.startsWith('## '))
   const elements = []
   let i = 0
 
@@ -183,10 +190,13 @@ export default function Markdown({ text }) {
       )
     } else if (line.startsWith('### ')) {
       const raw = line.slice(4)
+      const id = slugify(raw.replace(/[*`]/g, '').trim())
       elements.push(
-        <h3 key={i} id={slugify(raw.replace(/[*`]/g, '').trim())}>
-          {renderInline(raw)}
-        </h3>,
+        hasH2 ? (
+          <h3 key={i} id={id}>{renderInline(raw)}</h3>
+        ) : (
+          <h2 key={i} id={id} className="prose-h3">{renderInline(raw)}</h2>
+        ),
       )
     } else if (line.startsWith('- ')) {
       elements.push(

@@ -24,6 +24,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Guards the seams a build can't: manifest/search index drift, missing
+      # icons, untranslated lessons, labels nothing renders.
+      - name: Test
+        run: npm test
+
       # `prebuild` regenerates the manifest and search index, so a build that
       # passes here proves the generated data is in sync with the modules.
       - name: Build

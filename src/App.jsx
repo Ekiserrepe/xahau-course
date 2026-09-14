@@ -109,18 +109,36 @@ export default function App() {
   // setState, so no cascading render when a module is already in memory.
   // `loadedTick` exists only to re-render once an async load lands.
   const [loadedTick, setLoadedTick] = useState(0)
+  const [loadError, setLoadError] = useState(null)
   const moduleContent = view === 'lesson' ? peekModule(activeModuleIdx) : undefined
 
   useEffect(() => {
     if (view !== 'lesson' || peekModule(activeModuleIdx)) return undefined
     let live = true
-    loadModule(activeModuleIdx).then(() => {
-      if (live) setLoadedTick((n) => n + 1)
-    })
+    loadModule(activeModuleIdx).then(
+      () => {
+        if (live) setLoadedTick((n) => n + 1)
+      },
+      () => {
+        // A chunk can 404 after a redeploy, or simply not arrive. Without this
+        // the lesson showed a spinner for ever, with no way out.
+        if (live) setLoadError(activeModuleIdx)
+      },
+    )
     return () => {
       live = false
     }
   }, [view, activeModuleIdx, loadedTick])
+
+  // Retrying in place cannot work: a module map entry whose fetch failed is
+  // stored as such for the life of the document, so every later import() of
+  // that same specifier reuses the rejection. A reload is the only real
+  // recovery — and it is also the right one after a redeploy, since it
+  // refetches index.html and with it the current chunk hashes. Nothing is
+  // lost: progress is in localStorage and the position is in the URL.
+  const retryLoad = useCallback(() => {
+    window.location.reload()
+  }, [])
 
   // Once a module is open, the next one is the likeliest thing to be wanted
   const hasContent = !!moduleContent
@@ -191,6 +209,19 @@ export default function App() {
 
   const currentMeta = COURSE_META[activeModuleIdx]
   const currentLesson = moduleContent?.lessons?.[activeLessonIdx]
+
+  // index.html ships one static English title; without this the browser tab
+  // and every bookmark stay English whatever language the reader picked.
+  useEffect(() => {
+    const lessonTitle =
+      view === 'lesson'
+        ? currentMeta?.lessons[activeLessonIdx]?.title?.[lang] ??
+          currentMeta?.lessons[activeLessonIdx]?.title?.en
+        : null
+    document.title = lessonTitle
+      ? `${lessonTitle} — ${t.title}`
+      : `${t.title} — ${t.subtitle}`
+  }, [view, activeLessonIdx, currentMeta, lang, t])
 
   // Central navigation: updates state AND pushes a browser history entry
   const navigate = useCallback((nextView, mIdx, lIdx, slides = false) => {
@@ -271,10 +302,30 @@ export default function App() {
     if (!currentLesson?.slides) {
       return (
         <div
-          className="fixed inset-0 flex items-center justify-center"
+          className="fixed inset-0 flex flex-col items-center justify-center gap-5 px-6 text-center"
           style={{ background: 'var(--color-bg)' }}
         >
-          <Spinner size={26} />
+          {loadError === activeModuleIdx ? (
+            <>
+              <p className="text-[15px]" style={{ color: 'var(--color-text-heading)' }}>
+                {t.loadFailed}
+              </p>
+              <div className="flex gap-3">
+                <button type="button" onClick={retryLoad} className="x-btn x-btn-primary">
+                  {t.loadRetry}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('lesson', activeModuleIdx, activeLessonIdx, false)}
+                  className="x-btn x-btn-ghost"
+                >
+                  {t.exitSlides}
+                </button>
+              </div>
+            </>
+          ) : (
+            <Spinner size={26} />
+          )}
         </div>
       )
     }
@@ -350,6 +401,8 @@ export default function App() {
         onNext={goNext}
         onGoToLesson={(lIdx) => navigate('lesson', activeModuleIdx, lIdx)}
         onOpenSearch={() => setSearchOpen(true)}
+        loadFailed={loadError === activeModuleIdx}
+        onRetryLoad={retryLoad}
         hasPrev={!isFirst}
         hasNext={!isLast}
         theme={theme}

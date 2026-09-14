@@ -35,6 +35,15 @@ Shared primitives (`.x-card`, `.x-btn`, `.x-chip`, `.x-act-label`) and the token
 `src/components/Brand.jsx`. Light is the default; a dark counterpart built on the brand's
 `#0f2328` ink is available from the header toggle.
 
+## Before going live
+
+`site.config.js` holds a placeholder URL. Replace `SITE_URL` with the real
+host — it feeds the canonical link, the Open Graph and Twitter image URLs,
+`robots.txt` and `sitemap.xml`, and all four are wrong until you do.
+
+`.github/workflows/deploy.yml` is manual-trigger only until someone confirms
+GitHub Pages is the right target.
+
 ## Tech Stack
 
 - React 18 + Vite
@@ -85,9 +94,21 @@ src/
 └── styles/         # Global CSS
 
 scripts/
-├── build-course-data.mjs  # manifest, search indexes, sitemap
+├── build-course-data.mjs  # manifest, search indexes, sitemap, robots.txt
 └── make-og-image.py       # social card
+
+tests/
+└── course-data.test.js    # smoke tests for the data pipeline
 ```
+
+## Scripts
+
+| | |
+|---|---|
+| `npm run dev` | regenerates course data, then serves |
+| `npm run build` | regenerates course data, then builds |
+| `npm run lint` | ESLint |
+| `npm test` | regenerates course data, then runs the smoke tests |
 
 ## Contributing
 

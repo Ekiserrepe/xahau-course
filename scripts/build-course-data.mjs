@@ -6,6 +6,7 @@
  *   public/search/<lang>.json       stripped lesson bodies, fetched the first
  *                                   time someone opens search
  *   public/sitemap.xml              one entry per lesson deep link
+ *   public/robots.txt               points crawlers at the sitemap
  *
  * Why: courses.js used to import all twelve modules statically, so every
  * visitor downloaded the entire curriculum (~3.1 MB of JS) before the index
@@ -21,7 +22,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SITE = 'https://learnxahau.inftf.org'
+
+const { SITE_URL: SITE } = await import(path.join(ROOT, 'site.config.js'))
 
 const { MODULE_FILES } = await import(path.join(ROOT, 'src/data/module-list.js'))
 const { LOCALES } = await import(path.join(ROOT, 'src/data/locales.js'))
@@ -111,10 +113,17 @@ await writeFile(
     `\n</urlset>\n`,
 )
 
+// robots.txt has to name the sitemap's absolute URL, so it is generated from
+// the same constant rather than left as a static file that can drift.
+await writeFile(
+  path.join(ROOT, 'public/robots.txt'),
+  `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
+)
+
 const lessons = manifest.reduce((n, m) => n + m.lessons.length, 0)
 console.log(
   `course data: ${manifest.length} modules, ${lessons} lessons\n` +
     `  manifest  src/data/generated/manifest.js\n` +
     `  search    ${sizes.join(', ')}\n` +
-    `  sitemap   ${urls.length} urls`,
+    `  sitemap   ${urls.length} urls at ${SITE}`,
 )

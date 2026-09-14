@@ -80,6 +80,8 @@ export default function LessonView({
   onNext,
   onGoToLesson,
   onOpenSearch,
+  loadFailed = false,
+  onRetryLoad,
   hasPrev,
   hasNext,
   theme,
@@ -139,6 +141,12 @@ export default function LessonView({
   }
 
   const doneInModule = mod.lessons.filter((l) => completedLessons[l.id]).length
+
+  // Leaving the module is worth announcing — "Next" alone hides the jump.
+  const crossesNext = lessonIdx === mod.lessons.length - 1
+  const crossesPrev = lessonIdx === 0
+  const nextLabel = crossesNext ? labels.nextModule : labels.next
+  const prevLabel = crossesPrev ? labels.prevModule : labels.prev
 
   // The module check belongs at the end of the module, so it shows under the
   // last lesson's theory — and only for modules that declare one.
@@ -400,6 +408,7 @@ export default function LessonView({
                   border: '1px solid var(--color-border-subtle)',
                   color: 'var(--color-text-dim)',
                 }}
+                aria-label={`${labels.module} ${moduleIdx} — ${lessonIdx + 1} ${labels.lessonOf} ${mod.lessons.length}`}
               >
                 {String(moduleIdx).padStart(2, '0')}/{String(totalModules - 1).padStart(2, '0')}
                 <span style={{ opacity: 0.4, margin: '0 6px' }}>·</span>
@@ -432,6 +441,24 @@ export default function LessonView({
                 {ready ? (
                   <div className="prose-content">
                     <Markdown text={localized(lesson.theory, lang)} />
+                  </div>
+                ) : loadFailed ? (
+                  <div className="py-10 flex flex-col items-center text-center gap-4">
+                    <p
+                      className="text-[15px] font-semibold m-0"
+                      style={{ color: 'var(--color-text-heading)' }}
+                    >
+                      {labels.loadFailed}
+                    </p>
+                    <p
+                      className="text-[13.5px] m-0 max-w-[42ch]"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      {labels.loadHint}
+                    </p>
+                    <button type="button" onClick={onRetryLoad} className="x-btn x-btn-primary">
+                      {labels.loadRetry}
+                    </button>
                   </div>
                 ) : (
                   <div className="py-12 flex justify-center">
@@ -469,8 +496,10 @@ export default function LessonView({
                 disabled={!hasPrev}
                 className="x-btn x-btn-ghost"
                 style={{ height: 44 }}
+                /* The text is hidden on phones, so the button needs its own name */
+                aria-label={crossesPrev ? labels.prevModule : labels.prevLesson}
               >
-                ← <span className="hidden sm:inline">{labels.prev}</span>
+                ← <span className="hidden sm:inline">{prevLabel}</span>
               </button>
 
               <button
@@ -494,8 +523,9 @@ export default function LessonView({
                 disabled={!hasNext}
                 className="x-btn x-btn-primary"
                 style={{ height: 44 }}
+                aria-label={crossesNext ? labels.nextModule : labels.nextLesson}
               >
-                <span className="hidden sm:inline">{labels.next}</span> →
+                <span className="hidden sm:inline">{nextLabel}</span> →
               </button>
             </div>
           </main>

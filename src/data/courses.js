@@ -39,6 +39,9 @@ export function loadModule(mIdx) {
     cache.set(mIdx, m.default)
     return m.default
   })
+  // Deliberately no catch: a failed chunk must reject so the caller can show
+  // an error and offer a retry. Swallowing it here is what left the lesson
+  // spinning forever. Nothing is cached on failure, so a retry refetches.
 }
 
 /** Already-resolved module, or undefined. Lets render paths stay synchronous. */

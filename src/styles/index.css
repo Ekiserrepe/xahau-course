@@ -398,7 +398,7 @@ samp {
   line-height: 1.78;
   color: var(--color-text);
 }
-.prose-content h2 {
+.prose-content h2:not(.prose-h3) {
   font-size: 1.4rem;
   font-weight: 800;
   color: var(--color-text-heading);
@@ -406,7 +406,8 @@ samp {
   letter-spacing: -0.02em;
   line-height: 1.25;
 }
-.prose-content h2:first-child {
+.prose-content h2:first-child,
+.prose-content h2.prose-h3:first-child {
   margin-top: 0;
 }
 /* Anchor links from the "on this page" rail must clear the two sticky bars */
@@ -414,6 +415,9 @@ samp {
 .prose-content h3[id] {
   scroll-margin-top: 130px;
 }
+/* A `###` promoted to h2 for document structure keeps h3's visual weight —
+   the level is for assistive tech, the size is for the reader. */
+.prose-content h2.prose-h3,
 .prose-content h3 {
   font-size: 1.075rem;
   font-weight: 700;
