@@ -1,4 +1,32 @@
-import React from 'react'
+import React, { createContext, useContext } from 'react'
+
+/**
+ * Theory can name a course file in inline code (`hola-xahau.js`). When the
+ * lesson view provides a resolver, those names become links to the file in a
+ * Code tab. `resolve(name)` returns { href, ...target } or null; `open(target)`
+ * handles a plain click without reloading the page.
+ */
+export const FileLinks = createContext(null)
+
+function InlineCode({ text }) {
+  const links = useContext(FileLinks)
+  const target = links?.resolve(text)
+  if (!target) return <code>{text}</code>
+  return (
+    <a
+      href={target.href}
+      className="file-link"
+      onClick={(e) => {
+        // Let modified clicks open a new tab as usual
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+        e.preventDefault()
+        links.open(target)
+      }}
+    >
+      <code>{text}</code>
+    </a>
+  )
+}
 
 /**
  * Stable, URL-safe id for a heading. Shared with LessonView, which builds the
@@ -41,12 +69,18 @@ function renderInline(text) {
       return <strong key={i}>{renderInline(part.slice(2, -2))}</strong>
     }
     if (part.startsWith('`') && part.endsWith('`')) {
-      return <code key={i}>{part.slice(1, -1)}</code>
+      return <InlineCode key={i} text={part.slice(1, -1)} />
     }
     const linkMatch = part.match(/\[([^\]]+)\]\(([^)]+)\)/)
     if (linkMatch) {
+      // Links to other lessons ("?m=2&l=1") stay in the tab; outside links open a new one
+      const internal = /^[?#]/.test(linkMatch[2])
       return (
-        <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer">
+        <a
+          key={i}
+          href={linkMatch[2]}
+          {...(internal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+        >
           {linkMatch[1]}
         </a>
       )

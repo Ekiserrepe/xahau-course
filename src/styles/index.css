@@ -453,6 +453,16 @@ samp {
   overflow-wrap: break-word;
 }
 
+/* Inline code naming a file shown in a Code tab links to it */
+.prose-content a.file-link {
+  text-decoration-style: dotted;
+  text-decoration-color: var(--color-inline-code-fg);
+  font-weight: inherit;
+}
+.prose-content a.file-link:hover {
+  text-decoration-style: solid;
+}
+
 /* Code inside a fenced block sits on the ink panel and takes its colour from
    it. Without this the rule above used to box every single line. */
 .prose-content pre code {

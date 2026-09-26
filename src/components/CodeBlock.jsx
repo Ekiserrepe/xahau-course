@@ -50,7 +50,7 @@ function CopyIcon({ size = 12 }) {
  * The contrast is deliberate: code is the one place on the page allowed to
  * go dark, which makes snippets scannable without any extra decoration.
  */
-export default function CodeBlock({ block, lang, labels }) {
+export default function CodeBlock({ block, lang, labels, id, highlighted = false }) {
   const [copied, setCopied] = useState(false)
 
   const code =
@@ -72,11 +72,15 @@ export default function CodeBlock({ block, lang, labels }) {
 
   return (
     <figure
+      id={id}
       className="m-0 rounded-2xl overflow-hidden"
       style={{
         background: 'var(--color-code-bg)',
         border: '1px solid var(--color-code-border)',
-        boxShadow: 'var(--shadow-soft)',
+        // A theory link landed here: ring it for a moment
+        boxShadow: highlighted ? '0 0 0 3px var(--xahau-green), var(--shadow-soft)' : 'var(--shadow-soft)',
+        transition: 'box-shadow 0.6s ease',
+        scrollMarginTop: 96,
       }}
     >
       <figcaption

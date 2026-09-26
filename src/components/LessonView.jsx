@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import Markdown, { headingsOf } from './Markdown'
+import Markdown, { FileLinks, headingsOf } from './Markdown'
 import CodeBlock from './CodeBlock'
 import Quiz from './Quiz'
 import { hasQuiz } from '../data/quizzes'
+import { COURSE_META } from '../data/courses'
+import { codeAnchor, codeFile } from '../data/code-files'
 import Header from './Header'
 import {
   ActLabel,
@@ -15,6 +17,28 @@ import {
 } from './Brand'
 
 const localized = (value, lang) => value?.[lang] ?? value?.en ?? value?.es ?? ''
+
+/** Every file shown in a Code tab, and the first lesson that shows it. */
+const FILE_HOME = new Map()
+COURSE_META.forEach((m, mIdx) =>
+  m.lessons.forEach((l, lIdx) =>
+    (l.files ?? []).forEach((f) => FILE_HOME.has(f) || FILE_HOME.set(f, { mIdx, lIdx })),
+  ),
+)
+
+/**
+ * A name as theory writes it ("hola-xahau.js", "App.jsx") -> one of `files`.
+ * A bare name may stand for a longer path only among the lesson's own files:
+ * course-wide, "index.html" in the Vite lesson is not the backend's
+ * "public/index.html" three lessons later.
+ */
+function findFile(name, files, { suffix = false } = {}) {
+  const n = name.trim()
+  if (!/^[\w./-]+\.[a-z]+$/i.test(n)) return null
+  return files.find((f) => f === n) ?? (suffix ? files.find((f) => f.endsWith('/' + n)) : null) ?? null
+}
+
+const fileHref = (mIdx, lIdx, file) => `?m=${mIdx}&l=${lIdx}&t=code&f=${encodeURIComponent(file)}`
 
 /* ── Tabs ───────────────────────────────────────────────────────────────────
    A segmented control rather than the old emoji strip: quieter, and it reads
@@ -82,6 +106,8 @@ export default function LessonView({
   onOpenSearch,
   loadFailed = false,
   onRetryLoad,
+  onGoToFile,
+  pendingFile = null,
   hasPrev,
   hasNext,
   theme,
@@ -92,7 +118,9 @@ export default function LessonView({
   completedCount,
   totalLessons,
 }) {
-  const [activeTab, setActiveTab] = useState('theory')
+  const [activeTab, setActiveTab] = useState(pendingFile ? 'code' : 'theory')
+  // The file a theory link asked for: scrolled to and briefly highlighted
+  const [focusFile, setFocusFile] = useState(pendingFile)
   const mt = themeFor(moduleIdx, theme)
 
   // `mod` is manifest metadata and is always present; `lesson` is the loaded
@@ -100,18 +128,56 @@ export default function LessonView({
   const meta = mod.lessons[lessonIdx]
   const ready = !!lesson
 
-  // A new lesson always opens on Theory. Adjusting during render beats an
-  // effect that would paint the previous lesson's tab for one frame first.
+  // A new lesson opens on Theory, or on Code when a link asked for a file.
+  // Adjusting during render beats an effect that would paint the previous
+  // lesson's tab for one frame first.
   const lessonKey = `${moduleIdx}:${lessonIdx}`
   const [tabFor, setTabFor] = useState(lessonKey)
   if (tabFor !== lessonKey) {
     setTabFor(lessonKey)
-    setActiveTab('theory')
+    setActiveTab(pendingFile ? 'code' : 'theory')
+    setFocusFile(pendingFile)
   }
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [moduleIdx, lessonIdx])
+
+  // Bring the requested file into view once its block is on the page.
+  // 'instant', not smooth: the site sets `scroll-behavior: smooth`, and a smooth
+  // scroll here can stop short or never run. Keyed on `lesson` too: across
+  // modules, `ready` can be true while the previous module's content is still
+  // on screen, so the block isn't there on the first run.
+  useEffect(() => {
+    if (!focusFile || activeTab !== 'code' || !ready) return
+    const el = document.getElementById(codeAnchor(focusFile))
+    if (!el) return
+    el.scrollIntoView({ behavior: 'instant', block: 'start' })
+    const t = setTimeout(() => setFocusFile(null), 2500)
+    return () => clearTimeout(t)
+  }, [focusFile, activeTab, ready, lesson])
+
+  const fileLinks = useMemo(
+    () => ({
+      resolve(name) {
+        const here = findFile(name, meta?.files ?? [], { suffix: true })
+        if (here) return { file: here, mIdx: moduleIdx, lIdx: lessonIdx, href: fileHref(moduleIdx, lessonIdx, here) }
+        const file = findFile(name, [...FILE_HOME.keys()])
+        if (!file) return null
+        const { mIdx, lIdx } = FILE_HOME.get(file)
+        return { file, mIdx, lIdx, href: fileHref(mIdx, lIdx, file) }
+      },
+      open({ file, mIdx, lIdx }) {
+        if (mIdx === moduleIdx && lIdx === lessonIdx) {
+          setActiveTab('code')
+          setFocusFile(file)
+        } else {
+          onGoToFile?.(mIdx, lIdx, file)
+        }
+      },
+    }),
+    [meta, moduleIdx, lessonIdx, onGoToFile],
+  )
 
   const tabs = [
     { key: 'theory', label: labels.theory, disabled: false },
@@ -440,7 +506,9 @@ export default function LessonView({
                 </h1>
                 {ready ? (
                   <div className="prose-content">
-                    <Markdown text={localized(lesson.theory, lang)} />
+                    <FileLinks.Provider value={fileLinks}>
+                      <Markdown text={localized(lesson.theory, lang)} />
+                    </FileLinks.Provider>
                   </div>
                 ) : loadFailed ? (
                   <div className="py-10 flex flex-col items-center text-center gap-4">
@@ -483,7 +551,15 @@ export default function LessonView({
               <div className="flex flex-col gap-5">
                 <ActLabel color={mt.ink}>{labels.code}</ActLabel>
                 {lesson.codeBlocks.map((block, idx) => (
-                  <CodeBlock key={idx} block={block} lang={lang} labels={labels} theme={theme} />
+                  <CodeBlock
+                    key={idx}
+                    id={codeFile(block) ? codeAnchor(codeFile(block)) : undefined}
+                    highlighted={!!focusFile && focusFile === codeFile(block)}
+                    block={block}
+                    lang={lang}
+                    labels={labels}
+                    theme={theme}
+                  />
                 ))}
               </div>
             )}
