@@ -2070,7 +2070,8 @@ For token names longer than 3 characters, a 40-character hexadecimal code is use
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getTokenBalances(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2099,8 +2100,10 @@ async function getTokenBalances(address) {
   await client.disconnect();
 }
 
-getTokenBalances("rTuDireccionAqui");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+getTokenBalances(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function getTokenSaldos(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -2122,8 +2125,10 @@ async function getTokenSaldos(address) {
   }
   await client.disconnect();
 }
-getTokenSaldos("rTuDireccionAqui");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+getTokenSaldos(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getTokenBalances(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2152,8 +2157,10 @@ async function getTokenBalances(address) {
   await client.disconnect();
 }
 
-getTokenBalances("rYourAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+getTokenBalances(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getTokenBalances(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2182,8 +2189,10 @@ async function getTokenBalances(address) {
   await client.disconnect();
 }
 
-getTokenBalances("rYourAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+getTokenBalances(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getTokenBalances(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2212,8 +2221,10 @@ async function getTokenBalances(address) {
   await client.disconnect();
 }
 
-getTokenBalances("rYourAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+getTokenBalances(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getTokenBalances(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2242,7 +2253,8 @@ async function getTokenBalances(address) {
   await client.disconnect();
 }
 
-getTokenBalances("rYourAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+getTokenBalances(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
 

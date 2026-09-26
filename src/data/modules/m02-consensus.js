@@ -339,6 +339,7 @@ async function getValidators() {
   console.log("Estado del consenso:");
   console.log("  Ledger validado:", info.validated_ledger.seq);
   console.log("  Hash:", info.validated_ledger.hash);
+  // Algunos nodos públicos muestran 0: el quórum depende de los validadores en los que confía cada nodo
   console.log("  Quorum:", info.validation_quorum);
 
   await client.disconnect();
@@ -357,6 +358,7 @@ async function getValidadors() {
   console.log("Estado do consenso:");
   console.log("  Ledger validado:", info.validated_ledger.seq);
   console.log("  Hash:", info.validated_ledger.hash);
+  // Alguns nós públicos mostram 0: o quórum depende dos validadores em que cada nó confia
   console.log("  Quorum:", info.validation_quorum);
   await client.disconnect();
 }
@@ -376,6 +378,7 @@ async function getValidators() {
   console.log("Consensus status:");
   console.log("  Validated ledger:", info.validated_ledger.seq);
   console.log("  Hash:", info.validated_ledger.hash);
+  // Some public nodes report 0 here: the quorum depends on the validators each node trusts
   console.log("  Quorum:", info.validation_quorum);
 
   await client.disconnect();
@@ -397,6 +400,7 @@ async function getValidators() {
   console.log("コンセンサスの状態：");
   console.log("  検証済みレジャー：", info.validated_ledger.seq);
   console.log("  ハッシュ：", info.validated_ledger.hash);
+  // 一部の公開ノードは 0 を返します。クォーラムは各ノードが信頼するバリデータで決まります
   console.log("  クォーラム：", info.validation_quorum);
 
   await client.disconnect();
@@ -418,6 +422,7 @@ async function getValidators() {
   console.log("합의 상태:");
   console.log("  검증된 원장:", info.validated_ledger.seq);
   console.log("  해시:", info.validated_ledger.hash);
+  // 일부 공개 노드는 0을 반환합니다. 쿼럼은 각 노드가 신뢰하는 검증자에 따라 정해집니다
   console.log("  쿼럼:", info.validation_quorum);
 
   await client.disconnect();
@@ -439,6 +444,7 @@ async function getValidators() {
   console.log("共识状态:");
   console.log("  已验证账本:", info.validated_ledger.seq);
   console.log("  哈希:", info.validated_ledger.hash);
+  // 一些公共节点在这里返回 0：法定人数取决于每个节点信任的验证者
   console.log("  法定人数:", info.validation_quorum);
 
   await client.disconnect();
@@ -1490,6 +1496,7 @@ async function inspectValidatorInfo() {
   console.log("");
 
   console.log("=== Estado del consenso ===");
+  // Algunos nodos públicos muestran 0: el quórum depende de los validadores en los que confía cada nodo
   console.log("Quorum de validación:", info.validation_quorum);
   console.log("Ledger validado:", info.validated_ledger.seq);
   console.log("Hash del ledger:", info.validated_ledger.hash);
@@ -1520,6 +1527,7 @@ async function inspectValidadorInfo() {
   console.log("Estado:", info.server_state);
   console.log("");
   console.log("=== Estado do consenso ===");
+  // Alguns nós públicos mostram 0: o quórum depende dos validadores em que cada nó confia
   console.log("Quorum de validação:", info.validation_quorum);
   console.log("Ledger validado:", info.validated_ledger.seq);
   console.log("Hash do ledger:", info.validated_ledger.hash);
@@ -1552,6 +1560,7 @@ async function inspectValidatorInfo() {
   console.log("");
 
   console.log("=== Consensus status ===");
+  // Some public nodes report 0 here: the quorum depends on the validators each node trusts
   console.log("Validation quorum:", info.validation_quorum);
   console.log("Validated ledger:", info.validated_ledger.seq);
   console.log("Ledger hash:", info.validated_ledger.hash);
@@ -1587,6 +1596,7 @@ async function inspectValidatorInfo() {
   console.log("");
 
   console.log("=== コンセンサスの状態 ===");
+  // 一部の公開ノードは 0 を返します。クォーラムは各ノードが信頼するバリデータで決まります
   console.log("検証クォーラム：", info.validation_quorum);
   console.log("検証済みレジャー：", info.validated_ledger.seq);
   console.log("レジャーハッシュ：", info.validated_ledger.hash);
@@ -1622,6 +1632,7 @@ async function inspectValidatorInfo() {
   console.log("");
 
   console.log("=== 합의 상태 ===");
+  // 일부 공개 노드는 0을 반환합니다. 쿼럼은 각 노드가 신뢰하는 검증자에 따라 정해집니다
   console.log("검증 쿼럼:", info.validation_quorum);
   console.log("검증된 원장:", info.validated_ledger.seq);
   console.log("원장 해시:", info.validated_ledger.hash);
@@ -1657,6 +1668,7 @@ async function inspectValidatorInfo() {
   console.log("");
 
   console.log("=== 共识状态 ===");
+  // 一些公共节点在这里返回 0：法定人数取决于每个节点信任的验证者
   console.log("验证法定人数:", info.validation_quorum);
   console.log("已验证账本:", info.validated_ledger.seq);
   console.log("账本哈希:", info.validated_ledger.hash);
@@ -1716,7 +1728,8 @@ async function checkNetworkFees() {
 
   console.log("=== Estado del ledger ===");
   console.log("Ledger actual:", fee.ledger_current_index);
-  console.log("Niveles de carga esperados:", fee.levels.median_level);
+  console.log("Nivel de comisión de referencia:", fee.levels.reference_level);
+  console.log("Nivel de comisión mediano:", fee.levels.median_level);
 
   await client.disconnect();
 }
@@ -1746,7 +1759,8 @@ async function checkNetworkFees() {
   console.log("");
   console.log("=== Estado do ledger ===");
   console.log("Ledger atual:", fee.ledger_current_index);
-  console.log("Niveles de carga esperados:", fee.levels.median_level);
+  console.log("Nível de taxa de referência:", fee.levels.reference_level);
+  console.log("Nível de taxa mediano:", fee.levels.median_level);
   await client.disconnect();
 }
 checkNetworkFees();`,
@@ -1779,7 +1793,8 @@ async function checkNetworkFees() {
 
   console.log("=== Ledger status ===");
   console.log("Current ledger:", fee.ledger_current_index);
-  console.log("Expected load levels:", fee.levels.median_level);
+  console.log("Reference fee level:", fee.levels.reference_level);
+  console.log("Median fee level:", fee.levels.median_level);
 
   await client.disconnect();
 }
@@ -1814,7 +1829,8 @@ async function checkNetworkFees() {
 
   console.log("=== レジャーの状態 ===");
   console.log("現在のレジャー：", fee.ledger_current_index);
-  console.log("予想負荷レベル：", fee.levels.median_level);
+  console.log("基準手数料レベル：", fee.levels.reference_level);
+  console.log("中央値の手数料レベル：", fee.levels.median_level);
 
   await client.disconnect();
 }
@@ -1849,7 +1865,8 @@ async function checkNetworkFees() {
 
   console.log("=== 원장 상태 ===");
   console.log("현재 원장:", fee.ledger_current_index);
-  console.log("예상 부하 수준:", fee.levels.median_level);
+  console.log("기준 수수료 수준:", fee.levels.reference_level);
+  console.log("중간 수수료 수준:", fee.levels.median_level);
 
   await client.disconnect();
 }
@@ -1884,7 +1901,8 @@ async function checkNetworkFees() {
 
   console.log("=== 账本状态 ===");
   console.log("当前账本:", fee.ledger_current_index);
-  console.log("预期负载级别:", fee.levels.median_level);
+  console.log("参考费用级别:", fee.levels.reference_level);
+  console.log("中位费用级别:", fee.levels.median_level);
 
   await client.disconnect();
 }

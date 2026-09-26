@@ -508,7 +508,8 @@ mintURIToken();`,
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
@@ -542,9 +543,10 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-// Reemplaza con la dirección que quieres consultar, por ejemplo r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
-getURITokens("rTuDireccionAqui");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+getURITokens(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -573,9 +575,10 @@ async function getURITokens(address) {
   }
   await client.disconnect();
 }
-// Substitua pelo endereço que quer consultar, por exemplo r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
-getURITokens("rTuDireccionAqui");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+getURITokens(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
@@ -609,9 +612,10 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-// Insert the address you want to query, for example r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
-getURITokens("rYourAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+getURITokens(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
@@ -626,7 +630,8 @@ async function getURITokens(address) {
 
   const tokens = response.result.account_objects;
   console.log(\`=== \${address} のURIToken ===\`);
-  console.log(\`合計: \${tokens.length}\n\`);
+  console.log(\`合計: \${tokens.length}
+\`);
 
   for (const token of tokens) {
     const uri = Buffer.from(token.URI, "hex").toString("utf8");
@@ -645,9 +650,10 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-// 照会したいアドレスに置き換えてください。例：r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
-getURITokens("rYourAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+getURITokens(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
@@ -681,9 +687,10 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-// 조회할 주소로 교체하세요. 예: r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
-getURITokens("rYourAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+getURITokens(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getURITokens(address) {
   const client = new Client("wss://xahau-test.net");
@@ -717,8 +724,8 @@ async function getURITokens(address) {
 
   await client.disconnect();
 }
-// 替换成你要查询的地址，例如 r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
-getURITokens("rYourAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+getURITokens(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],

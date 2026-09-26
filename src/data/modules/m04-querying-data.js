@@ -341,7 +341,8 @@ getServerInfo();`,
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
@@ -372,8 +373,10 @@ async function getAccountInfo(address) {
   await client.disconnect();
 }
 
-getAccountInfo("rYourAddressHere");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -398,8 +401,10 @@ async function getAccountInfo(address) {
   }
   await client.disconnect();
 }
-getAccountInfo("rYourAddressHere");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
@@ -430,8 +435,10 @@ async function getAccountInfo(address) {
   await client.disconnect();
 }
 
-getAccountInfo("rYourAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
@@ -462,8 +469,10 @@ async function getAccountInfo(address) {
   await client.disconnect();
 }
 
-getAccountInfo("rYourAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
@@ -494,8 +503,10 @@ async function getAccountInfo(address) {
   await client.disconnect();
 }
 
-getAccountInfo("rYourAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountInfo(address) {
   const client = new Client("wss://xahau-test.net");
@@ -526,7 +537,8 @@ async function getAccountInfo(address) {
   await client.disconnect();
 }
 
-getAccountInfo("rYourAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],
@@ -740,7 +752,8 @@ You can query the details of a specific transaction using its **hash** with the 
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
@@ -772,8 +785,10 @@ async function getAccountTransactions(address) {
   await client.disconnect();
 }
 //Ejemplo de dirección: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountTransactions("rYourAddressHere");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -800,8 +815,10 @@ async function getAccountTransactions(address) {
   await client.disconnect();
 }
 //Exemplo de endereçou: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountTransactions("rYourAddressHere");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
@@ -833,8 +850,10 @@ async function getAccountTransactions(address) {
   await client.disconnect();
 }
 //Example address: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountTransactions("rYourAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
@@ -866,8 +885,10 @@ async function getAccountTransactions(address) {
   await client.disconnect();
 }
 //アドレスの例：rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountTransactions("rYourAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
@@ -899,8 +920,10 @@ async function getAccountTransactions(address) {
   await client.disconnect();
 }
 //예시 주소: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountTransactions("rYourAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountTransactions(address) {
   const client = new Client("wss://xahau-test.net");
@@ -932,7 +955,8 @@ async function getAccountTransactions(address) {
   await client.disconnect();
 }
 //示例地址: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountTransactions("rYourAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
         {
@@ -946,7 +970,8 @@ getAccountTransactions("rYourAddressHere");`,
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -988,8 +1013,10 @@ async function getAccountObjects(address) {
   setTimeout(() => client.disconnect(), 60000);
 }
 //Ejemplo de dirección: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountObjects("rYourAddressHere");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -1024,8 +1051,10 @@ async function getAccountObjects(address) {
   setTimeout(() => client.disconnect(), 60000);
 }
 //Exemplo de endereçou: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountObjects("rYourAddressHere");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1051,7 +1080,7 @@ async function getAccountObjects(address) {
   }
 
   // Subscribe to transactions for this account
-  console.log("\Subscribed to account transactions...");
+  console.log("Subscribed to account transactions...");
   await client.request({
     command: "subscribe",
     accounts: [address]
@@ -1067,8 +1096,10 @@ async function getAccountObjects(address) {
   setTimeout(() => client.disconnect(), 60000);
 }
 //Example address: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountObjects("rYourAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1110,8 +1141,10 @@ async function getAccountObjects(address) {
   setTimeout(() => client.disconnect(), 60000);
 }
 //アドレスの例：rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountObjects("rYourAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1153,8 +1186,10 @@ async function getAccountObjects(address) {
   setTimeout(() => client.disconnect(), 60000);
 }
 //예시 주소: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountObjects("rYourAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1196,7 +1231,8 @@ async function getAccountObjects(address) {
   setTimeout(() => client.disconnect(), 60000);
 }
 //示例地址: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
-getAccountObjects("rYourAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],
@@ -1442,7 +1478,8 @@ Many API commands return paginated results. When there is more data than fits in
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1500,8 +1537,10 @@ async function getAllAccountObjects(address) {
   await client.disconnect();
 }
 //Ejemplo de cuenta: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
-getAllAccountObjects("rYourAddressHere");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+getAllAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -1546,8 +1585,10 @@ async function getAllAccountObjects(address) {
   await client.disconnect();
 }
 //Exemplo de conta: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
-getAllAccountObjects("rYourAddressHere");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+getAllAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1605,8 +1646,10 @@ async function getAllAccountObjects(address) {
   await client.disconnect();
 }
 //Example account: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
-getAllAccountObjects("rYourAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+getAllAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1664,8 +1707,10 @@ async function getAllAccountObjects(address) {
   await client.disconnect();
 }
 //アカウントの例：rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
-getAllAccountObjects("rYourAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+getAllAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1723,8 +1768,10 @@ async function getAllAccountObjects(address) {
   await client.disconnect();
 }
 //예시 계정: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
-getAllAccountObjects("rYourAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+getAllAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function getAllAccountObjects(address) {
   const client = new Client("wss://xahau-test.net");
@@ -1782,7 +1829,8 @@ async function getAllAccountObjects(address) {
   await client.disconnect();
 }
 //示例账户: rHh1YJN4kwRdw4Y29Xu1EY9qW8u36vAYLc
-getAllAccountObjects("rYourAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+getAllAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],

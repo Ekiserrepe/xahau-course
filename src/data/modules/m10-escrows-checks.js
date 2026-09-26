@@ -1199,7 +1199,11 @@ Xahau soporta crypto-condiciones del protocolo **Interledger (ILP)**:
 - Basadas en el estándar **PREIMAGE-SHA-256**
 - El creador genera un \`Condition\` (hash) y guarda el \`Fulfillment\` (preimagen)
 - Para completar el escrow, se debe proporcionar el \`Fulfillment\` que corresponda al \`Condition\`
-- Esto permite escrows que solo se liberan cuando alguien demuestra conocer un secreto`,
+- Esto permite escrows que solo se liberan cuando alguien demuestra conocer un secreto
+
+### Ejecutar los ejemplos
+
+El primer ejemplo crea el escrow desde \`WALLET\` e imprime su \`Sequence\`. Cuando pasen los dos minutos de \`FinishAfter\`, ejecuta el segundo ejemplo con ese \`Sequence\` como primer argumento. Antes de ese momento, el script imprime cuántos segundos faltan.`,
         pt: `Um **Escrow** é um mecanismo de pagamento condicional que bloqueia fundos até que se cumpram certas condições. É como um sobre selado com dinheiro que sou pode abrir sob circunstâncias específicas. Uma cofre condicional.
 ### Casos de uso
 - **Pagamentos programados**: Liberar fundos em uma data futura determinada
@@ -1234,7 +1238,11 @@ Xahau suporta condições criptográficas do protocolo **Interledger (ILP)**:
 - Baseadas no padrão **PREIMAGE-SHA-256**
 - O criador gera um \`Condition\` (hash) e guarda o \`Fulfillment\` (pré-imagem)
 - Para completar o escrow, se deve proporcionar o \`Fulfillment\` que corresponda ao \`Condition\`
-- Isso permite escrows que sou são liberados quando alguém demonstra conhecer um segredo`,
+- Isso permite escrows que sou são liberados quando alguém demonstra conhecer um segredo
+
+### Executar os exemplos
+
+O primeiro exemplo cria o escrow a partir da \`WALLET\` e imprime o seu \`Sequence\`. Quando passarem os dois minutos de \`FinishAfter\`, execute o segundo exemplo com esse \`Sequence\` como primeiro argumento. Antes disso, o script imprime quantos segundos faltam.`,
         en: `An **Escrow** is a conditional payment mechanism that locks funds until certain conditions are met. Like a sealed envelope with money that can only be opened under specific circumstances, a conditional safe.
 
 ### Use cases
@@ -1281,7 +1289,11 @@ Xahau supports crypto-conditions from the **Interledger (ILP)** protocol:
 - Based on the **PREIMAGE-SHA-256** standard
 - The creator generates a \`Condition\` (hash) and saves the \`Fulfillment\` (preimage)
 - To complete the escrow, the \`Fulfillment\` matching the \`Condition\` must be provided
-- This allows escrows only released when someone proves they know a secret`,
+- This allows escrows only released when someone proves they know a secret
+
+### Running the examples
+
+The first example creates the escrow from \`WALLET\` and prints its \`Sequence\`. When the two minutes of \`FinishAfter\` have passed, run the second example with that \`Sequence\` as its first argument. Before that, the script prints how many seconds remain.`,
         jp: `**エスクロー**は、特定の条件が満たされるまで資金をロックする条件付き支払いメカニズムです。特定の状況下でのみ開封できる封筒のようなもので、条件付き金庫と言えます。
 
 ### ユースケース
@@ -1328,7 +1340,11 @@ Xahauは**Interledger (ILP)**プロトコルの暗号条件をサポートしま
 - **PREIMAGE-SHA-256**標準に基づいています
 - 作成者は\`Condition\`（ハッシュ）を生成し、\`Fulfillment\`（プリイメージ）を保存します
 - エスクローを完了するには、\`Condition\`に一致する\`Fulfillment\`を提供する必要があります
-- これにより、秘密を知っている人だけがリリースできるエスクローが可能になります`,
+- これにより、秘密を知っている人だけがリリースできるエスクローが可能になります
+
+### 例の実行
+
+最初の例は \`WALLET\` から escrow を作成し、その \`Sequence\` を表示します。\`FinishAfter\` の2分が過ぎたら、その \`Sequence\` を最初の引数にして2つ目の例を実行します。それより前に実行すると、スクリプトは残り秒数を表示します。`,
         ko: `**Escrow**는 조건이 충족될 때까지 자금을 잠가 두는 메커니즘입니다. 미래 시점 지급이나 조건부 정산처럼 즉시 송금이 적합하지 않을 때 유용합니다.
 
 ### 대표 사용 사례
@@ -1344,7 +1360,11 @@ Xahauは**Interledger (ILP)**プロトコルの暗号条件をサポートしま
 - \`EscrowFinish\`: 조건 충족 후 해제
 - \`EscrowCancel\`: 취소 가능 시점 이후 취소
 
-시간 조건과 암호 조건을 잘 이해해야 안전하게 사용할 수 있습니다.`,
+시간 조건과 암호 조건을 잘 이해해야 안전하게 사용할 수 있습니다.
+
+### 예제 실행
+
+첫 번째 예제는 \`WALLET\`에서 escrow를 만들고 그 \`Sequence\`를 출력합니다. \`FinishAfter\`의 2분이 지나면 그 \`Sequence\`를 첫 번째 인수로 두 번째 예제를 실행합니다. 그 전에 실행하면 스크립트가 남은 초를 출력합니다.`,
         zh: `**Escrow** 是一种在满足条件之前锁定资金的机制，适合未来付款或条件结算等不适合立即转账的场景。
 
 ### 常见用途
@@ -1360,7 +1380,11 @@ Xahauは**Interledger (ILP)**プロトコルの暗号条件をサポートしま
 - \`EscrowFinish\`：条件满足后释放
 - \`EscrowCancel\`：在可取消时间后撤销
 
-安全使用 Escrow 的关键是理解时间条件和加密条件。`,
+安全使用 Escrow 的关键是理解时间条件和加密条件。
+
+### 运行示例
+
+第一个示例从 \`WALLET\` 创建 escrow 并打印它的 \`Sequence\`。\`FinishAfter\` 的两分钟过后，把这个 \`Sequence\` 作为第一个参数运行第二个示例。在此之前运行，脚本会打印剩余的秒数。`,
       },
       codeBlocks: [
         {
@@ -1375,12 +1399,15 @@ Xahauは**Interledger (ILP)**プロトコルの暗号条件をサポートしま
           code: {
             es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 
 async function createTimeLockedEscrow() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  // La cuenta CASH de .env recibe los fondos
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Ripple Epoch: segundos desde 01/01/2000 00:00:00 UTC
   // Diferencia con Unix Epoch: 946684800 segundos
@@ -1395,7 +1422,7 @@ async function createTimeLockedEscrow() {
   const escrowCreate = {
     TransactionType: "EscrowCreate",
     Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
+    Destination: receiver,
     Amount: xahToDrops(10), // Bloquear 10 XAH
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
@@ -1432,10 +1459,13 @@ async function createTimeLockedEscrow() {
 createTimeLockedEscrow();`,
             pt: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 async function createTimeLockedEscrow() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  // A conta CASH do .env recebe os fundos
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
   // Ripple Epoch: segundos a partir de 01/01/2000 00:00:00 UTC
   // Diferencia com Unix Epoch: 946684800 segundos
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -1447,7 +1477,7 @@ async function createTimeLockedEscrow() {
   const escrowCreate = {
     TransactionType: "EscrowCreate",
     Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
+    Destination: receiver,
     Amount: xahToDrops(10), // Bloquear 10 XAH
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
@@ -1478,12 +1508,15 @@ async function createTimeLockedEscrow() {
 createTimeLockedEscrow();`,
             en: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 
 async function createTimeLockedEscrow() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  // The CASH account from .env receives the funds
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Ripple Epoch: seconds since 01/01/2000 00:00:00 UTC
   // Difference from Unix Epoch: 946684800 seconds
@@ -1498,7 +1531,7 @@ async function createTimeLockedEscrow() {
   const escrowCreate = {
     TransactionType: "EscrowCreate",
     Account: sender.address,
-    Destination: "rDestinationAddress",
+    Destination: receiver,
     Amount: xahToDrops(10), // Lock 10 XAH
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
@@ -1523,7 +1556,7 @@ async function createTimeLockedEscrow() {
       "CancelAfter:",
       new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
     );
-    console.log("\Save the Sequence! You need it for EscrowFinish.");
+    console.log("Save the Sequence! You need it for EscrowFinish.");
     console.log(\`Escrow Sequence: \${prepared.Sequence}\`);
     console.log(\`Your address: \${sender.address}\`);
 
@@ -1535,12 +1568,15 @@ async function createTimeLockedEscrow() {
 createTimeLockedEscrow();`,
             jp: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 
 async function createTimeLockedEscrow() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  // .env の CASH アカウントが資金を受け取ります
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Ripple Epoch: 2000年01月01日00:00:00 UTCからの秒数
   // Unix Epochとの差: 946684800秒
@@ -1555,7 +1591,7 @@ async function createTimeLockedEscrow() {
   const escrowCreate = {
     TransactionType: "EscrowCreate",
     Account: sender.address,
-    Destination: "rDestinationAddress",
+    Destination: receiver,
     Amount: xahToDrops(10), // 10 XAHをロック
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
@@ -1592,12 +1628,15 @@ async function createTimeLockedEscrow() {
 createTimeLockedEscrow();`,
             zh: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 
 async function createTimeLockedEscrow() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  // .env 中的 CASH 账户接收资金
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Ripple Epoch：自 2000/01/01 00:00:00 UTC 起的秒数
   // 与 Unix Epoch 相差 946684800 秒
@@ -1612,7 +1651,7 @@ async function createTimeLockedEscrow() {
   const escrowCreate = {
     TransactionType: "EscrowCreate",
     Account: sender.address,
-    Destination: "rDestinationAddress",
+    Destination: receiver,
     Amount: xahToDrops(10), // 锁定 10 XAH
     FinishAfter: finishAfter,
     CancelAfter: cancelAfter,
@@ -1735,8 +1774,11 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   await client.disconnect();
 }
 
-// Usa la dirección del creador y el Sequence del EscrowCreate
-finishEscrow("rDireccionDelCreador", 12345);`,
+// El dueño del escrow del ejemplo anterior es WALLET
+// Su Sequence, que imprimió EscrowCreate, es el primer argumento
+const escrowSequence = Number(process.argv[2]);
+if (!Number.isInteger(escrowSequence)) throw new Error("Pasa como primer argumento el Sequence del escrow que imprimió EscrowCreate");
+finishEscrow(Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address, escrowSequence);`,
             pt: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 async function finishEscrow(ownerAddress, escrowSequence) {
@@ -1798,8 +1840,11 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   }
   await client.disconnect();
 }
-// Use o endereço do criador e o Sequence do EscrowCreate
-finishEscrow("rDireccionDelCreador", 12345);`,
+// O dono do escrow do exemplo anterior é a WALLET
+// O Sequence dele, impresso pelo EscrowCreate, é o primeiro argumento
+const escrowSequence = Number(process.argv[2]);
+if (!Number.isInteger(escrowSequence)) throw new Error("Passe como primeiro argumento o Sequence do escrow impresso pelo EscrowCreate");
+finishEscrow(Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address, escrowSequence);`,
             en: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
@@ -1876,8 +1921,11 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   await client.disconnect();
 }
 
-// Use the creator's address and the Sequence from EscrowCreate
-finishEscrow("rCreatorAddress", 12345);`,
+// The owner of the escrow from the previous example is WALLET
+// Its Sequence, printed by EscrowCreate, is the first argument
+const escrowSequence = Number(process.argv[2]);
+if (!Number.isInteger(escrowSequence)) throw new Error("Pass the escrow Sequence printed by EscrowCreate as the first argument");
+finishEscrow(Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address, escrowSequence);`,
             jp: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
@@ -1954,8 +2002,11 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   await client.disconnect();
 }
 
-// 作成者のアドレスとEscrowCreateのSequenceを使用
-finishEscrow("rCreatorAddress", 12345);`,
+// 前の例の escrow の所有者は WALLET です
+// EscrowCreate が表示した Sequence を最初の引数として渡します
+const escrowSequence = Number(process.argv[2]);
+if (!Number.isInteger(escrowSequence)) throw new Error("EscrowCreate が表示した escrow の Sequence を最初の引数として渡してください");
+finishEscrow(Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address, escrowSequence);`,
             zh: `require("dotenv").config();
 const { Client, Wallet } = require("xahau");
 
@@ -2032,8 +2083,11 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   await client.disconnect();
 }
 
-// 使用创建者地址和 EscrowCreate 的 Sequence
-finishEscrow("rCreatorAddress", 12345);`,
+// 上一个示例中 escrow 的所有者是 WALLET
+// 它的 Sequence 由 EscrowCreate 打印，作为第一个参数传入
+const escrowSequence = Number(process.argv[2]);
+if (!Number.isInteger(escrowSequence)) throw new Error("请将 EscrowCreate 打印的 escrow Sequence 作为第一个参数传入");
+finishEscrow(Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address, escrowSequence);`,
           },
         },
       ],
@@ -3299,6 +3353,9 @@ Xahauの各アカウントには、トランザクションごとにインクリ
           code: {
             es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
+if (!process.env.HOLDER_SEED) throw new Error("HOLDER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 
 async function paymentsWithTickets() {
   const client = new Client("wss://xahau-test.net");
@@ -3337,10 +3394,12 @@ async function paymentsWithTickets() {
   // === PASO 2: Usar los Tickets para enviar pagos (en cualquier orden) ===
   console.log("=== Paso 2: Enviar pagos con Tickets ===");
 
+  // Tres cuentas del curso en .env reciben los pagos
+  const addressOf = (role) => Wallet.fromSeed(process.env[\`\${role}_SEED\`], {algorithm: 'secp256k1'}).address;
   const destinations = [
-    { address: "rDestino1XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Pago A" },
-    { address: "rDestino2XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Pago B" },
-    { address: "rDestino3XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Pago C" },
+    { address: addressOf("CASH"), amount: 5,  label: "Pago A" },
+    { address: addressOf("BUYER"), amount: 10, label: "Pago B" },
+    { address: addressOf("HOLDER"), amount: 15, label: "Pago C" },
   ];
 
   // Podemos enviarlos en cualquier orden, incluso en paralelo
@@ -3379,6 +3438,9 @@ async function paymentsWithTickets() {
 paymentsWithTickets();`,
             pt: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
+if (!process.env.HOLDER_SEED) throw new Error("HOLDER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 async function paymentsWithTickets() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -3407,10 +3469,12 @@ async function paymentsWithTickets() {
   console.log("Tickets criados:", ticketSequences);
   // === PASSO 2: Usar os Tickets para enviar pagamentos (em qualquer ordem) ===
   console.log("=== Passo 2: Enviar pagamentos com Tickets ===");
+  // Três contas do curso no .env recebem os pagamentos
+  const addressOf = (role) => Wallet.fromSeed(process.env[\`\${role}_SEED\`], {algorithm: 'secp256k1'}).address;
   const destinations = [
-    { address: "rDestino1XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Pagamento A" },
-    { address: "rDestino2XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Pagamento B" },
-    { address: "rDestino3XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Pagamento C" },
+    { address: addressOf("CASH"), amount: 5,  label: "Pagamento A" },
+    { address: addressOf("BUYER"), amount: 10, label: "Pagamento B" },
+    { address: addressOf("HOLDER"), amount: 15, label: "Pagamento C" },
   ];
   // Podemos enviá-los em qualquer ordem, inclusive em paralelo
   // Aqui eles são enviados em ordem inversa para mostrar essa flexibilidade
@@ -3441,6 +3505,9 @@ async function paymentsWithTickets() {
 paymentsWithTickets();`,
             en: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
+if (!process.env.HOLDER_SEED) throw new Error("HOLDER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 
 async function paymentsWithTickets() {
   const client = new Client("wss://xahau-test.net");
@@ -3479,10 +3546,12 @@ async function paymentsWithTickets() {
   // === STEP 2: Use the Tickets to send payments (in any order) ===
   console.log("=== Step 2: Send payments with Tickets ===");
 
+  // Three course accounts from .env receive the payments
+  const addressOf = (role) => Wallet.fromSeed(process.env[\`\${role}_SEED\`], {algorithm: 'secp256k1'}).address;
   const destinations = [
-    { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Payment A" },
-    { address: "rDestination2XXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Payment B" },
-    { address: "rDestination3XXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Payment C" },
+    { address: addressOf("CASH"), amount: 5,  label: "Payment A" },
+    { address: addressOf("BUYER"), amount: 10, label: "Payment B" },
+    { address: addressOf("HOLDER"), amount: 15, label: "Payment C" },
   ];
 
   // We can send them in any order, even in parallel
@@ -3521,6 +3590,9 @@ async function paymentsWithTickets() {
 paymentsWithTickets();`,
             jp: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
+if (!process.env.HOLDER_SEED) throw new Error("HOLDER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 
 async function paymentsWithTickets() {
   const client = new Client("wss://xahau-test.net");
@@ -3559,10 +3631,12 @@ async function paymentsWithTickets() {
   // === ステップ2: チケットを使って支払いを送信（任意の順序で）===
   console.log("=== ステップ2: チケットで支払いを送信 ===");
 
+  // .env にある講座の3つのアカウントが支払いを受け取ります
+  const addressOf = (role) => Wallet.fromSeed(process.env[\`\${role}_SEED\`], {algorithm: 'secp256k1'}).address;
   const destinations = [
-    { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "支払いA" },
-    { address: "rDestination2XXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "支払いB" },
-    { address: "rDestination3XXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "支払いC" },
+    { address: addressOf("CASH"), amount: 5,  label: "支払いA" },
+    { address: addressOf("BUYER"), amount: 10, label: "支払いB" },
+    { address: addressOf("HOLDER"), amount: 15, label: "支払いC" },
   ];
 
   // 任意の順序で、並行して送信することもできます
@@ -3601,6 +3675,9 @@ async function paymentsWithTickets() {
 paymentsWithTickets();`,
             zh: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
+if (!process.env.HOLDER_SEED) throw new Error("HOLDER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 
 async function paymentsWithTickets() {
   const client = new Client("wss://xahau-test.net");
@@ -3639,10 +3716,12 @@ async function paymentsWithTickets() {
   // === 第 2 步：用 Tickets 发送支付（顺序可任意）===
   console.log("=== 第 2 步：使用 Tickets 发送支付 ===");
 
+  // .env 中的三个课程账户接收这些付款
+  const addressOf = (role) => Wallet.fromSeed(process.env[\`\${role}_SEED\`], {algorithm: 'secp256k1'}).address;
   const destinations = [
-    { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "支付 A" },
-    { address: "rDestination2XXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "支付 B" },
-    { address: "rDestination3XXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "支付 C" },
+    { address: addressOf("CASH"), amount: 5,  label: "支付 A" },
+    { address: addressOf("BUYER"), amount: 10, label: "支付 B" },
+    { address: addressOf("HOLDER"), amount: 15, label: "支付 C" },
   ];
 
   // 可以按任意顺序发送，甚至并行发送
@@ -3762,7 +3841,11 @@ Si por algún motivo quieres dejar de participar en el sistema de recompensas, p
 - Las recompensas dependen del balance y del tiempo transcurrido desde la última reclamación
 - El fee de la transacción \`ClaimReward\` es estándar (como cualquier otra transacción)
 - Es compatible con cuentas que tengan Hooks instalados
-- La dirección de \`Issuer\` es específica de cada red (testnet vs mainnet)`,
+- La dirección de \`Issuer\` es específica de cada red (testnet vs mainnet)
+
+### ClaimReward en testnet
+
+En testnet la cuenta génesis no tiene instalado el Hook de recompensas, así que el ejemplo devuelve \`tecNO_TARGET\`: la transacción es válida, pero no hay nada que reclamar. En mainnet la cuenta génesis lleva los Hooks que calculan las recompensas, y la misma transacción las reclama.`,
         pt: `A Xahau tem um sistema de **recompensas nativas** que distribui XAH às contas que participam ativamente da rede. A transação \`ClaimReward\` permite reclamar essas recompensas acumuladas.
 ### Como funcionam as recompensas na Xahau?
 Diferentemente de blockchains Proof of Stake em que você precisa fazer staking, na Xahau as recompensas são distribuídas a contas que mantêm um saldo ativo na rede. O mecanismo funciona assim:
@@ -3785,7 +3868,11 @@ Se por algum motivo quiser deixar de participar no sistema de recompensas, você
 - As recompensas dependem do saldo e do tempo transcorrido desde a última reivindicação
 - O fee da transação \`ClaimReward\` é padrão (como qualquer outra transação)
 - É compatible com contas que tenham Hooks instalados
-- A endereço de \`Issuer\` é específica de cada rede (testnet vs mainnet)`,
+- O endereço de \`Issuer\` é específico de cada rede (testnet vs mainnet)
+
+### ClaimReward na testnet
+
+Na testnet a conta gênese não tem o Hook de recompensas instalado, então o exemplo retorna \`tecNO_TARGET\`: a transação é válida, mas não há nada para reivindicar. Na mainnet a conta gênese carrega os Hooks que calculam as recompensas, e a mesma transação as reivindica.`,
         en: `Xahau has a **native rewards system** that distributes XAH to accounts that actively participate in the network. The \`ClaimReward\` transaction allows you to claim these accumulated rewards.
 
 ### How do rewards work on Xahau?
@@ -3819,7 +3906,11 @@ If for any reason you want to stop participating in the rewards system, you can 
 - Rewards depend on the balance and time elapsed since the last claim
 - The \`ClaimReward\` transaction fee is standard (like any other transaction)
 - Compatible with accounts that have Hooks installed
-- The \`Issuer\` address is specific to each network (testnet vs mainnet)`,
+- The \`Issuer\` address is specific to each network (testnet vs mainnet)
+
+### ClaimReward on testnet
+
+On testnet the genesis account has no reward Hook installed, so the example returns \`tecNO_TARGET\`: the transaction is valid, but there is nothing to claim from. On mainnet the genesis account carries the Hooks that compute rewards, and the same transaction claims them.`,
         jp: `Xahauには、ネットワークに積極的に参加するアカウントにXAHを配布する**ネイティブ報酬システム**があります。\`ClaimReward\`トランザクションにより、これらの累積報酬を請求できます。
 
 ### Xahauの報酬の仕組みは？
@@ -3853,7 +3944,11 @@ If for any reason you want to stop participating in the rewards system, you can 
 - 報酬はバランスと最後の請求からの経過時間によって異なります
 - \`ClaimReward\`トランザクションのfeeは標準（他のトランザクションと同様）です
 - Hooksがインストールされたアカウントと互換性があります
-- \`Issuer\`アドレスは各ネットワーク（testnet / mainnet）によって異なります`,
+- \`Issuer\`アドレスは各ネットワーク（testnet / mainnet）によって異なります
+
+### テストネットでの ClaimReward
+
+テストネットではジェネシスアカウントに報酬 Hook がインストールされていないため、この例は \`tecNO_TARGET\` を返します。トランザクション自体は有効ですが、請求できる報酬がありません。メインネットではジェネシスアカウントに報酬を計算する Hooks があり、同じトランザクションで報酬を請求できます。`,
         ko: `Xahau는 네트워크 참여 계정에 XAH를 분배하는 **네이티브 보상 시스템**을 가지고 있습니다. \`ClaimReward\`는 누적 보상을 청구하는 트랜잭션입니다.
 
 ### 동작 방식
@@ -3868,7 +3963,11 @@ If for any reason you want to stop participating in the rewards system, you can 
 - 보상은 계정 잔액으로 바로 반영
 - 중지하려면 특정 플래그로 비활성화 가능
 
-정확한 운영 정책은 네트워크 규칙에 따라 달라질 수 있으므로 항상 최신 문서를 확인하는 것이 좋습니다.`,
+정확한 운영 정책은 네트워크 규칙에 따라 달라질 수 있으므로 항상 최신 문서를 확인하는 것이 좋습니다.
+
+### 테스트넷의 ClaimReward
+
+테스트넷에서는 제네시스 계정에 보상 Hook이 설치되어 있지 않아 이 예제는 \`tecNO_TARGET\`을 반환합니다. 트랜잭션 자체는 유효하지만 청구할 보상이 없습니다. 메인넷에서는 제네시스 계정에 보상을 계산하는 Hooks가 있어 같은 트랜잭션으로 보상을 청구합니다.`,
         zh: `Xahau 拥有一个向网络参与账户分配 XAH 的**原生奖励系统**。\`ClaimReward\` 用来领取累计奖励。
 
 ### 工作方式
@@ -3883,7 +3982,11 @@ If for any reason you want to stop participating in the rewards system, you can 
 - 奖励直接计入账户余额
 - 如需停止接收，可通过特定标志关闭
 
-具体规则可能会随网络政策变化，因此最好始终查看最新文档。`,
+具体规则可能会随网络政策变化，因此最好始终查看最新文档。
+
+### 测试网上的 ClaimReward
+
+在测试网上，创世账户没有安装奖励 Hook，所以示例返回 \`tecNO_TARGET\`：交易本身有效，但没有可以领取的奖励。在主网上，创世账户带有计算奖励的 Hooks，同一笔交易就能领取奖励。`,
       },
       codeBlocks: [
         {
@@ -4377,12 +4480,14 @@ async function invokeHook() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // Una cuenta con un Hook: el primer argumento, o una cuenta de testnet con un Hook Accept
+  const hookAccount = process.argv[2] ?? "rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN";
 
   // Invoke a otra cuenta que tiene un Hook instalado
   const invoke = {
     TransactionType: "Invoke",
     Account: wallet.address,
-    Destination: "rCuentaConHookInstalado", // Cuenta cuyo Hook queremos activar
+    Destination: hookAccount, // Cuenta cuyo Hook queremos activar
   };
 
   const prepared = await client.autofill(invoke);
@@ -4408,11 +4513,13 @@ async function invokeHook() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // Uma conta com um Hook: o primeiro argumento, ou uma conta da testnet com um Hook Accept
+  const hookAccount = process.argv[2] ?? "rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN";
   // Invoke a outra conta que tem um Hook instalado
   const invoke = {
     TransactionType: "Invoke",
     Account: wallet.address,
-    Destination: "rCuentaConHookInstalado", // Conta cujo Hook se quer ativar
+    Destination: hookAccount, // Conta cujo Hook se quer ativar
   };
   const prepared = await client.autofill(invoke);
   const signed = wallet.sign(prepared);
@@ -4435,12 +4542,14 @@ async function invokeHook() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // An account with a Hook: the first argument, or a testnet account with an Accept Hook
+  const hookAccount = process.argv[2] ?? "rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN";
 
   // Invoke on another account that has a Hook installed
   const invoke = {
     TransactionType: "Invoke",
     Account: wallet.address,
-    Destination: "rAccountWithHookInstalled", // Account whose Hook we want to activate
+    Destination: hookAccount, // Account whose Hook we want to activate
   };
 
   const prepared = await client.autofill(invoke);
@@ -4468,12 +4577,14 @@ async function invokeHook() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // Hook を持つアカウント：最初の引数、または Accept Hook を持つテストネットのアカウント
+  const hookAccount = process.argv[2] ?? "rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN";
 
   // Hookがインストールされている他のアカウントにInvoke
   const invoke = {
     TransactionType: "Invoke",
     Account: wallet.address,
-    Destination: "rAccountWithHookInstalled", // 実行したいHookを持つアカウント
+    Destination: hookAccount, // 実行したいHookを持つアカウント
   };
 
   const prepared = await client.autofill(invoke);
@@ -4501,12 +4612,14 @@ async function invokeHook() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // 带有 Hook 的账户：第一个参数，或带有 Accept Hook 的测试网账户
+  const hookAccount = process.argv[2] ?? "rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN";
 
   // 对安装了 Hook 的另一个账户发送 Invoke
   const invoke = {
     TransactionType: "Invoke",
     Account: wallet.address,
-    Destination: "rAccountWithHookInstalled", // 要触发其 Hook 的账户
+    Destination: hookAccount, // 要触发其 Hook 的账户
   };
 
   const prepared = await client.autofill(invoke);
@@ -5665,7 +5778,11 @@ Todos estos costes se deducen de la cuenta que envía la transacción (\`Account
 
 ### Más información
 
-Para una referencia completa de \`Remit\`, incluyendo todos los campos y errores posibles, consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
+Para una referencia completa de \`Remit\`, incluyendo todos los campos y errores posibles, consulta la [documentación oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).
+
+### Ejecutar el ejemplo dos veces
+
+El ID de un URIToken sale de su emisor y de su URI. Una segunda ejecución del ejemplo con la misma URI devuelve \`tecDUPLICATE\`, y tampoco se envía el pago: falla el Remit entero. Para ejecutarlo de nuevo, cambia la URI.`,
         pt: `A transação \`Remit\` é uma operação exclusiva de Xahau que combina múltiplas ações em uma única transação. Pode **ativar contas**, **enviar pagamentos** (XAH ou IOUs) e realizar **operações com URITokens** (transferir ou mintar), tudo de uma vez. Além disso, **paga todos os fees** de ativação de conta, TrustLines e reservas de URITokens.
 ### Por que usar Remit?
 Em lugar de enviar várias transações separadas (uma para ativar a conta, outra para pagar, outra para transferir um URIToken), \`Remit\` faz tudo em uma única transação atômica. Isso economiza tempo, fees e garante que todas as operações ocorrem juntas ou nenhuma ocorre.
@@ -5710,7 +5827,11 @@ O Remit paga automaticamente os custos adicionais associados a cada ação:
 - **Reservas de URITokens**: As reservas por URITokens transferidos ou minteados são cobertas automaticamente
 Todos esses custos são deduzidos da conta que envia a transação (\`Account\`), além da fee padrão da transação.
 ### Mais informação
-Para uma referência completa do \`Remit\`, incluindo todos os campos e erros possíveis, consulte a [documentação oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
+Para uma referência completa do \`Remit\`, incluindo todos os campos e erros possíveis, consulte a [documentação oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).
+
+### Executar o exemplo duas vezes
+
+O ID de um URIToken vem do seu emissor e da sua URI. Uma segunda execução do exemplo com a mesma URI retorna \`tecDUPLICATE\`, e o pagamento também não é enviado: o Remit inteiro falha. Para executá-lo de novo, mude a URI.`,
         en: `The \`Remit\` transaction is an operation exclusive to Xahau that combines multiple actions in a single transaction. It can **activate accounts**, **send payments** (XAH or IOUs) and perform **URIToken operations** (transfer or mint), all at once. It also **pays all fees** for account activation, TrustLines and URIToken reserves.
 
 ### Why use Remit?
@@ -5773,7 +5894,11 @@ All these costs are deducted from the sending account (\`Account\`), plus the st
 
 ### More information
 
-For a complete reference to \`Remit\`, including all fields and possible errors, see the [official documentation](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
+For a complete reference to \`Remit\`, including all fields and possible errors, see the [official documentation](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).
+
+### Running the example twice
+
+The ID of a URIToken comes from its issuer and its URI. A second run of the example with the same URI returns \`tecDUPLICATE\`, and the payment isn't sent either: the whole Remit fails. To run it again, change the URI.`,
         jp: `\`Remit\`トランザクションは、Xahau独自の操作で、単一のトランザクションに複数のアクションを組み合わせます。**アカウントの有効化**、**支払いの送信**（XAHまたはIOU）、**URIToken操作**（転送またはミント）をすべて一度に実行できます。また、アカウントの有効化、トラストライン、URITokenの準備金のための**すべてのfeeを支払います**。
 
 ### なぜRemitを使うのか？
@@ -5836,7 +5961,11 @@ Remitは各アクションに関連する追加コストを自動的に支払い
 
 ### 詳細情報
 
-すべてのフィールドと考えられるエラーを含む\`Remit\`の完全なリファレンスは、[公式ドキュメント](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/)を参照してください。`,
+すべてのフィールドと考えられるエラーを含む\`Remit\`の完全なリファレンスは、[公式ドキュメント](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/)を参照してください。
+
+### 例を2回実行する場合
+
+URIToken の ID は発行者と URI から決まります。同じ URI で例をもう一度実行すると \`tecDUPLICATE\` が返り、支払いも送られません。Remit 全体が失敗します。もう一度実行するには URI を変更します。`,
         ko: `**Remit**는 Xahau 전용 다기능 트랜잭션입니다. 하나의 작업으로 **계정 활성화, 결제, URIToken 전송 또는 민팅**까지 묶어 처리할 수 있습니다.
 
 ### 장점
@@ -5854,7 +5983,11 @@ Remitは各アクションに関連する追加コストを自動的に支払い
 - \`Inform\`
 - \`Blob\`
 
-복잡한 온보딩 흐름이나 다중 자산 전송에 특히 유용합니다.`,
+복잡한 온보딩 흐름이나 다중 자산 전송에 특히 유용합니다.
+
+### 예제를 두 번 실행하는 경우
+
+URIToken의 ID는 발행자와 URI로 정해집니다. 같은 URI로 예제를 다시 실행하면 \`tecDUPLICATE\`가 반환되고 결제도 전송되지 않습니다. Remit 전체가 실패합니다. 다시 실행하려면 URI를 바꿉니다.`,
         zh: `**Remit** 是 Xahau 专有的多功能交易。它可以把**账户激活、支付、URIToken 转移或铸造**合并成一次操作。
 
 ### 优点
@@ -5872,7 +6005,11 @@ Remitは各アクションに関連する追加コストを自動的に支払い
 - \`Inform\`
 - \`Blob\`
 
-它尤其适合复杂的 onboarding 流程或多资产转移。`,
+它尤其适合复杂的 onboarding 流程或多资产转移。
+
+### 第二次运行示例
+
+URIToken 的 ID 由发行方和 URI 决定。用同一个 URI 再次运行示例会返回 \`tecDUPLICATE\`，付款也不会发送：整个 Remit 都会失败。要再次运行，请修改 URI。`,
       },
       codeBlocks: [
         {
@@ -5887,6 +6024,7 @@ Remitは各アクションに関連する追加コストを自動的に支払い
           code: {
             es: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 
 function stringToHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
@@ -5897,12 +6035,14 @@ async function sendRemit() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // La cuenta CASH de .env recibe los fondos
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Remit: enviar 25 XAH + mintear un URIToken para el destino
   const remit = {
     TransactionType: "Remit",
     Account: wallet.address,
-    Destination: "rDireccionDelDestinatario",
+    Destination: receiver,
     // Enviar 25 XAH
     Amounts: [
       {
@@ -5941,6 +6081,7 @@ async function sendRemit() {
 sendRemit();`,
             pt: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 function stringToHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
 }
@@ -5948,11 +6089,13 @@ async function sendRemit() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // A conta CASH do .env recebe os fundos
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
   // Remit: enviar 25 XAH + mintar um URIToken para o destino
   const remit = {
     TransactionType: "Remit",
     Account: wallet.address,
-    Destination: "rDireccionDelDestinatario",
+    Destination: receiver,
     // Enviar 25 XAH
     Amounts: [
       {
@@ -5986,6 +6129,7 @@ async function sendRemit() {
 sendRemit();`,
             en: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 
 function stringToHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
@@ -5996,12 +6140,14 @@ async function sendRemit() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // The CASH account from .env receives the funds
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Remit: send 25 XAH + mint a URIToken for the destination
   const remit = {
     TransactionType: "Remit",
     Account: wallet.address,
-    Destination: "rDestinationAddress",
+    Destination: receiver,
     // Send 25 XAH
     Amounts: [
       {
@@ -6040,6 +6186,7 @@ async function sendRemit() {
 sendRemit();`,
             jp: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 
 function stringToHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
@@ -6050,12 +6197,14 @@ async function sendRemit() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // .env の CASH アカウントが資金を受け取ります
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Remit: 25 XAHの送信 + 宛先にURITokenをミント
   const remit = {
     TransactionType: "Remit",
     Account: wallet.address,
-    Destination: "rDestinationAddress",
+    Destination: receiver,
     // 25 XAHを送信
     Amounts: [
       {
@@ -6094,6 +6243,7 @@ async function sendRemit() {
 sendRemit();`,
             zh: `require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 
 function stringToHex(str) {
   return Buffer.from(str, "utf8").toString("hex").toUpperCase();
@@ -6104,12 +6254,14 @@ async function sendRemit() {
   await client.connect();
 
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
+  // .env 中的 CASH 账户接收资金
+  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // Remit：发送 25 XAH，并为目标账户铸造一个 URIToken
   const remit = {
     TransactionType: "Remit",
     Account: wallet.address,
-    Destination: "rDestinationAddress",
+    Destination: receiver,
     // 发送 25 XAH
     Amounts: [
       {
@@ -7383,7 +7535,11 @@ Regles importantes : il faut au moins \`FinishAfter\` ou \`Condition\`; si \`Can
 
 ### Crypto-conditions
 
-Xahau supporte les crypto-conditions Interledger, notamment PREIMAGE-SHA-256. Le createur genere une \`Condition\` et conserve le \`Fulfillment\`. Pour terminer l'escrow, il faut prouver que l'on connait la preimage correspondant au hash.`,
+Xahau supporte les crypto-conditions Interledger, notamment PREIMAGE-SHA-256. Le createur genere une \`Condition\` et conserve le \`Fulfillment\`. Pour terminer l'escrow, il faut prouver que l'on connait la preimage correspondant au hash.
+
+### Exécuter les exemples
+
+Le premier exemple crée l'escrow depuis \`WALLET\` et affiche son \`Sequence\`. Une fois les deux minutes de \`FinishAfter\` écoulées, exécute le second exemple avec ce \`Sequence\` en premier argument. Avant, le script affiche le nombre de secondes restantes.`,
     ar: `**Escrow** هو دفع مشروط يقفل الأموال إلى أن تتحقق شروط محددة. يمكن تخيله كظرف مختوم أو خزنة لا تفتح إلا في ظروف معينة.
 
 ### حالات الاستخدام
@@ -7407,7 +7563,11 @@ Xahau supporte les crypto-conditions Interledger, notamment PREIMAGE-SHA-256. Le
 
 ### الشروط التشفيرية
 
-يدعم Xahau شروط Interledger، خصوصا PREIMAGE-SHA-256. ينشئ المنشئ \`Condition\` ويحفظ \`Fulfillment\`. ولإنهاء Escrow يجب إثبات معرفة السر الذي يطابق ذلك الشرط.`,
+يدعم Xahau شروط Interledger، خصوصا PREIMAGE-SHA-256. ينشئ المنشئ \`Condition\` ويحفظ \`Fulfillment\`. ولإنهاء Escrow يجب إثبات معرفة السر الذي يطابق ذلك الشرط.
+
+### تشغيل الأمثلة
+
+ينشئ المثال الأول الـ escrow من \`WALLET\` ويطبع الـ \`Sequence\` الخاص به. بعد مرور الدقيقتين الخاصتين بـ \`FinishAfter\`، شغّل المثال الثاني مع ذلك الـ \`Sequence\` كأول وسيط. قبل ذلك، يطبع السكربت عدد الثواني المتبقية.`,
   },
   m10l4: {
     fr: `Xahau possede un **systeme natif de recompenses** qui distribue du XAH aux comptes qui participent activement au reseau. La transaction \`ClaimReward\` sert a reclamer les recompenses accumulees.
@@ -7424,7 +7584,11 @@ Le premier \`ClaimReward\` active le compte dans le systeme. Les suivants reclam
 
 ### Considerations
 
-Les recompenses dependent du solde, du temps et du reseau. Les frais sont standards. Les comptes avec Hooks restent compatibles. L'adresse \`Issuer\` n'est pas universelle : elle depend du reseau testnet ou mainnet.`,
+Les recompenses dependent du solde, du temps et du reseau. Les frais sont standards. Les comptes avec Hooks restent compatibles. L'adresse \`Issuer\` n'est pas universelle : elle depend du reseau testnet ou mainnet.
+
+### ClaimReward sur le testnet
+
+Sur le testnet, le compte genèse n'a pas de Hook de récompenses installé : l'exemple renvoie donc \`tecNO_TARGET\`. La transaction est valide, mais il n'y a rien à réclamer. Sur le mainnet, le compte genèse porte les Hooks qui calculent les récompenses, et la même transaction les réclame.`,
     ar: `لدى Xahau **نظام مكافآت أصلي** يوزع XAH على الحسابات النشطة في الشبكة. تستخدم معاملة \`ClaimReward\` للمطالبة بالمكافآت المتراكمة.
 
 على عكس شبكات Proof of Stake، لا تحتاج إلى staking أو delegation أو تشغيل validator. تتراكم المكافآت حسب رصيد XAH والوقت. لاستلامها يرسل الحساب \`ClaimReward\` دوريا، فتضاف المكافأة إلى الرصيد.
@@ -7439,7 +7603,11 @@ Les recompenses dependent du solde, du temps et du reseau. Les frais sont standa
 
 ### اعتبارات
 
-المكافآت تعتمد على الرصيد والوقت والشبكة. الرسوم عادية. الحسابات التي لديها Hooks متوافقة. عنوان \`Issuer\` يختلف بين testnet وmainnet.`,
+المكافآت تعتمد على الرصيد والوقت والشبكة. الرسوم عادية. الحسابات التي لديها Hooks متوافقة. عنوان \`Issuer\` يختلف بين testnet وmainnet.
+
+### ClaimReward على testnet
+
+على testnet لا يحمل حساب التكوين (genesis) Hook المكافآت، لذلك يعيد المثال \`tecNO_TARGET\`: المعاملة صالحة، لكن لا توجد مكافآت للمطالبة بها. على mainnet يحمل حساب التكوين الـ Hooks التي تحسب المكافآت، والمعاملة نفسها تطالب بها.`,
   },
   m10l5: {
     fr: `\`Invoke\` est une transaction propre a Xahau qui permet **d'activer volontairement un Hook** sans envoyer de paiement ni autre effet economique. C'est le mecanisme de declenchement direct d'un Hook.
@@ -7823,8 +7991,40 @@ Amount received: 50 XAH
     ar: `\n\n### لماذا ليست Memo؟\n\nMemo مرتبط بمعاملة تاريخية. أما Remark فمرتبطة بكائن ما زال موجودا في ledger. لذلك تبقى قابلة للقراءة مع الكائن نفسه، مثل AccountRoot أو TrustLine أو URIToken، ويمكن تحديثها أو حذفها حسب القواعد.\n\n### تفاصيل الحقول\n\n\`ObjectID\` إلزامي ويشير إلى الكائن المراد التعليق عليه. \`Remarks\` مصفوفة، ولذلك يمكن إنشاء أو تعديل عدة إدخالات في معاملة واحدة. \`RemarkName\` يجب أن يكون فريدا داخل الكائن. \`RemarkValue\` اختياري فقط لأن غيابه يعني الحذف. \`tfImmutable\` يجب استخدامه بحذر لأنه يجعل الإدخال نهائيا.\n\n### نصائح تصميم\n\nاستخدم أسماء قصيرة وثابتة، ورمز القيم إلى hexadecimal بشكل صحيح، وتجنب البيانات الشخصية، واجعل Remarks غير القابلة للتعديل مخصصة للشهادات أو المراجع التي لا يجب أن تتغير.`,
   },
   m10l7: {
-    fr: `\n\n### Atomicite\n\nL'interet principal de Remit est l'atomicite : si une partie du flux ne peut pas etre executee, la transaction entiere echoue. Cela evite les etats intermediaires ou un compte serait active mais sans recevoir l'actif attendu, ou un URIToken serait transfere sans le paiement associe.\n\n### Amounts et doublons\n\nLe tableau \`Amounts\` accepte plusieurs actifs, mais pas deux entrees equivalentes pour la meme devise et le meme issuer. Pour les IOUs, le destinataire peut avoir besoin d'une TrustLine ; Remit peut couvrir la reserve necessaire selon les regles de la transaction.\n\n### Inform et Blob\n\n\`Inform\` permet de notifier un compte avec Hook. \`Blob\` transporte des donnees arbitraires en hex, jusqu'a une taille importante, pour que le Hook puisse comprendre le contexte de l'operation. Ces champs rendent Remit utile dans des workflows d'application, pas seulement dans des paiements simples.`,
-    ar: `\n\n### الذرية\n\nأهم ميزة في Remit هي الذرية: إذا تعذر تنفيذ جزء من التدفق تفشل المعاملة كلها. هذا يمنع حالات وسطية مثل تفعيل حساب دون استلام الأصل، أو نقل URIToken دون الدفع المرتبط به.\n\n### Amounts والتكرار\n\nتقبل \`Amounts\` عدة أصول، لكنها لا تقبل إدخالين مكافئين لنفس العملة ونفس issuer. بالنسبة إلى IOUs قد يحتاج المستلم TrustLine؛ ويمكن لـ Remit تغطية الاحتياطي اللازم حسب قواعد المعاملة.\n\n### Inform وBlob\n\n\`Inform\` يسمح بإخطار حساب لديه Hook. \`Blob\` ينقل بيانات عشوائية بصيغة hex حتى حجم كبير، حتى يفهم Hook سياق العملية. لذلك Remit مفيدة في workflows تطبيقية، وليس في المدفوعات البسيطة فقط.`,
+    fr: `
+
+### Atomicite
+
+L'interet principal de Remit est l'atomicite : si une partie du flux ne peut pas etre executee, la transaction entiere echoue. Cela evite les etats intermediaires ou un compte serait active mais sans recevoir l'actif attendu, ou un URIToken serait transfere sans le paiement associe.
+
+### Amounts et doublons
+
+Le tableau \`Amounts\` accepte plusieurs actifs, mais pas deux entrees equivalentes pour la meme devise et le meme issuer. Pour les IOUs, le destinataire peut avoir besoin d'une TrustLine ; Remit peut couvrir la reserve necessaire selon les regles de la transaction.
+
+### Inform et Blob
+
+\`Inform\` permet de notifier un compte avec Hook. \`Blob\` transporte des donnees arbitraires en hex, jusqu'a une taille importante, pour que le Hook puisse comprendre le contexte de l'operation. Ces champs rendent Remit utile dans des workflows d'application, pas seulement dans des paiements simples.
+
+### Exécuter l'exemple deux fois
+
+L'ID d'un URIToken vient de son émetteur et de son URI. Une deuxième exécution de l'exemple avec la même URI renvoie \`tecDUPLICATE\`, et le paiement n'est pas envoyé non plus : tout le Remit échoue. Pour l'exécuter à nouveau, change l'URI.`,
+    ar: `
+
+### الذرية
+
+أهم ميزة في Remit هي الذرية: إذا تعذر تنفيذ جزء من التدفق تفشل المعاملة كلها. هذا يمنع حالات وسطية مثل تفعيل حساب دون استلام الأصل، أو نقل URIToken دون الدفع المرتبط به.
+
+### Amounts والتكرار
+
+تقبل \`Amounts\` عدة أصول، لكنها لا تقبل إدخالين مكافئين لنفس العملة ونفس issuer. بالنسبة إلى IOUs قد يحتاج المستلم TrustLine؛ ويمكن لـ Remit تغطية الاحتياطي اللازم حسب قواعد المعاملة.
+
+### Inform وBlob
+
+\`Inform\` يسمح بإخطار حساب لديه Hook. \`Blob\` ينقل بيانات عشوائية بصيغة hex حتى حجم كبير، حتى يفهم Hook سياق العملية. لذلك Remit مفيدة في workflows تطبيقية، وليس في المدفوعات البسيطة فقط.
+
+### تشغيل المثال مرتين
+
+يُشتق معرّف الـ URIToken من المُصدر والـ URI. تشغيل المثال مرة ثانية بالـ URI نفسه يعيد \`tecDUPLICATE\`، ولا تُرسل الدفعة أيضًا: يفشل الـ Remit بالكامل. لتشغيله مرة أخرى، غيّر الـ URI.`,
   },
   m10l8: {
     fr: `\n\n### Difference avec Invoke periodique\n\nAvec Invoke periodique, un script, serveur ou bot doit envoyer des transactions a intervalle regulier. Si ce service tombe, le Hook ne s'execute plus. Avec CronSet, la planification est enregistree dans le ledger et l'execution est geree par le reseau lui-meme.\n\n### Extension du compteur\n\n\`RepeatCount\` a une limite de 256 par transaction. Si ton cas d'usage demande une execution longue, il faut envoyer un nouveau \`CronSet\` avant la fin du compteur pour prolonger le programme. Cela donne un controle explicite et evite des executions infinies accidentelles.\n\n### Bonnes pratiques\n\nTeste avec de petits intervalles sur testnet, trace le Hook, verifie que \`hsfCOLLECT\` et \`asfTshCollect\` sont actifs, puis supprime les crons inutiles avec \`tfCronUnset\` pour eviter un comportement inattendu.`,

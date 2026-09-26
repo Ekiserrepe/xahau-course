@@ -290,11 +290,12 @@ console.log("Seed:", wallet2.seed);`,
           },
           language: "javascript",
           code: {
-            es: `const { Wallet } = require("xahau");
+            es: `const { Wallet, isValidSecret } = require("xahau");
 
 // Restaurar wallet desde un seed existente
-// (usa tu propio seed de testnet)
-const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// Tu seed de testnet, pasado como primer argumento
+const seed = process.argv[2];
+if (!isValidSecret(seed ?? "")) throw new Error("Pasa un seed válido como primer argumento (empieza por s)");
 // Si prefieres derivarla en ed25519, elimina {algorithm: 'secp256k1'} ya que usará ed25519 por defecto
 const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 
@@ -304,10 +305,11 @@ console.log("Seed:", wallet.seed);
 
 // El mismo seed siempre genera la misma dirección
 // ¡Nunca compartas tu seed!`,
-            pt: `const { Wallet } = require("xahau");
+            pt: `const { Wallet, isValidSecret } = require("xahau");
 // Restaurar wallet a partir de um seed existente
-// (usa seu próprio seed de testnet)
-const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// Sua seed da testnet, passada como primeiro argumento
+const seed = process.argv[2];
+if (!isValidSecret(seed ?? "")) throw new Error("Passe uma seed válida como primeiro argumento (começa com s)");
 // Se preferir derivá-la em ed25519, remova {algorithm: 'secp256k1'} já que usará ed25519 por padrão
 const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 console.log("Endereço:", wallet.address);
@@ -315,11 +317,12 @@ console.log("Chave pública:", wallet.publicKey);
 console.log("Seed:", wallet.seed);
 // A mesma seed sempre gera o mesmo endereço
 // Nunca compartilhe sua seed!`,
-            en: `const { Wallet } = require("xahau");
+            en: `const { Wallet, isValidSecret } = require("xahau");
 
 // Restore wallet from an existing seed
-// (use your own testnet seed)
-const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// Your testnet seed, passed as the first argument
+const seed = process.argv[2];
+if (!isValidSecret(seed ?? "")) throw new Error("Pass a valid seed as the first argument (it starts with s)");
 // If you prefer to derive it in ed25519, remove {algorithm: 'secp256k1'} since it will use ed25519 by default
 const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 
@@ -329,11 +332,12 @@ console.log("Seed:", wallet.seed);
 
 // The same seed always generates the same address
 // Never share your seed!`,
-            jp: `const { Wallet } = require("xahau");
+            jp: `const { Wallet, isValidSecret } = require("xahau");
 
 // 既存のシードからウォレットを復元する
-// （自分のテストネットシードを使用すること）
-const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// 最初の引数として渡すテストネットのシード
+const seed = process.argv[2];
+if (!isValidSecret(seed ?? "")) throw new Error("有効なシードを最初の引数として渡してください（s で始まります）");
 // ed25519で導出したい場合は {algorithm: 'secp256k1'} を削除する（デフォルトでed25519を使用）
 const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 
@@ -343,11 +347,12 @@ console.log("シード：", wallet.seed);
 
 // 同じシードは常に同じアドレスを生成する
 // シードを絶対に共有しないこと！`,
-            ko: `const { Wallet } = require("xahau");
+            ko: `const { Wallet, isValidSecret } = require("xahau");
 
 // 기존 시드에서 지갑 복원
-// (자신의 testnet 시드를 사용하세요)
-const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// 첫 번째 인수로 전달하는 테스트넷 시드
+const seed = process.argv[2];
+if (!isValidSecret(seed ?? "")) throw new Error("유효한 시드를 첫 번째 인수로 전달하세요 (s로 시작합니다)");
 // ed25519로 파생하려면 {algorithm: 'secp256k1'} 를 제거하세요. 기본값은 ed25519입니다
 const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 
@@ -357,11 +362,12 @@ console.log("시드:", wallet.seed);
 
 // 같은 시드는 항상 같은 주소를 생성합니다
 // 시드를 절대 공유하지 마세요!`,
-            zh: `const { Wallet } = require("xahau");
+            zh: `const { Wallet, isValidSecret } = require("xahau");
 
 // 从现有 seed 恢复钱包
-// （请使用你自己的测试网 seed）
-const seed = "sEdVHBhkL2next8NH9cMPyPJoXXXXXX";
+// 作为第一个参数传入的测试网 seed
+const seed = process.argv[2];
+if (!isValidSecret(seed ?? "")) throw new Error("请将有效的 seed 作为第一个参数传入（以 s 开头）");
 // 如果想使用 ed25519，去掉 {algorithm: 'secp256k1'}，默认即为 ed25519
 const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 
@@ -562,14 +568,14 @@ faucet은 테스트 토큰을 지갑으로 보내주는 서비스입니다. \`xa
           },
           language: "javascript",
           code: {
-            es: `const { Client, Wallet } = require("xahau");
+            es: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // Generar una nueva wallet
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("Wallet generada:");
   console.log("  Dirección:", wallet.address);
   console.log("  Seed:", wallet.seed);
@@ -598,12 +604,12 @@ async function createTestnetWallet() {
 }
 
 createTestnetWallet();`,
-            pt: `const { Client, Wallet } = require("xahau");
+            pt: `const { Client, Wallet, ECDSA } = require("xahau");
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   // Gerar uma nova wallet
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("Wallet gerada:");
   console.log("  Endereço:", wallet.address);
   console.log("  Seed:", wallet.seed);
@@ -626,14 +632,14 @@ async function createTestnetWallet() {
   await client.disconnect();
 }
 createTestnetWallet();`,
-            en: `const { Client, Wallet } = require("xahau");
+            en: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // Generate a new wallet
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("Wallet generated:");
   console.log("  Address:", wallet.address);
   console.log("  Seed:", wallet.seed);
@@ -662,14 +668,14 @@ async function createTestnetWallet() {
 }
 
 createTestnetWallet();`,
-            jp: `const { Client, Wallet } = require("xahau");
+            jp: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // 新しいウォレットを生成する
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("ウォレットが生成されました：");
   console.log("  アドレス：", wallet.address);
   console.log("  シード：", wallet.seed);
@@ -698,14 +704,14 @@ async function createTestnetWallet() {
 }
 
 createTestnetWallet();`,
-            ko: `const { Client, Wallet } = require("xahau");
+            ko: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // 새 지갑 생성
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("생성된 지갑:");
   console.log("  주소:", wallet.address);
   console.log("  시드:", wallet.seed);
@@ -734,14 +740,14 @@ async function createTestnetWallet() {
 }
 
 createTestnetWallet();`,
-            zh: `const { Client, Wallet } = require("xahau");
+            zh: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // 生成新钱包
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("已生成钱包：");
   console.log("  地址:", wallet.address);
   console.log("  Seed:", wallet.seed);
@@ -783,7 +789,8 @@ createTestnetWallet();`,
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkBalance(address) {
   const client = new Client("wss://xahau-test.net");
@@ -813,9 +820,10 @@ async function checkBalance(address) {
   await client.disconnect();
 }
 
-// Reemplaza con tu dirección de testnet
-checkBalance("rYourXahauAddressHere");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+checkBalance(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function checkSaldo(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -840,9 +848,10 @@ async function checkSaldo(address) {
   }
   await client.disconnect();
 }
-// Substitua pelo seu endereço de testnet
-checkSaldo("rYourXahauAddressHere");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+checkSaldo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkBalance(address) {
   const client = new Client("wss://xahau-test.net");
@@ -872,9 +881,10 @@ async function checkBalance(address) {
   await client.disconnect();
 }
 
-// Replace with your testnet address
-checkBalance("rYourXahauAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+checkBalance(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkBalance(address) {
   const client = new Client("wss://xahau-test.net");
@@ -904,9 +914,10 @@ async function checkBalance(address) {
   await client.disconnect();
 }
 
-// テストネットのアドレスに置き換えてください
-checkBalance("rYourXahauAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+checkBalance(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkBalance(address) {
   const client = new Client("wss://xahau-test.net");
@@ -936,9 +947,10 @@ async function checkBalance(address) {
   await client.disconnect();
 }
 
-// 자신의 testnet 주소로 바꾸세요
-checkBalance("rYourXahauAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+checkBalance(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkBalance(address) {
   const client = new Client("wss://xahau-test.net");
@@ -968,8 +980,8 @@ async function checkBalance(address) {
   await client.disconnect();
 }
 
-// 替换为你的测试网地址
-checkBalance("rYourXahauAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+checkBalance(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],
@@ -2123,7 +2135,11 @@ Los flags de cuenta se almacenan como un campo numérico donde cada bit represen
 | asfRequireAuth | 2 | Requerir autorización de trust lines |
 | asfDisallowXRP | 3 | Señalar que no se desea recibir XAH |
 | asfDisableMaster | 4 | Desactivar clave maestra |
-| asfDefaultRipple | 8 | Permitir rippling de tokens emitidos |`,
+| asfDefaultRipple | 8 | Permitir rippling de tokens emitidos |
+
+### La cuenta del ejemplo
+
+El ejemplo activa RequireDestTag en una cuenta nueva del faucet, no en \`WALLET\`. Las lecciones siguientes envían pagos a \`WALLET\` sin Destination Tag, y con este flag activo la red los rechazaría con \`tecDST_TAG_NEEDED\`. Para leer los flags de esa cuenta con el segundo ejemplo, pásale como argumento la dirección que imprime el primero.`,
         pt: `Em Xahau, sua conta tem múltiplas opções de configuração que você pode ativar ou desativar usando a transação **AccountSet**. Estas configurações controlan o comportamento de sua conta frente a pagamentos recebidos, trust lines, e muito mais.
 ### A transação AccountSet
 \`AccountSet\` é o tipo de transação que permite modificar as propriedades da sua conta. Ela não envia nem recebe fundos: apenas muda os **flags** e outros campos de configuração da sua conta.
@@ -2158,7 +2174,11 @@ Os flags de conta são armazenados como um campo numérico em que cada bit repre
 | asfRequireAuth | 2 | Exigir autorização de trust lines |
 | asfDisallowXRP | 3 | Indicar que não deseja receber XAH |
 | asfDisableMaster | 4 | Desativar a chave mestra |
-| asfDefaultRipple | 8 | Permitir rippling de tokens emitidos |`,
+| asfDefaultRipple | 8 | Permitir rippling de tokens emitidos |
+
+### A conta do exemplo
+
+O exemplo ativa RequireDestTag em uma conta nova do faucet, não na \`WALLET\`. As próximas lições enviam pagamentos à \`WALLET\` sem Destination Tag, e com esta flag ativa a rede os rejeitaria com \`tecDST_TAG_NEEDED\`. Para ler as flags dessa conta com o segundo exemplo, passe como argumento o endereço que o primeiro imprime.`,
         en: `In Xahau, your account has multiple configuration options that you can enable or disable using the **AccountSet** transaction. These settings control your account's behavior regarding incoming payments, trust lines, and more.
 
 ### The AccountSet transaction
@@ -2206,7 +2226,11 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 | asfRequireAuth | 2 | Require trust line authorization |
 | asfDisallowXRP | 3 | Signal that XAH is not desired |
 | asfDisableMaster | 4 | Disable master key |
-| asfDefaultRipple | 8 | Allow rippling of issued tokens |`,
+| asfDefaultRipple | 8 | Allow rippling of issued tokens |
+
+### The example account
+
+The example enables RequireDestTag on a new faucet account, not on \`WALLET\`. The later lessons send payments to \`WALLET\` without a Destination Tag, and with this flag on, the network would reject them with \`tecDST_TAG_NEEDED\`. To read the flags of that account with the second example, pass the address the first one prints as its argument.`,
         jp: `Xahauでは、**AccountSet**トランザクションを使用して、アカウントの複数の設定オプションを有効化または無効化できます。これらの設定は、着信ペイメント、トラストラインなどに対するアカウントの動作を制御します。
 
 ### AccountSetトランザクション
@@ -2254,7 +2278,11 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 | asfRequireAuth | 2 | トラストラインの承認を要求 |
 | asfDisallowXRP | 3 | XAHの受け取りを希望しないことを示す |
 | asfDisableMaster | 4 | マスターキーを無効化 |
-| asfDefaultRipple | 8 | 発行されたトークンのリップリングを許可 |`,
+| asfDefaultRipple | 8 | 発行されたトークンのリップリングを許可 |
+
+### 例で使うアカウント
+
+この例では \`WALLET\` ではなく、フォーセットの新しいアカウントで RequireDestTag を有効にします。後のレッスンは Destination Tag なしで \`WALLET\` に支払いを送るため、このフラグが有効だとネットワークは \`tecDST_TAG_NEEDED\` で拒否します。 2つ目の例でそのアカウントのフラグを読むには、1つ目の例が表示するアドレスを引数として渡します。`,
         ko: `Xahau에서는 **AccountSet** 트랜잭션을 사용해 계정의 여러 설정을 켜거나 끌 수 있습니다. 이러한 설정은 들어오는 결제, trust line, 그 외 다양한 계정 동작에 영향을 줍니다.
 
 ### AccountSet 트랜잭션
@@ -2302,7 +2330,11 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 | asfRequireAuth | 2 | trust line 승인 요구 |
 | asfDisallowXRP | 3 | XAH 수신을 원하지 않는다는 신호 |
 | asfDisableMaster | 4 | master key 비활성화 |
-| asfDefaultRipple | 8 | 발행 토큰의 rippling 허용 |`,
+| asfDefaultRipple | 8 | 발행 토큰의 rippling 허용 |
+
+### 예제 계정
+
+이 예제는 \`WALLET\`이 아니라 faucet에서 만든 새 계정에서 RequireDestTag를 켭니다. 이후 레슨은 Destination Tag 없이 \`WALLET\`으로 결제를 보내므로, 이 플래그가 켜져 있으면 네트워크가 \`tecDST_TAG_NEEDED\`로 거부합니다. 두 번째 예제로 그 계정의 플래그를 읽으려면 첫 번째 예제가 출력한 주소를 인수로 전달합니다.`,
         zh: `在 Xahau 中，你可以使用 **AccountSet** 交易开启或关闭账户的多种配置选项。这些设置控制账户对收款、trust line 等各种操作的行为。
 
 ### AccountSet 交易
@@ -2350,7 +2382,11 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 | asfRequireAuth | 2 | 要求 trust line 授权 |
 | asfDisallowXRP | 3 | 表示不希望接收 XAH |
 | asfDisableMaster | 4 | 禁用主密钥 |
-| asfDefaultRipple | 8 | 允许发行代币的 rippling |`,
+| asfDefaultRipple | 8 | 允许发行代币的 rippling |
+
+### 示例账户
+
+示例在一个新的水龙头账户上启用 RequireDestTag，而不是在 \`WALLET\` 上。后续课程会向 \`WALLET\` 发送不带 Destination Tag 的付款，如果启用了这个标志，网络会以 \`tecDST_TAG_NEEDED\` 拒绝它们。 要用第二个示例读取该账户的标志，请把第一个示例打印的地址作为参数传入。`,
       },
       codeBlocks: [
         {
@@ -2364,14 +2400,15 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
           },
           language: "javascript",
           code: {
-            es: `const { Client, Wallet } = require("xahau");
+            es: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // Usa tu wallet de testnet (reemplaza con tu seed)
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+  // Una cuenta nueva del faucet: RequireDestTag en WALLET rechazaría
+  // los pagos sin tag que le envían las lecciones siguientes
+  const { wallet } = await client.fundWallet(Wallet.generate(ECDSA.secp256k1));
 
   // AccountSet con SetFlag para activar RequireDestTag
   const tx = {
@@ -2411,12 +2448,13 @@ async function setRequireDestTag() {
 }
 
 setRequireDestTag();`,
-            pt: `const { Client, Wallet } = require("xahau");
+            pt: `const { Client, Wallet, ECDSA } = require("xahau");
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Use sua wallet de testnet (substitua pela sua seed)
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+  // Uma conta nova do faucet: RequireDestTag na WALLET rejeitaria
+  // os pagamentos sem tag que as próximas lições enviam a ela
+  const { wallet } = await client.fundWallet(Wallet.generate(ECDSA.secp256k1));
   // AccountSet com SetFlag para ativar RequireDestTag
   const tx = {
     TransactionType: "AccountSet",
@@ -2447,14 +2485,15 @@ async function setRequireDestTag() {
   await client.disconnect();
 }
 setRequireDestTag();`,
-            en: `const { Client, Wallet } = require("xahau");
+            en: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // Use your testnet wallet (replace with your seed)
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+  // A new faucet account: RequireDestTag on WALLET would reject
+  // the payments without a tag that later lessons send to it
+  const { wallet } = await client.fundWallet(Wallet.generate(ECDSA.secp256k1));
 
   // AccountSet with SetFlag to enable RequireDestTag
   const tx = {
@@ -2494,14 +2533,15 @@ async function setRequireDestTag() {
 }
 
 setRequireDestTag();`,
-            jp: `const { Client, Wallet } = require("xahau");
+            jp: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // テストネットのウォレットを使用（シードを置き換えてください）
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+  // 新しいフォーセットアカウント：WALLET で RequireDestTag を有効にすると
+  // 後のレッスンがタグなしで送る支払いが拒否されます
+  const { wallet } = await client.fundWallet(Wallet.generate(ECDSA.secp256k1));
 
   // RequireDestTagを有効にするためのSetFlagを持つAccountSet
   const tx = {
@@ -2541,14 +2581,15 @@ async function setRequireDestTag() {
 }
 
 setRequireDestTag();`,
-            ko: `const { Client, Wallet } = require("xahau");
+            ko: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // testnet 지갑 사용(시드로 교체하세요)
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+  // 새 faucet 계정: WALLET에서 RequireDestTag를 켜면
+  // 이후 레슨이 태그 없이 보내는 결제가 거부됩니다
+  const { wallet } = await client.fundWallet(Wallet.generate(ECDSA.secp256k1));
 
   // RequireDestTag를 활성화하는 SetFlag가 포함된 AccountSet
   const tx = {
@@ -2588,14 +2629,15 @@ async function setRequireDestTag() {
 }
 
 setRequireDestTag();`,
-            zh: `const { Client, Wallet } = require("xahau");
+            zh: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
-  // 使用测试网钱包（替换为你的 seed）
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
+  // 新的水龙头账户：在 WALLET 上启用 RequireDestTag 会拒绝
+  // 后续课程发给它的不带标签的付款
+  const { wallet } = await client.fundWallet(Wallet.generate(ECDSA.secp256k1));
 
   // 带 SetFlag 的 AccountSet，用于启用 RequireDestTag
   const tx = {
@@ -2648,7 +2690,8 @@ setRequireDestTag();`,
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2715,9 +2758,10 @@ async function readAccountFlags(address) {
   await client.disconnect();
 }
 
-// Reemplaza con una dirección de testnet
-readAccountFlags("rYourXahauAddressHere");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+readAccountFlags(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -2773,9 +2817,10 @@ async function readAccountFlags(address) {
   }
   await client.disconnect();
 }
-// Substitua por um endereço de testnet
-readAccountFlags("rYourXahauAddressHere");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+readAccountFlags(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2842,9 +2887,10 @@ async function readAccountFlags(address) {
   await client.disconnect();
 }
 
-// Replace with a testnet address
-readAccountFlags("rYourXahauAddressHere");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+readAccountFlags(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2911,9 +2957,10 @@ async function readAccountFlags(address) {
   await client.disconnect();
 }
 
-// テストネットのアドレスに置き換えてください
-readAccountFlags("rYourXahauAddressHere");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+readAccountFlags(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2980,9 +3027,10 @@ async function readAccountFlags(address) {
   await client.disconnect();
 }
 
-// testnet 주소로 교체하세요
-readAccountFlags("rYourXahauAddressHere");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+readAccountFlags(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function readAccountFlags(address) {
   const client = new Client("wss://xahau-test.net");
@@ -3049,8 +3097,8 @@ async function readAccountFlags(address) {
   await client.disconnect();
 }
 
-// 替换为测试网地址
-readAccountFlags("rYourXahauAddressHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+readAccountFlags(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],
@@ -3640,14 +3688,14 @@ Xaman 支持两种签署交易的方式：
           },
           language: "javascript",
           code: {
-            es: `const { Client, Wallet } = require("xahau");
+            es: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // Generar y financiar una wallet
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("Generando wallet de testnet...");
   await client.fundWallet(wallet);
 
@@ -3667,9 +3715,9 @@ async function prepareForXaman() {
   console.log("=== Instrucciones ===");
   console.log("1. Abre Xaman en tu móvil");
   console.log("2. Toca 'Añadir cuenta' → 'Importar cuenta existente'");
-  console.log("4. Selecciona Acceso Completo");
-  console.log("5. Selecciona 'Family Seed (s...)'");
-  console.log("6. Introduce el seed:", wallet.seed);
+  console.log("3. Selecciona 'Family Seed (s...)'");
+  console.log("4. Introduce el seed:", wallet.seed);
+  console.log("5. Selecciona Acceso Completo");
   console.log("  Recuerda: estamos en TESTNET.");
   console.log("    Asegúrate de seleccionar la red Xahau Testnet en Xaman.");
 
@@ -3677,12 +3725,12 @@ async function prepareForXaman() {
 }
 
 prepareForXaman();`,
-            pt: `const { Client, Wallet } = require("xahau");
+            pt: `const { Client, Wallet, ECDSA } = require("xahau");
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   // Gerar e financiar uma wallet
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("Generando wallet de testnet...");
   await client.fundWallet(wallet);
   // Verificar saldo
@@ -3699,22 +3747,22 @@ async function prepareForXaman() {
   console.log("=== Instruções ===");
   console.log("1. Abra Xaman em seu móvel");
   console.log("2. Toque em 'Adicionar conta' → 'Importar conta existente'");
-  console.log("4. Selecione Acesso Completo");
-  console.log("5. Selecione 'Family Seed (s...)'");
-  console.log("6. Digite a seed:", wallet.seed);
+  console.log("3. Selecione 'Family Seed (s...)'");
+  console.log("4. Digite a seed:", wallet.seed);
+  console.log("5. Selecione Acesso Completo");
   console.log("  Lembre-se: estamos na TESTNET.");
   console.log("    Certifique-se de selecionar a rede Xahau Testnet na Xaman.");
   await client.disconnect();
 }
 prepareForXaman();`,
-            en: `const { Client, Wallet } = require("xahau");
+            en: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // Generate and fund a wallet
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("Generating testnet wallet...");
   await client.fundWallet(wallet);
 
@@ -3734,9 +3782,9 @@ async function prepareForXaman() {
   console.log("=== Instructions ===");
   console.log("1. Open Xaman on your phone");
   console.log("2. Tap 'Add account' → 'Import existing account'");
-  console.log("4. Select Full Access");
-  console.log("5. Select 'Family Seed (s...)'");
-  console.log("6. Enter the seed:", wallet.seed);
+  console.log("3. Select 'Family Seed (s...)'");
+  console.log("4. Enter the seed:", wallet.seed);
+  console.log("5. Select Full Access");
   console.log("  Remember: we are on TESTNET.");
   console.log("    Make sure to select the Xahau Testnet network in Xaman.");
 
@@ -3744,14 +3792,14 @@ async function prepareForXaman() {
 }
 
 prepareForXaman();`,
-            jp: `const { Client, Wallet } = require("xahau");
+            jp: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // ウォレットを生成して資金を供給する
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("テストネットウォレットを生成中...");
   await client.fundWallet(wallet);
 
@@ -3771,9 +3819,9 @@ async function prepareForXaman() {
   console.log("=== 手順 ===");
   console.log("1. スマートフォンでXamanを開く");
   console.log("2. 「アカウントを追加」→「既存のアカウントをインポート」をタップ");
-  console.log("4. 「フルアクセス」を選択");
-  console.log("5. 「Family Seed（s...）」を選択");
-  console.log("6. シードを入力：", wallet.seed);
+  console.log("3. 「Family Seed（s...）」を選択");
+  console.log("4. シードを入力：", wallet.seed);
+  console.log("5. 「フルアクセス」を選択");
   console.log("  注意：テストネットを使用しています。");
   console.log("    Xamanで必ずXahau Testnetネットワークを選択してください。");
 
@@ -3781,14 +3829,14 @@ async function prepareForXaman() {
 }
 
 prepareForXaman();`,
-            ko: `const { Client, Wallet } = require("xahau");
+            ko: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // 지갑 생성 및 자금 지급
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("testnet 지갑 생성 중...");
   await client.fundWallet(wallet);
 
@@ -3808,9 +3856,9 @@ async function prepareForXaman() {
   console.log("=== 안내 ===");
   console.log("1. 휴대폰에서 Xaman을 엽니다");
   console.log("2. '계정 추가' → '기존 계정 가져오기'를 누릅니다");
-  console.log("4. 전체 접근을 선택합니다");
-  console.log("5. 'Family Seed (s...)'를 선택합니다");
-  console.log("6. 시드를 입력합니다:", wallet.seed);
+  console.log("3. 'Family Seed (s...)'를 선택합니다");
+  console.log("4. 시드를 입력합니다:", wallet.seed);
+  console.log("5. 전체 접근을 선택합니다");
   console.log("  주의: 지금은 TESTNET입니다.");
   console.log("    Xaman에서 반드시 Xahau Testnet 네트워크를 선택하세요.");
 
@@ -3818,14 +3866,14 @@ async function prepareForXaman() {
 }
 
 prepareForXaman();`,
-            zh: `const { Client, Wallet } = require("xahau");
+            zh: `const { Client, Wallet, ECDSA } = require("xahau");
 
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
 
   // 生成钱包并获取资金
-  const wallet = Wallet.generate();
+  const wallet = Wallet.generate(ECDSA.secp256k1);
   console.log("正在生成测试网钱包...");
   await client.fundWallet(wallet);
 
@@ -3845,9 +3893,9 @@ async function prepareForXaman() {
   console.log("=== 操作步骤 ===");
   console.log("1. 在手机上打开 Xaman");
   console.log("2. 点击'添加账户' → '导入现有账户'");
-  console.log("4. 选择完全访问");
-  console.log("5. 选择 'Family Seed (s...)'");
-  console.log("6. 输入 seed:", wallet.seed);
+  console.log("3. 选择 'Family Seed (s...)'");
+  console.log("4. 输入 seed:", wallet.seed);
+  console.log("5. 选择完全访问");
   console.log("  注意：当前使用的是 TESTNET。");
   console.log("    请确保在 Xaman 中选择 Xahau Testnet 网络。");
 
@@ -4251,7 +4299,11 @@ Multi-signing مثالي لـ:
 | asfRequireAuth | 2 | طلب تفويض trust lines |
 | asfDisallowXRP | 3 | الإشارة إلى عدم الرغبة في استقبال XAH |
 | asfDisableMaster | 4 | تعطيل master key |
-| asfDefaultRipple | 8 | السماح بـ rippling لـ tokens الصادرة |`,
+| asfDefaultRipple | 8 | السماح بـ rippling لـ tokens الصادرة |
+
+### حساب المثال
+
+يفعّل المثال RequireDestTag على حساب جديد من الـ faucet، لا على \`WALLET\`. ترسل الدروس التالية مدفوعات إلى \`WALLET\` بدون Destination Tag، ومع تفعيل هذا الـ flag سترفضها الشبكة بـ \`tecDST_TAG_NEEDED\`. لقراءة flags ذلك الحساب بالمثال الثاني، مرّر إليه العنوان الذي يطبعه المثال الأول كوسيط.`,
       codeTitles: [
         "تفعيل RequireDestTag على حسابك",
         "قراءة وتفسير account flags",
@@ -4680,7 +4732,11 @@ Les flags de compte sont stockés dans un champ numérique où chaque bit repré
 | asfRequireAuth | 2 | Exiger l'autorisation des trust lines |
 | asfDisallowXRP | 3 | Signaler que le XAH n'est pas souhaité |
 | asfDisableMaster | 4 | Désactiver la master key |
-| asfDefaultRipple | 8 | Autoriser le rippling des tokens émis |`,
+| asfDefaultRipple | 8 | Autoriser le rippling des tokens émis |
+
+### Le compte de l'exemple
+
+L'exemple active RequireDestTag sur un nouveau compte du faucet, pas sur \`WALLET\`. Les leçons suivantes envoient des paiements à \`WALLET\` sans Destination Tag ; avec ce flag actif, le réseau les rejetterait avec \`tecDST_TAG_NEEDED\`. Pour lire les flags de ce compte avec le second exemple, passe-lui en argument l'adresse qu'affiche le premier.`,
       codeTitles: [
         "Activer le flag RequireDestTag sur ton compte",
         "Lire et interpréter les flags d'un compte",

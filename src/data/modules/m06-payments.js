@@ -1328,8 +1328,8 @@ async function verifyPayment(txHash) {
 
   await client.disconnect();
 }
-// Ejemplo de hash de transacción: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("TU_HASH_DE_TRANSACCION_AQUI");`,
+// El hash de tu pago (el primer argumento), o un pago de ejemplo en testnet
+verifyPayment(process.argv[2] ?? "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C");`,
             pt: `const { Client } = require("xahau");
 async function verifyPayment(txHash) {
   const client = new Client("wss://xahau-test.net");
@@ -1359,8 +1359,8 @@ async function verifyPayment(txHash) {
   }
   await client.disconnect();
 }
-// Exemplo de hash de transação: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("SEU_HASH_DE_TRANSACAO_AQUI");`,
+// O hash do seu pagamento (o primeiro argumento), ou um pagamento de exemplo na testnet
+verifyPayment(process.argv[2] ?? "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C");`,
             en: `const { Client } = require("xahau");
 
 async function verifyPayment(txHash) {
@@ -1396,8 +1396,8 @@ async function verifyPayment(txHash) {
 
   await client.disconnect();
 }
-// Example transaction hash: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
+// The hash of your payment (the first argument), or an example payment on testnet
+verifyPayment(process.argv[2] ?? "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C");`,
             jp: `const { Client } = require("xahau");
 
 async function verifyPayment(txHash) {
@@ -1433,8 +1433,8 @@ async function verifyPayment(txHash) {
 
   await client.disconnect();
 }
-// トランザクションハッシュの例："4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
+// 自分の支払いのハッシュ（最初の引数）、またはテストネット上の支払いの例
+verifyPayment(process.argv[2] ?? "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C");`,
             ko: `const { Client } = require("xahau");
 
 async function verifyPayment(txHash) {
@@ -1470,8 +1470,8 @@ async function verifyPayment(txHash) {
 
   await client.disconnect();
 }
-// 트랜잭션 해시 예시: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
+// 내 결제의 해시(첫 번째 인수), 또는 테스트넷의 예시 결제
+verifyPayment(process.argv[2] ?? "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C");`,
             zh: `const { Client } = require("xahau");
 
 async function verifyPayment(txHash) {
@@ -1507,8 +1507,8 @@ async function verifyPayment(txHash) {
 
   await client.disconnect();
 }
-// 示例交易哈希: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
+// 你的付款哈希（第一个参数），或测试网上的示例付款
+verifyPayment(process.argv[2] ?? "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C");`,
           },
         },
       ],

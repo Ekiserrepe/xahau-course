@@ -2504,7 +2504,7 @@ Xahau 支持**多重签名**：一笔交易需要**多个账户共同签名**才
           language: "javascript",
           code: {
             es: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+const { Client, Wallet, decode } = require("xahau");
 
 async function firmaDetallada() {
   const client = new Client("wss://xahau-test.net");
@@ -2540,14 +2540,9 @@ async function firmaDetallada() {
   // (el nodo hace esto internamente al recibir el submit)
   console.log("=== VERIFICACIÓN ===");
 
-  // Decodificar el blob para inspeccionar
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // La tx aún no existe en el ledger, es normal
-    console.log("La tx aún no se ha enviado (solo firmada).");
-  });
+  // Decodifica el blob: los mismos campos, más SigningPubKey y TxnSignature
+  const decoded = decode(signed.tx_blob);
+  console.log("Campos firmados:", Object.keys(decoded).join(", "));
 
   // Enviar
   console.log("Enviando tx_blob al nodo...");
@@ -2570,7 +2565,7 @@ async function firmaDetallada() {
 
 firmaDetallada().catch(console.error);`,
             pt: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+const { Client, Wallet, decode } = require("xahau");
 async function assinaturaDetalhada() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -2597,14 +2592,9 @@ async function assinaturaDetalhada() {
   // Verificar que a transação é válida
   // (ou nó faz isto internamente ao receber ou submit)
   console.log("=== VERIFICAÇÃO ===");
-  // Decodificar o blob para inspecioná-lo
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // A tx ainda não existe no ledger; é normal
-    console.log("A tx ainda não foi enviada (apenas assinada).");
-  });
+  // Decodifique o blob: os mesmos campos, mais SigningPubKey e TxnSignature
+  const decoded = decode(signed.tx_blob);
+  console.log("Campos assinados:", Object.keys(decoded).join(", "));
   // Enviar
   console.log("Enviando tx_blob ao nó...");
   const result = await client.submitAndWait(signed.tx_blob);
@@ -2622,7 +2612,7 @@ async function assinaturaDetalhada() {
 }
 assinaturaDetalhada().catch(console.error);`,
             en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+const { Client, Wallet, decode } = require("xahau");
 
 async function firmaDetallada() {
   const client = new Client("wss://xahau-test.net");
@@ -2658,14 +2648,9 @@ async function firmaDetallada() {
   // (the node does this internally upon receiving the submit)
   console.log("=== VERIFICATION ===");
 
-  // Decode the blob to inspect
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // The tx doesn't exist in the ledger yet, this is normal
-    console.log("The tx has not been submitted yet (only signed).");
-  });
+  // Decode the blob: the same fields, plus SigningPubKey and TxnSignature
+  const decoded = decode(signed.tx_blob);
+  console.log("Signed fields:", Object.keys(decoded).join(", "));
 
   // Submit
   console.log("Sending tx_blob to the node...");
@@ -2688,7 +2673,7 @@ async function firmaDetallada() {
 
 firmaDetallada().catch(console.error);`,
             jp: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+const { Client, Wallet, decode } = require("xahau");
 
 async function detailedSigning() {
   const client = new Client("wss://xahau-test.net");
@@ -2724,14 +2709,9 @@ async function detailedSigning() {
   // （ノードはsubmitを受信すると内部でこれを行う）
   console.log("=== 検証 ===");
 
-  // blobをデコードして確認
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // txはまだレジャーに存在しない、これは正常
-    console.log("txはまだ送信されていません（署名のみ）。");
-  });
+  // blob をデコードする：同じフィールドに SigningPubKey と TxnSignature が加わる
+  const decoded = decode(signed.tx_blob);
+  console.log("署名済みフィールド：", Object.keys(decoded).join(", "));
 
   // 送信
   console.log("ノードにtx_blobを送信中...");
@@ -2754,7 +2734,7 @@ async function detailedSigning() {
 
 detailedSigning().catch(console.error);`,
             ko: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+const { Client, Wallet, decode } = require("xahau");
 
 async function detailedSigning() {
   const client = new Client("wss://xahau-test.net");
@@ -2790,14 +2770,9 @@ async function detailedSigning() {
   // (노드는 submit을 받으면 내부적으로 이것을 수행)
   console.log("=== 검증 ===");
 
-  // blob를 확인하기 위한 조회
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // tx가 아직 ledger에 없음. 정상
-    console.log("tx는 아직 제출되지 않았습니다 (서명만 완료).");
-  });
+  // blob을 디코딩합니다: 같은 필드에 SigningPubKey와 TxnSignature가 더해집니다
+  const decoded = decode(signed.tx_blob);
+  console.log("서명된 필드:", Object.keys(decoded).join(", "));
 
   // 제출
   console.log("노드에 tx_blob 전송 중...");
@@ -2820,7 +2795,7 @@ async function detailedSigning() {
 
 detailedSigning().catch(console.error);`,
             zh: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
+const { Client, Wallet, decode } = require("xahau");
 
 async function detailedSigning() {
   const client = new Client("wss://xahau-test.net");
@@ -2856,14 +2831,9 @@ async function detailedSigning() {
   // （节点在收到 submit 时会在内部执行）
   console.log("=== 验证 ===");
 
-  // 尝试按 hash 查询以检查状态
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // 交易还未进入账本，这是正常现象
-    console.log("该交易尚未提交到网络（当前仅完成签名）。");
-  });
+  // 解码 blob：相同的字段，加上 SigningPubKey 和 TxnSignature
+  const decoded = decode(signed.tx_blob);
+  console.log("已签名字段:", Object.keys(decoded).join(", "));
 
   // 提交
   console.log("正在将 tx_blob 发送到节点...");
@@ -2911,7 +2881,8 @@ async function prepararOnline() {
 
   const tx = {
     TransactionType: "Payment",
-    Account: "rTuDireccionAqui",
+    // El dispositivo conectado solo necesita la dirección, nunca el seed
+    Account: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
@@ -2977,7 +2948,8 @@ async function prepararOnline() {
   await client.connect();
   const tx = {
     TransactionType: "Payment",
-    Account: "rTuDireccionAqui",
+    // O dispositivo conectado só precisa do endereço, nunca da seed
+    Account: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
@@ -3033,7 +3005,8 @@ async function prepareOnline() {
 
   const tx = {
     TransactionType: "Payment",
-    Account: "rYourAddressHere",
+    // The connected device only needs the address, never the seed
+    Account: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
@@ -3101,7 +3074,8 @@ async function prepareOnline() {
 
   const tx = {
     TransactionType: "Payment",
-    Account: "rYourAddressHere",
+    // 接続されたデバイスに必要なのはアドレスだけで、シードは不要です
+    Account: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
@@ -3169,7 +3143,8 @@ async function prepareOnline() {
 
   const tx = {
     TransactionType: "Payment",
-    Account: "rYourAddressHere",
+    // 연결된 기기에는 주소만 필요하며 시드는 절대 필요하지 않습니다
+    Account: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
@@ -3237,7 +3212,8 @@ async function prepareOnline() {
 
   const tx = {
     TransactionType: "Payment",
-    Account: "rYourAddressHere",
+    // 联网设备只需要地址，永远不需要 seed
+    Account: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
     Amount: "10000000", // 10 XAH
   };
@@ -5519,7 +5495,7 @@ analyzeMetadata().catch(console.error);`,
           language: "javascript",
           code: {
             es: `require("dotenv").config();
-const { Client } = require("xahau");
+const { Client, Wallet } = require("xahau");
 
 async function consultarReserva(address) {
   const client = new Client("wss://xahau-test.net");
@@ -5578,9 +5554,10 @@ async function consultarReserva(address) {
   await client.disconnect();
 }
 //Puedes usar tu cuenta o rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
-consultarReserva("rTuCuentaAqui");`,
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+consultarReserva(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             pt: `require("dotenv").config();
-const { Client } = require("xahau");
+const { Client, Wallet } = require("xahau");
 async function consultarReserva(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -5629,9 +5606,10 @@ async function consultarReserva(address) {
   await client.disconnect();
 }
 //Você pode usar seu conta ou rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
-consultarReserva("rTuCuentaAqui");`,
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+consultarReserva(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             en: `require("dotenv").config();
-const { Client } = require("xahau");
+const { Client, Wallet } = require("xahau");
 
 async function consultarReserva(address) {
   const client = new Client("wss://xahau-test.net");
@@ -5690,9 +5668,10 @@ async function consultarReserva(address) {
   await client.disconnect();
 }
 //You can use your account or rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
-consultarReserva("rYourAccountHere");`,
+// The account to inspect: the first argument, or WALLET from .env
+consultarReserva(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             jp: `require("dotenv").config();
-const { Client } = require("xahau");
+const { Client, Wallet } = require("xahau");
 
 async function checkReserve(address) {
   const client = new Client("wss://xahau-test.net");
@@ -5751,9 +5730,10 @@ async function checkReserve(address) {
   await client.disconnect();
 }
 //あなたのアカウントまたはrf1NrYAsv92UPDd8nyCG4A3bez7dhYE61rを使用できます
-checkReserve("rYourAccountHere");`,
+// 調べるアカウント：最初の引数、または .env の WALLET
+checkReserve(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             ko: `require("dotenv").config();
-const { Client } = require("xahau");
+const { Client, Wallet } = require("xahau");
 
 async function checkReserve(address) {
   const client = new Client("wss://xahau-test.net");
@@ -5812,9 +5792,10 @@ async function checkReserve(address) {
   await client.disconnect();
 }
 // 자신의 계정 또는 rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r 를 사용할 수 있습니다
-checkReserve("rYourAccountHere");`,
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+checkReserve(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             zh: `require("dotenv").config();
-const { Client } = require("xahau");
+const { Client, Wallet } = require("xahau");
 
 async function checkReserve(address) {
   const client = new Client("wss://xahau-test.net");
@@ -5873,7 +5854,8 @@ async function checkReserve(address) {
   await client.disconnect();
 }
 // 你可以使用自己的账户，或 rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
-checkReserve("rYourAccountHere");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+checkReserve(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],

@@ -1670,7 +1670,7 @@ async function removeHook() {
   console.log("Result:", result.result.meta.TransactionResult);
 
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Hook succesfully removed from the account!", account.address);
+    console.log("Hook successfully removed from the account!", account.address);
   }
 
   await client.disconnect();
@@ -2060,7 +2060,8 @@ deployHook();`,
           },
           language: "javascript",
           code: {
-            es: `const { Client } = require("xahau");
+            es: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2075,7 +2076,8 @@ async function checkHooks(address) {
 
   const hooks = response.result.account_objects;
   console.log(\`=== Hooks de \${address} ===\`);
-  console.log(\`Total instalados: \${hooks.length}\n\`);
+  console.log(\`Total instalados: \${hooks.length}
+\`);
 
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
@@ -2085,11 +2087,13 @@ async function checkHooks(address) {
 
     if (hook.Hooks && hook.Hooks.length > 0) {
       const installedHook = hook.Hooks[0].Hook;
+      // Los campos que el SetHook no incluyó vienen de la HookDefinition
+      const def = (await client.request({ command: "ledger_entry", hook_definition: installedHook.HookHash })).result.node;
 
       console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn ?? def.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace ?? def.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit ?? def.HookCanEmit ?? "-"}\`);
     }
 
     console.log();
@@ -2098,8 +2102,10 @@ async function checkHooks(address) {
   await client.disconnect();
 }
 // Una dirección de ejemplo con un Hook en Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rTuDireccionAqui");`,
-            pt: `const { Client } = require("xahau");
+// La cuenta a consultar: el primer argumento, o WALLET de .env
+checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            pt: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -2111,25 +2117,30 @@ async function checkHooks(address) {
   });
   const hooks = response.result.account_objects;
   console.log(\`=== Hooks de \${address} ===\`);
-  console.log(\`Total instalados: \${hooks.length}\n\`);
+  console.log(\`Total instalados: \${hooks.length}
+\`);
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
     console.log(\`Hook #\${i + 1}:\`);
     //console.log(JSON.stringify(hook, null, 2)); //Se você quiser ver todà info do hook, descomenta esta linha
     if (hook.Hooks && hook.Hooks.length > 0) {
       const installedHook = hook.Hooks[0].Hook;
+      // Os campos que o SetHook não incluiu vêm da HookDefinition
+      const def = (await client.request({ command: "ledger_entry", hook_definition: installedHook.HookHash })).result.node;
       console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn ?? def.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace ?? def.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit ?? def.HookCanEmit ?? "-"}\`);
     }
     console.log();
   }
   await client.disconnect();
 }
 // Umo endereçou de exemplo com um Hook em Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rTuDireccionAqui");`,
-            en: `const { Client } = require("xahau");
+// A conta a consultar: o primeiro argumento, ou a WALLET do .env
+checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            en: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2144,7 +2155,8 @@ async function checkHooks(address) {
 
   const hooks = response.result.account_objects;
   console.log(\`=== Hooks of \${address} ===\`);
-  console.log(\`Total installed: \${hooks.length}\n\`);
+  console.log(\`Total installed: \${hooks.length}
+\`);
 
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
@@ -2154,11 +2166,13 @@ async function checkHooks(address) {
 
     if (hook.Hooks && hook.Hooks.length > 0) {
       const installedHook = hook.Hooks[0].Hook;
+      // Fields the SetHook left out come from the HookDefinition
+      const def = (await client.request({ command: "ledger_entry", hook_definition: installedHook.HookHash })).result.node;
 
       console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn ?? def.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace ?? def.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit ?? def.HookCanEmit ?? "-"}\`);
     }
 
     console.log();
@@ -2167,8 +2181,10 @@ async function checkHooks(address) {
   await client.disconnect();
 }
 // Example addres with a Hook in Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rTuDireccionAqui");`,
-            jp: `const { Client } = require("xahau");
+// The account to inspect: the first argument, or WALLET from .env
+checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            jp: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2183,7 +2199,8 @@ async function checkHooks(address) {
 
   const hooks = response.result.account_objects;
   console.log(\`=== \${address} のHooks ===\`);
-  console.log(\`合計インストール数: \${hooks.length}\n\`);
+  console.log(\`合計インストール数: \${hooks.length}
+\`);
 
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
@@ -2193,11 +2210,13 @@ async function checkHooks(address) {
 
     if (hook.Hooks && hook.Hooks.length > 0) {
       const installedHook = hook.Hooks[0].Hook;
+      // SetHook で省略したフィールドは HookDefinition から取得します
+      const def = (await client.request({ command: "ledger_entry", hook_definition: installedHook.HookHash })).result.node;
 
       console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn ?? def.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace ?? def.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit ?? def.HookCanEmit ?? "-"}\`);
     }
 
     console.log();
@@ -2206,8 +2225,10 @@ async function checkHooks(address) {
   await client.disconnect();
 }
 // TestnetでHookを持つアドレスの例: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rTuDireccionAqui");`,
-            ko: `const { Client } = require("xahau");
+// 調べるアカウント：最初の引数、または .env の WALLET
+checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            ko: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2222,7 +2243,8 @@ async function checkHooks(address) {
 
   const hooks = response.result.account_objects;
   console.log(\`=== \${address} 의 Hooks ===\`);
-  console.log(\`설치된 총 수: \${hooks.length}\n\`);
+  console.log(\`설치된 총 수: \${hooks.length}
+\`);
 
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
@@ -2232,11 +2254,13 @@ async function checkHooks(address) {
 
     if (hook.Hooks && hook.Hooks.length > 0) {
       const installedHook = hook.Hooks[0].Hook;
+      // SetHook에서 생략한 필드는 HookDefinition에서 가져옵니다
+      const def = (await client.request({ command: "ledger_entry", hook_definition: installedHook.HookHash })).result.node;
 
       console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn ?? def.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace ?? def.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit ?? def.HookCanEmit ?? "-"}\`);
     }
 
     console.log();
@@ -2245,8 +2269,10 @@ async function checkHooks(address) {
   await client.disconnect();
 }
 // Testnet 예시 주소: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rTuDireccionAqui");`,
-            zh: `const { Client } = require("xahau");
+// 조회할 계정: 첫 번째 인수, 또는 .env의 WALLET
+checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
+            zh: `require("dotenv").config();
+const { Client, Wallet } = require("xahau");
 
 async function checkHooks(address) {
   const client = new Client("wss://xahau-test.net");
@@ -2261,7 +2287,8 @@ async function checkHooks(address) {
 
   const hooks = response.result.account_objects;
   console.log(\`=== \${address} 的 Hooks ===\`);
-  console.log(\`已安装总数: \${hooks.length}\n\`);
+  console.log(\`已安装总数: \${hooks.length}
+\`);
 
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
@@ -2271,11 +2298,13 @@ async function checkHooks(address) {
 
     if (hook.Hooks && hook.Hooks.length > 0) {
       const installedHook = hook.Hooks[0].Hook;
+      // SetHook 中省略的字段来自 HookDefinition
+      const def = (await client.request({ command: "ledger_entry", hook_definition: installedHook.HookHash })).result.node;
 
       console.log(\`  HookHash: \${installedHook.HookHash}\`);
-      console.log(\`  HookOn: \${installedHook.HookOn}\`);
-      console.log(\`  Namespace: \${installedHook.HookNamespace}\`);
-      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit}\`);
+      console.log(\`  HookOn: \${installedHook.HookOn ?? def.HookOn}\`);
+      console.log(\`  Namespace: \${installedHook.HookNamespace ?? def.HookNamespace}\`);
+      console.log(\`  HookCanEmit: \${installedHook.HookCanEmit ?? def.HookCanEmit ?? "-"}\`);
     }
 
     console.log();
@@ -2284,7 +2313,8 @@ async function checkHooks(address) {
   await client.disconnect();
 }
 // Testnet 示例地址: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
-checkHooks("rTuDireccionAqui");`,
+// 要查看的账户：第一个参数，或 .env 中的 WALLET
+checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
           },
         },
       ],
