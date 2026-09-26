@@ -1,9 +1,10 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
 const moduleData = {
   id: "m7",
   icon: "🎨",
   title: {
     es: "Creación y uso de NFTs",
-    pt: "Creación e uso de NFTs",
+    pt: "Criação e uso de NFTs",
     en: "Creating and Using NFTs",
     jp: "NFTの作成と使用",
     ko: "NFT 생성 및 사용",
@@ -61,15 +62,15 @@ Um URIToken é um objeto **único** no ledger que contém:
 - **URI**: Um link a os metadados ou conteúdo do NFT (imagen, JSON, etc.)
 - **Digest**: Hash opcional do conteúdo ao qual aponta a URI (para verificar integridade)
 - **Owner**: A conta proprietária atual
-- **Issuer**: A conta que lo criou originalmente
+- **Issuer**: a conta que o criou originalmente
 ### URIToken vs ERC-721
 | Característica | ERC-721 (Ethereum) | URIToken (Xahau) |
 |---|---|---|
-| Criar colección | Fazer deploy de contrato Solidity | Não necessário |
+| Criar coleção | Fazer deploy de contrato Solidity | Não necessário |
 | Mintear NFT | Função do contrato | Transação \`URITokenMint\` |
 | Transferir | Função do contrato | Transação \`URITokenBuy\` |
 | Metadata | tokenURI em contrato | URI nativa no objeto |
-| Custo | Gas costoso | Fee mínimo (~12 drops) |
+| Custo | Gas caro | Fee mínima (~12 drops) |
 | Verificação | Depende do contrato | Digest nativo no ledger |
 ### Transações relacionadas com URITokens
 - **URITokenMint**: Criar um novo URIToken
@@ -293,7 +294,7 @@ async function mintURIToken() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡URIToken criado com éxito!");
+    console.log("URIToken criado com sucesso!");
     console.log("Hash tx:", signed.hash);
     // Buscar ou URIToken criado nos nós afetados
     const criated = result.result.meta.AffectedNodes.find(
@@ -572,7 +573,7 @@ async function getURITokens(address) {
   }
   await client.disconnect();
 }
-// Substitua com o endereçou que quieres consultar, por exemplo r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
+// Substitua pelo endereço que quer consultar, por exemplo r9oB9E7jnRjp88fTrxHzngAietepwCCcqV
 getURITokens("rTuDireccionAqui");`,
             en: `const { Client } = require("xahau");
 
@@ -725,12 +726,19 @@ getURITokens("rYourAddressHere");`,
         {
           title: { es: "URITokens en Xahau", pt: "URITokens na Xahau", en: "URITokens on Xahau", jp: "XahauのURIToken", ko: "Xahau의 URIToken", zh: "Xahau 上的 URIToken" },
           content: {
-            es: "NFTs nativos del ledger de Xahau\n\n• URI → Enlace a metadatos\n• Digest → Hash de verificación\n• Owner → Propietario actual\n• Issuer → Creador original\n\nSin necesidad de smart contracts",
-            pt: "NFTs nativos do ledger da Xahau\n\n• URI → Enlace a metadados\n• Digest → Hash de verificação\n• Owner → Proprietário atual\n• Issuer → Creador original\n\nSin necessidade de smart contracts",
-            en: "Native NFTs on the Xahau ledger\n\n• URI → Link to metadata\n• Digest → Verification hash\n• Owner → Current owner\n• Issuer → Original creator\n\nNo smart contracts needed",
-            jp: "Xahauレジャーのネイティブ NFT\n\n• URI → メタデータへのリンク\n• Digest → 検証ハッシュ\n• Owner → 現在の所有者\n• Issuer → 元の作成者\n\nスマートコントラクト不要",
-            ko: "Xahau 레저의 네이티브 NFT\n\n• URI → 메타데이터 링크\n• Digest → 검증 해시\n• Owner → 현재 소유자\n• Issuer → 최초 생성자\n\n스마트 컨트랙트 불필요",
-            zh: "Xahau 账本中的原生 NFT\n\n• URI → 元数据链接\n• Digest → 校验哈希\n• Owner → 当前持有者\n• Issuer → 原始创建者\n\n不需要智能合约",
+            es: "NFTs nativos de la red Xahau\n\n• URI → Enlace a metadatos\n• Digest → Hash de verificación\n• Owner → Propietario actual\n• Issuer → Creador original\n\nSin necesidad de smart contracts",
+            pt: `NFTs nativos da rede Xahau
+
+• URI → Link para metadados
+• Digest → Hash de verificação
+• Owner → Proprietário atual
+• Issuer → Creador original
+
+Sem necessidade de smart contracts`,
+            en: "Native NFTs on the Xahau Network\n\n• URI → Link to metadata\n• Digest → Verification hash\n• Owner → Current owner\n• Issuer → Original creator\n\nNo smart contracts needed",
+            jp: "XahauネットワークのネイティブNFT\n\n• URI → メタデータへのリンク\n• Digest → 検証ハッシュ\n• Owner → 現在の所有者\n• Issuer → 元の作成者\n\nスマートコントラクト不要",
+            ko: "Xahau 네트워크의 네이티브 NFT\n\n• URI → 메타데이터 링크\n• Digest → 검증 해시\n• Owner → 현재 소유자\n• Issuer → 최초 생성자\n\n스마트 컨트랙트 불필요",
+            zh: "Xahau 网络上的原生 NFT\n\n• URI → 元数据链接\n• Digest → 校验哈希\n• Owner → 当前持有者\n• Issuer → 原始创建者\n\n不需要智能合约",
           },
           visual: "🎨",
         },
@@ -750,7 +758,15 @@ getURITokens("rYourAddressHere");`,
           title: { es: "URIToken vs ERC-721", pt: "URIToken vs ERC-721", en: "URIToken vs ERC-721", jp: "URIToken vs ERC-721", ko: "URIToken vs ERC-721", zh: "URIToken vs ERC-721" },
           content: {
             es: "URIToken (Xahau):\n• Nativo del ledger, sin contratos\n• Fee mínimo (~12 drops)\n• Digest nativo para verificación\n\nERC-721 (Ethereum):\n• Requiere contrato Solidity\n• Gas costoso y variable\n• Verificación depende del contrato",
-            pt: "URIToken (Xahau):\n• Nativo do ledger, sem contratos\n• Fee mínimo (~12 drops)\n• Digest nativo para verificação\n\nERC-721 (Ethereum):\n• Requer contrato Solidity\n• Gas costoso e variável\n• Verificação depende do contrato",
+            pt: `URIToken (Xahau):
+• Nativo do ledger, sem contratos
+• Fee mínimo (~12 drops)
+• Digest nativo para verificação
+
+ERC-721 (Ethereum):
+• Requer contrato Solidity
+• Gas caro e variável
+• Verificação depende do contrato`,
             en: "URIToken (Xahau):\n• Native to the ledger, no contracts\n• Minimal fee (~12 drops)\n• Native Digest for verification\n\nERC-721 (Ethereum):\n• Requires Solidity contract\n• Expensive and variable gas\n• Verification depends on contract",
             jp: "URIToken（Xahau）：\n• レジャーネイティブ、コントラクト不要\n• 最小限のFee（〜12 drops）\n• 検証用のネイティブDigest\n\nERC-721（Ethereum）：\n• Solidityコントラクトが必要\n• 高価で変動するガス代\n• 検証はコントラクトに依存",
             ko: "URIToken (Xahau):\n• 레저 네이티브, 컨트랙트 불필요\n• 최소 수수료 (~12 drops)\n• 검증을 위한 네이티브 Digest\n\nERC-721 (Ethereum):\n• Solidity 컨트랙트 필요\n• 비싸고 가변적인 가스비\n• 검증이 컨트랙트에 의존",
@@ -789,18 +805,70 @@ Para transferir un URIToken sin coste (regalar), puedes crear una oferta de vent
 
 ### Quemar un URIToken
 
-El propietario actual siempre puede quemar (destruir) su URIToken con \`URITokenBurn\`. Si el token fue creado con el flag \`tfBurnable\`, el emisor original también puede quemarlo.`,
+El propietario actual siempre puede quemar (destruir) su URIToken con \`URITokenBurn\`. Si el token fue creado con el flag \`tfBurnable\`, el emisor original también puede quemarlo.
+
+### Ejecutar los scripts de esta lección
+
+\`sell-uritoken.js\` firma con \`WALLET_SEED\`, el dueño del [módulo 8](?m=8&l=0); \`buy-uritoken.js\` firma con \`BUYER_SEED\`, que crea \`create-accounts.js\` ([módulo 3](?m=3&l=1)). Los dos reciben como argumento el **URITokenID** que imprimió el script de minteo:
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+Salida en testnet:
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **Puesta a la venta \`tesSUCCESS\`**: el URIToken tiene ahora una oferta de venta de 5 XAH. Sigue siendo del dueño hasta que alguien lo compre.
+- **Compra \`tesSUCCESS\`**: BUYER pagó 5 XAH y el URIToken pasó a su cuenta en la misma transacción.
+
+Sin un ID hex de 64 caracteres, cualquiera de los dos scripts se detiene antes de enviar nada y dice qué pasar. Una compra con un \`Amount\` menor que el precio de venta falla, por eso los dos scripts usan los mismos 5 XAH.`,
         pt: `Xahau inclui um sistema nativo para a compra-venda de URITokens, sem necessidade de marketplaces externos nem smart contracts.
 ### Fluxo de venda
 1. O proprietário cria uma **oferta de venda** com \`URITokenCreateSellOffer\`, indicando o precio em XAH ou em outra divisa.
 2. Qualquer pessoa pode **comprar** o URIToken com \`URITokenBuy\`, pagando o preço definido
 3. O proprietário pode **cancelar** a oferta com \`URITokenCancelSellOffer\`
-### Vendà um destinatario específico
+### Venda para um destinatário específico
 Você pode criar uma oferta de venda direcionada a uma conta específica usando o campo \`Destination\`. Somente essa conta poderá comprar o URIToken.
 ### Transferencia gratuita
 Para transferir um URIToken sem custo (presentear), você pode criar uma oferta de venda com \`Amount: "0"\` e um \`Destination\` específico.
 ### Queimar um URIToken
-O proprietário atual sempre pode queimar (destruir) seu URIToken com \`URITokenBurn\`. Se o token foi criado com o flag \`tfBurnable\`, o emissor original também pode queimarlo.`,
+O proprietário atual sempre pode queimar (destruir) seu URIToken com \`URITokenBurn\`. Se o token foi criado com o flag \`tfBurnable\`, o emissor original também pode queimarlo.
+
+### Executar os scripts desta lição
+
+\`sell-uritoken.js\` assina com \`WALLET_SEED\`, o dono do [módulo 8](?m=8&l=0); \`buy-uritoken.js\` assina com \`BUYER_SEED\`, criada por \`create-accounts.js\` ([módulo 3](?m=3&l=1)). Os dois recebem como argumento o **URITokenID** que o script de mint imprimiu:
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+Saída na testnet:
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **Colocado à venda \`tesSUCCESS\`**: o URIToken agora tem uma oferta de venda de 5 XAH. Continua com o dono até alguém comprá-lo.
+- **Compra \`tesSUCCESS\`**: o BUYER pagou 5 XAH e o URIToken passou para ele na mesma transação.
+
+Sem um ID hex de 64 caracteres, qualquer um dos scripts para antes de enviar e diz o que passar. Uma compra com \`Amount\` menor que o preço de venda falha, por isso os dois scripts usam os mesmos 5 XAH.`,
         en: `Xahau includes a native system for buying and selling URITokens, with no need for external marketplaces or smart contracts.
 
 ### Sale Flow
@@ -819,7 +887,33 @@ To transfer a URIToken at no cost (as a gift), you can create a sell offer with 
 
 ### Burning a URIToken
 
-The current owner can always burn (destroy) their URIToken with \`URITokenBurn\`. If the token was created with the \`tfBurnable\` flag, the original issuer can also burn it.`,
+The current owner can always burn (destroy) their URIToken with \`URITokenBurn\`. If the token was created with the \`tfBurnable\` flag, the original issuer can also burn it.
+
+### Run this lesson's scripts
+
+\`sell-uritoken.js\` signs with \`WALLET_SEED\`, the owner from [Module 8](?m=8&l=0); \`buy-uritoken.js\` signs with \`BUYER_SEED\`, created by \`create-accounts.js\` ([Module 3](?m=3&l=1)). Both take the **URITokenID** the mint script printed, as their argument:
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+Output on testnet:
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **Listed \`tesSUCCESS\`**: the URIToken now carries a sell offer of 5 XAH. It stays with the owner until someone buys it.
+- **Purchased \`tesSUCCESS\`**: BUYER paid 5 XAH and the URIToken moved to it in the same transaction.
+
+Without a 64-character hex ID, either script stops before submitting and says what to pass. A buy with an \`Amount\` lower than the sale price fails, so the two scripts use the same 5 XAH.`,
         jp: `XahauにはURITokenの売買のためのネイティブシステムが含まれており、外部マーケットプレイスやスマートコントラクトは不要です。
 
 ### 売却フロー
@@ -838,7 +932,33 @@ The current owner can always burn (destroy) their URIToken with \`URITokenBurn\`
 
 ### URITokenのバーン
 
-現在の所有者はいつでも\`URITokenBurn\`でURITokenをバーン（破棄）できます。\`tfBurnable\`フラグで作成されたトークンは、元の発行者もバーンできます。`,
+現在の所有者はいつでも\`URITokenBurn\`でURITokenをバーン（破棄）できます。\`tfBurnable\`フラグで作成されたトークンは、元の発行者もバーンできます。
+
+### このレッスンのスクリプトを実行する
+
+\`sell-uritoken.js\` は[モジュール8](?m=8&l=0)の所有者である \`WALLET_SEED\` で署名し、\`buy-uritoken.js\` は\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成する \`BUYER_SEED\` で署名します。どちらもミントスクリプトが表示した **URITokenID** を引数に取ります。
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+テストネットでの出力:
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **出品の \`tesSUCCESS\`**: URIToken に 5 XAH の売り注文が付きました。誰かが購入するまで所有者のものです。
+- **購入の \`tesSUCCESS\`**: BUYER が 5 XAH を支払い、同じトランザクションで URIToken が BUYER に移りました。
+
+64文字の hex ID がない場合、どちらのスクリプトも何も送信せずに停止し、渡すべき値を表示します。販売価格より低い \`Amount\` の購入は失敗するため、2つのスクリプトは同じ 5 XAH を使います。`,
         ko: `Xahau는 외부 마켓플레이스나 스마트 컨트랙트 없이 URIToken을 사고팔 수 있는 네이티브 시스템을 포함합니다.
 
 ### 판매 흐름
@@ -857,7 +977,33 @@ URIToken을 비용 없이 전송(선물)하려면 \`Amount: "0"\`과 특정 \`De
 
 ### URIToken 소각
 
-현재 소유자는 언제든지 \`URITokenBurn\`으로 URIToken을 소각(파괴)할 수 있습니다. \`tfBurnable\` 플래그로 생성된 토큰은 원래 발행자도 소각할 수 있습니다.`,
+현재 소유자는 언제든지 \`URITokenBurn\`으로 URIToken을 소각(파괴)할 수 있습니다. \`tfBurnable\` 플래그로 생성된 토큰은 원래 발행자도 소각할 수 있습니다.
+
+### 이 레슨의 스크립트 실행
+
+\`sell-uritoken.js\`는 [모듈 8](?m=8&l=0)의 소유자인 \`WALLET_SEED\`로 서명하고, \`buy-uritoken.js\`는 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만든 \`BUYER_SEED\`로 서명합니다. 둘 다 민트 스크립트가 출력한 **URITokenID**를 인자로 받습니다.
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+테스트넷 출력:
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **판매 등록 \`tesSUCCESS\`**: URIToken에 5 XAH 판매 오퍼가 붙었습니다. 누군가 구매할 때까지 소유자에게 남아 있습니다.
+- **구매 \`tesSUCCESS\`**: BUYER가 5 XAH를 지불했고 같은 트랜잭션에서 URIToken이 BUYER에게 넘어갔습니다.
+
+64자 hex ID가 없으면 두 스크립트 모두 제출 전에 멈추고 무엇을 전달해야 하는지 알려 줍니다. 판매 가격보다 낮은 \`Amount\`로 구매하면 실패하므로 두 스크립트는 같은 5 XAH를 사용합니다.`,
         zh: `Xahau 内置了买卖 URIToken 的原生系统，不需要外部市场或智能合约。
 
 ### 出售流程
@@ -876,7 +1022,33 @@ URIToken을 비용 없이 전송(선물)하려면 \`Amount: "0"\`과 특정 \`De
 
 ### 销毁 URIToken
 
-当前持有者始终可以通过 \`URITokenBurn\` 销毁自己的 URIToken。如果该代币在创建时启用了 \`tfBurnable\` 标志，则最初的发行方也可以销毁它。`,
+当前持有者始终可以通过 \`URITokenBurn\` 销毁自己的 URIToken。如果该代币在创建时启用了 \`tfBurnable\` 标志，则最初的发行方也可以销毁它。
+
+### 运行本课的脚本
+
+\`sell-uritoken.js\` 用 \`WALLET_SEED\`（[模块8](?m=8&l=0)中的所有者）签名；\`buy-uritoken.js\` 用由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建的 \`BUYER_SEED\` 签名。两者都以铸造脚本打印的 **URITokenID** 作为参数：
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+测试网上的输出：
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **挂售 \`tesSUCCESS\`**：URIToken 现在带有 5 XAH 的卖单。在有人购买之前，它仍归所有者。
+- **购买 \`tesSUCCESS\`**：BUYER 支付了 5 XAH，URIToken 在同一笔交易中转给了它。
+
+没有 64 字符的 hex ID 时，两个脚本都会在提交前停止并说明应传入什么。\`Amount\` 低于售价的购买会失败，所以两个脚本使用相同的 5 XAH。`,
       },
       codeBlocks: [
         {
@@ -890,8 +1062,14 @@ URIToken을 비용 없이 전송(선물)하려면 \`Amount: "0"\`과 특정 \`De
           },
           language: "javascript",
           code: {
-            es: `require("dotenv").config();
+            es: `// Archivo: sell-uritoken.js
+// node sell-uritoken.js <URITokenID>
+require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("Pasa el URITokenID que imprimió el script de minteo (módulo 8, lección 1): node sell-uritoken.js <URITokenID>");
+}
 
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -903,7 +1081,7 @@ async function sellURIToken() {
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
-    URITokenID: "TU_URITOKEN_ID_AQUI", // ID del URIToken a vender
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // Precio: 5 XAH
   };
 
@@ -921,8 +1099,14 @@ async function sellURIToken() {
 }
 
 sellURIToken();`,
-            pt: `require("dotenv").config();
+            pt: `// Arquivo: sell-uritoken.js
+// node sell-uritoken.js <URITokenID>
+require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("Passe o URITokenID que o script de mint imprimiu (módulo 8, lição 1): node sell-uritoken.js <URITokenID>");
+}
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -931,7 +1115,7 @@ async function sellURIToken() {
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
-    URITokenID: "TU_URITOKEN_ID_AQUI", // ID do URIToken a vender
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // Precio: 5 XAH
   };
   const prepared = await client.autofill(sellOffer);
@@ -939,13 +1123,19 @@ async function sellURIToken() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡URIToken puesto à venda por 5 XAH!");
+    console.log("URIToken colocado à venda por 5 XAH!");
   }
   await client.disconnect();
 }
 sellURIToken();`,
-            en: `require("dotenv").config();
+            en: `// File: sell-uritoken.js
+// node sell-uritoken.js <URITokenID>
+require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("Pass the URITokenID the mint script printed (Module 8, lesson 1): node sell-uritoken.js <URITokenID>");
+}
 
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -957,7 +1147,7 @@ async function sellURIToken() {
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // ID of the URIToken to sell
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // Price: 5 XAH
   };
 
@@ -975,8 +1165,14 @@ async function sellURIToken() {
 }
 
 sellURIToken();`,
-            jp: `require("dotenv").config();
+            jp: `// ファイル: sell-uritoken.js
+// node sell-uritoken.js <URITokenID>
+require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("ミントスクリプトが表示した URITokenID を渡してください（モジュール8・レッスン1）: node sell-uritoken.js <URITokenID>");
+}
 
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -988,7 +1184,7 @@ async function sellURIToken() {
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // 売りに出すURITokenのID
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // 価格：5 XAH
   };
 
@@ -1006,8 +1202,14 @@ async function sellURIToken() {
 }
 
 sellURIToken();`,
-            ko: `require("dotenv").config();
+            ko: `// 파일: sell-uritoken.js
+// node sell-uritoken.js <URITokenID>
+require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("민트 스크립트가 출력한 URITokenID를 전달하세요 (모듈 8, 레슨 1): node sell-uritoken.js <URITokenID>");
+}
 
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1019,7 +1221,7 @@ async function sellURIToken() {
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // 판매할 URIToken의 ID
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // 가격: 5 XAH
   };
 
@@ -1037,8 +1239,14 @@ async function sellURIToken() {
 }
 
 sellURIToken();`,
-            zh: `require("dotenv").config();
+            zh: `// 文件: sell-uritoken.js
+// node sell-uritoken.js <URITokenID>
+require("dotenv").config();
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("请传入铸造脚本打印的 URITokenID（模块 8，第 1 课）：node sell-uritoken.js <URITokenID>");
+}
 
 async function sellURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1050,7 +1258,7 @@ async function sellURIToken() {
   const sellOffer = {
     TransactionType: "URITokenCreateSellOffer",
     Account: owner.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // 要出售的 URIToken ID
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // 价格：5 XAH
   };
 
@@ -1081,8 +1289,15 @@ sellURIToken();`,
           },
           language: "javascript",
           code: {
-            es: `require("dotenv").config();
+            es: `// Archivo: buy-uritoken.js
+// node buy-uritoken.js <URITokenID>
+require("dotenv").config();
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("Pasa el URITokenID del token puesto a la venta: node buy-uritoken.js <URITokenID>");
+}
 
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1094,7 +1309,7 @@ async function buyURIToken() {
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
-    URITokenID: "TU_URITOKEN_ID_AQUI", // ID del URIToken a comprar
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // Debe coincidir con el precio de venta
   };
 
@@ -1114,8 +1329,15 @@ async function buyURIToken() {
 }
 
 buyURIToken();`,
-            pt: `require("dotenv").config();
+            pt: `// Arquivo: buy-uritoken.js
+// node buy-uritoken.js <URITokenID>
+require("dotenv").config();
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("Passe o URITokenID do token colocado à venda: node buy-uritoken.js <URITokenID>");
+}
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -1124,7 +1346,7 @@ async function buyURIToken() {
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
-    URITokenID: "TU_URITOKEN_ID_AQUI", // ID do URIToken a comprar
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // Deve coincidir com o precio de venda
   };
   const prepared = await client.autofill(buy);
@@ -1132,15 +1354,22 @@ async function buyURIToken() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡URIToken comprado com éxito!");
-    console.log("O NFT ahora é tuyo.");
+    console.log("URIToken comprado com sucesso!");
+    console.log("O NFT agora é seu.");
         console.log("Endereçou do comprador:", buyer.address);
   }
   await client.disconnect();
 }
 buyURIToken();`,
-            en: `require("dotenv").config();
+            en: `// File: buy-uritoken.js
+// node buy-uritoken.js <URITokenID>
+require("dotenv").config();
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("Pass the URITokenID of the token listed for sale: node buy-uritoken.js <URITokenID>");
+}
 
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1152,7 +1381,7 @@ async function buyURIToken() {
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // ID of the URIToken to buy
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // Must match the sale price
   };
 
@@ -1172,8 +1401,15 @@ async function buyURIToken() {
 }
 
 buyURIToken();`,
-            jp: `require("dotenv").config();
+            jp: `// ファイル: buy-uritoken.js
+// node buy-uritoken.js <URITokenID>
+require("dotenv").config();
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("売りに出された URIToken の URITokenID を渡してください: node buy-uritoken.js <URITokenID>");
+}
 
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1185,7 +1421,7 @@ async function buyURIToken() {
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // 購入するURITokenのID
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // 売り価格と一致する必要がある
   };
 
@@ -1205,8 +1441,15 @@ async function buyURIToken() {
 }
 
 buyURIToken();`,
-            ko: `require("dotenv").config();
+            ko: `// 파일: buy-uritoken.js
+// node buy-uritoken.js <URITokenID>
+require("dotenv").config();
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("판매 중인 토큰의 URITokenID를 전달하세요: node buy-uritoken.js <URITokenID>");
+}
 
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1218,7 +1461,7 @@ async function buyURIToken() {
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // 구매할 URIToken의 ID
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // 판매 가격과 일치해야 함
   };
 
@@ -1238,8 +1481,15 @@ async function buyURIToken() {
 }
 
 buyURIToken();`,
-            zh: `require("dotenv").config();
+            zh: `// 文件: buy-uritoken.js
+// node buy-uritoken.js <URITokenID>
+require("dotenv").config();
+if (!process.env.BUYER_SEED) throw new Error("BUYER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const uriTokenID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(uriTokenID ?? "")) {
+  throw new Error("请传入正在出售的 URIToken 的 URITokenID：node buy-uritoken.js <URITokenID>");
+}
 
 async function buyURIToken() {
   const client = new Client("wss://xahau-test.net");
@@ -1251,7 +1501,7 @@ async function buyURIToken() {
   const buy = {
     TransactionType: "URITokenBuy",
     Account: buyer.address,
-    URITokenID: "YOUR_URITOKEN_ID_HERE", // 要购买的 URIToken ID
+    URITokenID: uriTokenID,
     Amount: xahToDrops(5), // 必须与卖价一致
   };
 
@@ -1303,7 +1553,15 @@ buyURIToken();`,
           title: { es: "Quemar URITokens en detalle", pt: "Queimar URITokens em detalhe", en: "Burning URITokens in Detail", jp: "URITokenのバーンの詳細", ko: "URIToken 소각 상세", zh: "URIToken 销毁详解" },
           content: {
             es: "Flag tfBurnable (1) al mintear:\n• Permite al emisor quemar el token\n• Incluso si ya no es propietario\n\nSin tfBurnable:\n• Solo el propietario actual puede quemar\n\nUsos: eliminar errores de minteo,\ncontenido expirado, tokens revocables",
-            pt: "Flag tfBurnable (1) ao mintar:\n• Permite ao emissor queimar ou token\n• Incluso se já não é proprietário\n\nSin tfBurnable:\n• Apenas ou proprietário atual pode queimar\n\nUsos: eliminar erros de minteo,\nconteúdo expirado, tokens revocables",
+            pt: `Flag tfBurnable (1) ao mintar:
+• Permite ao emissor queimar ou token
+• Incluso se já não é proprietário
+
+Sem tfBurnable:
+• Apenas ou proprietário atual pode queimar
+
+Usos: eliminar erros de mint,
+conteúdo expirado, tokens revogáveis`,
             en: "tfBurnable flag (1) at mint time:\n• Allows the issuer to burn the token\n• Even if they are no longer the owner\n\nWithout tfBurnable:\n• Only the current owner can burn\n\nUse cases: fix minting errors,\nexpired content, revocable tokens",
             jp: "ミント時のtfBurnableフラグ（1）：\n• 発行者がトークンをバーンできる\n• もはや所有者でなくても\n\ntfBurnableなし：\n• 現在の所有者のみバーン可能\n\nユースケース：ミントエラーの修正、\n期限切れコンテンツ、取り消し可能なトークン",
             ko: "민팅 시 tfBurnable 플래그 (1):\n• 발행자가 토큰을 소각할 수 있음\n• 더 이상 소유자가 아니더라도\n\ntfBurnable 없음:\n• 현재 소유자만 소각 가능\n\n사용 사례: 민팅 오류 수정,\n만료된 콘텐츠, 취소 가능한 토큰",
@@ -1317,7 +1575,7 @@ buyURIToken();`,
       id: "m7l3",
       title: {
         es: "Metadatos y estándares para URITokens",
-        pt: "Metadados e estándares para URITokens",
+        pt: "Metadados e padrões para URITokens",
         en: "Metadata and Standards for URITokens",
         jp: "URITokenのメタデータと標準",
         ko: "URIToken의 메타데이터와 표준",
@@ -1376,15 +1634,15 @@ Siguiendo un estándar similar a ERC-721, los metadatos JSON de un URIToken típ
 - **Usa IPFS para producción**: La inmutabilidad y descentralización protegen el valor del NFT
 - **Mantén el JSON consistente**: Sigue el estándar de metadatos para compatibilidad con marketplaces y exploradores
 - **No pongas datos sensibles en la URI**: Todo es público en el ledger`,
-        pt: `Os metadados são a chave para que um NFT sea útil e verificable. Em Xahau, os URITokens usam os campos **URI** e **Digest** para enlazar e verificar o conteúdo asociado.
+        pt: `Os metadados são a chave para que um NFT seja útil e verificável. Na Xahau, os URITokens usam os campos **URI** e **Digest** para vincular e verificar o conteúdo associado.
 ### O campo URI: o que colocar nele
 A URI é um link que aponta ao conteúdo ou metadados do NFT. Há várias opções:
 - **IPFS links** (\`ipfs://QmXxx...\`): Armazenamento descentralizado. O conteúdo é imutável e direcionado por hash. É a opção **recomendada** para produção
 - **HTTPS links** (\`https://mi-servidor.com/metadata/1.json\`): Armazenamento centralizado. Fácil de implementar mas depende de que o servidor esteja disponível
 ### O campo Digest: verificação de integridade
 O **Digest** é um hash SHA-256 do conteúdo ao qual aponta a URI. Permite a qualquer pessoa verificar que o conteúdo não foi alterado desde que se criou o NFT. É armazenado como uma string hexadecimal de 64 caracteres no ledger.
-### Estándar de metadados JSON
-Siguiendo um estándar similar a ERC-721, os metadados JSON de um URIToken típicamente incluin:
+### Padrão de metadados JSON
+Seguindo um padrão semelhante ao ERC-721, os metadados JSON de um URIToken normalmente incluem:
 \`\`\`json
 {
     "content": {
@@ -1396,7 +1654,7 @@ Siguiendo um estándar similar a ERC-721, os metadados JSON de um URIToken típi
             "0001"
         ],
         "publisher": {
-            "name": "Tu nome",
+            "name": "Seu nome",
             "url": "https://www.tuweb.com",
             "email": "tucorreo@gmail.com"
         },
@@ -1409,12 +1667,12 @@ Siguiendo um estándar similar a ERC-721, os metadados JSON de um URIToken típi
 ### Opções de armazenamento
 | Opção | Vantagens | Desvantagens |
 |---|---|---|
-| **IPFS** | Descentralizado, imutável, direcionado por hash | Necesita pinning para persistencia |
-| **Servidor centralizado** | Simple, rápido | Punto único de fallo, mutable |
+| **IPFS** | Descentralizado, imutável, endereçado por hash | Precisa de pinning para persistir |
+| **Servidor centralizado** | Simples, rápido | Ponto único de falha, mutável |
 ### Boas práticas
 - **Sempre defina o Digest**: Permite verificar a integridade do conteúdo em qualquer momento
 - **Usa IPFS para produção**: A imutabilidade e descentralização protegem o valor do NFT
-- **Mantén o JSON consistente**: Sigue o estándar de metadados para compatibilidad com marketplaces e exploradores
+- **Mantenha o JSON consistente**: siga o padrão de metadados para ser compatível com marketplaces e exploradores
 - **Não coloque dados sensíveis na URI**: Tudo é público no ledger`,
         en: `Metadata is the key to making an NFT useful and verifiable. On Xahau, URITokens use the **URI** and **Digest** fields to link to and verify associated content.
 
@@ -1657,7 +1915,14 @@ URI 是指向 NFT 内容或元数据的链接，常见选择包括：
           title: { es: "Estándar de metadatos JSON", pt: "Padrão de metadados JSON", en: "JSON Metadata Standard", jp: "JSONメタデータ標準", ko: "JSON 메타데이터 표준", zh: "JSON 元数据标准" },
           content: {
             es: "Estructura recomendada (similar a ERC-721):\n\n• name → Nombre del NFT\n• description → Descripción\n• image → Enlace a la imagen\n• attributes → Array de propiedades\n\nConsistencia = compatibilidad con exploradores",
-            pt: "Estructura recomendada (similar a ERC-721):\n\n• name → Nome do NFT\n• description → Descripción\n• image → Enlace à imagen\n• attributes → Array de propriedades\n\nConsistencia = compatibilidad com exploradores",
+            pt: `Estrutura recomendada (semelhante ao ERC-721):
+
+• name → Nome do NFT
+• description → Descrição
+• image → Link para a imagem
+• attributes → Array de propriedades
+
+Consistência = compatibilidade com exploradores`,
             en: "Recommended structure (similar to ERC-721):\n\n• name → NFT name\n• description → Description\n• image → Link to image\n• attributes → Array of properties\n\nConsistency = compatibility with explorers",
             jp: "推奨構造（ERC-721と類似）：\n\n• name → NFT名\n• description → 説明\n• image → 画像へのリンク\n• attributes → プロパティの配列\n\n一貫性 = エクスプローラーとの互換性",
             ko: "권장 구조 (ERC-721과 유사):\n\n• name → NFT 이름\n• description → 설명\n• image → 이미지 링크\n• attributes → 속성 배열\n\n일관성 = 탐색기와의 호환성",
@@ -1698,58 +1963,6 @@ URIToken هو object فريد يحتوي عادة على:
         "إنشاء Mint لـ URIToken",
         "استعلام URITokens لحساب",
       ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet, convertStringToHex } = require("xahau");
-
-async function mintUriToken() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // URI يشير إلى metadata أو ملف مرتبط بالـ NFT
-  const tx = {
-    TransactionType: "URITokenMint",
-    Account: wallet.address,
-    URI: convertStringToHex("ipfs://example-metadata.json"),
-    Flags: 1, // tfBurnable: يسمح للـ issuer بحرق token لاحقا
-  };
-
-  const prepared = await client.autofill(tx);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-  console.log("Hash:", signed.hash);
-
-  await client.disconnect();
-}
-
-mintUriToken().catch(console.error);`,
-        `const { Client } = require("xahau");
-
-async function queryUriTokens() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const account = "rYourAddressHere";
-
-  // account_objects مع type يعرض URITokens التي يملكها الحساب
-  const response = await client.request({
-    command: "account_objects",
-    account,
-    type: "uri_token",
-    ledger_index: "validated",
-  });
-
-  console.log("URITokens:", response.result.account_objects.length);
-  console.log(response.result.account_objects);
-
-  await client.disconnect();
-}
-
-queryUriTokens().catch(console.error);`,
-      ],
       slides: [
         {
           title: "URITokens في Xahau",
@@ -1783,61 +1996,36 @@ queryUriTokens().catch(console.error);`,
 
 ### Transfer
 
-الشراء هو طريقة نقل الملكية عند وجود offer. لذلك البيع والشراء جزء من نموذج النقل الأصلي للـ URITokens.`,
+الشراء هو طريقة نقل الملكية عند وجود offer. لذلك البيع والشراء جزء من نموذج النقل الأصلي للـ URITokens.
+
+### تشغيل سكربتات هذا الدرس
+
+يوقّع \`sell-uritoken.js\` بـ \`WALLET_SEED\`، المالك من [الوحدة 8](?m=8&l=0)، ويوقّع \`buy-uritoken.js\` بـ \`BUYER_SEED\` الذي ينشئه \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)). يأخذ كلاهما كوسيط الـ **URITokenID** الذي طبعه سكربت السك:
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+المخرجات على testnet:
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **العرض للبيع \`tesSUCCESS\`**: أصبح على URIToken عرض بيع بـ 5 XAH، ويبقى مع المالك حتى يشتريه أحد.
+- **الشراء \`tesSUCCESS\`**: دفع BUYER مبلغ 5 XAH وانتقل URIToken إليه في المعاملة نفسها.
+
+بدون معرّف hex من 64 حرفًا يتوقف أي من السكربتين قبل الإرسال ويوضح ما يجب تمريره. يفشل الشراء بـ \`Amount\` أقل من سعر البيع، لذلك يستخدم السكربتان نفس 5 XAH.`,
       codeTitles: [
         "عرض URIToken للبيع",
         "شراء URIToken معروض للبيع",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function listUriTokenForSale() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const seller = Wallet.fromSeed(process.env.SELLER_SEED, { algorithm: "secp256k1" });
-
-  const tx = {
-    TransactionType: "URITokenCreateSellOffer",
-    Account: seller.address,
-    URITokenID: process.env.URI_TOKEN_ID,
-    Amount: xahToDrops("25"), // سعر البيع بـ XAH
-  };
-
-  const prepared = await client.autofill(tx);
-  const signed = seller.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-listUriTokenForSale().catch(console.error);`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function buyUriToken() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const buyer = Wallet.fromSeed(process.env.BUYER_SEED, { algorithm: "secp256k1" });
-
-  const tx = {
-    TransactionType: "URITokenBuy",
-    Account: buyer.address,
-    URITokenID: process.env.URI_TOKEN_ID,
-  };
-
-  const prepared = await client.autofill(tx);
-  const signed = buyer.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-buyUriToken().catch(console.error);`,
       ],
       slides: [
         {
@@ -1909,7 +2097,6 @@ buyUriToken().catch(console.error);`,
 - **حافظ على اتساق JSON**: اتبع معيار metadata للتوافق مع marketplaces والمستكشفات
 - **لا تضع بيانات حساسة في URI**: كل شيء عام على ledger`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "حقل URI: خيارات الروابط",
@@ -1940,7 +2127,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2017,7 +2203,33 @@ Pour transférer un URIToken sans frais (comme un cadeau), tu peux créer une of
 
 ### Brûler un URIToken
 
-Le propriétaire actuel peut toujours brûler (détruire) son URIToken avec \`URITokenBurn\`. Si le token a été créé avec le flag \`tfBurnable\`, l'émetteur d'origine peut également le brûler.`,
+Le propriétaire actuel peut toujours brûler (détruire) son URIToken avec \`URITokenBurn\`. Si le token a été créé avec le flag \`tfBurnable\`, l'émetteur d'origine peut également le brûler.
+
+### Lancer les scripts de cette leçon
+
+\`sell-uritoken.js\` signe avec \`WALLET_SEED\`, le propriétaire du [module 8](?m=8&l=0) ; \`buy-uritoken.js\` signe avec \`BUYER_SEED\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Les deux prennent en argument l'**URITokenID** affiché par le script de mint :
+
+\`\`\`bash
+node sell-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+node buy-uritoken.js 59F09E404622042E6F03F91A599C53015FEE4022831F659900E22B6B184C6E7A
+\`\`\`
+
+Sortie sur le testnet :
+
+\`\`\`
+Result: tesSUCCESS
+URIToken listed for sale at 5 XAH!
+
+Result: tesSUCCESS
+URIToken purchased successfully!
+The NFT is now yours.
+Buyer Address: rwYEUZNkuH7ErBVsq8T3TVfC8iEb5HP7rj
+\`\`\`
+
+- **Mise en vente \`tesSUCCESS\`** : l'URIToken porte maintenant une offre de vente à 5 XAH. Il reste au propriétaire jusqu'à ce que quelqu'un l'achète.
+- **Achat \`tesSUCCESS\`** : BUYER a payé 5 XAH et l'URIToken lui a été transféré dans la même transaction.
+
+Sans ID hex de 64 caractères, chaque script s'arrête avant d'envoyer quoi que ce soit et indique quoi passer. Un achat avec un \`Amount\` inférieur au prix de vente échoue : les deux scripts utilisent donc les mêmes 5 XAH.`,
       codeTitles: ["Mettre un URIToken en vente", "Acheter un URIToken listé à la vente"],
       slides: [
         ["Flux de vente", "1. Le propriétaire liste l'URIToken\n2. L'acheteur envoie l'achat\n3. Le ledger transfère l'objet\n4. Le paiement est réglé"],
@@ -2098,9 +2310,6 @@ function applyFrenchTranslations(module) {
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.fr = translation.codeTitles[index];
       if (typeof block.code === "string") block.code = { en: block.code };
-      block.code.fr = localizeFrenchCode(
-        `// ${translation.codeTitles[index]}\n// Exemple commenté en français : remplace les valeurs par celles de ton compte testnet.\n\n${block.code.en ?? block.code.es}`,
-      );
     });
     lesson.slides?.forEach((slide, index) => {
       const slideTranslation = translation.slides[index];
@@ -2111,22 +2320,9 @@ function applyFrenchTranslations(module) {
   }
 }
 
-function localizeFrenchCode(code) {
-  return code
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("//") && !/[éèàùçîô]/i.test(trimmed)) {
-        return `${line.match(/^\s*/)?.[0] ?? ""}// Note : adapte cette étape à ton compte testnet et à ton URIToken.`;
-      }
-      if (trimmed.startsWith("#") && /[A-Za-z]{4,}/.test(trimmed) && !/[éèàùçîô]/i.test(trimmed)) {
-        return `${line.match(/^\s*/)?.[0] ?? ""}# Note : adapte cette étape à ton environnement local.`;
-      }
-      return line;
-    })
-    .join("\n");
-}
-
 applyFrenchTranslations(moduleData);
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

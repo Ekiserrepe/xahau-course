@@ -1,3 +1,4 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
 const moduleData = {
   id: "m1",
   icon: "🧱",
@@ -49,7 +50,7 @@ No hay un servidor central. La red está formada por **nodos** (ordenadores) que
 Una vez que una transacción se incluye en un bloque y se valida, **no se puede modificar ni eliminar**. Esto garantiza un historial fiable.
 
 **Consenso**
-Los nodos necesitan un mecanismo para ponerse de acuerdo sobre qué transacciones son válidas. Esto se llama **protocolo de consenso** (lo veremos en detalle en el módulo 2).
+Los nodos necesitan un mecanismo para ponerse de acuerdo sobre qué transacciones son válidas. Esto se llama **protocolo de consenso** (lo verás en detalle en el [módulo 2](?m=2&l=1)).
 
 **Criptografía**
 La blockchain usa funciones criptográficas para:
@@ -105,7 +106,7 @@ Não há um servidor central. A rede está formada por **nós** (ordenadores) qu
 **Imutabilidade**
 Uma vez que uma transação ela é incluída em um bloco e se valida, **não pode ser modificar nem excluir**. Isso garante um histórico confiável.
 **Consenso**
-Os nós precisam um mecanismo para chegar a um acordo sobre quais transações são válidas. Isso se chama **protocolo de consenso** (veremos em detalhes no módulo 2).
+Os nós precisam um mecanismo para chegar a um acordo sobre quais transações são válidas. Isso se chama **protocolo de consenso** (você verá em detalhes no [módulo 2](?m=2&l=1)).
 **Criptografia**
 A blockchain usa funções criptográficas para:
 - **Hashes**: Identificar blocos e verificar integridade de dados
@@ -117,7 +118,7 @@ São as operações que modificam o estado da blockchain: enviar tokens, criar u
 | Característica | Base de dados tradicional | Blockchain |
 |---|---|---|
 | Control | Uma empresa (centralizada) | Rede de nós (descentralizada) |
-| Modificação | Qualquer pessoa com acceso pode editar | Imutável uma vez validado |
+| Modificação | Qualquer pessoa com acesso pode editar | Imutável depois de validado |
 | Confiança | Você confia na empresa | Você confia na criptografia e o consenso |
 | Transparência | Privada por padrão | Pública e verificável |
 | Intermediario | Necessário (banco, servidor) | Não necessário (peer-to-peer) |
@@ -161,7 +162,7 @@ There is no central server. The network is made up of **nodes** (computers) that
 Once a transaction is included in a block and validated, **it cannot be modified or deleted**. This guarantees a reliable history.
 
 **Consensus**
-Nodes need a mechanism to agree on which transactions are valid. This is called a **consensus protocol** (we will cover this in detail in module 2).
+Nodes need a mechanism to agree on which transactions are valid. This is called a **consensus protocol** (covered in detail in [Module 2](?m=2&l=1)).
 
 **Cryptography**
 The blockchain uses cryptographic functions for:
@@ -226,7 +227,7 @@ In this course we will focus on **Xahau**, a **public** blockchain designed for 
 トランザクションがブロックに含まれ検証されると、**変更も削除もできません**。これにより信頼できる履歴が保証されます。
 
 **コンセンサス**
-ノードはどのトランザクションが有効かについて合意するメカニズムを必要とします。これを**コンセンサスプロトコル**と呼びます（モジュール2で詳しく説明します）。
+ノードはどのトランザクションが有効かについて合意するメカニズムを必要とします。これを**コンセンサスプロトコル**と呼びます（[モジュール2](?m=2&l=1)で詳しく説明します）。
 
 **暗号技術**
 ブロックチェーンは以下のために暗号関数を使用します：
@@ -355,7 +356,7 @@ In this course we will focus on **Xahau**, a **public** blockchain designed for 
 一旦交易被包含在区块中并经过验证，**就无法修改或删除**，从而保证了可靠的历史记录。
 
 **共识**
-节点需要一种机制来就哪些交易有效达成一致，这称为**共识协议**（将在模块2中详细介绍）。
+节点需要一种机制来就哪些交易有效达成一致，这称为**共识协议**（将在[模块2](?m=2&l=1)中详细介绍）。
 
 **密码学**
 区块链使用密码学函数来实现：
@@ -432,7 +433,7 @@ In this course we will focus on **Xahau**, a **public** blockchain designed for 
           visual: "🧩",
         },
         {
-          title: { es: "¿Para qué sirve?", pt: "¿Para quais serve?", en: "What Is It Used For?", jp: "何に使われるのか？", ko: "어디에 사용될까?", zh: "有什么用途？" },
+          title: { es: "¿Para qué sirve?", pt: "Para que servem?", en: "What Is It Used For?", jp: "何に使われるのか？", ko: "어디에 사용될까?", zh: "有什么用途？" },
           content: {
             es: "• 💰 Criptomonedas (pagos sin bancos)\n• 🪙 Tokens (activos digitales)\n• 🎨 NFTs (objetos únicos)\n• 🪝 Smart contracts (lógica programable)\n• 📦 Trazabilidad (registros verificables)",
             pt: "• 💰 Criptomoedas (pagamentos sem bancos)\n• 🪙 Tokens (ativos digitais)\n• 🎨 NFTs (objetos únicos)\n• 🪝 Smart contracts (lógica programável)\n• 📦 Rastreabilidade (registros verificáveis)",
@@ -491,9 +492,9 @@ A diferencia de las redes EVM, en Xahau:
 | Gas / Fees | Gas variável e caro | Fees fixos e previsíveis |
 | Modelo de dados | Key-value em storage | Objetos nativos (AccountRoot, TrustLine, etc.) |
 ### Por que Não-EVM?
-As blockchains No-EVM como **Xahau** foram projetadas desde cero para casos de uso específicos: pagamentos rápidos, tokenização e lógica programável eficiente. No intentan ser "computadoras de propósito geral" como Ethereum, sino que optimizan para **rendimiento, bajo custo e finalidad rápida**.
+As blockchains não EVM como a **Xahau** foram projetadas do zero para casos de uso específicos: pagamentos rápidos, tokenização e lógica programável eficiente. Elas não tentam ser "computadores de propósito geral" como o Ethereum; em vez disso, otimizam **desempenho, baixo custo e finalidade rápida**.
 ### Xahau: uma blockchain Não-EVM
-**Xahau** é uma blockchain de capa 1 que hereda a arquitectura do **XRP Ledger (XRPL)** e le añade a capacidad de executar **Hooks**, smart contracts ligeros escritos em C e compilados a WebAssembly.
+A **Xahau** é uma blockchain de camada 1 que herda a arquitetura do **XRP Ledger (XRPL)** e acrescenta a capacidade de executar **Hooks**, smart contracts leves escritos em C e compilados para WebAssembly.
 Diferentemente das redes EVM, na Xahau:
 - As transações são **nativas e tipadas** (Payment, TrustSet, OfferCreate, etc.)
 - O ledger mantem **objetos estruturados**, no estados arbitrários
@@ -641,7 +642,7 @@ async function serverInfo() {
   });
   const info = response.result.info;
   console.log("Rede:", info.network_id);
-  console.log("Versión:", info.build_version);
+  console.log("Versão:", info.build_version);
   console.log("Ledger atual:", info.validated_ledger.seq);
   console.log("Tipo de rede: Não-EVM (blockchain Xahau)");
   await client.disconnect();
@@ -747,7 +748,13 @@ serverInfo();`,
           title: { es: "¿Qué es Xahau?", pt: "O que é Xahau?", en: "What is Xahau?", jp: "Xahauとは？", ko: "Xahau란?", zh: "什么是 Xahau？" },
           content: {
             es: "Blockchain de capa 1 basada en XRPL\n\n• Smart Contracts nativos (Hooks)\n• Token nativo: XAH\n• Transacciones tipadas\n• Fees bajos y predecibles\n• Finalidad en 3-5 segundos",
-            pt: "Blockchain de capa 1 baseada no XRPL\n\n• Smart Contracts nativos (Hooks)\n• Token nativo: XAH\n• Transações tipadas\n• Fees baixos e previsíveis\n• Finalidade em 3-5 segundos",
+            pt: `Blockchain de camada 1 baseada no XRPL
+
+• Smart Contracts nativos (Hooks)
+• Token nativo: XAH
+• Transações tipadas
+• Fees baixos e previsíveis
+• Finalidade em 3-5 segundos`,
             en: "Layer 1 blockchain based on XRPL\n\n• Native Smart Contracts (Hooks)\n• Native token: XAH\n• Typed transactions\n• Low and predictable fees\n• Finality in 3-5 seconds",
             jp: "XRPLベースのレイヤー1ブロックチェーン\n\n• ネイティブスマートコントラクト（Hooks）\n• ネイティブトークン：XAH\n• 型付きトランザクション\n• 低く予測可能な手数料\n• 3〜5秒での最終確定",
             ko: "XRPL 기반의 레이어 1 블록체인\n\n• 네이티브 스마트 컨트랙트 (Hooks)\n• 네이티브 토큰: XAH\n• 타입이 있는 트랜잭션\n• 낮고 예측 가능한 수수료\n• 3~5초 최종성",
@@ -758,12 +765,12 @@ serverInfo();`,
         {
           title: { es: "Arquitectura del Ledger", pt: "Arquitetura do Ledger", en: "Ledger Architecture", jp: "レジャーアーキテクチャ", ko: "레저 구조", zh: "账本架构" },
           content: {
-            es: "El ledger de Xahau contiene objetos nativos:\n\n• AccountRoot → Cuentas\n• TrustLine → Líneas de confianza\n• Offer → Órdenes de intercambio\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Estado de los Hooks",
-            pt: "O ledger da Xahau contém objetos nativos:\n\n• AccountRoot → Contas\n• TrustLine → Linhas de confiança\n• Offer → Ordens de negociação\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Estado dos Hooks",
-            en: "The Xahau ledger contains native objects:\n\n• AccountRoot → Accounts\n• TrustLine → Trust lines\n• Offer → Trade orders\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Hook state data",
-            jp: "Xahauレジャーにはネイティブオブジェクトが含まれる：\n\n• AccountRoot → アカウント\n• TrustLine → トラストライン\n• Offer → 取引注文\n• URIToken → NFT\n• Hook → スマートコントラクト\n• HookState → Hookの状態データ",
-            ko: "Xahau 레저에는 네이티브 객체가 있습니다:\n\n• AccountRoot → 계정\n• TrustLine → 신뢰선\n• Offer → 거래 주문\n• URIToken → NFT\n• Hook → 스마트 컨트랙트\n• HookState → Hook 상태 데이터",
-            zh: "Xahau 账本包含原生对象:\n\n• AccountRoot → 账户\n• TrustLine → 信任线\n• Offer → 交易挂单\n• URIToken → NFT\n• Hook → 智能合约\n• HookState → Hook 状态数据",
+            es: "El ledger contiene objetos nativos:\n\n• AccountRoot → Cuentas\n• TrustLine → Líneas de confianza\n• Offer → Órdenes de intercambio\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Estado de los Hooks",
+            pt: "O ledger contém objetos nativos:\n\n• AccountRoot → Contas\n• TrustLine → Linhas de confiança\n• Offer → Ordens de negociação\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Estado dos Hooks",
+            en: "The ledger contains native objects:\n\n• AccountRoot → Accounts\n• TrustLine → Trust lines\n• Offer → Trade orders\n• URIToken → NFTs\n• Hook → Smart contracts\n• HookState → Hook state data",
+            jp: "レジャーにはネイティブオブジェクトが含まれる：\n\n• AccountRoot → アカウント\n• TrustLine → トラストライン\n• Offer → 取引注文\n• URIToken → NFT\n• Hook → スマートコントラクト\n• HookState → Hookの状態データ",
+            ko: "레저에는 네이티브 객체가 있습니다:\n\n• AccountRoot → 계정\n• TrustLine → 신뢰선\n• Offer → 거래 주문\n• URIToken → NFT\n• Hook → 스마트 컨트랙트\n• HookState → Hook 상태 데이터",
+            zh: "账本包含原生对象:\n\n• AccountRoot → 账户\n• TrustLine → 信任线\n• Offer → 交易挂单\n• URIToken → NFT\n• Hook → 智能合约\n• HookState → Hook 状态数据",
           },
           visual: "📦",
         },
@@ -818,7 +825,7 @@ Os objetos estão **tipados**, cada tipo tem campos específicos e predefinidos:
 - **HookDefinition**: Código WASM de um Hook desplegado
 - **HookState**: Dados persistentes armazenados por um Hook
 ### Diferença chave com EVM
-Em Ethereum, o estado é um **árbol de contas** donde cada conta tem su próprio **storage** (key-value arbitrário). Em Xahau, o estado são **objetos tipados** com campos predefinidos. Esto é más restrictivo pero mucho más eficiente e fácil de consultar.`,
+No Ethereum, o estado é uma **árvore de contas** em que cada conta tem seu próprio **storage** (key-value arbitrário). Na Xahau, o estado são **objetos tipados** com campos predefinidos. Isso é mais restritivo, mas muito mais eficiente e fácil de consultar.`,
         en: `The Xahau **ledger** is a distributed database that stores the complete state of the network at a given point in time. Each ledger has a unique **sequence number** and contains all objects of the current state.
 
 ### Ledger Components
@@ -955,7 +962,7 @@ async function getLedgerInfo() {
   const ledger = response.result.ledger;
   console.log("Seq do Ledger:", ledger.ledger_index);
   console.log("Hash:", ledger.ledger_hash);
-  console.log("Cerrado:", ledger.close_time_human);
+  console.log("Fechado:", ledger.close_time_human);
   await client.disconnect();
 }
 getLedgerInfo();`,
@@ -1044,7 +1051,7 @@ getLedgerInfo();`,
       ],
       slides: [
         {
-          title: { es: "El Ledger de Xahau", pt: "O Ledger da Xahau", en: "The Xahau Ledger", jp: "Xahauのレジャー", ko: "Xahau의 레저", zh: "Xahau 账本" },
+          title: { es: "El ledger", pt: "O ledger", en: "The Ledger", jp: "レジャー", ko: "레저", zh: "账本" },
           content: {
             es: "Base de datos distribuida con el estado completo\n\n• Cada ledger tiene un número de secuencia\n• Se cierra cada 3-5 segundos\n• Contiene todos los objetos del estado\n• Inmutable una vez validado",
             pt: "Banco de dados distribuído com o estado completo\n\n• Cada ledger tem um número de sequência\n• É fechado cada 3-5 segundos\n• Contém todos os objetos do estado\n• Imutável uma vez validado",
@@ -1059,7 +1066,14 @@ getLedgerInfo();`,
           title: { es: "Objetos del Ledger", pt: "Objetos do Ledger", en: "Ledger Objects", jp: "レジャーオブジェクト", ko: "레저 객체", zh: "账本对象" },
           content: {
             es: "Objetos tipados y estructurados:\n\n• AccountRoot → Cuentas\n• RippleState → TrustLines\n• Offer → Órdenes DEX\n• URIToken → NFTs\n• HookDefinition → Código de Hooks\n• HookState → Estado de Hooks",
-            pt: "Objetos tipados e estruturados:\n\n• AccountRoot → Contas\n• RippleState → TrustLines\n• Offer → Órdenes DEX\n• URIToken → NFTs\n• HookDefinition → Código de Hooks\n• HookState → Estado de Hooks",
+            pt: `Objetos tipados e estruturados:
+
+• AccountRoot → Contas
+• RippleState → TrustLines
+• Offer → Ordens no DEX
+• URIToken → NFTs
+• HookDefinition → Código de Hooks
+• HookState → Estado de Hooks`,
             en: "Typed and structured objects:\n\n• AccountRoot → Accounts\n• RippleState → TrustLines\n• Offer → DEX orders\n• URIToken → NFTs\n• HookDefinition → Hook code\n• HookState → Hook state data",
             jp: "型付きかつ構造化されたオブジェクト：\n\n• AccountRoot → アカウント\n• RippleState → トラストライン\n• Offer → DEX注文\n• URIToken → NFT\n• HookDefinition → Hookコード\n• HookState → Hookの状態データ",
             ko: "타입이 정해진 구조화 객체:\n\n• AccountRoot → 계정\n• RippleState → TrustLine\n• Offer → DEX 주문\n• URIToken → NFT\n• HookDefinition → Hook 코드\n• HookState → Hook 상태 데이터",
@@ -1181,55 +1195,55 @@ Bitcoin introduziu:
 - **Proof of Work (PoW)**: Os mineradores resolvem problemas matemáticos para validar transações
 - **Descentralização total**: Sem bancos, sem servidores centrais
 - **Imutabilidade**: As transações confirmadas não pode serm revertir
-- **Escassez digital**: Só existirão 21 millones de BTC
-Limitação: Bitcoin é lento (~7 transações por segundo) e su linguagem de scripting é muy limitado. No foi projetado para executar lógica complexa.
+- **Escassez digital**: só existirão 21 milhões de BTC
+Limitação: o Bitcoin é lento (~7 transações por segundo) e sua linguagem de scripting é muito limitada. Ele não foi projetado para executar lógica complexa.
 ### 2012 — XRP Ledger: velocidade sem mineração
-Más adelante se creó o **XRP Ledger (ou XRPL)**, a primera blockchain importante que **no usa Proof of Work**. Em su lugar, usa um protocolo de consenso basado em **validadores de confiança (UNL)**.
+Mais tarde foi criado o **XRP Ledger (ou XRPL)**, a primeira blockchain importante que **não usa Proof of Work**. Em seu lugar, usa um protocolo de consenso baseado em **validadores de confiança (UNL)**.
 XRPL introduziu:
 - **Consenso sem mineração**: Transações confirmadas em 3-5 segundos
 - **DEX nativo**: Interalteração descentralizado integrado no protocolo
-- **Tokens nativos**: Crear tokens sem necessidade de smart contracts
-- **Fees mínimos**: Fracciones de centavo por transação
-Limitação: XRPL no tenía capacidad para executar smart contracts (lógica programável personalizada).
-### 2015 — Ethereum: a computadora mundial
-**Vitalik Buterin** publicó o whitepaper de Ethereum com uma idea ambiciosa: uma blockchain que pudiera executar **cualquier programa**. Así nació a **Ethereum Virtual Machine (EVM)**.
+- **Tokens nativos**: criar tokens sem necessidade de smart contracts
+- **Fees mínimas**: frações de centavo por transação
+Limitação: o XRPL não tinha capacidade de executar smart contracts (lógica programável personalizada).
+### 2015 — Ethereum: o computador mundial
+**Vitalik Buterin** publicou o whitepaper do Ethereum com uma ideia ambiciosa: uma blockchain que pudesse executar **qualquer programa**. Assim nasceu a **Ethereum Virtual Machine (EVM)**.
 Ethereum introduziu:
-- **Smart contracts**: Programas que viven na blockchain e é executadan automáticamente
-- **Solidity**: Lenguaje de programación para escrever contratos
+- **Smart contracts**: programas que vivem na blockchain e são executados automaticamente
+- **Solidity**: linguagem de programação para escrever contratos
 - **EVM**: Máquina virtual que executa o código dos contratos
-- **ERC-20 / ERC-721**: Estándares para tokens fungibles e NFTs
-- **DeFi**: Finanzas descentralizadas (prredemos, exchanges, stablecoins)
-Limitação: Gas caro e variable, baja velocidade (~15 TPS), escalabilidad limitada.
-### 2020+ — Explosión de L1s e L2s
-Os problemas de Ethereum impulsaron uma oleada de nuevas blockchains:
+- **ERC-20 / ERC-721**: padrões para tokens fungíveis e NFTs
+- **DeFi**: finanças descentralizadas (empréstimos, exchanges, stablecoins)
+Limitação: gas caro e variável, baixa velocidade (~15 TPS), escalabilidade limitada.
+### 2020+ — Explosão de L1s e L2s
+Os problemas do Ethereum impulsionaram uma onda de novas blockchains:
 - **Solana** (2020): Alta velocidade (~65,000 TPS teóricos) com Proof of History
-- **Avalanche** (2020): Subredes personalizables com consenso rápido
-- **Polygon** (2020): Solución Layer 2 para escalar Ethereum
+- **Avalanche** (2020): sub-redes personalizáveis com consenso rápido
+- **Polygon** (2020): solução Layer 2 para escalar o Ethereum
 - **Arbitrum / Optimism** (2021): Rollups que procesan transações fora de Ethereum
 - **Cosmos / Polkadot**: Ecosistemas de blockchains interconectadas
-A maioria de estas redes são **compatíveis com EVM** usan Solidity e ferramentas de Ethereum.
+A maioria dessas redes é **compatível com EVM** e usa Solidity e ferramentas do Ethereum.
 ### 2023 — Xahau: XRPL + Smart Contracts
-**Xahau** nace como um **fork do XRP Ledger** que añade a capacidad que XRPL sempre necesitó: **smart contracts**, llamados **Hooks**. Inicialmente Xahau no ibà existir e os Hooks iban a ser parte de XRP Ledger pero Ripple no quiso aceitar esta mejora da comunidade. Por no desaprovechar o trabajo realizado durante años, Xahau nació.
+A **Xahau** nasce como um **fork do XRP Ledger** que acrescenta a capacidade de que o XRPL sempre precisou: **smart contracts**, chamados **Hooks**. Inicialmente a Xahau não existiria: os Hooks fariam parte do XRP Ledger, mas a Ripple não quis aceitar essa melhoria da comunidade. Para não desperdiçar anos de trabalho, nasceu a Xahau.
 Xahau introduziu:
 - **Hooks**: Smart contracts escritos em C e compilados a WebAssembly
 - **XAH**: Token nativo com sistema de emissões/recompensas
 - **Herencia de XRPL**: Conserva a velocidade, o DEX nativo e os fees baixos
-- **Sem EVM**: Arquitetura propia, no compatible com Solidity
+- **Sem EVM**: arquitetura própria, não compatível com Solidity
 ### Por que Xahau é um fork de XRPL?
-Xahau ao ser um fork de XRPL, aprovecha todas as ventajas de uma blockchain probada e optimizada para pagos e tokens, e le añade a pieza que faltaba: a capacidad de executar lógica programável diretamente no protocolo.
-1. **Base probada**: XRPL lleva funcionando desde 2012 sem interrupciones graves
-2. **Velocidade nativa**: O consenso de XRPL ya ofrece 3-5 segundos de finalidad
-3. **DEX integrado**: Não há que construir um exchange descentralizado desde cero
-4. **Tokens nativos**: O sistema de TrustLines e tokens ya existe e funciona
-5. **Comunidad existente**: Desarrolladores e ferramentas de XRPL podem adaptarse
+Por ser um fork do XRPL, a Xahau aproveita todas as vantagens de uma blockchain testada e otimizada para pagamentos e tokens, e acrescenta a peça que faltava: a capacidade de executar lógica programável diretamente no protocolo.
+1. **Base testada**: o XRPL funciona desde 2012 sem interrupções graves
+2. **Velocidade nativa**: o consenso do XRPL já oferece 3-5 segundos de finalidade
+3. **DEX integrado**: não é preciso construir uma exchange descentralizada do zero
+4. **Tokens nativos**: o sistema de TrustLines e tokens já existe e funciona
+5. **Comunidade existente**: desenvolvedores e ferramentas do XRPL podem se adaptar
 ### Línea temporal resumida
-| Añou | Hito | Innovación chave |
+| Ano | Marco | Inovação-chave |
 |---|---|---|
 | 2008 | Bitcoin | Dinero digital descentralizado |
 | 2012 | XRP Ledger | Consenso sem mineração, DEX nativo |
 | 2015 | Ethereum | Smart contracts (EVM + Solidity) |
-| 2017 | ICO boom | Tokens ERC-20, financiación descentralizada |
-| 2020 | DeFi Summer | Finanzas descentralizadas em Ethereum |
+| 2017 | Boom das ICOs | Tokens ERC-20, financiamento descentralizado |
+| 2020 | DeFi Summer | Finanças descentralizadas no Ethereum |
 | 2020+ | L1s/L2s | Solana, Avalanche, Polygon, Rollups |
 | 2023 | Xahau | XRPL + Hooks (smart contracts em C/WASM) |`,
         en: `To understand why Xahau exists and what makes it different, we need to go through the **history of blockchains** and how each generation solved problems that the previous one could not.
@@ -1567,7 +1581,17 @@ Xahau 引入了：
           title: { es: "2008-2015: Los orígenes", pt: "2008-2015: As origens", en: "2008-2015: The Origins", jp: "2008-2015年：起源", ko: "2008-2015: 시작", zh: "2008-2015：起源" },
           content: {
             es: "2008 — Bitcoin\n• Primer dinero digital descentralizado\n• Proof of Work, lento pero revolucionario\n\n2012 — XRP Ledger\n• Sin minería, consenso en 3-5 segundos\n• DEX nativo y tokens integrados\n\n2015 — Ethereum\n• Smart contracts con Solidity\n• La EVM como computadora mundial",
-            pt: "2008 — Bitcoin\n• Primer dinheiro digital descentralizado\n• Proof of Work, lento, mas revolucionário\n\n2012 — XRP Ledger\n• Sem mineração, consenso em 3-5 segundos\n• DEX nativo e tokens integrados\n\n2015 — Ethereum\n• Smart contracts com Solidity\n• A EVM como computadora mundial",
+            pt: `2008 — Bitcoin
+• Primer dinheiro digital descentralizado
+• Proof of Work, lento, mas revolucionário
+
+2012 — XRP Ledger
+• Sem mineração, consenso em 3-5 segundos
+• DEX nativo e tokens integrados
+
+2015 — Ethereum
+• Smart contracts com Solidity
+• A EVM como computador mundial`,
             en: "2008 — Bitcoin\n• First decentralized digital money\n• Proof of Work, slow but revolutionary\n\n2012 — XRP Ledger\n• No mining, consensus in 3-5 seconds\n• Native DEX and integrated tokens\n\n2015 — Ethereum\n• Smart contracts with Solidity\n• The EVM as a world computer",
             jp: "2008年 — Bitcoin\n• 最初の分散型デジタルマネー\n• プルーフ・オブ・ワーク、遅いが革命的\n\n2012年 — XRP Ledger\n• マイニングなし、3〜5秒でコンセンサス\n• ネイティブDEXと統合トークン\n\n2015年 — Ethereum\n• Solidityによるスマートコントラクト\n• ワールドコンピュータとしてのEVM",
             ko: "2008 — Bitcoin\n• 최초의 탈중앙 디지털 화폐\n• 작업증명, 느리지만 혁신적\n\n2012 — XRP Ledger\n• 채굴 없음, 3~5초 합의\n• 네이티브 DEX와 토큰\n\n2015 — Ethereum\n• Solidity 기반 스마트 컨트랙트\n• 월드 컴퓨터로서의 EVM",
@@ -1579,7 +1603,14 @@ Xahau 引入了：
           title: { es: "2020+: La explosión", pt: "2020+: A explosão", en: "2020+: The Explosion", jp: "2020年以降：爆発", ko: "2020+: 확산", zh: "2020+：爆发期" },
           content: {
             es: "Los problemas de Ethereum impulsan nuevas redes:\n\n• Solana → Alta velocidad\n• Avalanche → Subredes personalizables\n• Polygon → Layer 2 para Ethereum\n• Arbitrum/Optimism → Rollups\n\nLa mayoría son compatibles con EVM (Solidity)",
-            pt: "Os problemas de Ethereum impulsan novas redes:\n\n• Solana → Alta velocidade\n• Avalanche → Subredes personalizables\n• Polygon → Layer 2 para Ethereum\n• Arbitrum/Optimism → Rollups\n\nA maioria são compatíveis com EVM (Solidity)",
+            pt: `Os problemas de Ethereum impulsan novas redes:
+
+• Solana → Alta velocidade
+• Avalanche → Sub-redes personalizáveis
+• Polygon → Layer 2 para Ethereum
+• Arbitrum/Optimism → Rollups
+
+A maioria são compatíveis com EVM (Solidity)`,
             en: "Ethereum's problems drive new networks:\n\n• Solana → High speed\n• Avalanche → Customizable subnets\n• Polygon → Layer 2 for Ethereum\n• Arbitrum/Optimism → Rollups\n\nMost are EVM-compatible (Solidity)",
             jp: "Ethereumの問題が新しいネットワークを生む：\n\n• Solana → 高速\n• Avalanche → カスタマイズ可能なサブネット\n• Polygon → Ethereum用レイヤー2\n• Arbitrum/Optimism → ロールアップ\n\nほとんどがEVM互換（Solidity）",
             ko: "Ethereum의 문제는 새로운 네트워크를 낳았습니다:\n\n• Solana → 높은 속도\n• Avalanche → 맞춤형 서브넷\n• Polygon → Ethereum용 Layer 2\n• Arbitrum/Optimism → 롤업\n\n대부분은 EVM 호환 (Solidity 사용)",
@@ -1591,7 +1622,16 @@ Xahau 引入了：
           title: { es: "2023: Nace Xahau", pt: "2023: Nasce a Xahau", en: "2023: Xahau Is Born", jp: "2023年：Xahauの誕生", ko: "2023: Xahau의 탄생", zh: "2023：Xahau 诞生" },
           content: {
             es: "Fork de XRPL + Smart Contracts (Hooks)\n\n¿Por qué un fork de XRPL?\n• Base probada desde 2012\n• Velocidad nativa (3-5 seg)\n• DEX y tokens integrados\n• Solo faltaban smart contracts\n\nHooks = C compilado a WebAssembly\nSin EVM, sin Solidity",
-            pt: "Fork de XRPL + Smart Contracts (Hooks)\n\nPor que um fork de XRPL?\n• Base probadà partir de 2012\n• Velocidade nativa (3-5 seg)\n• DEX e tokens integrados\n• Apenas faltaban smart contracts\n\nHooks = C compilado a WebAssembly\nSin EVM, sem Solidity",
+            pt: `Fork de XRPL + Smart Contracts (Hooks)
+
+Por que um fork de XRPL?
+• Base probadà partir de 2012
+• Velocidade nativa (3-5 seg)
+• DEX e tokens integrados
+• Apenas faltaban smart contracts
+
+Hooks = C compilado a WebAssembly
+Sem EVM, sem Solidity`,
             en: "Fork of XRPL + Smart Contracts (Hooks)\n\nWhy a fork of XRPL?\n• Proven foundation since 2012\n• Native speed (3-5 sec)\n• Integrated DEX and tokens\n• Only smart contracts were missing\n\nHooks = C compiled to WebAssembly\nNo EVM, no Solidity",
             jp: "XRPLのフォーク + スマートコントラクト（Hooks）\n\nなぜXRPLのフォークなのか？\n• 2012年からの実証済みの基盤\n• ネイティブな速度（3〜5秒）\n• DEXとトークンが統合済み\n• スマートコントラクトだけが欠けていた\n\nHooks = CをWebAssemblyにコンパイル\nEVMなし、Solidityなし",
             ko: "XRPL의 포크 + 스마트 컨트랙트 (Hooks)\n\n왜 XRPL 포크인가?\n• 2012년부터 검증된 기반\n• 네이티브 속도 (3~5초)\n• 통합 DEX와 토큰\n• 부족했던 것은 스마트 컨트랙트뿐\n\nHooks = C를 WebAssembly로 컴파일\nEVM 없음, Solidity 없음",
@@ -1603,7 +1643,14 @@ Xahau 引入了：
           title: { es: "Línea temporal completa", pt: "Linha do tempo completa", en: "Complete Timeline", jp: "完全な年表", ko: "전체 타임라인", zh: "完整时间线" },
           content: {
             es: "2008 → Bitcoin (PoW, dinero digital)\n2012 → XRPL (sin minería, DEX)\n2015 → Ethereum (EVM, Solidity)\n2017 → Boom de ICOs y tokens\n2020 → DeFi + nuevas L1s/L2s\n2023 → Xahau (XRPL + Hooks)\n\nCada generación resolvió limitaciones de la anterior",
-            pt: "2008 → Bitcoin (PoW, dinheiro digital)\n2012 → XRPL (sem mineração, DEX)\n2015 → Ethereum (EVM, Solidity)\n2017 → Boom de ICOs e tokens\n2020 → DeFi + novas L1s/L2s\n2023 → Xahau (XRPL + Hooks)\n\nCada geração resolveu limitaciones da anterior",
+            pt: `2008 → Bitcoin (PoW, dinheiro digital)
+2012 → XRPL (sem mineração, DEX)
+2015 → Ethereum (EVM, Solidity)
+2017 → Boom de ICOs e tokens
+2020 → DeFi + novas L1s/L2s
+2023 → Xahau (XRPL + Hooks)
+
+Cada geração resolveu limitações da anterior`,
             en: "2008 → Bitcoin (PoW, digital money)\n2012 → XRPL (no mining, DEX)\n2015 → Ethereum (EVM, Solidity)\n2017 → ICO and token boom\n2020 → DeFi + new L1s/L2s\n2023 → Xahau (XRPL + Hooks)\n\nEach generation solved limitations of the previous one",
             jp: "2008年 → Bitcoin（PoW、デジタルマネー）\n2012年 → XRPL（マイニングなし、DEX）\n2015年 → Ethereum（EVM、Solidity）\n2017年 → ICOとトークンのブーム\n2020年 → DeFi + 新しいL1s/L2s\n2023年 → Xahau（XRPL + Hooks）\n\n各世代は前の世代の限界を解決した",
             ko: "2008 → Bitcoin (PoW, 디지털 화폐)\n2012 → XRPL (채굴 없음, DEX)\n2015 → Ethereum (EVM, Solidity)\n2017 → ICO와 토큰 붐\n2020 → DeFi + 새로운 L1/L2\n2023 → Xahau (XRPL + Hooks)\n\n각 세대는 이전 세대의 한계를 해결했습니다",
@@ -1704,7 +1751,7 @@ Xahau tiene dos redes principales:
 
 **Para este curso usaremos siempre la testnet.** Los tokens de testnet no tienen valor real, así que puedes experimentar libremente sin riesgo de perder dinero.
 
-Para obtener XAH de testnet, usa el **faucet** (grifo): una herramienta que te envía tokens gratuitos a tu cuenta de prueba. Lo veremos en detalle en módulos posteriores.`,
+Para obtener XAH de testnet, usa el **faucet** (grifo): una herramienta que te envía tokens gratuitos a tu cuenta de prueba. Cómo usarlo, paso a paso: [módulo 3](?m=3&l=1).`,
         pt: `Xahau não é apenas uma blockchain, é um **ecossistema completo** com ferramentas, wallets, exploradores e uma comunidade ativa. Nesta lição você conhecerá as peças fundamentais do ecossistema para saber onde buscar informações e como interagir com a rede.
 ### XAH: o token nativo
 **XAH** é a criptomoeda nativa de Xahau. Diferentemente de XRP no XRPL, XAH tem um sistema de **emissão inflacionária**: os titulares de contas ativas podem solicitar recompensas periódicas em XAH. Isso incentiva a participação na rede e o uso de rede.
@@ -1714,26 +1761,26 @@ Características de XAH:
 - O sistema de **emissões** distribui XAH a contas ativas que solicitarem
 - Se pode enviar, negociar e usar em Hooks
 ### Xaman (antes XUMM): a wallet principal
-**Xaman** (anteriormente conocida como XUMM) é a wallet más utilizada no ecossistema XRPL/Xahau. É uma aplicación móvel que te permite:
-- Crear e gerenciar contas na Xahau e XRPL
-- Enviar e recibir XAH e tokens
+A **Xaman** (antes conhecida como XUMM) é a wallet mais usada no ecossistema XRPL/Xahau. É um aplicativo móvel que permite:
+- Criar e gerenciar contas na Xahau e no XRPL
+- Enviar e receber XAH e tokens
 - Assinar transações de forma segura
-- Interactuar com aplicaciones descentralizadas (xApps)
+- Interagir com aplicações descentralizadas (xApps)
 - Disponível para **iOS** e **Android**
-Descarga: [xaman.app](https://xaman.app)
+Download: [xaman.app](https://xaman.app)
 ### Hooks Builder: IDE online para smart contracts
-**Hooks Builder** é um entorno de desenvolvimento integrado (IDE) que funciona no navegador e te permite escrever, compilar e fazer deploy Hooks sem instalar nada em tu ordenador na Xahau Testnet.
+O **Hooks Builder** é um ambiente de desenvolvimento integrado (IDE) que funciona no navegador e permite escrever, compilar e fazer deploy de Hooks na Xahau Testnet sem instalar nada no seu computador.
 Características:
-- Editor de código com resaltado de sintaxis para C
+- Editor de código com destaque de sintaxe para C
 - Compilador de C a WebAssembly integrado
 - Despliegue direto à testnet de Xahau
-- Ejemplos e plantillas para empezar rápido
+- Exemplos e modelos para começar rápido
 URL: [builder.xahau.network/](https://builder.xahau.network/)
 ### Exploradores de blocos
-Os **exploradores** permitem que você ver todo lo que ocurre na blockchain de forma visual:
+Os **exploradores** permitem ver de forma visual tudo o que acontece na blockchain:
 - Buscar transações por hash
 - Ver o estado de qualquer conta (balance, tokens, hooks)
-- Explorar ledgers e sus contenidos
+- Explorar ledgers e seu conteúdo
 - Verificar o estado da rede
 Para **Xahau Mainnet**:
 URL: [xahauexplorer.com](https://xahauexplorer.com)
@@ -1745,10 +1792,10 @@ URL: [test.xahauexplorer.com](https://test.xahauexplorer.com)
 URL: [xahau-testnet.xrplwin.com](https://xahau-testnet.xrplwin.com)
 URL: [explorer.xahau-test.net](https://explorer.xahau-test.net)
 ### Recursos para desenvolvedores
-- **Documentação oficial**: [xahau.network/docs/](https://xahau.network/docs/) Guías, referencia de API e tutoriales
+- **Documentação oficial**: [xahau.network/docs/](https://xahau.network/docs/) Guias, referência da API e tutoriais
 - **GitHub**: [https://github.com/xahau](https://github.com/xahau) Código fonte do nó, bibliotecas e ferramentas
-- **Discord**: [https://discord.gg/ds7nb93mYj](https://discord.gg/ds7nb93mYj) Comunidad ativa donde hacer preguntas e compartilhar proyectos
-- **X**: [https://x.com/XahauNetwork](https://x.com/XahauNetwork) Conta oficial da blockchain Xahau para noticias e atualizaciones
+- **Discord**: [https://discord.gg/ds7nb93mYj](https://discord.gg/ds7nb93mYj) Comunidade ativa onde fazer perguntas e compartilhar projetos
+- **X**: [https://x.com/XahauNetwork](https://x.com/XahauNetwork) Conta oficial da blockchain Xahau para notícias e atualizações
 - **Biblioteca xahau js**: [https://www.npmjs.com/package/xahau](https://www.npmjs.com/package/xahau) A biblioteca JavaScript que usamos em este curso para interagir com a rede
 ### Testnet vs Mainnet
 Xahau tem dos redes principais:
@@ -1756,11 +1803,11 @@ Xahau tem dos redes principais:
 |---|---|---|
 | URL WebSocket | wss://xahau-test.net | wss://xahau.network |
 | Token | XAH (sem valor real) | XAH (com valor real) |
-| Propósito | Desarrollo e pruebas | Producción |
-| Faucet | Sí (XAH grátis para testar) | No |
-| Dados | Se podem reiniciar periódicamente | Permanentes |
+| Propósito | Desenvolvimento e testes | Produção |
+| Faucet | Sim (XAH grátis para testar) | Não |
+| Dados | Podem ser reiniciados periodicamente | Permanentes |
 **Para este curso usaremos sempre a testnet.** Os tokens de testnet não têm valor real, então você pode experimentar livremente sem risco de perder dinheiro.
-Para obter XAH de testnet, usa o **faucet** (grifo): uma herramienta que te envia tokens gratuitos a sua conta de prueba. Lo veremos em detalle em módulos posteriores.`,
+Para obter XAH de testnet, use o **faucet** (torneira): uma ferramenta que envia tokens gratuitos para a sua conta de teste. Como usá-lo, passo a passo: [módulo 3](?m=3&l=1).`,
         en: `Xahau is not just a blockchain, it is a **complete ecosystem** with tools, wallets, explorers, and an active community. In this lesson you will learn about the fundamental pieces of the ecosystem so you know where to find information and how to interact with the network.
 
 ### XAH: The Native Token
@@ -1841,7 +1888,7 @@ Xahau has two main networks:
 
 **For this course we will always use the testnet.** Testnet tokens have no real value, so you can experiment freely without the risk of losing money.
 
-To obtain testnet XAH, use the **faucet**: a tool that sends free tokens to your test account. We will cover this in detail in later modules.`,
+To obtain testnet XAH, use the **faucet**: a tool that sends free tokens to your test account. How to use it, step by step: [Module 3](?m=3&l=1).`,
         jp: `Xahauは単なるブロックチェーンではなく、ツール、ウォレット、エクスプローラー、活発なコミュニティを備えた**完全なエコシステム**です。このレッスンでは、情報をどこで探すか、ネットワークとどのようにやりとりするかを知るために、エコシステムの基本的な要素を学びます。
 
 ### XAH：ネイティブトークン
@@ -1922,7 +1969,7 @@ Xahauには2つの主要なネットワークがあります：
 
 **このコースでは常にtestnetを使用します。** Testnetのトークンには実際の価値がないため、お金を失うリスクなく自由に実験できます。
 
-Testnet XAHを取得するには、**faucet**（テストアカウントにテスト用トークンを送るツール）を使用します。これは後のモジュールで詳しく説明します。`,
+Testnet XAHを取得するには、**faucet**（テストアカウントにテスト用トークンを送るツール）を使用します。使い方は[モジュール3](?m=3&l=1)で順を追って説明します。`,
         ko: `Xahau는 단순한 블록체인이 아니라 **도구, 지갑, 익스플로러, 커뮤니티**를 포함한 완전한 생태계입니다. 이 레슨에서는 정보를 어디서 찾고 네트워크와 어떻게 상호작용할지 이해하기 위한 핵심 요소를 살펴봅니다.
 
 ### XAH: 네이티브 토큰
@@ -1988,7 +2035,7 @@ URL: [builder.xahau.network/](https://builder.xahau.network/)
 
 **이 강좌에서는 항상 testnet을 사용합니다.** Testnet 토큰은 실제 가치가 없으므로 자유롭게 실험할 수 있습니다.
 
-테스트용 XAH가 필요하면 **faucet**을 사용하세요. 이후 모듈에서 자세히 다룹니다.`,
+테스트용 XAH가 필요하면 **faucet**을 사용하세요. 사용 방법은 [모듈 3](?m=3&l=1)에서 단계별로 다룹니다.`,
         zh: `Xahau 不仅仅是一条区块链，它是一个拥有工具、钱包、浏览器和活跃社区的**完整生态系统**。本课将介绍该生态系统的基本组成部分，帮助你了解在哪里查找信息以及如何与网络交互。
 
 ### XAH：原生代币
@@ -2069,7 +2116,7 @@ Xahau 有两个主要网络：
 
 **本课程始终使用测试网。** 测试网代币没有实际价值，你可以自由实验，无需担心损失资金。
 
-要获取测试网 XAH，请使用**水龙头（faucet）**：一个向你的测试账户发送免费代币的工具。我们将在后续模块中详细介绍。`,
+要获取测试网 XAH，请使用**水龙头（faucet）**：一个向你的测试账户发送免费代币的工具。具体用法见[模块3](?m=3&l=1)。`,
       },
       codeBlocks: [
       ],
@@ -2078,7 +2125,12 @@ Xahau 有两个主要网络：
           title: { es: "XAH y el sistema de emisiones", pt: "XAH e ou sistema de emissões", en: "XAH and the Emission System", jp: "XAHとエミッションシステム", ko: "XAH와 발행 시스템", zh: "XAH 与发行系统" },
           content: {
             es: "XAH = Token nativo de Xahau\n\n• Pagar fees (comisiones)\n• Reserva mínima para cuentas\n• Sistema de emisión inflaccionario\n  → Los usuarios que lo soliciten, reciben XAH periódicamente",
-            pt: "XAH = Token nativo da Xahau\n\n• Pagar fees (taxas)\n• Reserva mínima para contas\n• Sistema de emissão inflacionária\n  → Os usuários que solicitarem, reciben XAH periódicamente",
+            pt: `XAH = Token nativo da Xahau
+
+• Pagar fees (taxas)
+• Reserva mínima para contas
+• Sistema de emissão inflacionária
+  → Os usuários que solicitarem recebem XAH periodicamente`,
             en: "XAH = Native token of Xahau\n\n• Pay fees (transaction fees)\n• Minimum reserve for accounts\n• Inflationary emission system\n  → Users who request it receive XAH periodically",
             jp: "XAH = Xahauのネイティブトークン\n\n• 手数料（取引手数料）の支払い\n• アカウントの最小リザーブ\n• インフレ型エミッションシステム\n  → リクエストしたユーザーは定期的にXAHを受け取る",
             ko: "XAH = Xahau의 네이티브 토큰\n\n• 수수료 지불\n• 계정 최소 준비금\n• 인플레이션형 발행 시스템\n  → 요청한 사용자는 주기적으로 XAH를 받음",
@@ -2147,7 +2199,7 @@ const arabicModuleTranslations = {
 
 **عدم القابلية للتغيير** يعني أن المعاملة، بعد إدراجها والتحقق منها، لا يمكن تعديلها أو حذفها بسهولة.
 
-**الإجماع** هو الطريقة التي تتفق بها العقد على أي معاملات صحيحة وأي حالة ledger هي الحالة المعتمدة. سنفصل ذلك في الوحدة 2.
+**الإجماع** هو الطريقة التي تتفق بها العقد على أي معاملات صحيحة وأي حالة ledger هي الحالة المعتمدة. تفاصيل ذلك في [الوحدة 2](?m=2&l=1).
 
 **التشفير** يستخدم في hashes، والتوقيعات الرقمية، وأزواج المفاتيح العامة والخاصة. بهذه الأدوات يمكن إثبات أن صاحب الحساب هو من وافق على المعاملة.
 
@@ -2163,7 +2215,6 @@ const arabicModuleTranslations = {
 
 في هذه الدورة سنركز على **Xahau**: بلوكتشين عامة مصممة للمدفوعات السريعة، tokens، و smart contracts فعالة.`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "ما هي البلوكتشين؟",
@@ -2210,30 +2261,6 @@ const arabicModuleTranslations = {
       codeTitles: [
         "الاتصال بعقدة Xahau وعرض معلومات الخادم",
       ],
-      code: [
-        `const { Client } = require("xahau");
-
-async function serverInfo() {
-  // الاتصال بعقدة Xahau على mainnet
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // طلب معلومات عامة عن الخادم والشبكة
-  const response = await client.request({
-    command: "server_info"
-  });
-
-  const info = response.result.info;
-  console.log("الشبكة:", info.network_id);
-  console.log("الإصدار:", info.build_version);
-  console.log("الـ ledger الحالي:", info.validated_ledger.seq);
-  console.log("نوع الشبكة: غير EVM (بلوكتشين Xahau)");
-
-  await client.disconnect();
-}
-
-serverInfo();`,
-      ],
       slides: [
         {
           title: "EVM مقابل غير EVM",
@@ -2275,30 +2302,6 @@ serverInfo();`,
 في EVM، الحالة غالبا storage عام داخل contracts. في Xahau، الحالة أكثر تقييدا لكنها منظمة وقابلة للاستعلام بكفاءة. هذا مهم عندما تبني تطبيقات تحتاج إلى قراءة الحسابات، الأرصدة، tokens، و objects مباشرة من ledger.`,
       codeTitles: [
         "استعلام معلومات الـ ledger الحالي",
-      ],
-      code: [
-        `const { Client } = require("xahau");
-
-async function getLedgerInfo() {
-  // الاتصال بعقدة Xahau
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // طلب آخر ledger تم التحقق منه
-  const response = await client.request({
-    command: "ledger",
-    ledger_index: "validated",
-  });
-
-  const ledger = response.result.ledger;
-  console.log("رقم الـ Ledger:", ledger.ledger_index);
-  console.log("Hash:", ledger.ledger_hash);
-  console.log("وقت الإغلاق:", ledger.close_time_human);
-
-  await client.disconnect();
-}
-
-getLedgerInfo();`,
       ],
       slides: [
         {
@@ -2400,7 +2403,6 @@ getLedgerInfo();`,
 | 2020+ | L1s/L2s | Solana، Avalanche، Polygon، Rollups |
 | 2023 | Xahau | XRPL + Hooks (smart contracts بلغة C/WASM) |`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "2008-2015: البدايات",
@@ -2502,9 +2504,8 @@ getLedgerInfo();`,
 
 **في هذه الدورة سنستخدم testnet دائما.** لا تملك tokens الـ testnet قيمة حقيقية، لذلك يمكنك التجربة بحرية دون خطر خسارة المال.
 
-للحصول على XAH في testnet، استخدم **faucet** (الحنفية): أداة ترسل tokens مجانية إلى حسابك التجريبي. سنتناول ذلك بالتفصيل في وحدات لاحقة.`,
+للحصول على XAH في testnet، استخدم **faucet** (الحنفية): أداة ترسل tokens مجانية إلى حسابك التجريبي. طريقة استخدامه خطوة بخطوة في [الوحدة 3](?m=3&l=1).`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "XAH ونظام الإصدار",
@@ -2535,7 +2536,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2580,7 +2580,7 @@ Il n'y a pas de serveur central. Le réseau est composé de **noeuds** (ordinate
 Une fois qu'une transaction est incluse dans un bloc et validée, **elle ne peut plus être modifiée ni supprimée**. Cela garantit un historique fiable.
 
 **Consensus**
-Les noeuds ont besoin d'un mécanisme pour se mettre d'accord sur les transactions valides. On appelle cela un **protocole de consensus** (nous verrons cela en détail dans le module 2).
+Les noeuds ont besoin d'un mécanisme pour se mettre d'accord sur les transactions valides. On appelle cela un **protocole de consensus** (détaillé dans le [module 2](?m=2&l=1)).
 
 **Cryptographie**
 La blockchain utilise des fonctions cryptographiques pour :
@@ -2652,24 +2652,6 @@ Contrairement aux réseaux EVM, dans Xahau :
 - Les smart contracts (Hooks) s'exécutent comme des **filtres réactifs** sur les transactions
 - Le token natif est **XAH**`,
       codeTitles: ["Se connecter à un noeud Xahau et afficher server_info"],
-      code: [
-`// Se connecter à un noeud Xahau et lire les informations du serveur
-const { Client } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const info = await client.request({ command: "server_info" });
-
-  console.log("Connecté au réseau :", info.result.info.network_id);
-  console.log("Ledger validé :", info.result.info.validated_ledger.seq);
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-      ],
       slides: [
         ["EVM vs non-EVM", "EVM : smart contracts Solidity exécutés dans une VM commune\n\nNon-EVM : modèle propre au protocole\n\nXahau utilise des transactions natives, des objets de ledger et des Hooks."],
         ["Qu'est-ce que Xahau ?", "Xahau est une blockchain compatible avec l'écosystème XRPL, orientée paiements, actifs et logique on-chain via Hooks."],
@@ -2684,29 +2666,8 @@ Chaque nouvelle version validée du ledger reçoit un numéro. Les transactions 
 
 Dans Xahau, on ne pense pas seulement en blocs : on pense en objets de ledger. Comprendre ces objets aide à lire les réponses de l'API et à prévoir l'effet d'une transaction.`,
       codeTitles: ["Consulter les informations du ledger courant"],
-      code: [
-`// Lire les informations du ledger validé le plus récent
-const { Client } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const ledger = await client.request({
-    command: "ledger",
-    ledger_index: "validated",
-  });
-
-  console.log("Index du ledger :", ledger.result.ledger_index);
-  console.log("Hash du ledger :", ledger.result.ledger_hash);
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-      ],
       slides: [
-        ["Le ledger Xahau", "Le ledger est une photo validée de l'état du réseau\n\n• Comptes\n• Soldes\n• Objets\n• Paramètres\n• Historique de modifications"],
+        ["Le ledger", "Le ledger est une photo validée de l'état du réseau\n\n• Comptes\n• Soldes\n• Objets\n• Paramètres\n• Historique de modifications"],
         ["Objets de ledger", "Exemples :\n\nAccountRoot\nTrustLine\nOffer\nEscrow\nCheck\nHook\n\nChaque type a ses champs et ses règles."],
         ["Détails d'un objet", "Chaque objet possède des champs prédéfinis :\n\n• AccountRoot → Solde, Sequence, Flags, Hooks\n• RippleState → Solde entre deux comptes pour un token\n• Offer → Prix, quantité, paire d'échange\n• DirectoryNode → Index reliant les objets\n\nDifférence avec l'EVM :\n• Pas de stockage arbitraire (clé-valeur)\n• Champs fixes → requêtes plus efficaces"],
       ],
@@ -2884,7 +2845,7 @@ Xahau possède deux réseaux principaux :
 
 **Pour ce cours, nous utiliserons toujours le testnet.** Les tokens de testnet n'ont pas de valeur réelle, tu peux donc expérimenter librement sans risque de perdre de l'argent.
 
-Pour obtenir des XAH de testnet, utilise le **faucet** (robinet) : un outil qui envoie des tokens gratuits à ton compte de test. Nous verrons cela en détail dans les modules suivants.`,
+Pour obtenir des XAH de testnet, utilise le **faucet** (robinet) : un outil qui envoie des tokens gratuits à ton compte de test. Son utilisation, pas à pas : [module 3](?m=3&l=1).`,
       slides: [
         ["XAH et le système d'émission", "XAH est l'actif natif du réseau\n\nIl sert aux frais, réserves et opérations de base du protocole."],
         ["Outils de l'écosystème", "• SDK xahau\n• Explorateurs\n• Wallets comme Xaman\n• Noeuds publics\n• Hooks\n• Documentation développeur"],
@@ -2909,7 +2870,6 @@ function applyFrenchTranslations(module) {
       if (typeof block.code === "string") {
         block.code = { en: block.code };
       }
-      block.code.fr = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2922,5 +2882,8 @@ function applyFrenchTranslations(module) {
 }
 
 applyFrenchTranslations(moduleData);
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

@@ -1,3 +1,4 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
 const moduleData = {
   id: "m5b",
   icon: "🔬",
@@ -92,7 +93,11 @@ El tiempo desde enviar hasta validar es normalmente de **3 a 5 segundos**, el ti
 A diferencia de blockchains con finalidad probabilística (Bitcoin, Ethereum), en Xahau el resultado es **determinista**:
 - Si una transacción es incluida en un ledger validado, es **final**
 - No hay reorgs, ni forks, ni "confirmaciones pendientes"
-- \`tesSUCCESS\` = éxito garantizado, para siempre`,
+- \`tesSUCCESS\` = éxito garantizado, para siempre
+
+### Ejecutar los scripts de esta lección
+
+A partir de este módulo, los scripts firman con \`WALLET_SEED\` de \`.env\`. Si ejecutaste \`create-accounts.js\` ([módulo 3](?m=3&l=1)), ya está ahí y con fondos. Si no, crea una wallet con el faucet como muestra el primer bloque de código y pega su seed en \`.env\`.`,
         pt: `Antes de se aprofundar em tokens, NFTs ou smart contracts, é fundamental entender **como funciona uma transação do início ao fim** na Xahau. Esse conhecimento ajudará você a diagnosticar problemas e construir aplicações robustas.
 ### O fluxo completo
 Uma transação na Xahau passa por **5 fases** desde que você a cria até ela ficar registrada permanentemente no ledger:
@@ -140,7 +145,11 @@ O tempo entre enviar e validar é normalmente de **3 a 5 segundos**, o tempo que
 Diferentemente de blockchains com finalidade probabilística (Bitcoin, Ethereum), na Xahau o resultado é **determinístico**:
 - Se uma transação é incluída em um ledger validado, é **final**
 - Não há reorgs, nem forks, nem "confirmações pendentes"
-- \`tesSUCCESS\` = sucesso garantido, para sempre`,
+- \`tesSUCCESS\` = sucesso garantido, para sempre
+
+### Executar os scripts desta lição
+
+A partir deste módulo, os scripts assinam com \`WALLET_SEED\` do \`.env\`. Se você executou \`create-accounts.js\` ([módulo 3](?m=3&l=1)), ela já está lá e com fundos. Se não, crie uma wallet com o faucet como mostra o primeiro bloco de código e cole a seed no \`.env\`.`,
         en: `Before diving into tokens, NFTs, or smart contracts, it is essential to understand **how a transaction works from start to finish** in Xahau. This knowledge will help you diagnose issues and build robust applications.
 
 ### The complete flow
@@ -212,7 +221,11 @@ The time from submission to validation is typically **3 to 5 seconds**, the time
 Unlike blockchains with probabilistic finality (Bitcoin, Ethereum), in Xahau the result is **deterministic**:
 - If a transaction is included in a validated ledger, it is **final**
 - There are no reorgs, no forks, no "pending confirmations"
-- \`tesSUCCESS\` = guaranteed success, forever`,
+- \`tesSUCCESS\` = guaranteed success, forever
+
+### Run this lesson's scripts
+
+From this module on, the scripts sign with \`WALLET_SEED\` from \`.env\`. If you ran \`create-accounts.js\` ([Module 3](?m=3&l=1)), it is already there and funded. Otherwise, create a wallet with the faucet as the first code block shows and paste its seed into \`.env\`.`,
         jp: `トークン、NFT、スマートコントラクトに深入りする前に、Xahauにおける**トランザクションが最初から最後までどのように機能するか**を理解することが重要です。この知識は、問題の診断と堅牢なアプリケーションの構築に役立ちます。
 
 ### 完全なフロー
@@ -284,7 +297,11 @@ const tx = {
 確率的なファイナリティを持つブロックチェーン（ビットコイン、イーサリアム）とは異なり、Xahauの結果は**決定論的**です：
 - 検証済みレジャーに含まれたトランザクションは**最終的**です
 - リオーグなし、フォークなし、「保留中の確認」なし
-- \`tesSUCCESS\` = 永遠に保証された成功`,
+- \`tesSUCCESS\` = 永遠に保証された成功
+
+### このレッスンのスクリプトを実行する
+
+このモジュール以降、スクリプトは \`.env\` の \`WALLET_SEED\` で署名します。\`create-accounts.js\`（[モジュール3](?m=3&l=1)）を実行済みなら、入金済みの状態ですでに入っています。まだなら、最初のコードブロックのとおり faucet でウォレットを作成し、その seed を \`.env\` に貼り付けてください。`,
         ko: `토큰, NFT, 스마트 컨트랙트를 깊게 보기 전에, Xahau에서 **트랜잭션이 처음부터 끝까지 어떻게 동작하는지** 이해하는 것이 매우 중요합니다. 이 지식은 문제를 진단하고 안정적인 애플리케이션을 만드는 데 도움이 됩니다.
 
 ### 전체 흐름
@@ -356,7 +373,11 @@ const tx = {
 확률적 finality를 가진 블록체인(비트코인, 이더리움)과 달리, Xahau의 결과는 **결정적**입니다:
 - 검증된 ledger에 포함되면 그 트랜잭션은 **최종 결과**입니다
 - reorg도, fork도, "확인 대기"도 없습니다
-- \`tesSUCCESS\` = 영구적으로 성공`,
+- \`tesSUCCESS\` = 영구적으로 성공
+
+### 이 레슨의 스크립트 실행
+
+이 모듈부터 스크립트는 \`.env\`의 \`WALLET_SEED\`로 서명합니다. \`create-accounts.js\`([모듈 3](?m=3&l=1))를 실행했다면 이미 충전된 상태로 들어 있습니다. 아니라면 첫 번째 코드 블록처럼 faucet으로 지갑을 만들고 seed를 \`.env\`에 붙여 넣으세요.`,
         zh: `在深入学习代币、NFT 或智能合约之前，先理解 Xahau 中**一笔交易从开始到结束是如何运作的**非常重要。这些知识能帮助你排查问题，并构建更稳健的应用。
 
 ### 完整流程
@@ -428,7 +449,11 @@ const tx = {
 与采用概率最终性的区块链（Bitcoin、Ethereum）不同，Xahau 的结果是**确定性的**：
 - 交易一旦进入已验证账本，就是**最终结果**
 - 没有 reorg、没有分叉、也没有“等待确认”
-- \`tesSUCCESS\` = 永久成功`,
+- \`tesSUCCESS\` = 永久成功
+
+### 运行本课的脚本
+
+从本模块开始，脚本使用 \`.env\` 中的 \`WALLET_SEED\` 签名。如果你运行过 \`create-accounts.js\`（[模块3](?m=3&l=1)），它已经在那里并且有余额。否则，按第一个代码块的方式用 faucet 创建钱包，并把 seed 粘贴到 \`.env\`。`,
       },
       codeBlocks: [
         {
@@ -442,22 +467,22 @@ const tx = {
           },
           language: "bash",
           code: {
-            es: `#Visita https://xahau-test.net/wallet para crear una wallet de testnet y obtener su seed
-#Crea un fichero ".env" en tu carpeta
+            es: `# Visita https://xahau-test.net para crear una wallet de testnet y obtener su seed
+# Crea un fichero ".env" en tu carpeta
 WALLET_SEED=sTuSeed`,
-            pt: `# Visite https://xahau-test.net/wallet para criar uma wallet de testnet e obter sua seed
+            pt: `# Visite https://xahau-test.net para criar uma wallet de testnet e obter sua seed
 # Crie um arquivo ".env" na sua pasta
 WALLET_SEED=sSuaSeed`,
-            en: `#Visit https://xahau-test.net/wallet to create a wallet on testnet y obtain your seed
-#Create a ".env" file in your project folder
+            en: `# Visit https://xahau-test.net (the testnet faucet) to create a testnet wallet and get its seed
+# Create a ".env" file in your project folder
 WALLET_SEED=sYourSeed`,
-            jp: `#テストネットウォレットを作成してシードを取得するには https://xahau-test.net/wallet を訪問してください
+            jp: `# テストネットウォレットを作成してシードを取得するには https://xahau-test.net を訪問してください
 #プロジェクトフォルダに".env"ファイルを作成してください
 WALLET_SEED=sYourSeed`,
-            ko: `# https://xahau-test.net/wallet 에서 testnet 지갑을 만들고 시드를 받으세요
+            ko: `# https://xahau-test.net 에서 testnet 지갑을 만들고 시드를 받으세요
 # 프로젝트 폴더에 ".env" 파일을 만드세요
 WALLET_SEED=sYourSeed`,
-            zh: `# 访问 https://xahau-test.net/wallet 创建 testnet 钱包并获取种子
+            zh: `# 访问 https://xahau-test.net 创建 testnet 钱包并获取种子
 # 在项目文件夹中创建 ".env" 文件
 WALLET_SEED=sYourSeed`,
           },
@@ -571,7 +596,7 @@ async function flujoCompleto() {
   console.log("3. Transação assinada:");
   console.log("   Hash:", signed.hash);
   console.log("   tx_blob (primeiroos 60 chars):", signed.tx_blob.substring(0, 60) + "...");
-  console.log("   Longitud do blob:", signed.tx_blob.length, "caracteres hex");
+  console.log("   Comprimento do blob:", signed.tx_blob.length, "caracteres hex");
   // =============================================
   // FASE 4: Enviar
   // =============================================
@@ -583,7 +608,7 @@ async function flujoCompleto() {
   console.log("5. Resultado validado:");
   console.log("   TransactionResult:", result.result.meta.TransactionResult);
   console.log("   Ledger:", result.result.ledger_index);
-  console.log("   Nós afectados:", result.result.meta.AffectedNodes.length);
+  console.log("   Nós afetados:", result.result.meta.AffectedNodes.length);
   await client.disconnect();
 }
 flujoCompleto().catch(console.error);`,
@@ -615,7 +640,7 @@ async function flujoCompleto() {
   // =============================================
   const prepared = await client.autofill(tx);
 
-  console.log("2. Transacción preparada (autofill):");
+  console.log("2. Transaction prepared (autofill):");
   console.log("   Fee:", prepared.Fee, "drops");
   console.log("   Sequence:", prepared.Sequence);
   console.log("   LastLedgerSequence:", prepared.LastLedgerSequence);
@@ -627,21 +652,21 @@ async function flujoCompleto() {
   // =============================================
   const signed = wallet.sign(prepared);
 
-  console.log("3. Transacción firmada:");
+  console.log("3. Transaction signed:");
   console.log("   Hash:", signed.hash);
   console.log("   tx_blob (first 60 chars):", signed.tx_blob.substring(0, 60) + "...");
-  console.log("   Blob length:", signed.tx_blob.length, "caracteres hex");
+  console.log("   Blob length:", signed.tx_blob.length, "hex characters");
 
   // =============================================
   // PHASE 4: Submit
   // =============================================
-  console.log("4. Enviando al nodo...");
+  console.log("4. Sending to the node...");
   const result = await client.submitAndWait(signed.tx_blob);
 
   // =============================================
   // PHASE 5: Validated result
   // =============================================
-  console.log("5. Resultado validado:");
+  console.log("5. Validated result:");
   console.log("   TransactionResult:", result.result.meta.TransactionResult);
   console.log("   Ledger:", result.result.ledger_index);
   console.log("   Affected nodes:", result.result.meta.AffectedNodes.length);
@@ -871,7 +896,14 @@ completeFlow().catch(console.error);`,
           title: { es: "Finalidad determinista", pt: "Finalidade determinística", en: "Deterministic finality", jp: "決定論的ファイナリティ", ko: "결정적 파이널리티", zh: "确定性终局性" },
           content: {
             es: "Validación en 3-5 segundos\n\n• Sin reorgs ni forks\n• Sin confirmaciones pendientes\n• tesSUCCESS = éxito para siempre\n• Resultado final e irreversible\n\nDiferente a Bitcoin/Ethereum (probabilístico)",
-            pt: "Validação em 3-5 segundos\n\n• Sem reorgs nem forks\n• Sem conassinaturaciones pendientes\n• tesSUCCESS = éxito para sempre\n• Resultado final e irreversível\n\nDiferente a Bitcoin/Ethereum (probabilístico)",
+            pt: `Validação em 3-5 segundos
+
+• Sem reorgs nem forks
+• Sem assinaturas pendentes
+• tesSUCCESS = sucesso para sempre
+• Resultado final e irreversível
+
+Diferente a Bitcoin/Ethereum (probabilístico)`,
             en: "Validation in 3-5 seconds\n\n• No reorgs or forks\n• No pending confirmations\n• tesSUCCESS = success forever\n• Final and irreversible result\n\nDifferent from Bitcoin/Ethereum (probabilistic)",
             jp: "3〜5秒で検証\n\n• リオーグやフォークなし\n• 保留中の確認なし\n• tesSUCCESS = 永遠の成功\n• 最終的かつ不可逆の結果\n\nビットコイン/イーサリアム（確率的）と異なる",
             ko: "3~5초 안에 검증\n\n• reorg와 fork 없음\n• 확인 대기 없음\n• tesSUCCESS = 영구적인 성공\n• 최종적이고 되돌릴 수 없는 결과\n\n비트코인/이더리움과 다른 결정적 구조",
@@ -1026,7 +1058,7 @@ Muitos tipos de transação aceitam um campo **Flags** que modifica seu comporta
 - Exemplo: \`Flags: 1\` em URITokenMint ativa \`tfBurnable\`
 - Exemplo: \`Flags: 131072\` em OfferCreate ativa \`tfImmediateOrCancel\`
 - Você pode combinar flags somando seus valores
-### Memos: Dados adjuntos
+### Memos: dados anexados
 Você pode anexar dados a qualquer transação usando o campo **Memos**:
 - **MemoType**: Tipo MIME em hexadecimal (ex.: "text/plain")
 - **MemoData**: O conteúdo em hexadecimal
@@ -1436,7 +1468,7 @@ async function inspeccionarCampos() {
   const camposNovos = Object.keys(prepared).filter(
     (k) => !Object.keys(tx).includes(k)
   );
-  console.log("=== Campos añadidos por autofill ===");
+  console.log("=== Campos adicionados pelo autofill ===");
   for (const campo of camposNovos) {
     console.log("  " + campo + ":", prepared[campo]);
   }
@@ -1987,7 +2019,13 @@ console.log("它们都共享：TransactionType、Account、Fee、Sequence。");`
           title: { es: "Tipos de transacción", pt: "Tipos de transação", en: "Transaction types", jp: "トランザクションタイプ", ko: "트랜잭션 유형", zh: "交易类型" },
           content: {
             es: "• Payment → Enviar XAH o tokens\n• TrustSet → Trust lines\n• OfferCreate/Cancel → DEX\n• AccountSet → Configurar cuenta\n• SetHook → Smart contracts\n• URITokenMint/Buy → NFTs\n• EscrowCreate/Finish → Pagos condicionales",
-            pt: "• Payment → Enviar XAH ou tokens\n• TrustSet → Trust lines\n• OfferCreate/Cancel → DEX\n• AccountSet → Configurar conta\n• SetHook → Smart contracts\n• URITokenMint/Buy → NFTs\n• EscrowCreate/Finish → Pagamentos condicionales",
+            pt: `• Payment → Enviar XAH ou tokens
+• TrustSet → Trust lines
+• OfferCreate/Cancel → DEX
+• AccountSet → Configurar conta
+• SetHook → Smart contracts
+• URITokenMint/Buy → NFTs
+• EscrowCreate/Finish → Pagamentos condicionais`,
             en: "• Payment → Send XAH or tokens\n• TrustSet → Trust lines\n• OfferCreate/Cancel → DEX\n• AccountSet → Configure account\n• SetHook → Smart contracts\n• URITokenMint/Buy → NFTs\n• EscrowCreate/Finish → Conditional payments",
             jp: "• Payment → XAHまたはトークンの送金\n• TrustSet → トラストライン\n• OfferCreate/Cancel → DEX\n• AccountSet → アカウント設定\n• SetHook → スマートコントラクト\n• URITokenMint/Buy → NFT\n• EscrowCreate/Finish → 条件付き支払い",
             ko: "• Payment → XAH 또는 토큰 전송\n• TrustSet → Trust line\n• OfferCreate/Cancel → DEX\n• AccountSet → 계정 설정\n• SetHook → 스마트 컨트랙트\n• URITokenMint/Buy → NFT\n• EscrowCreate/Finish → 조건부 결제",
@@ -1999,7 +2037,15 @@ console.log("它们都共享：TransactionType、Account、Fee、Sequence。");`
           title: { es: "Fee, Sequence y Flags", pt: "Fee, Sequence e Flags", en: "Fee, Sequence and Flags", jp: "Fee、Sequence、Flags", ko: "Fee, Sequence, Flags", zh: "Fee、Sequence 与 Flags" },
           content: {
             es: "Fee: 12 drops base (~gratis), se quema\n\nSequence: contador incremental\n• Garantiza orden de ejecución\n• Sin huecos: txs quedan en cola\n\nFlags: modifican comportamiento\n• Se combinan sumando valores\n• Cada tipo tiene sus flags propios",
-            pt: "Fee: 12 drops base (~quase grátis), é queimado\n\nSequence: contador incremental\n• Garante ordem de execução\n• Sem lacunas: txs ficam na fila\n\nFlags: modificam comportamento\n• Se combinan sumando valores\n• Cada tipo tem suas próprias flags",
+            pt: `Fee: 12 drops base (~quase grátis), é queimado
+
+Sequence: contador incremental
+• Garante ordem de execução
+• Sem lacunas: txs ficam na fila
+
+Flags: modificam comportamento
+• Combinam-se somando valores
+• Cada tipo tem suas próprias flags`,
             en: "Fee: 12 drops base (~free), burned\n\nSequence: incremental counter\n• Ensures execution order\n• No gaps: txs are queued\n\nFlags: modify behavior\n• Combined by adding values\n• Each type has its own flags",
             jp: "Fee：12 drops基本（ほぼ無料）、バーン\n\nSequence：インクリメンタルカウンター\n• 実行順序を保証\n• 欠番はキューに入る\n\nFlags：動作を変更\n• 値を加算して組み合わせ\n• 各タイプ固有のフラグ",
             ko: "Fee: 기본 12 drops (~거의 무료), 소각됨\n\nSequence: 증가 카운터\n• 실행 순서를 보장\n• 중간 번호가 비면 tx가 대기함\n\nFlags: 동작을 수정\n• 값을 더해 조합\n• 각 유형마다 고유 flag 보유",
@@ -2119,7 +2165,7 @@ O \`tx_blob\` é uma string hexadecimal que contém **toda a transação** (camp
 wallet.sign(prepared)
 // Retorna: { tx_blob: "1200002280000000...", hash: "A1B2C3..." }
 \`\`\`
-- **tx_blob**: A transação serializada e firmada (hex)
+- **tx_blob**: a transação serializada e assinada (hex)
 - **hash**: O identificador único da transação (para encontrá-la depois)
 ### Verificação da assinatura
 Quando um nó recebe seu tx_blob:
@@ -2134,7 +2180,7 @@ Você pode assinar transações **sem conexão à internet**:
 1. Em um dispositivo conectado: prepare a transação com \`autofill()\`
 2. Copie a transação preparada para um dispositivo offline
 3. No dispositivo offline: assine com \`wallet.sign()\`
-4. Copia o \`tx_blob\` de vuelta ao dispositivo conectado
+4. Copie o \`tx_blob\` de volta para o dispositivo conectado
 5. Envia com \`client.submit(tx_blob)\`
 Isso é útil para **cold wallets** — as chaves privadas nunca tocam um dispositivo com internet.
 ### Multi-assinatura (MultiSign)
@@ -2142,7 +2188,7 @@ Xahau suporta **multi-assinatura**: uma transação que exige a assinatura de **
 - Você define uma lista de signatários (SignerList) com seus pesos
 - Estableces um quórum mínimo
 - Cada signatário assina a transação separadamente
-- As assinaturas se combinan e se envían juntas
+- As assinaturas são combinadas e enviadas juntas
 - Útil para contas compartilhadas, DAOs, ou segurança adicional`,
         en: `The digital signature is the mechanism that ensures **only you can authorize transactions** from your account. Understanding how it works will help you grasp Xahau's security and debug signing issues.
 
@@ -2546,24 +2592,24 @@ async function assinaturaDetalhada() {
   console.log("=== RESULTADO DE A ASSINATURA ===");
   console.log("Hash (ID da tx):", signed.hash);
   console.log("tx_blob completo:", signed.tx_blob);
-  console.log("Longitud:", signed.tx_blob.length, "caracteres hex");
-  console.log("Tamañou:", signed.tx_blob.length / 2, "bytes");
+  console.log("Comprimento:", signed.tx_blob.length, "caracteres hex");
+  console.log("Tamanho:", signed.tx_blob.length / 2, "bytes");
   // Verificar que a transação é válida
   // (ou nó faz isto internamente ao receber ou submit)
-  console.log("=== VERIFICACIÓN ===");
-  // Decodificar ou blob para inspeccionar
+  console.log("=== VERIFICAÇÃO ===");
+  // Decodificar o blob para inspecioná-lo
   const decoded = client.request({
     command: "tx",
     transaction: signed.hash,
   }).catch(() => {
-    // A tx aún não existe no ledger, é normal
-    console.log("A tx aún não se ha enviado (apenas assinada).");
+    // A tx ainda não existe no ledger; é normal
+    console.log("A tx ainda não foi enviada (apenas assinada).");
   });
   // Enviar
   console.log("Enviando tx_blob ao nó...");
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
-  // Ahora sí podemos buscarla por hash
+  // Agora sim é possível buscá-la pelo hash
   const txInfo = await client.request({
     command: "tx",
     transaction: signed.hash,
@@ -2844,7 +2890,7 @@ detailedSigning().catch(console.error);`,
         {
           title: {
             es: "Firma offline: preparar en un lado, firmar en otro",
-            pt: "Assinatura offline: preparar em um lado, assinar em otro",
+            pt: "Assinatura offline: preparar em um lado, assinar em outro",
             en: "Offline signing: prepare on one side, sign on another",
             jp: "オフライン署名：一方で準備し、他方で署名",
             ko: "오프라인 서명: 한쪽에서 준비, 다른 쪽에서 서명",
@@ -2967,7 +3013,7 @@ async function enviarOnline(txBlob) {
   console.log("Resultado:", result.result.meta.TransactionResult);
   await client.disconnect();
 }
-// Demo do flujo completo (em um apenas script para simplicidad)
+// Demonstração do fluxo completo (em um único script, para simplificar)
 async function demo() {
   const prepared = await prepararOnline();
   const signed = firmarOffline(prepared);
@@ -3251,7 +3297,7 @@ demo().catch(console.error);`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es una firma digital?", pt: "¿Qué é uma assinatura digital?", en: "What is a digital signature?", jp: "デジタル署名とは？", ko: "디지털 서명이란?", zh: "什么是数字签名？" },
+          title: { es: "¿Qué es una firma digital?", pt: "O que é uma assinatura digital?", en: "What is a digital signature?", jp: "デジタル署名とは？", ko: "디지털 서명이란?", zh: "什么是数字签名？" },
           content: {
             es: "Prueba matemática de que:\n\n• Tú creaste la transacción (autenticación)\n• Nadie la modificó (integridad)\n• No puedes negar haberla firmado (no repudio)\n\nAlgoritmos: ed25519 (sEd...) o secp256k1 (s...)",
             pt: "Prova matemática de que:\n\n• Você criou a transação (autenticação)\n• Ninguém a modificou (integridade)\n• Você não pode negar que a assinou (não repúdio)\n\nAlgoritmos: ed25519 (sEd...) ou secp256k1 (s...)",
@@ -3409,24 +3455,24 @@ Os códigos \`tec\` significam que a transação foi **incluída em um ledger** 
 | **tecNO_LINE** | Não existe trust line para o token |
 | **tecNO_DST** | A conta de destino não existe |
 | **tecDST_TAG_NEEDED** | A conta de destino exige DestinationTag |
-| **tecNO_PERMISSION** | No tems permiso para esta operação |
-| **tecINSUFFICIENT_RESERVE** | No tems suficiente XAH para a reserva do novo objeto |
+| **tecNO_PERMISSION** | Você não tem permissão para esta operação |
+| **tecINSUFFICIENT_RESERVE** | Você não tem XAH suficiente para a reserva do novo objeto |
 | **tecPATH_DRY** | Não foi encontrada uma rota de pagamento viável |
 | **tecKILLED** | Oferta cancelada por flag tfFillOrKill |
-**Importante**: Em os erros \`tec\`, o fee **sí é cobrado** aunque a operação falle.
+**Importante**: nos erros \`tec\`, a fee **é cobrada** mesmo que a operação falhe.
 ### tef: Erro antes do processamento
-Os códigos \`tef\` indican que a transação foi **rejeitada antes de ser processada**. O fee **no é cobrado**:
+Os códigos \`tef\` indicam que a transação foi **rejeitada antes de ser processada**. A fee **não é cobrada**:
 | Código | Significado |
 |---|---|
-| **tefPAST_SEQ** | O Sequence ya se usó (transação duplicada) |
-| **tefMAX_LEDGER** | LastLedgerSequence ya pasó (transação caducada) |
-| **tefALREADY** | A transação ya está na cola |
+| **tefPAST_SEQ** | O Sequence já foi usado (transação duplicada) |
+| **tefMAX_LEDGER** | O LastLedgerSequence já passou (transação expirada) |
+| **tefALREADY** | A transação já está na fila |
 ### tem: Erro de formato
-Os códigos \`tem\` indican que a transação está **malformada** e nunca poderia ser válida:
+Os códigos \`tem\` indicam que a transação está **malformada** e nunca poderia ser válida:
 | Código | Significado |
 |---|---|
 | **temMALFORMED** | Campos inválidos ou formato incorreto |
-| **temBAD_AMOUNT** | Quantidade inválida (negativa, cero em XAH, etc.) |
+| **temBAD_AMOUNT** | Quantidade inválida (negativa, zero em XAH etc.) |
 | **temBAD_FEE** | Fee inválido |
 | **temDISABLED** | A funcionalidade está desativada em esta rede |
 | **temINVALID_FLAG** | Flag no válido para este tipo de transação |
@@ -3441,8 +3487,8 @@ Os códigos \`ter\` indicam um erro **temporário** que pode ser resolvido ao te
 O objeto de resultado contem toda a informação que você precisa:
 \`\`\`
 result.result.meta.TransactionResult  → O código (tesSUCCESS, etc.)
-result.result.meta.AffectedNodes      → Qué mudou no ledger
-result.result.ledger_index             → Em qué ledger se incluyó
+result.result.meta.AffectedNodes      → O que mudou no ledger
+result.result.ledger_index             → Em que ledger foi incluída
 result.result.hash                     → Hash único da transação
 \`\`\``,
         en: `Once the transaction is signed, you need to send it to the network and understand the possible outcomes. Xahau has a very detailed **result code** system that tells you exactly what happened.
@@ -3891,20 +3937,20 @@ async function enviarComTratamento() {
     const signed = wallet.sign(prepared);
     const result = await client.submitAndWait(signed.tx_blob);
     const codigo = result.result.meta.TransactionResult;
-    // Analizar o resultado por categoría
+    // Analisar o resultado por categoria
     if (codigo === "tesSUCCESS") {
-      console.log("ÉXITO: Transação processada corretamente.");
+      console.log("SUCESSO: transação processada corretamente.");
       console.log("Ledger:", result.result.ledger_index);
       console.log("Hash:", signed.hash);
     } else if (codigo.startsWith("tec")) {
       // A tx foi incluída no ledger, mas a operação falhou
-      // O fee SÍ foi cobrado
-      console.log("FALLO (tec):", codigo);
+      // A fee FOI cobrada
+      console.log("FALHA (tec):", codigo);
       console.log("A operação não foi executada, mas o fee foi cobrado.");
       // Diagnóstico específico
       switch (codigo) {
         case "tecUNFUNDED_PAYMENT":
-          console.log("→ Não tems suficiente saldo.");
+          console.log("→ Você não tem saldo suficiente.");
           break;
         case "tecNO_DST":
           console.log("→ A conta de destino não existe.");
@@ -3913,10 +3959,10 @@ async function enviarComTratamento() {
           console.log("→ Faltao DestinationTag.");
           break;
         case "tecINSUFFICIENT_RESERVE":
-          console.log("→ Não tems suficiente XAH parà reserva.");
+          console.log("→ Você não tem XAH suficiente para a reserva.");
           break;
         default:
-          console.log("→ Consultà documentación para:", codigo);
+          console.log("→ Consulte a documentação para:", codigo);
       }
     } else if (codigo.startsWith("tef")) {
       console.log("REJEITADA (tef):", codigo);
@@ -3928,10 +3974,10 @@ async function enviarComTratamento() {
       console.log("Revisa os campos e os valores.");
     } else if (codigo.startsWith("ter")) {
       console.log("ERRO TEMPORAL (ter):", codigo);
-      console.log("Você pode tente novamenter em unos segundos.");
+      console.log("Você pode tentar novamente em alguns segundos.");
     }
   } catch (error) {
-    console.error("Erro de conexão ou envíou:", error.message);
+    console.error("Erro de conexão ou de envio:", error.message);
   }
   await client.disconnect();
 }
@@ -4249,7 +4295,15 @@ sendChecking().catch(console.error);`,
           title: { es: "submit vs submitAndWait", pt: "submit vs submitAndWait", en: "submit vs submitAndWait", jp: "submit対submitAndWait", ko: "submit vs submitAndWait", zh: "submit 与 submitAndWait" },
           content: {
             es: "submit():\n• Envía y devuelve inmediatamente\n• Resultado preliminar (no final)\n• Rápido, para enviar muchas txs\n\nsubmitAndWait():\n• Envía y espera validación (3-10s)\n• Resultado final directo\n• Recomendado para la mayoría de casos",
-            pt: "submit():\n• Envia e retorna imediatamente\n• Resultado preliminar (não final)\n• Rápido, para enviar muchas txs\n\nsubmitAndWait():\n• Envia e espera validação (3-10s)\n• Resultado final direto\n• Recomendado parà maioría de casos",
+            pt: `submit():
+• Envia e retorna imediatamente
+• Resultado preliminar (não final)
+• Rápido, para enviar muitas txs
+
+submitAndWait():
+• Envia e espera validação (3-10s)
+• Resultado final direto
+• Recomendado parà maioría de casos`,
             en: "submit():\n• Sends and returns immediately\n• Preliminary result (not final)\n• Fast, for sending many txs\n\nsubmitAndWait():\n• Sends and waits for validation (3-10s)\n• Direct final result\n• Recommended for most cases",
             jp: "submit()：\n• 送信して即座に返す\n• 暫定結果（最終でない）\n• 高速、多くのtxを送信する場合\n\nsubmitAndWait()：\n• 送信して検証を待つ（3〜10秒）\n• 直接最終結果\n• ほとんどの場合に推奨",
             ko: "submit():\n• 전송 후 즉시 반환\n• 예비 결과 (최종 아님)\n• 빠르며 많은 tx 전송에 적합\n\nsubmitAndWait():\n• 전송 후 검증까지 대기 (3~10초)\n• 최종 결과 바로 반환\n• 대부분의 경우 권장",
@@ -4377,7 +4431,7 @@ Para tokens (IOUs), los cambios se ven en los \`ModifiedNode\` de tipo \`RippleS
 
 ### Reserves: El sistema de reservas
 
-El ledger de Xahau usa un sistema de **reservas** que afecta tu balance disponible:
+La red Xahau usa un sistema de **reservas** que afecta tu balance disponible:
 
 - **Reserva base**: 1 XAH — mínimo para que una cuenta exista
 - **Reserva por objeto**: 0.2 XAH por cada objeto que tu cuenta posee
@@ -4464,7 +4518,7 @@ Em uma transação de pagamento, você pode rastrear exatamente como o dinheiro 
 - A diferença entre os saldos é o \`Amount\` + \`Fee\`
 Para tokens (IOUs), as alterações são vistas nos \`ModifiedNode\` de tipo \`RippleState\`.
 ### Reserves: O sistema de reservas
-O ledger de Xahau usa um sistema de **reservas** que afeta seu saldo disponível:
+A rede Xahau usa um sistema de **reservas** que afeta seu saldo disponível:
 - **Reserva base**: 1 XAH — mínimo para uma conta existir
 - **Reserva por objeto**: 0.2 XAH por cada objeto que sua conta possui
 Cada objeto no ledger (trust line, oferta, URIToken, Hook) aumenta sua reserva. O XAH reservado não pode ser gasto até que você elimine o objeto.
@@ -4564,7 +4618,7 @@ For tokens (IOUs), changes are visible in the \`ModifiedNode\` entries of type \
 
 ### Reserves: The reserve system
 
-The Xahau ledger uses a **reserve** system that affects your available balance:
+The Xahau Network uses a **reserve** system that affects your available balance:
 
 - **Base reserve**: 1 XAH — minimum for an account to exist
 - **Owner reserve**: 0.2 XAH for each object your account owns
@@ -4782,7 +4836,7 @@ Payment 트랜잭션에서는 \`AccountRoot\` 타입의 \`ModifiedNode\`를 보�
 
 ### Reserve: reserve 시스템
 
-Xahau ledger는 사용 가능한 잔액에 영향을 주는 **reserve** 시스템을 사용합니다:
+Xahau 네트워크는 사용 가능한 잔액에 영향을 주는 **reserve** 시스템을 사용합니다:
 
 - **기본 reserve**: 1 XAH — 계정이 존재하기 위한 최소값
 - **객체 reserve**: 계정이 소유한 각 객체당 0.2 XAH
@@ -4891,7 +4945,7 @@ ledger가 닫히면 다음을 요약하는 **hash**가 계산됩니다:
 
 ### Reserves：reserve 系统
 
-Xahau 账本使用一套会影响可用余额的 **reserve** 系统：
+Xahau 网络使用一套会影响可用余额的 **reserve** 系统：
 
 - **基础 reserve**：1 XAH —— 账户存在所需的最低值
 - **对象 reserve**：账户每拥有一个对象，就要额外占用 0.2 XAH
@@ -4922,7 +4976,7 @@ Xahau 账本使用一套会影响可用余额的 **reserve** 系统：
         {
           title: {
             es: "Analizar los AffectedNodes de una transacción",
-            pt: "Analizar os AffectedNodes de uma transação",
+            pt: "Analisar os AffectedNodes de uma transação",
             en: "Analyze a transaction's AffectedNodes",
             jp: "トランザクションのAffectedNodesを分析",
             ko: "트랜잭션의 AffectedNodes 분석",
@@ -5025,7 +5079,7 @@ async function analizarMetadata() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  // Enviar um pagamento para analizar sua metadata
+  // Enviar um pagamento para analisar sua metadata
   const tx = {
     TransactionType: "Payment",
     Account: wallet.address,
@@ -5038,8 +5092,8 @@ async function analizarMetadata() {
   const meta = result.result.meta;
   console.log("=== ANÁLISIS DE METADATA ===");
   console.log("Resultado:", meta.TransactionResult);
-  console.log("Nós afectados:", meta.AffectedNodes.length);
-  // Clasificar os nós afectados
+  console.log("Nós afetados:", meta.AffectedNodes.length);
+  // Classificar os nós afetados
   const creados = [];
   const modificados = [];
   const eliminados = [];
@@ -5067,11 +5121,11 @@ async function analizarMetadata() {
       console.log("  ~", n.LedgerEntryType);
       if (n.PreviousFields && n.FinalFields) {
         // Mostrar alteraçãos em saldo (AccountRoot)
-        if (n.PreviousFields.Saldo && n.FinalFields.Saldo) {
-          const antes = Number(n.PreviousFields.Saldo) / 1000000;
-          const despues = Number(n.FinalFields.Saldo) / 1000000;
-          const diff = despues - antes;
-          console.log("   Saldo:", antes, "→", despues, "XAH");
+        if (n.PreviousFields.Balance && n.FinalFields.Balance) {
+          const antes = Number(n.PreviousFields.Balance) / 1000000;
+          const depois = Number(n.FinalFields.Balance) / 1000000;
+          const diff = depois - antes;
+          console.log("   Saldo:", antes, "→", depois, "XAH");
           console.log("   Cambio:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
         }
         // Mostrar alteração de Sequence
@@ -5545,7 +5599,7 @@ async function consultarReserva(address) {
     ledger_index: "validated",
   });
   const account = accountInfo.result.account_data;
-  const balance = Number(account.Saldo) / 1000000;
+  const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
   const reservaTotal = reservaBase + (ownerCount * reservaObjeto);
   const disponible = balance - reservaTotal;
@@ -5557,7 +5611,7 @@ async function consultarReserva(address) {
   console.log("  →", reservaBase, "XAH (base)");
   console.log("  +", ownerCount, "x", reservaObjeto, "=", ownerCount * reservaObjeto, "XAH (objetos)");
   console.log("Disponível para gastar:", disponible, "XAH");
-  // Mostrar qué objetos tems
+  // Mostrar quais objetos você tem
   const objects = await client.request({
     command: "account_objects",
     account: address,
@@ -5828,7 +5882,14 @@ checkReserve("rYourAccountHere");`,
           title: { es: "AffectedNodes", pt: "AffectedNodes", en: "AffectedNodes", jp: "AffectedNodes", ko: "AffectedNodes", zh: "AffectedNodes" },
           content: {
             es: "Cada transacción registra qué cambió:\n\n• CreatedNode → Nuevo objeto en el ledger\n• ModifiedNode → Objeto existente modificado\n  (PreviousFields → FinalFields)\n• DeletedNode → Objeto eliminado\n\nLa huella exacta de la transacción",
-            pt: "Cada transação registra qué mudou:\n\n• CreatedNode → Novo objeto no ledger\n• ModifiedNode → Objeto existente modificado\n  (PreviousFields → FinalFields)\n• DeletedNode → Objeto eliminado\n\nLa pegada exata da transação",
+            pt: `Cada transação registra o que mudou:
+
+• CreatedNode → Novo objeto no ledger
+• ModifiedNode → Objeto existente modificado
+  (PreviousFields → FinalFields)
+• DeletedNode → Objeto eliminado
+
+A marca exata da transação`,
             en: "Each transaction records what changed:\n\n• CreatedNode → New object in the ledger\n• ModifiedNode → Existing object modified\n  (PreviousFields → FinalFields)\n• DeletedNode → Object deleted\n\nThe exact footprint of the transaction",
             jp: "各トランザクションが変化を記録：\n\n• CreatedNode → レジャー内の新しいオブジェクト\n• ModifiedNode → 既存オブジェクトの変更\n  （PreviousFields → FinalFields）\n• DeletedNode → 削除されたオブジェクト\n\nトランザクションの正確な足跡",
             ko: "각 트랜잭션은 바뀐 내용을 기록합니다:\n\n• CreatedNode → ledger의 새 객체\n• ModifiedNode → 기존 객체 수정\n  (PreviousFields → FinalFields)\n• DeletedNode → 삭제된 객체\n\n트랜잭션의 정확한 흔적",
@@ -5941,81 +6002,14 @@ const tx = {
 على عكس البلوكتشينز ذات النهائية الاحتمالية (Bitcoin، Ethereum)، النتيجة في Xahau **حتمية**:
 - إذا أُدرجت المعاملة في ledger مُتحقَّق منه، فهي **نهائية**
 - لا توجد إعادة تنظيم (reorgs)، ولا تفرعات (forks)، ولا "تأكيدات معلقة"
-- \`tesSUCCESS\` = نجاح مضمون، إلى الأبد`,
+- \`tesSUCCESS\` = نجاح مضمون، إلى الأبد
+
+### تشغيل سكربتات هذا الدرس
+
+ابتداءً من هذه الوحدة، تُوقّع السكربتات بـ \`WALLET_SEED\` من \`.env\`. إذا شغّلت \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)) فهو موجود بالفعل وممول. وإلا فأنشئ wallet عبر faucet كما يوضح أول كتلة كود، والصق الـ seed في \`.env\`.`,
       codeTitles: [
         "إنشاء .env يحتوي seed الخاص بك",
         "التدفق الكامل خطوة بخطوة",
-      ],
-      code: [
-        `# الملف: .env
-# لا ترفع هذا الملف إلى Git
-
-WALLET_SEED=your_testnet_seed_here
-DESTINATION=rDestinationAddressHere
-XAHAU_NODE=wss://xahau-test.net`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function fullTransactionFlow() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // =============================================
-  // المرحلة 1: بناء المعاملة
-  // =============================================
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rMXEZJecFdn1dVtE21pZ8duZz2E36KGaCp",
-    Amount: "5000000", // 5 XAH بوحدة drops
-  };
-
-  console.log("1. تم بناء المعاملة:");
-  console.log("   النوع:", tx.TransactionType);
-  console.log("   عدد الحقول المحددة:", Object.keys(tx).length);
-
-  // =============================================
-  // المرحلة 2: التحضير (autofill)
-  // =============================================
-  const prepared = await client.autofill(tx);
-
-  console.log("2. تم تحضير المعاملة (autofill):");
-  console.log("   Fee:", prepared.Fee, "drops");
-  console.log("   Sequence:", prepared.Sequence);
-  console.log("   LastLedgerSequence:", prepared.LastLedgerSequence);
-  console.log("   NetworkID:", prepared.NetworkID);
-  console.log("   إجمالي الحقول:", Object.keys(prepared).length);
-
-  // =============================================
-  // المرحلة 3: التوقيع
-  // =============================================
-  const signed = wallet.sign(prepared);
-
-  console.log("3. تم توقيع المعاملة:");
-  console.log("   Hash:", signed.hash);
-  console.log("   tx_blob (أول 60 حرفًا):", signed.tx_blob.substring(0, 60) + "...");
-  console.log("   طول الـ blob:", signed.tx_blob.length, "حرفًا سداسيًا عشريًا");
-
-  // =============================================
-  // المرحلة 4: الإرسال
-  // =============================================
-  console.log("4. جارٍ الإرسال إلى العقدة...");
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  // =============================================
-  // المرحلة 5: النتيجة المتحقَّق منها
-  // =============================================
-  console.log("5. النتيجة المتحقَّق منها:");
-  console.log("   TransactionResult:", result.result.meta.TransactionResult);
-  console.log("   Ledger:", result.result.ledger_index);
-  console.log("   العقد المتأثرة:", result.result.meta.AffectedNodes.length);
-
-  await client.disconnect();
-}
-
-fullTransactionFlow().catch(console.error);`,
       ],
       slides: [
         {
@@ -6119,92 +6113,6 @@ fullTransactionFlow().catch(console.error);`,
         "فحص الحقول قبل وبعد autofill",
         "بناء أنواع معاملات مختلفة",
       ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function inspectFields() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: process.env.DESTINATION,
-    Amount: xahToDrops("1"),
-  };
-
-  console.log("قبل autofill:", tx);
-
-  const prepared = await client.autofill(tx);
-  console.log("بعد autofill:", prepared);
-
-  await client.disconnect();
-}
-
-inspectFields().catch(console.error);`,
-        `// أمثلة عن كيفية بناء أنواع مختلفة من المعاملات.
-// نعرض فقط الحقول الأساسية — تملأ autofill() الباقي.
-
-// --- Payment: إرسال XAH ---
-const payment = {
-  TransactionType: "Payment",
-  Account: "rOrigin...",
-  Destination: "rDestination...",
-  Amount: "5000000", // 5 XAH بوحدة drops
-};
-
-// --- Payment: إرسال رمز (token) ---
-const tokenPayment = {
-  TransactionType: "Payment",
-  Account: "rOrigin...",
-  Destination: "rDestination...",
-  Amount: {
-    currency: "USD",
-    value: "100",
-    issuer: "rIssuer...",
-  },
-};
-
-// --- TrustSet: إنشاء trust line ---
-const trustSet = {
-  TransactionType: "TrustSet",
-  Account: "rReceiver...",
-  LimitAmount: {
-    currency: "USD",
-    value: "10000",
-    issuer: "rIssuer...",
-  },
-};
-
-// --- OfferCreate: إنشاء عرض في الـ DEX ---
-const offer = {
-  TransactionType: "OfferCreate",
-  Account: "rTrader...",
-  TakerPays: { currency: "USD", value: "50", issuer: "rIssuer..." },
-  TakerGets: "100000000", // 100 XAH
-};
-
-// --- AccountSet: تفعيل flag ---
-const accountSet = {
-  TransactionType: "AccountSet",
-  Account: "rMyAccount...",
-  SetFlag: 8, // asfDefaultRipple
-};
-
-// --- URITokenMint: إنشاء NFT ---
-const mint = {
-  TransactionType: "URITokenMint",
-  Account: "rCreator...",
-  URI: "68747470733A2F2F...", // الرابط بصيغة سداسية عشرية
-  Flags: 1, // tfBurnable
-};
-
-console.log("لكل نوع حقوله الخاصة.");
-console.log("جميعها تشترك في: TransactionType, Account, Fee, Sequence.");`,
-      ],
       slides: [
         {
           title: "حقول مشتركة",
@@ -6300,142 +6208,6 @@ wallet.sign(prepared)
       codeTitles: [
         "التوقيع والتحقق من tx_blob",
         "توقيع offline: التحضير في جهة والتوقيع في جهة أخرى",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function detailedSigning() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  console.log("=== معلومات المحفظة ===");
-  console.log("العنوان:", wallet.address);
-  console.log("المفتاح العام:", wallet.publicKey);
-  console.log("الخوارزمية:", wallet.publicKey.startsWith("ED") ? "ed25519" : "secp256k1");
-
-  // البناء والتحضير
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  };
-
-  const prepared = await client.autofill(tx);
-
-  // التوقيع
-  const signed = wallet.sign(prepared);
-
-  console.log("=== نتيجة التوقيع ===");
-  console.log("Hash (معرّف المعاملة):", signed.hash);
-  console.log("tx_blob الكامل:", signed.tx_blob);
-  console.log("الطول:", signed.tx_blob.length, "حرفًا سداسيًا عشريًا");
-  console.log("الحجم:", signed.tx_blob.length / 2, "بايت");
-
-  // التحقق من أن المعاملة صالحة
-  // (تقوم العقدة بهذا داخليًا عند استقبال submit)
-  console.log("=== التحقق ===");
-
-  // فك ترميز الـ blob للفحص
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // المعاملة لم تدخل الـ ledger بعد، هذا طبيعي
-    console.log("لم تُرسَل المعاملة بعد (تم توقيعها فقط).");
-  });
-
-  // الإرسال
-  console.log("جارٍ إرسال tx_blob إلى العقدة...");
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  // الآن يمكننا البحث عنها بواسطة hash
-  const txInfo = await client.request({
-    command: "tx",
-    transaction: signed.hash,
-  });
-
-  console.log("=== المعاملة في الـ ledger ===");
-  console.log("النوع:", txInfo.result.TransactionType);
-  console.log("SigningPubKey:", txInfo.result.SigningPubKey);
-  console.log("Ledger:", txInfo.result.ledger_index);
-
-  await client.disconnect();
-}
-
-detailedSigning().catch(console.error);`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// =============================================
-// الخطوة 1: على الجهاز المتصل
-// تحضير المعاملة (يتطلب اتصالًا)
-// =============================================
-async function prepareOnline() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const tx = {
-    TransactionType: "Payment",
-    Account: "rYourAddressHere",
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "10000000", // 10 XAH
-  };
-
-  const prepared = await client.autofill(tx);
-  await client.disconnect();
-
-  // حفظها كـ JSON لنقلها إلى الجهاز غير المتصل
-  const txParaFirmar = JSON.stringify(prepared, null, 2);
-  console.log("=== انسخ هذا الـ JSON إلى الجهاز غير المتصل ===");
-  console.log(txParaFirmar);
-
-  return prepared;
-}
-
-// =============================================
-// الخطوة 2: على الجهاز غير المتصل (بدون إنترنت)
-// توقيع المعاملة
-// =============================================
-function signOffline(preparedJSON) {
-  // المفتاح الخاص موجود فقط على الجهاز غير المتصل
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  const signed = wallet.sign(preparedJSON);
-
-  console.log("=== انسخ هذا الـ tx_blob إلى الجهاز المتصل ===");
-  console.log("tx_blob:", signed.tx_blob);
-  console.log("hash:", signed.hash);
-
-  return signed;
-}
-
-// =============================================
-// الخطوة 3: على الجهاز المتصل
-// إرسال المعاملة الموقّعة
-// =============================================
-async function sendOnline(txBlob) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const result = await client.submitAndWait(txBlob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-// عرض توضيحي للتدفق الكامل (في سكربت واحد للتبسيط)
-async function demo() {
-  const prepared = await prepareOnline();
-  const signed = signOffline(prepared);
-  await sendOnline(signed.tx_blob);
-}
-
-demo().catch(console.error);`,
       ],
       slides: [
         {
@@ -6541,84 +6313,6 @@ result.result.hash                     → معرّف المعاملة الفر�
 \`\`\``,
       codeTitles: [
         "التعامل مع كل أنواع النتائج",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function sendChecking() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  };
-
-  try {
-    const prepared = await client.autofill(tx);
-    const signed = wallet.sign(prepared);
-    const result = await client.submitAndWait(signed.tx_blob);
-
-    const codigo = result.result.meta.TransactionResult;
-
-    // تحليل النتيجة حسب الفئة
-    if (codigo === "tesSUCCESS") {
-      console.log("نجاح: عولجت المعاملة بشكل صحيح.");
-      console.log("Ledger:", result.result.ledger_index);
-      console.log("Hash:", signed.hash);
-
-    } else if (codigo.startsWith("tec")) {
-      // أُدرجت المعاملة في الـ ledger لكن العملية فشلت
-      // حُسِم الرسم فعلًا
-      console.log("فشل (tec):", codigo);
-      console.log("لم تُنفَّذ العملية لكن حُسِم الرسم.");
-
-      // تشخيص محدد
-      switch (codigo) {
-        case "tecUNFUNDED_PAYMENT":
-          console.log("→ رصيد غير كافٍ.");
-          break;
-        case "tecNO_DST":
-          console.log("→ حساب الوجهة غير موجود.");
-          break;
-        case "tecDST_TAG_NEEDED":
-          console.log("→ الـ DestinationTag مفقود.");
-          break;
-        case "tecINSUFFICIENT_RESERVE":
-          console.log("→ XAH غير كافٍ للاحتياطي.");
-          break;
-        default:
-          console.log("→ راجع التوثيق من أجل:", codigo);
-      }
-
-    } else if (codigo.startsWith("tef")) {
-      console.log("مرفوضة (tef):", codigo);
-      console.log("رُفضت المعاملة قبل المعالجة.");
-      console.log("لم يُحسَم الرسم.");
-
-    } else if (codigo.startsWith("tem")) {
-      console.log("مُشوَّهة (tem):", codigo);
-      console.log("المعاملة بها خطأ في التنسيق.");
-      console.log("راجع الحقول والقيم.");
-
-    } else if (codigo.startsWith("ter")) {
-      console.log("خطأ مؤقت (ter):", codigo);
-      console.log("يمكنك إعادة المحاولة خلال ثوانٍ.");
-    }
-
-  } catch (error) {
-    console.error("خطأ في الاتصال أو الإرسال:", error.message);
-  }
-
-  await client.disconnect();
-}
-
-sendChecking().catch(console.error);`,
       ],
       slides: [
         {
@@ -6750,158 +6444,6 @@ sendChecking().catch(console.error);`,
         "تحليل AffectedNodes لمعاملة",
         "استعلام reserve الحالي لحسابك",
       ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function analizarMetadata() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // إرسال دفعة لتحليل الـ metadata الخاصة بها
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "5000000", // 5 XAH
-  };
-
-  const prepared = await client.autofill(tx);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const meta = result.result.meta;
-  console.log("=== تحليل الـ METADATA ===");
-  console.log("النتيجة:", meta.TransactionResult);
-  console.log("العقد المتأثرة:", meta.AffectedNodes.length);
-
-  // تصنيف العقد المتأثرة
-  const created = [];
-  const modified = [];
-  const deleted = [];
-
-  for (const node of meta.AffectedNodes) {
-    if (node.CreatedNode) {
-      created.push(node.CreatedNode);
-    } else if (node.ModifiedNode) {
-      modified.push(node.ModifiedNode);
-    } else if (node.DeletedNode) {
-      deleted.push(node.DeletedNode);
-    }
-  }
-
-  // عرض الكائنات المُنشأة
-  if (created.length > 0) {
-    console.log("--- الكائنات المُنشأة ---");
-    for (const n of created) {
-      console.log("  +", n.LedgerEntryType);
-      console.log("   Index:", n.LedgerIndex);
-    }
-  }
-
-  // عرض الكائنات المُعدَّلة
-  if (modified.length > 0) {
-    console.log("--- الكائنات المُعدَّلة ---");
-    for (const n of modified) {
-      console.log("  ~", n.LedgerEntryType);
-      if (n.PreviousFields && n.FinalFields) {
-        // عرض تغييرات الرصيد (AccountRoot)
-        if (n.PreviousFields.Balance && n.FinalFields.Balance) {
-          const before = Number(n.PreviousFields.Balance) / 1000000;
-          const after = Number(n.FinalFields.Balance) / 1000000;
-          const diff = after - before;
-          console.log("   Balance:", before, "→", after, "XAH");
-          console.log("   التغيير:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
-        }
-        // عرض تغيير الـ Sequence
-        if (n.FinalFields.Sequence) {
-          console.log("   Sequence:", n.FinalFields.Sequence);
-        }
-      }
-    }
-  }
-
-  // عرض الكائنات المحذوفة
-  if (deleted.length > 0) {
-    console.log("--- الكائنات المحذوفة ---");
-    for (const n of deleted) {
-      console.log("  -", n.LedgerEntryType);
-    }
-  }
-
-  // ملخص الرصيد
-  console.log("--- الملخص ---");
-  console.log("الرسم المدفوع:", Number(result.result.Fee) / 1000000, "XAH");
-  console.log("تم حرق الرسم (لم يذهب إلى أي حساب).");
-
-  await client.disconnect();
-}
-
-analizarMetadata().catch(console.error);`,
-        `require("dotenv").config();
-const { Client } = require("xahau");
-
-async function consultarReserva(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // الحصول على معلومات الخادم للاحتياطيات الحالية
-  const serverInfo = await client.request({ command: "server_info" });
-  const ledgerInfo = serverInfo.result.info.validated_ledger;
-  const baseReserve = ledgerInfo.reserve_base_xrp; // بوحدة XAH
-  const ownerReserve = ledgerInfo.reserve_inc_xrp; // بوحدة XAH
-
-  console.log("=== احتياطيات الشبكة ===");
-  console.log("الاحتياطي الأساسي (لكل حساب):", baseReserve, "XAH");
-  console.log("احتياطي المالك (لكل كائن):", ownerReserve, "XAH");
-
-  // الحصول على معلومات الحساب
-  const accountInfo = await client.request({
-    command: "account_info",
-    account: address,
-    ledger_index: "validated",
-  });
-
-  const account = accountInfo.result.account_data;
-  const balance = Number(account.Balance) / 1000000;
-  const ownerCount = account.OwnerCount;
-  const totalReserve = baseReserve + (ownerCount * ownerReserve);
-  const available = balance - totalReserve;
-
-  console.log("=== حسابك ===");
-  console.log("العنوان:", address);
-  console.log("الرصيد الكلي:", balance, "XAH");
-  console.log("الكائنات في الـ ledger:", ownerCount);
-  console.log("الاحتياطي الكلي:", totalReserve, "XAH");
-  console.log("  →", baseReserve, "XAH (أساسي)");
-  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH (كائنات)");
-  console.log("المتاح للإنفاق:", available, "XAH");
-
-  // عرض الكائنات التي تملكها
-  const objects = await client.request({
-    command: "account_objects",
-    account: address,
-    ledger_index: "validated",
-  });
-
-  const byType = {};
-  for (const obj of objects.result.account_objects) {
-    const tipo = obj.LedgerEntryType;
-    byType[tipo] = (byType[tipo] || 0) + 1;
-  }
-
-  console.log("=== الكائنات حسب النوع ===");
-  for (const [tipo, count] of Object.entries(byType)) {
-    console.log("  " + tipo + ":", count, "(احتياطي:", count * ownerReserve, "XAH)");
-  }
-
-  await client.disconnect();
-}
-// يمكنك استخدام حسابك أو rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
-consultarReserva("rYourAccountHere");`,
-      ],
       slides: [
         {
           title: "AffectedNodes",
@@ -6932,7 +6474,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -7020,77 +6561,12 @@ Le temps entre la soumission et la validation est généralement de **3 à 5 sec
 Contrairement aux blockchains à finalité probabiliste (Bitcoin, Ethereum), sur Xahau le résultat est **déterministe** :
 - si une transaction est incluse dans un ledger validé, elle est **finale**
 - il n'y a ni reorg, ni fork, ni « confirmations en attente »
-- \`tesSUCCESS\` = succès garanti, pour toujours`,
+- \`tesSUCCESS\` = succès garanti, pour toujours
+
+### Lancer les scripts de cette leçon
+
+À partir de ce module, les scripts signent avec \`WALLET_SEED\` de \`.env\`. Si tu as lancé \`create-accounts.js\` ([module 3](?m=3&l=1)), il y est déjà, avec des fonds. Sinon, crée un wallet avec le faucet comme le montre le premier bloc de code et colle son seed dans \`.env\`.`,
       codeTitles: ["Créer .env avec le seed du wallet", "Le flux complet étape par étape"],
-      code: [
-`# fichier .env
-# Ne publie jamais ce fichier
-WALLET_SEED=sEdYourTestnetSeedHere
-XAHAU_NODE=wss://xahau-test.net`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function fullTransactionFlow() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // =============================================
-  // PHASE 1 : Construire la transaction
-  // =============================================
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rMXEZJecFdn1dVtE21pZ8duZz2E36KGaCp",
-    Amount: "5000000", // 5 XAH en drops
-  };
-
-  console.log("1. Transaction construite :");
-  console.log("   Type :", tx.TransactionType);
-  console.log("   Champs définis :", Object.keys(tx).length);
-
-  // =============================================
-  // PHASE 2 : Préparer (autofill)
-  // =============================================
-  const prepared = await client.autofill(tx);
-
-  console.log("2. Transaction préparée (autofill) :");
-  console.log("   Fee :", prepared.Fee, "drops");
-  console.log("   Sequence :", prepared.Sequence);
-  console.log("   LastLedgerSequence :", prepared.LastLedgerSequence);
-  console.log("   NetworkID :", prepared.NetworkID);
-  console.log("   Champs totaux :", Object.keys(prepared).length);
-
-  // =============================================
-  // PHASE 3 : Signer
-  // =============================================
-  const signed = wallet.sign(prepared);
-
-  console.log("3. Transaction signée :");
-  console.log("   Hash :", signed.hash);
-  console.log("   tx_blob (60 premiers caractères) :", signed.tx_blob.substring(0, 60) + "...");
-  console.log("   Longueur du blob :", signed.tx_blob.length, "caractères hex");
-
-  // =============================================
-  // PHASE 4 : Soumettre
-  // =============================================
-  console.log("4. Envoi au nœud...");
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  // =============================================
-  // PHASE 5 : Résultat validé
-  // =============================================
-  console.log("5. Résultat validé :");
-  console.log("   TransactionResult :", result.result.meta.TransactionResult);
-  console.log("   Ledger :", result.result.ledger_index);
-  console.log("   Nœuds affectés :", result.result.meta.AffectedNodes.length);
-
-  await client.disconnect();
-}
-
-fullTransactionFlow().catch(console.error);`,
-      ],
       slides: [
         ["5 phases d'une transaction", "1. Construire le JSON\n2. Compléter avec autofill\n3. Signer\n4. Soumettre\n5. Lire le résultat validé"],
         ["Autofill : champs automatiques", "autofill ajoute les valeurs nécessaires\n\n• Fee\n• Sequence\n• LastLedgerSequence\n\nCela évite beaucoup d'erreurs manuelles."],
@@ -7181,91 +6657,6 @@ Tu peux joindre des données à n'importe quelle transaction via le champ **Memo
 - Ils n'affectent pas la logique de la transaction, ils stockent seulement des informations supplémentaires
 - Si tu n'en as pas besoin, il est recommandé d'éviter ces champs pour ne pas stocker de données inutiles sur la blockchain`,
       codeTitles: ["Inspecter les champs avant et après autofill", "Construire différents types de transactions"],
-      code: [
-`// Comparer une transaction avant et après autofill
-require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED);
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rDestinationAddressHere",
-    Amount: xahToDrops("1"),
-  };
-
-  console.log("Avant autofill :", tx);
-  const prepared = await client.autofill(tx);
-  console.log("Après autofill :", prepared);
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-`// Exemples de construction de différents types de transaction.
-// On ne montre que les champs essentiels — autofill() remplit le reste.
-
-// --- Payment : envoyer du XAH ---
-const payment = {
-  TransactionType: "Payment",
-  Account: "rOrigin...",
-  Destination: "rDestination...",
-  Amount: "5000000", // 5 XAH en drops
-};
-
-// --- Payment : envoyer un token ---
-const tokenPayment = {
-  TransactionType: "Payment",
-  Account: "rOrigin...",
-  Destination: "rDestination...",
-  Amount: {
-    currency: "USD",
-    value: "100",
-    issuer: "rIssuer...",
-  },
-};
-
-// --- TrustSet : créer une trust line ---
-const trustSet = {
-  TransactionType: "TrustSet",
-  Account: "rReceiver...",
-  LimitAmount: {
-    currency: "USD",
-    value: "10000",
-    issuer: "rIssuer...",
-  },
-};
-
-// --- OfferCreate : créer une offre sur le DEX ---
-const offer = {
-  TransactionType: "OfferCreate",
-  Account: "rTrader...",
-  TakerPays: { currency: "USD", value: "50", issuer: "rIssuer..." },
-  TakerGets: "100000000", // 100 XAH
-};
-
-// --- AccountSet : activer un flag ---
-const accountSet = {
-  TransactionType: "AccountSet",
-  Account: "rMyAccount...",
-  SetFlag: 8, // asfDefaultRipple
-};
-
-// --- URITokenMint : créer un NFT ---
-const mint = {
-  TransactionType: "URITokenMint",
-  Account: "rCreator...",
-  URI: "68747470733A2F2F...", // URL en hexadécimal
-  Flags: 1, // tfBurnable
-};
-
-console.log("Chaque type a ses champs spécifiques.");
-console.log("Tous partagent : TransactionType, Account, Fee, Sequence.");`,
-      ],
       slides: [
         ["Champs communs", "Account : compte qui signe\nFee : coût réseau\nSequence : ordre de transaction\nFlags : options\nMemos : données facultatives"],
         ["Types de transactions", "Payment, AccountSet, TrustSet, OfferCreate, EscrowCreate...\n\nChaque type a ses champs obligatoires et ses règles."],
@@ -7350,142 +6741,6 @@ Xahau prend en charge la **signature multiple** : une transaction qui exige la s
 - Les signatures sont combinées et soumises ensemble
 - Utile pour les comptes partagés, les DAO, ou une sécurité supplémentaire`,
       codeTitles: ["Signer et vérifier le tx_blob", "Signature hors ligne : préparer d'un côté, signer de l'autre"],
-      code: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function detailedSigning() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  console.log("=== INFORMATIONS DU WALLET ===");
-  console.log("Adresse :", wallet.address);
-  console.log("Clé publique :", wallet.publicKey);
-  console.log("Algorithme :", wallet.publicKey.startsWith("ED") ? "ed25519" : "secp256k1");
-
-  // Construire et préparer
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  };
-
-  const prepared = await client.autofill(tx);
-
-  // Signer
-  const signed = wallet.sign(prepared);
-
-  console.log("=== RÉSULTAT DE LA SIGNATURE ===");
-  console.log("Hash (ID de la tx) :", signed.hash);
-  console.log("tx_blob complet :", signed.tx_blob);
-  console.log("Longueur :", signed.tx_blob.length, "caractères hex");
-  console.log("Taille :", signed.tx_blob.length / 2, "octets");
-
-  // Vérifier que la transaction est valide
-  // (le nœud fait cela en interne à la réception du submit)
-  console.log("=== VÉRIFICATION ===");
-
-  // Décoder le blob pour inspection
-  const decoded = client.request({
-    command: "tx",
-    transaction: signed.hash,
-  }).catch(() => {
-    // La tx n'existe pas encore dans le ledger, c'est normal
-    console.log("La tx n'a pas encore été soumise (seulement signée).");
-  });
-
-  // Soumettre
-  console.log("Envoi du tx_blob au nœud...");
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("Résultat :", result.result.meta.TransactionResult);
-
-  // Maintenant on peut la retrouver par son hash
-  const txInfo = await client.request({
-    command: "tx",
-    transaction: signed.hash,
-  });
-
-  console.log("=== TX DANS LE LEDGER ===");
-  console.log("Type :", txInfo.result.TransactionType);
-  console.log("SigningPubKey :", txInfo.result.SigningPubKey);
-  console.log("Ledger :", txInfo.result.ledger_index);
-
-  await client.disconnect();
-}
-
-detailedSigning().catch(console.error);`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// =============================================
-// ÉTAPE 1 : Sur l'appareil CONNECTÉ
-// Préparer la transaction (nécessite une connexion)
-// =============================================
-async function prepareOnline() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const tx = {
-    TransactionType: "Payment",
-    Account: "rYourAddressHere",
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "10000000", // 10 XAH
-  };
-
-  const prepared = await client.autofill(tx);
-  await client.disconnect();
-
-  // Sauvegarder en JSON pour le transférer sur l'appareil hors ligne
-  const txParaFirmar = JSON.stringify(prepared, null, 2);
-  console.log("=== COPIE CE JSON SUR L'APPAREIL HORS LIGNE ===");
-  console.log(txParaFirmar);
-
-  return prepared;
-}
-
-// =============================================
-// ÉTAPE 2 : Sur l'appareil HORS LIGNE (sans internet)
-// Signer la transaction
-// =============================================
-function signOffline(preparedJSON) {
-  // La clé privée n'existe QUE sur l'appareil hors ligne
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  const signed = wallet.sign(preparedJSON);
-
-  console.log("=== COPIE CE tx_blob SUR L'APPAREIL CONNECTÉ ===");
-  console.log("tx_blob :", signed.tx_blob);
-  console.log("hash :", signed.hash);
-
-  return signed;
-}
-
-// =============================================
-// ÉTAPE 3 : Sur l'appareil CONNECTÉ
-// Soumettre la transaction signée
-// =============================================
-async function sendOnline(txBlob) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const result = await client.submitAndWait(txBlob);
-  console.log("Résultat :", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-// Démo du flux complet (dans un seul script pour simplifier)
-async function demo() {
-  const prepared = await prepareOnline();
-  const signed = signOffline(prepared);
-  await sendOnline(signed.tx_blob);
-}
-
-demo().catch(console.error);`,
-      ],
       slides: [
         ["Qu'est-ce qu'une signature numérique ?", "Une preuve cryptographique\n\n• Le seed reste secret\n• La clé privée signe\n• Le réseau vérifie avec la clé publique\n• Toute modification invalide la signature"],
         ["Le processus de signature", "1. Sérialiser → JSON vers binaire\n2. Hash → SHA-512 half (32 octets)\n3. Signer → La clé privée génère la signature\n4. Assembler → tx_blob (hex)\n\nwallet.sign(prepared)\n→ { tx_blob: \"1200...\", hash: \"A1B2...\" }"],
@@ -7580,84 +6835,6 @@ result.result.ledger_index             → Dans quel ledger elle a été incluse
 result.result.hash                     → Hash unique de la transaction
 \`\`\``,
       codeTitles: ["Gérer tous les types de résultats"],
-      code: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function sendChecking() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "1000000",
-  };
-
-  try {
-    const prepared = await client.autofill(tx);
-    const signed = wallet.sign(prepared);
-    const result = await client.submitAndWait(signed.tx_blob);
-
-    const codigo = result.result.meta.TransactionResult;
-
-    // Analyser le résultat par catégorie
-    if (codigo === "tesSUCCESS") {
-      console.log("SUCCÈS : transaction traitée correctement.");
-      console.log("Ledger :", result.result.ledger_index);
-      console.log("Hash :", signed.hash);
-
-    } else if (codigo.startsWith("tec")) {
-      // La tx a été incluse dans le ledger mais l'opération a échoué
-      // Le fee A ÉTÉ prélevé
-      console.log("ÉCHEC (tec) :", codigo);
-      console.log("L'opération n'a pas été exécutée mais le fee a été prélevé.");
-
-      // Diagnostic spécifique
-      switch (codigo) {
-        case "tecUNFUNDED_PAYMENT":
-          console.log("→ Solde insuffisant.");
-          break;
-        case "tecNO_DST":
-          console.log("→ Le compte destinataire n'existe pas.");
-          break;
-        case "tecDST_TAG_NEEDED":
-          console.log("→ Le DestinationTag est manquant.");
-          break;
-        case "tecINSUFFICIENT_RESERVE":
-          console.log("→ XAH insuffisant pour la réserve.");
-          break;
-        default:
-          console.log("→ Consulte la documentation pour :", codigo);
-      }
-
-    } else if (codigo.startsWith("tef")) {
-      console.log("REJETÉE (tef) :", codigo);
-      console.log("La transaction a été rejetée avant traitement.");
-      console.log("Le fee N'A PAS été prélevé.");
-
-    } else if (codigo.startsWith("tem")) {
-      console.log("MAL FORMÉE (tem) :", codigo);
-      console.log("La transaction contient une erreur de format.");
-      console.log("Vérifie les champs et les valeurs.");
-
-    } else if (codigo.startsWith("ter")) {
-      console.log("ERREUR TEMPORAIRE (ter) :", codigo);
-      console.log("Tu peux réessayer dans quelques secondes.");
-    }
-
-  } catch (error) {
-    console.error("Erreur de connexion ou de soumission :", error.message);
-  }
-
-  await client.disconnect();
-}
-
-sendChecking().catch(console.error);`,
-      ],
       slides: [
         ["submit vs submitAndWait", "submit : envoi rapide\nsubmitAndWait : attend le résultat validé\n\nPour apprendre, submitAndWait donne un retour plus clair."],
         ["Codes de résultat", "tesSUCCESS : succès\ntec... : inclus mais effet échoué\ntef... : échec final\ntem... : transaction mal formée\nter... : réessayer plus tard"],
@@ -7749,7 +6926,7 @@ Pour les tokens (IOUs), les changements sont visibles dans les entrées \`Modifi
 
 ### Reserves : le système de réserve
 
-Le ledger Xahau utilise un système de **réserve** qui affecte ton solde disponible :
+Le réseau Xahau utilise un système de **réserve** qui affecte ton solde disponible :
 
 - **Réserve de base** : 1 XAH — minimum pour qu'un compte existe
 - **Réserve par objet** : 0,2 XAH pour chaque objet possédé par ton compte
@@ -7776,158 +6953,6 @@ Quand un ledger se ferme, un **hash** est calculé qui résume :
 
 Si un validateur calcule un hash différent de celui de 80 % de l'UNL, son ledger est rejeté — cela garantit la cohérence du réseau.`,
       codeTitles: ["Analyser les AffectedNodes d'une transaction", "Consulter la réserve actuelle de ton compte"],
-      code: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function analizarMetadata() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Envoyer un paiement pour analyser ses métadonnées
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: "5000000", // 5 XAH
-  };
-
-  const prepared = await client.autofill(tx);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const meta = result.result.meta;
-  console.log("=== ANALYSE DES MÉTADONNÉES ===");
-  console.log("Résultat :", meta.TransactionResult);
-  console.log("Nœuds affectés :", meta.AffectedNodes.length);
-
-  // Classer les nœuds affectés
-  const created = [];
-  const modified = [];
-  const deleted = [];
-
-  for (const node of meta.AffectedNodes) {
-    if (node.CreatedNode) {
-      created.push(node.CreatedNode);
-    } else if (node.ModifiedNode) {
-      modified.push(node.ModifiedNode);
-    } else if (node.DeletedNode) {
-      deleted.push(node.DeletedNode);
-    }
-  }
-
-  // Afficher les objets créés
-  if (created.length > 0) {
-    console.log("--- OBJETS CRÉÉS ---");
-    for (const n of created) {
-      console.log("  +", n.LedgerEntryType);
-      console.log("   Index :", n.LedgerIndex);
-    }
-  }
-
-  // Afficher les objets modifiés
-  if (modified.length > 0) {
-    console.log("--- OBJETS MODIFIÉS ---");
-    for (const n of modified) {
-      console.log("  ~", n.LedgerEntryType);
-      if (n.PreviousFields && n.FinalFields) {
-        // Afficher les changements de solde (AccountRoot)
-        if (n.PreviousFields.Balance && n.FinalFields.Balance) {
-          const before = Number(n.PreviousFields.Balance) / 1000000;
-          const after = Number(n.FinalFields.Balance) / 1000000;
-          const diff = after - before;
-          console.log("   Solde :", before, "→", after, "XAH");
-          console.log("   Changement :", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
-        }
-        // Afficher le changement de Sequence
-        if (n.FinalFields.Sequence) {
-          console.log("   Sequence :", n.FinalFields.Sequence);
-        }
-      }
-    }
-  }
-
-  // Afficher les objets supprimés
-  if (deleted.length > 0) {
-    console.log("--- OBJETS SUPPRIMÉS ---");
-    for (const n of deleted) {
-      console.log("  -", n.LedgerEntryType);
-    }
-  }
-
-  // Résumé du solde
-  console.log("--- RÉSUMÉ ---");
-  console.log("Fee payé :", Number(result.result.Fee) / 1000000, "XAH");
-  console.log("Le fee a été brûlé (il n'est allé à aucun compte).");
-
-  await client.disconnect();
-}
-
-analizarMetadata().catch(console.error);`,
-`require("dotenv").config();
-const { Client } = require("xahau");
-
-async function consultarReserva(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Obtenir les infos du serveur pour les réserves actuelles
-  const serverInfo = await client.request({ command: "server_info" });
-  const ledgerInfo = serverInfo.result.info.validated_ledger;
-  const baseReserve = ledgerInfo.reserve_base_xrp; // En XAH
-  const ownerReserve = ledgerInfo.reserve_inc_xrp; // En XAH
-
-  console.log("=== RÉSERVES RÉSEAU ===");
-  console.log("Réserve de base (par compte) :", baseReserve, "XAH");
-  console.log("Réserve par objet :", ownerReserve, "XAH");
-
-  // Obtenir les infos du compte
-  const accountInfo = await client.request({
-    command: "account_info",
-    account: address,
-    ledger_index: "validated",
-  });
-
-  const account = accountInfo.result.account_data;
-  const balance = Number(account.Balance) / 1000000;
-  const ownerCount = account.OwnerCount;
-  const totalReserve = baseReserve + (ownerCount * ownerReserve);
-  const available = balance - totalReserve;
-
-  console.log("=== TON COMPTE ===");
-  console.log("Adresse :", address);
-  console.log("Solde total :", balance, "XAH");
-  console.log("Objets dans le ledger :", ownerCount);
-  console.log("Réserve totale :", totalReserve, "XAH");
-  console.log("  →", baseReserve, "XAH (base)");
-  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH (objets)");
-  console.log("Disponible à dépenser :", available, "XAH");
-
-  // Afficher les objets que tu possèdes
-  const objects = await client.request({
-    command: "account_objects",
-    account: address,
-    ledger_index: "validated",
-  });
-
-  const byType = {};
-  for (const obj of objects.result.account_objects) {
-    const tipo = obj.LedgerEntryType;
-    byType[tipo] = (byType[tipo] || 0) + 1;
-  }
-
-  console.log("=== OBJETS PAR TYPE ===");
-  for (const [tipo, count] of Object.entries(byType)) {
-    console.log("  " + tipo + " :", count, "(réserve :", count * ownerReserve, "XAH)");
-  }
-
-  await client.disconnect();
-}
-//Tu peux utiliser ton compte ou rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
-consultarReserva("rTonCompteIci");`,
-      ],
       slides: [
         ["AffectedNodes", "Liste des objets touchés par une transaction\n\n• CreatedNode\n• ModifiedNode\n• DeletedNode\n\nC'est la trace exacte de l'effet sur le ledger."],
         ["Système de réserve", "Un compte doit garder une réserve de base\n\nCertains objets augmentent la réserve requise\n\nCela évite de remplir le ledger gratuitement."],
@@ -7952,7 +6977,6 @@ function applyFrenchTranslations(module) {
       if (typeof block.code === "string") {
         block.code = { en: block.code };
       }
-      block.code.fr = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -7965,5 +6989,8 @@ function applyFrenchTranslations(module) {
 }
 
 applyFrenchTranslations(moduleData);
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

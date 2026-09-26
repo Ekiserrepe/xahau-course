@@ -1,3 +1,4 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
 const moduleData = {
   id: "m2",
   icon: "🤝",
@@ -76,17 +77,17 @@ Xahau no se basa en competencia (como PoW) ni en capital bloqueado (como PoS), s
 ### Por que é necessário o consenso?
 Em uma rede descentralizada, não há uma autoridade central que decida quais transações são válidas. O consenso resolve o problema de como múltiplos nós independentes podem acordar um estado único sem confiar uns nos outros.
 ### O problema do gasto duplo
-O **gasto duplo** é o problema fundamental que todo sistema de dinheiro digital deve resolver: ¿cómo evitar que alguien gaste o mismo dinheiro duas vezes?
-Com dinheiro físico isso não é possível, se você dá uma nota a alguém, ya no lo tems. Mas os dados digitais podem ser copiados. Sem um mecanismo de consenso, Alice poderia enviar seus 10 XAH a Bob e simultáneamente enviar esses mesmos 10 XAH a Carol. Ambas transações pareceriam válidas separadamente.
-O consenso resolve esto: todos os nós da rede chegam a um acordo sobre **uma única ordem** de transações. Se a transação a Bob é processada primeiro, a transação a Carol é rejeitada porque Alice já não tem esses fundos.
+O **gasto duplo** é o problema fundamental que todo sistema de dinheiro digital precisa resolver: como evitar que alguém gaste o mesmo dinheiro duas vezes?
+Com dinheiro físico isso não é possível: se você dá uma nota a alguém, já não a tem. Mas dados digitais podem ser copiados. Sem um mecanismo de consenso, Alice poderia enviar seus 10 XAH a Bob e, ao mesmo tempo, enviar esses mesmos 10 XAH a Carol. As duas transações pareceriam válidas separadamente.
+O consenso resolve isso: todos os nós da rede chegam a um acordo sobre **uma única ordem** de transações. Se a transação para Bob é processada primeiro, a transação para Carol é rejeitada porque Alice já não tem esses fundos.
 ### O Problema dos Generais Bizantinos
 O gasto duplo é um caso particular de um problema mais geral da informática distribuída: o **Problema dos Generais Bizantinos** (1982, Lamport, Shostak e Pease).
-Imagina varios generais de um exército rodeando uma cidade inimiga. Deben coordinar se atacar ou recuar, se solo alguns atacan, perderão. O problema é que se comunican por mensageiros e **alguns generais podem ser traidores** que enviam ordens contraditórias para provocar o caos.
+Imagine vários generais de um exército cercando uma cidade inimiga. Eles precisam decidir se atacam ou recuam; se só alguns atacarem, perderão. O problema é que se comunicam por mensageiros e **alguns generais podem ser traidores** que enviam ordens contraditórias para provocar o caos.
 Aplicado a uma blockchain:
 - Os **generais** são os **nós/validadores** da rede
 - Os **mensagens** são as **transações e propostas**
 - Os **traidores** são **nós maliciosos** que tentam trapacear (por exemplo, aprovar um gasto duplo)
-Um protocolo de consenso deve funcionar corretamente **mesmo se uma parte dos participantes mentir ou falhar**. Isso se chama **Tolerância a Falhas Bizantinas (BFT)**. Cada mecanismo de consenso lo resolve de forma diferente:
+Um protocolo de consenso deve funcionar corretamente **mesmo se uma parte dos participantes mentir ou falhar**. Isso se chama **Tolerância a Falhas Bizantinas (BFT)**. Cada mecanismo de consenso resolve isso de forma diferente:
 - **PoW**: Faz com que mentir seja extremamente caro (exige gastar energia)
 - **PoS**: Faz com que mentir tenha consequências económicas (você perde seu stake)
 - **Consenso federado (Xahau)**: Exige que ao menos 80% dos validadores de confiança estejam de acordo
@@ -94,11 +95,11 @@ Um protocolo de consenso deve funcionar corretamente **mesmo se uma parte dos pa
 **Proof of Work (PoW)** — Bitcoin
 - Os mineradores competem resolvendo problemas matemáticos
 - Alto consumo energético
-- Finalidade probabilística (é preciso esperar varias confirmações)
+- Finalidade probabilística (é preciso esperar várias confirmações)
 **Proof of Stake (PoS)** — Ethereum
-- Os validadores colocam em stake (stake) sus tokens
+- Os validadores colocam seus tokens em stake
 - Mais eficiente que PoW
-- Finalidade muito mais rápida pero com possíveis reorganizações
+- Finalidade muito mais rápida, mas com possíveis reorganizações
 **Consenso federado / UNL** — Xahau
 - Os validadores votam sobre as transações válidas
 - Não exige mineração nem staking
@@ -464,7 +465,12 @@ getValidators();`,
           title: { es: "PoW vs PoS vs Federated", pt: "PoW vs PoS vs Federated", en: "PoW vs PoS vs Federated", jp: "PoW vs PoS vs 連合型コンセンサス", ko: "PoW vs PoS vs 연합 합의", zh: "PoW vs PoS vs 联邦共识" },
           content: {
             es: "⛏️ PoW → Minería (Bitcoin)\n💰 PoS → Staking (Ethereum)\n🗳️ Federado → Votación (Xahau)\n\nXahau: sin minería, sin staking\nFinalidad determinística en segundos",
-            pt: "⛏️ PoW → Minería (Bitcoin)\n💰 PoS → Staking (Ethereum)\n🗳️ Federado → Votação (Xahau)\n\nXahau: sem mineração, sem staking\nFinalidade determinística em segundos",
+            pt: `⛏️ PoW → Mineração (Bitcoin)
+💰 PoS → Staking (Ethereum)
+🗳️ Federado → Votação (Xahau)
+
+Xahau: sem mineração, sem staking
+Finalidade determinística em segundos`,
             en: "⛏️ PoW → Mining (Bitcoin)\n💰 PoS → Staking (Ethereum)\n🗳️ Federated → Voting (Xahau)\n\nXahau: no mining, no staking\nDeterministic finality in seconds",
             jp: "⛏️ PoW → マイニング（Bitcoin）\n💰 PoS → ステーキング（Ethereum）\n🗳️ 連合型コンセンサス → 投票（Xahau）\n\nXahau：マイニングなし、ステーキングなし\n数秒での決定論的なファイナリティ",
             ko: "⛏️ PoW → 채굴 (Bitcoin)\n💰 PoS → 스테이킹 (Ethereum)\n🗳️ 연합 합의 → 투표 (Xahau)\n\nXahau: 채굴 없음, 스테이킹 없음\n초 단위의 결정론적 최종성",
@@ -473,7 +479,7 @@ getValidators();`,
           visual: "⚡",
         },
         {
-          title: { es: "¿Por qué consenso federado?", pt: "¿Por quais consenso federado?", en: "Why federated consensus?", jp: "なぜ連合型コンセンサスなのか？", ko: "왜 연합 합의인가?", zh: "为什么选择联邦共识？" },
+          title: { es: "¿Por qué consenso federado?", pt: "Por que consenso federado?", en: "Why federated consensus?", jp: "なぜ連合型コンセンサスなのか？", ko: "왜 연합 합의인가?", zh: "为什么选择联邦共识？" },
           content: {
             es: "Xahau eligió consenso federado por:\n\n• Velocidad → Finalidad en 3-5 segundos\n• Eficiencia energética → Sin minería costosa\n• Finalidad determinística → Sin reorgs ni forks\n• Sin barreras económicas → No requiere staking\n• Confianza distribuida → Validadores diversos\n\nIdeal para pagos y aplicaciones financieras",
             pt: "A Xahau escolheu consenso federado por:\n\n• Velocidade → Finalidade em 3-5 segundos\n• Eficiência energética → Sem mineração custosa\n• Finalidade determinística → Sem reorgs nem forks\n• Sem barreiras econômicas → Não exige staking\n• Confiança distribuída → Validadores diversos\n\nIdeal para pagamentos e aplicações financieras",
@@ -525,20 +531,20 @@ En PoS, la seguridad está respaldada por capital económico (tokens en staking)
         pt: `Xahau utiliza o **Mecanismo de Consenso Federado**. Este protocolo se baseia no conceito de **UNL (Unique Node List)**, uma lista de validadores em que cada nó confia.
 ### Como funciona?
 1. **Proposta**: Os validadores propõem um conjunto de transações para incluir no próximo ledger
-2. **Votação**: Os validadores comparan sus propostas com as de otros validadores de su UNL
-3. **Convergência**: A través de varias rondas, os validadores convergen hacia um conjunto común de transações
-4. **Validação**: Cuando ao menos **80%** dos validadores da UNL estão de acordo, o ledger se valida
-5. **Fechamento**: O novo ledger se cierra e se convierte no estado oficial da rede
+2. **Votação**: os validadores comparam suas propostas com as de outros validadores da sua UNL
+3. **Convergência**: ao longo de várias rodadas, os validadores convergem para um conjunto comum de transações
+4. **Validação**: quando pelo menos **80%** dos validadores da UNL estão de acordo, o ledger é validado
+5. **Fechamento**: o novo ledger é fechado e se torna o estado oficial da rede
 ### UNL (Unique Node List)
-Cada nó mantem uma **UNL**, a lista de validadores cuyas opiniones considera fiables. No todos os nós precisam confiar nos mismos validadores, pero deve haber suficiente **solapamiento** entre as UNLs para que a rede converja.
-### Propiedades do consenso na Xahau
-- **Finalidade determinística**: Uma vez que um ledger se valida, é final. Não há reorganizaciones (a diferencia de Bitcoin/Ethereum)
+Cada nó mantém uma **UNL**, a lista de validadores cujas opiniões considera confiáveis. Nem todos os nós precisam confiar nos mesmos validadores, mas deve haver **sobreposição** suficiente entre as UNLs para que a rede convirja.
+### Propriedades do consenso na Xahau
+- **Finalidade determinística**: depois que um ledger é validado, ele é definitivo. Não há reorganizações (ao contrário do Bitcoin/Ethereum)
 - **Velocidade**: O ledger é fechado cada **3-5 segundos**
 - **Eficiência energética**: No exige cálculos intensivos como PoW
 - **Sem staking**: Os validadores no precisam blocoar capital
 - **Tolerância a falhas**: A rede funciona enquanto ao menos 80% dos validadores da UNL estén operativos
 ### Diferença com Proof of Stake
-Em PoS, a segurança está respaldada por capital económico (tokens em staking). Em o consenso de Xahau, a segurança está respaldada por a **reputación e diversidad** dos validadores. Os validadores são operados por entidades independentes (universidades, empresas, fundaciones ou particulares).`,
+No PoS, a segurança é garantida por capital econômico (tokens em staking). No consenso da Xahau, a segurança é garantida pela **reputação e diversidade** dos validadores. Os validadores são operados por entidades independentes (universidades, empresas, fundações ou pessoas físicas).`,
         en: `Xahau uses the **Federated Consensus Mechanism**. This protocol is based on the concept of **UNL (Unique Node List)**, a list of validators that each node trusts.
 
 ### How does it work?
@@ -644,7 +650,7 @@ PoS에서 보안은 경제적 자본(스테이킹된 토큰)으로 뒷받침됩�
         {
           title: {
             es: "Monitorizar el cierre de ledgers en tiempo real",
-            pt: "Monitorizar ou cierre de ledgers em tiempo real",
+            pt: "Monitorar o fechamento de ledgers em tempo real",
             en: "Monitor ledger closing in real time",
             jp: "レジャーのクローズをリアルタイムで監視する",
             ko: "실시간 원장 종결 모니터링",
@@ -687,8 +693,8 @@ async function monitorLedgers() {
   const client = new Client("wss://xahau.network");
   await client.connect();
   console.log("Monitorando o fechamento de ledgers...");
-  console.log("(Cada cierre = uma ronda de consenso completada)");
-  // Suscribirse a eventos de ledger
+  console.log("(Cada fechamento = uma rodada de consenso concluída)");
+  // Inscrever-se em eventos de ledger
   await client.request({
     command: "subscribe",
     streams: ["ledger"]
@@ -701,7 +707,7 @@ async function monitorLedgers() {
   });
   // Detener depois de 30 segundos
   setTimeout(async () => {
-    console.log("Deteniendo monitorización...");
+    console.log("Parando o monitoramento...");
     await client.disconnect();
   }, 30000);
 }
@@ -834,7 +840,13 @@ monitorLedgers();`,
           title: { es: "UNL: Unique Node List", pt: "UNL: Unique Node List", en: "UNL: Unique Node List", jp: "UNL：ユニークノードリスト", ko: "UNL: 고유 노드 목록", zh: "UNL：唯一节点列表" },
           content: {
             es: "Cada nodo tiene una lista de validadores\nen los que confía (UNL)\n\n• Los validadores proponen transacciones\n• Votan en múltiples rondas\n• 80% de acuerdo → Ledger validado\n• Finalidad en 3-5 segundos",
-            pt: "Cada nó tem uma lista de validadores\nen os que confía (UNL)\n\n• Os validadores propõem transações\n• Votam em múltiplas rondas\n• 80% de acordo → Ledger validado\n• Finalidade em 3-5 segundos",
+            pt: `Cada nó tem uma lista de validadores
+nos quais confia (UNL)
+
+• Os validadores propõem transações
+• Votam em várias rodadas
+• 80% de acordo → Ledger validado
+• Finalidade em 3-5 segundos`,
             en: "Each node has a list of validators\nthat it trusts (UNL)\n\n• Validators propose transactions\n• They vote in multiple rounds\n• 80% agreement → Validated ledger\n• Finality in 3-5 seconds",
             jp: "各ノードは信頼するバリデーターの\nリスト（UNL）を持つ\n\n• バリデーターがトランザクションを提案する\n• 複数のラウンドで投票する\n• 80%の合意 → レジャーが検証される\n• 3〜5秒での最終性",
             ko: "각 노드는 신뢰하는 검증자\n목록(UNL)을 보유\n\n• 검증자들이 트랜잭션을 제안\n• 여러 라운드에서 투표\n• 80% 동의 → 원장 검증\n• 3~5초 내 최종성",
@@ -858,7 +870,13 @@ monitorLedgers();`,
           title: { es: "Las 5 fases del consenso", pt: "As 5 fases do consenso", en: "The 5 phases of consensus", jp: "コンセンサスの5つのフェーズ", ko: "합의의 5단계", zh: "共识的 5 个阶段" },
           content: {
             es: "1️⃣ Propuesta → Validadores proponen transacciones\n2️⃣ Votación → Comparan propuestas con su UNL\n3️⃣ Convergencia → Varias rondas hasta coincidir\n4️⃣ Validación → 80% de acuerdo en la UNL\n5️⃣ Cierre → Nuevo ledger oficial e irreversible\n\nTodo el proceso tarda 3-5 segundos",
-            pt: "1️⃣ Proposta → Validadores propõem transações\n2️⃣ Votação → Comparam propostas com sua UNL\n3️⃣ Convergência → Várias rondas até coincidir\n4️⃣ Validação → 80% de acordo na UNL\n5️⃣ Fechamento → Novo ledger oficial e irreversível\n\nTodo ou proceso tarda 3-5 segundos",
+            pt: `1️⃣ Proposta → Validadores propõem transações
+2️⃣ Votação → Comparam propostas com sua UNL
+3️⃣ Convergência → Várias rodadas até coincidir
+4️⃣ Validação → 80% de acordo na UNL
+5️⃣ Fechamento → Novo ledger oficial e irreversível
+
+Todo o processo leva 3-5 segundos`,
             en: "1️⃣ Proposal → Validators propose transactions\n2️⃣ Voting → Compare proposals with their UNL\n3️⃣ Convergence → Multiple rounds until agreement\n4️⃣ Validation → 80% agreement in the UNL\n5️⃣ Closing → New official and irreversible ledger\n\nThe entire process takes 3-5 seconds",
             jp: "1️⃣ 提案 → バリデーターがトランザクションを提案する\n2️⃣ 投票 → UNLの提案と比較する\n3️⃣ 収束 → 合意するまで複数ラウンド繰り返す\n4️⃣ 検証 → UNLの80%が合意する\n5️⃣ クローズ → 新しい公式かつ不可逆のレジャー\n\nプロセス全体は3〜5秒",
             ko: "1️⃣ 제안 → 검증자들이 트랜잭션 제안\n2️⃣ 투표 → UNL과 제안 비교\n3️⃣ 수렴 → 동의할 때까지 여러 라운드 반복\n4️⃣ 검증 → UNL의 80% 동의\n5️⃣ 종결 → 새롭고 공식적이며 불가역적인 원장\n\n전체 과정은 3~5초 소요",
@@ -908,21 +926,21 @@ Escenarios que Xahau maneja:
 Cuando no se alcanza el umbral del 80%, el ledger simplemente **no se cierra**. Las transacciones en disputa se posponen hasta la siguiente ronda de consenso. No hay "ganador parcial", o hay consenso completo o no hay cierre. Si no se llega a un acuerdo, la blockchain se para antes que equivocarse `,
         pt: `A segurança de uma blockchain depende de sua capacidade para funcionar corretamente mesmo quando alguns participantes falham ou atuam de forma maliciosa. Este conceito é conhecido como **Tolerância a Falhas Bizantinas (BFT)**.
 ### O Problema dos Generais Bizantinos
-Imagina varios generais de um exército que rodean uma cidade inimiga. Deben coordinar um ataque simultáneo para ganar: se solo alguns atacan, perderão. O problema é que se comunican por mensageiros, e **alguns generais podem ser traidores** que envían mensagens contradictorios.
+Imagine vários generais de um exército cercando uma cidade inimiga. Eles precisam coordenar um ataque simultâneo para vencer: se só alguns atacarem, perderão. O problema é que se comunicam por mensageiros, e **alguns generais podem ser traidores** que enviam mensagens contraditórias.
 Este é o **Problema dos Generais Bizantinos**, formulado em 1982 por Lamport, Shostak e Pease. Aplicado a blockchain:
 - Os **generais** são os **validadores**
 - Os **mensagens** são as **propostas de transações**
 - Os **traidores** são **nós maliciosos ou defectuosos**
-### ¿Qué significa BFT?
-Um sistema tem **Tolerância a Falhas Bizantinas** cuando pode llegar a um consenso correcto aunque uma fracción de sus participantes actúe de forma arbitraria (envíe dados incorretos, no responda, ou intente sabotear a rede).
+### O que significa BFT?
+Um sistema tem **Tolerância a Falhas Bizantinas** quando consegue chegar a um consenso correto mesmo que uma parte dos participantes aja de forma arbitrária (envie dados incorretos, não responda ou tente sabotar a rede).
 ### Como maneja Xahau os falhas bizantinos?
-O protocolo de consenso de Xahau exige que ao menos **80% dos validadores da UNL** estejam de acordo para validar um ledger. Esto significa que a rede pode tolerar hasta um **20% de validadores defectuosos ou maliciosos** e seguir funcionando corretamente.
+O protocolo de consenso da Xahau exige que pelo menos **80% dos validadores da UNL** estejam de acordo para validar um ledger. Isso significa que a rede pode tolerar até **20% de validadores com defeito ou maliciosos** e continuar funcionando corretamente.
 Escenarios que Xahau maneja:
-- **Validador fora do ar**: Se um validador deja de responder, os demais continuam sem él
-- **Validador malicioso**: Se um validador propone transações inválidas, 80% restante lo ignora
-- **Partición de rede**: Se um grupo de validadores pierde conectividad, o grupo mayoritario (>80%) sigue validando
-### ¿Qué pasa quando os validadores não estão de acordo?
-Cuando no se alcanza o umbral do 80%, o ledger simplemente **no se cierra**. As transações em disputa se posponen hasta a seguinte ronda de consenso. Não há "ganador parcial", ou hay consenso completo ou não há cierre. Se no se llegà um acuerdo, a blockchain se para antes que equivocarse`,
+- **Validador fora do ar**: se um validador para de responder, os demais continuam sem ele
+- **Validador malicioso**: se um validador propõe transações inválidas, os 80% restantes o ignoram
+- **Partição de rede**: se um grupo de validadores perde conectividade, o grupo majoritário (>80%) continua validando
+### O que acontece quando os validadores não estão de acordo?
+Quando o limite de 80% não é atingido, o ledger simplesmente **não é fechado**. As transações em disputa são adiadas para a próxima rodada de consenso. Não há "vencedor parcial": ou há consenso completo ou não há fechamento. Se não se chega a um acordo, a blockchain para em vez de errar.`,
         en: `The security of a blockchain depends on its ability to function correctly even when some participants fail or act maliciously. This concept is known as **Byzantine Fault Tolerance (BFT)**.
 
 ### The Byzantine Generals Problem
@@ -1064,7 +1082,7 @@ Xahau 能处理的场景：
       id: "m2l4",
       title: {
         es: "Validadores en la práctica",
-        pt: "Validadores na práctica",
+        pt: "Validadores na prática",
         en: "Validators in practice",
         jp: "実践におけるバリデーター",
         ko: "실제 검증자",
@@ -1136,51 +1154,51 @@ Ejemplos de enmiendas incluyen: nuevos tipos de transacciones, nuevas caracterí
 - **Diversidad de operadores**: Diferentes tipos de entidades (empresas, universidades, individuos)
 - **Diversidad de infraestructura**: Diferentes proveedores de hosting, no todos en AWS o Google Cloud
 - **Solapamiento de UNL**: Qué porcentaje de validadores comparten las diferentes UNLs`,
-        pt: `Até agora falamos de validadores de forma teórica. Nesta lição veremos como funcionam **na prática**: quem os opera, o que é preciso para executar um, e como a rede evolui por meio do sistema de emendas.
+        pt: `Até agora falamos de validadores de forma teórica. Esta lição mostra como funcionam **na prática**: quem os opera, o que é preciso para executar um, e como a rede evolui por meio do sistema de emendas.
 ### Quem opera validadores na Xahau?
-A força de uma rede descentralizada depende da **diversidad de sus validadores**. Em Xahau, os validadores são operados por:
-- **Fundaciones e organizaciones** do ecossistema
-- **Empresas** que construyen sobre a rede
-- **Desarrolladores independentes** da comunidade
-A chave é que os validadores sean operados por entidades **independentes** em distintas jurisdicciones e com diferentes motivaciones, lo que dificulta a colusión.
+A força de uma rede descentralizada depende da **diversidade dos seus validadores**. Na Xahau, os validadores são operados por:
+- **Fundações e organizações** do ecossistema
+- **Empresas** que constroem sobre a rede
+- **Desenvolvedores independentes** da comunidade
+O essencial é que os validadores sejam operados por entidades **independentes**, em jurisdições diferentes e com motivações diferentes, o que dificulta o conluio.
 ### Requisitos para operar um validador
 Para executar um nó validador na Xahau você precisa:
 - **Hardware**: Servidor com ao menos 8 GB de RAM, 4 CPUs, e armazenamiento SSD rápido
-- **Rede**: Conexión a internet estable com baja latencia e alta disponibilidad
+- **Rede**: conexão estável com a internet, baixa latência e alta disponibilidade
 - **Software**: O software \`xahaud\` (daemon de Xahau) configurado em modo validador
-- **Disponibilidad**: O validador deve estar online 24/7 com um uptime superior ao 99%
-- **Mantenimiento**: Actualizaciones regulares do software cuando se publican nuevas versiones
-No se exige ningún depósito nem staking de tokens para ser validador.
+- **Disponibilidade**: o validador deve ficar online 24/7, com uptime acima de 99%
+- **Manutenção**: atualizações regulares do software quando novas versões são publicadas
+Não é exigido nenhum depósito nem staking de tokens para ser validador.
 ### UNL por padrão vs UNL personalizada
 **UNL por padrão (Default UNL / dUNL)**:
 - É a lista de validadores recomendada publicada por os operadores principais da rede
-- Os nós nuevos usan esta lista por padrão
-- Se atualiza periódicamente para añadir ou excluir validadores
+- Os nós novos usam esta lista por padrão
+- É atualizada periodicamente para adicionar ou remover validadores
 **UNL personalizada**:
-- Cada operador de nó pode criar su propia UNL
-- Permite elegir em quais validadores confiar específicamente
-- Debe tener suficiente solapamiento com otras UNLs para manter a convergencia
-- Útil para operadores avanzados que quieren mayor control
-### ¿Qué pasa se um validador se desconecta?
-Cuando um validador da UNL deja de responder:
-1. Os otros validadores simplemente continúan sem él
-2. O quorum se calcula sobre os validadores **activos**
-3. Se demasiados validadores caen (<80% disponible), a rede **deja de validar** nuevos ledgers (no se corrompe, solo se pausa)
-4. Cuando suficientes validadores vuelven, a rede reanuda automáticamente
-### Enmiendas (Amendments) e votación de protocolo
-As **emendas** são o mecanismo pelo qual Xahau atualiza su protocolo de forma descentralizada:
-1. Um desarrollador propone um alteração ao protocolo e lo implementa com um ID de emenda único
-2. Os validadores **votam** se apoyan a ativação de esa emenda
-3. Se uma emenda recibe apoyo do **80% dos validadores** durante **5 días consecutivos**, se ativa automáticamente
+- Cada operador de nó pode criar sua própria UNL
+- Permite escolher especificamente em quais validadores confiar
+- Deve ter sobreposição suficiente com outras UNLs para manter a convergência
+- Útil para operadores avançados que querem mais controle
+### O que acontece se um validador se desconecta?
+Quando um validador da UNL para de responder:
+1. Os outros validadores simplesmente continuam sem ele
+2. O quorum é calculado sobre os validadores **ativos**
+3. Se validadores demais caírem (<80% disponíveis), a rede **para de validar** novos ledgers (nada se corrompe; ela apenas pausa)
+4. Quando validadores suficientes voltam, a rede retoma automaticamente
+### Emendas (Amendments) e votação do protocolo
+As **emendas** são o mecanismo pelo qual a Xahau atualiza seu protocolo de forma descentralizada:
+1. Um desenvolvedor propõe uma alteração ao protocolo e a implementa com um ID de emenda único
+2. Os validadores **votam** se apoiam a ativação dessa emenda
+3. Se uma emenda recebe apoio de **80% dos validadores** durante **5 dias consecutivos**, ela é ativada automaticamente
 4. Uma vez ativada, é permanente e irreversível
-Ejemplos de emendas incluin: nuevos tipos de transações, nuevas características da blockchain.
-### Métricas de descentralización
-¿Cómo medir se uma rede é realmente descentralizada? Algunas métricas chave:
-- **Coeficiente Nakamoto**: O número mínimo de entidades que tendrían que coludirse para comprometer a rede. Cuanto más alto, mejor
-- **Distribución geográfica**: Validadores em diferentes países e continentes
-- **Diversidad de operadores**: Diferentes tipos de entidades (empresas, universidades, individuos)
-- **Diversidad de infraestrutura**: Diferentes proveedores de hosting, no todos em AWS ou Google Cloud
-- **Solapamiento de UNL**: Qué porcentaje de validadores comparten as diferentes UNLs`,
+Exemplos de emendas: novos tipos de transação e novas funcionalidades da blockchain.
+### Métricas de descentralização
+Como medir se uma rede é realmente descentralizada? Algumas métricas-chave:
+- **Coeficiente de Nakamoto**: o número mínimo de entidades que precisariam entrar em conluio para comprometer a rede. Quanto mais alto, melhor
+- **Distribuição geográfica**: validadores em diferentes países e continentes
+- **Diversidade de operadores**: diferentes tipos de entidades (empresas, universidades, pessoas físicas)
+- **Diversidade de infraestrutura**: diferentes provedores de hospedagem, não todos na AWS ou no Google Cloud
+- **Sobreposição de UNL**: que porcentagem de validadores as diferentes UNLs compartilham`,
         en: `So far we have talked about validators theoretically. In this lesson we will see how they work **in practice**: who operates them, what is needed to run one, and how the network evolves through the amendments system.
 
 ### Who operates validators on Xahau?
@@ -1498,14 +1516,14 @@ async function inspectValidadorInfo() {
   });
   const info = response.result.info;
   console.log("=== Informação do servidor ===");
-  console.log("Versión do servidor:", info.build_version);
+  console.log("Versão do servidor:", info.build_version);
   console.log("Estado:", info.server_state);
   console.log("");
   console.log("=== Estado do consenso ===");
   console.log("Quorum de validação:", info.validation_quorum);
   console.log("Ledger validado:", info.validated_ledger.seq);
   console.log("Hash do ledger:", info.validated_ledger.hash);
-  console.log("Antigüedad do ledger:", info.validated_ledger.age, "segundos");
+  console.log("Idade do ledger:", info.validated_ledger.age, "segundos");
   console.log("Reserva base:", info.validated_ledger.reserve_base_xrp, "XAH");
   console.log("Reserva por objeto:", info.validated_ledger.reserve_inc_xrp, "XAH");
   console.log("");
@@ -1719,7 +1737,7 @@ async function checkNetworkFees() {
   console.log("Tarifa mínima (drops):", fee.drops.minimum_fee);
   console.log("Tarifa ledger abierto (drops):", fee.drops.open_ledger_fee);
   console.log("");
-  // Convertir drops a XAH (1 XAH = 1,000,000 drops)
+  // Converter drops em XAH (1 XAH = 1.000.000 drops)
   const baseFeeXAH = Number(fee.drops.base_fee) / 1_000_000;
   const medianFeeXAH = Number(fee.drops.median_fee) / 1_000_000;
   console.log("=== Em XAH ===");
@@ -1880,7 +1898,15 @@ checkNetworkFees();`,
           title: { es: "¿Quién opera los validadores?", pt: "Quem opera os validadores?", en: "Who operates the validators?", jp: "誰がバリデーターを運営するのか？", ko: "검증자를 누가 운영하는가?", zh: "谁在运营验证者？" },
           content: {
             es: "La diversidad es clave para la seguridad:\n\n🏛️ Fundaciones del ecosistema\n🏢 Empresas que construyen sobre Xahau\n🎓 Universidades e instituciones\n👩‍💻 Desarrolladores independientes\n\nIndependientes, en distintas jurisdicciones\nSin requisito de staking",
-            pt: "A diversidad é chave parà segurança:\n\n🏛️ Fundaciones do ecossistema\n🏢 Empresas que construyen sobre Xahau\n🎓 Universidades e instituciones\n👩‍💻 Desenvolvedores independentes\n\nIndependientes, em distintas jurisdicciones\nSin requisito de staking",
+            pt: `A diversidade é essencial para a segurança:
+
+🏛️ Fundações do ecossistema
+🏢 Empresas que constroem sobre a Xahau
+🎓 Universidades e instituições
+👩‍💻 Desenvolvedores independentes
+
+Independentes, em jurisdições diferentes
+Sem exigência de staking`,
             en: "Diversity is key to security:\n\n🏛️ Ecosystem foundations\n🏢 Companies building on Xahau\n🎓 Universities and institutions\n👩‍💻 Independent developers\n\nIndependent, in different jurisdictions\nNo staking requirement",
             jp: "多様性がセキュリティの鍵：\n\n🏛️ エコシステムの財団\n🏢 Xahau上に構築する企業\n🎓 大学と機関\n👩‍💻 独立した開発者\n\n異なる管轄区域で独立\nステーキング要件なし",
             ko: "다양성이 보안의 핵심:\n\n🏛️ 생태계 재단\n🏢 Xahau에서 개발하는 기업\n🎓 대학 및 기관\n👩‍💻 독립 개발자\n\n서로 다른 관할 구역에서 독립적\n스테이킹 요건 없음",
@@ -1889,10 +1915,17 @@ checkNetworkFees();`,
           visual: "🌐",
         },
         {
-          title: { es: "Enmiendas: gobernanza descentralizada", pt: "Enmiendas: gobernanza descentralizada", en: "Amendments: decentralized governance", jp: "エンメントメント：分散型ガバナンス", ko: "수정안: 탈중앙화 거버넌스", zh: "修正案：去中心化治理" },
+          title: { es: "Emendas: governança descentralizada", pt: "Emendas: governança descentralizada", en: "Amendments: decentralized governance", jp: "エンメントメント：分散型ガバナンス", ko: "수정안: 탈중앙화 거버넌스", zh: "修正案：去中心化治理" },
           content: {
             es: "Las actualizaciones del protocolo\nse votan de forma descentralizada:\n\n1. Se propone un cambio (amendment)\n2. Los validadores votan a favor o en contra\n3. 80% de apoyo durante 5 días\n4. Se activa automáticamente\n5. Es permanente e irreversible",
-            pt: "As atualizaciones do protocolo\nse votam de forma descentralizada:\n\n1. Se propone um alteração (amendment)\n2. Os validadores votam a favor ou em contra\n3. 80% de apoyo durante 5 días\n4. Se ativa automáticamente\n5. É permanente e irreversível",
+            pt: `As atualizações do protocolo
+se votam de forma descentralizada:
+
+1. Se propone um alteração (amendment)
+2. Os validadores votam a favor ou em contra
+3. 80% de apoio durante 5 dias
+4. É ativada automaticamente
+5. É permanente e irreversível`,
             en: "Protocol updates\nare voted on in a decentralized way:\n\n1. A change is proposed (amendment)\n2. Validators vote for or against\n3. 80% support for 5 days\n4. It is activated automatically\n5. It is permanent and irreversible",
             jp: "プロトコルの更新は\n分散型の方法で投票される：\n\n1. 変更（エンメントメント）を提案する\n2. バリデーターが賛否を投票する\n3. 5日間、80%の支持を得る\n4. 自動的にアクティベートされる\n5. 永続的かつ不可逆",
             ko: "프로토콜 업데이트는\n탈중앙화 방식으로 투표:\n\n1. 변경(수정안)이 제안됨\n2. 검증자들이 찬성 또는 반대 투표\n3. 5일 동안 80% 지지\n4. 자동으로 활성화\n5. 영구적이고 불가역적",
@@ -1904,7 +1937,15 @@ checkNetworkFees();`,
           title: { es: "Midiendo la descentralización", pt: "Medindo a descentralização", en: "Measuring decentralization", jp: "分散化の測定", ko: "탈중앙화 측정", zh: "衡量去中心化程度" },
           content: {
             es: "Métricas clave:\n\n📊 Coeficiente Nakamoto (mín. entidades para atacar)\n🌍 Distribución geográfica\n🏛️ Diversidad de operadores\n☁️ Diversidad de infraestructura\n🔗 Solapamiento de UNLs\n\nMás diversidad = más seguridad",
-            pt: "Métricas chave:\n\n📊 Coeficiente Nakamoto (mín. entidades para atacar)\n🌍 Distribución geográfica\n🏛️ Diversidad de operadores\n☁️ Diversidad de infraestrutura\n🔗 Solapamiento de UNLs\n\nMás diversidad = mais segurança",
+            pt: `Métricas chave:
+
+📊 Coeficiente de Nakamoto (mín. de entidades para atacar)
+🌍 Distribuição geográfica
+🏛️ Diversidade de operadores
+☁️ Diversidade de infraestrutura
+🔗 Solapamiento de UNLs
+
+Mais diversidade = mais segurança`,
             en: "Key metrics:\n\n📊 Nakamoto Coefficient (min. entities to attack)\n🌍 Geographic distribution\n🏛️ Operator diversity\n☁️ Infrastructure diversity\n🔗 UNL overlap\n\nMore diversity = more security",
             jp: "主要な指標：\n\n📊 中本係数（攻撃に必要な最小エンティティ数）\n🌍 地理的分布\n🏛️ オペレーターの多様性\n☁️ インフラの多様性\n🔗 UNLの重複\n\nより多様性 = より高いセキュリティ",
             ko: "핵심 지표:\n\n📊 나카모토 계수 (공격에 필요한 최소 기관 수)\n🌍 지리적 분포\n🏛️ 운영자 다양성\n☁️ 인프라 다양성\n🔗 UNL 중복\n\n더 많은 다양성 = 더 높은 보안",
@@ -1956,28 +1997,6 @@ const arabicModuleTranslations = {
 
 Xahau لا يعتمد على سباق حوسبة ولا على رأس مال محجوز، بل على اتفاق validators موثوقين. إذا اتفقت نسبة كافية من قائمة UNL، يغلق ledger وتصبح الحالة نهائية خلال ثوان.`,
       codeTitles: ["استعلام حالة الـ validator"],
-      code: [`const { Client } = require("xahau");
-
-async function validatorStatus() {
-  // الاتصال بعقدة Xahau
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // طلب معلومات الخادم، ومنها معلومات الإجماع إن كانت متاحة
-  const response = await client.request({
-    command: "server_info"
-  });
-
-  const info = response.result.info;
-  console.log("الشبكة:", info.network_id);
-  console.log("حالة الخادم:", info.server_state);
-  console.log("آخر ledger موثق:", info.validated_ledger?.seq);
-  console.log("زمن إغلاق ledger:", info.validated_ledger?.age);
-
-  await client.disconnect();
-}
-
-validatorStatus().catch(console.error);`],
       slides: [
         {
           title: "ما هو الإجماع؟",
@@ -2024,28 +2043,6 @@ UNL هي قائمة validators تعتبرها العقدة موثوقة. لا ي
 
 عند بناء تطبيق على Xahau، لا تتعامل مع confirmations طويلة كما في PoW. غالبا تنتظر نتيجة \`submitAndWait\` أو تقرأ من \`validated\` ledger لتعرف الحالة النهائية.`,
       codeTitles: ["مراقبة إغلاق الـ ledger في الوقت الحقيقي"],
-      code: [`const { Client } = require("xahau");
-
-async function monitorLedgers() {
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // الاشتراك في أحداث ledger الجديدة
-  await client.request({
-    command: "subscribe",
-    streams: ["ledger"]
-  });
-
-  console.log("نراقب إغلاق ledgers الجديدة...");
-
-  client.on("ledgerClosed", (ledger) => {
-    console.log("Ledger جديد:", ledger.ledger_index);
-    console.log("وقت الإغلاق:", ledger.ledger_time);
-    console.log("عدد المعاملات:", ledger.txn_count);
-  });
-}
-
-monitorLedgers().catch(console.error);`],
       slides: [
         {
           title: "UNL: Unique Node List",
@@ -2084,7 +2081,6 @@ monitorLedgers().catch(console.error);`],
 
 عندما ترى معاملة في validated ledger، فهذا يعني أن الشبكة وصلت لاتفاق كاف عليها. لذلك يمكن للتطبيقات التعامل معها كحالة نهائية بدلا من انتظار سلسلة طويلة من confirmations.`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "مشكلة الجنرالات البيزنطيين",
@@ -2167,64 +2163,6 @@ monitorLedgers().catch(console.error);`],
         "استعلام server_info وحقول validator",
         "استعلام رسوم الشبكة الحالية",
       ],
-      code: [
-        `const { Client } = require("xahau");
-
-async function serverInfo() {
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // server_info يعرض حالة العقدة ومعلومات عن ledger والشبكة
-  const response = await client.request({
-    command: "server_info"
-  });
-
-  const info = response.result.info;
-  console.log("حالة الخادم:", info.server_state);
-  console.log("الشبكة:", info.network_id);
-  console.log("إصدار الخادم:", info.build_version);
-  console.log("آخر ledger:", info.validated_ledger?.seq);
-
-  await client.disconnect();
-}
-
-serverInfo().catch(console.error);`,
-        `const { Client } = require("xahau");
-
-async function checkNetworkFees() {
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // أمر fee: يعرض رسوم الشبكة الحالية
-  const feeResponse = await client.request({
-    command: "fee"
-  });
-
-  const fee = feeResponse.result;
-  console.log("=== رسوم الشبكة الحالية ===");
-  console.log("الرسم الأساسي (drops):", fee.drops.base_fee);
-  console.log("الرسم الوسيط (drops):", fee.drops.median_fee);
-  console.log("الحد الأدنى للرسم (drops):", fee.drops.minimum_fee);
-  console.log("رسم الـ ledger المفتوح (drops):", fee.drops.open_ledger_fee);
-  console.log("");
-
-  // تحويل drops إلى XAH (1 XAH = 1,000,000 drops)
-  const baseFeeXAH = Number(fee.drops.base_fee) / 1_000_000;
-  const medianFeeXAH = Number(fee.drops.median_fee) / 1_000_000;
-  console.log("=== بالـ XAH ===");
-  console.log("الرسم الأساسي:", baseFeeXAH, "XAH");
-  console.log("الرسم الوسيط:", medianFeeXAH, "XAH");
-  console.log("");
-
-  console.log("=== حالة الـ ledger ===");
-  console.log("الـ ledger الحالي:", fee.ledger_current_index);
-  console.log("مستويات التحميل المتوقعة:", fee.levels.median_level);
-
-  await client.disconnect();
-}
-
-checkNetworkFees().catch(console.error);`,
-      ],
       slides: [
         {
           title: "من يشغل validators؟",
@@ -2255,7 +2193,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2324,26 +2261,6 @@ Un protocole de consensus doit fonctionner correctement **même si une partie de
 
 Xahau ne repose ni sur la compétition (comme le PoW) ni sur un capital bloqué (comme le PoS), mais sur la **confiance entre validateurs** à travers les listes UNL.`,
       codeTitles: ["Consulter l'état des validateurs"],
-      code: [
-`// Interroger le noeud pour voir les informations liées aux validateurs
-const { Client } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const result = await client.request({ command: "server_info" });
-  const info = result.result.info;
-
-  console.log("État du serveur :", info.server_state);
-  console.log("Ledger validé :", info.validated_ledger.seq);
-  console.log("Réseau :", info.network_id);
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-      ],
       slides: [
         ["Qu'est-ce que le consensus ?", "Un accord partagé sur l'état du ledger\n\n• Quelles transactions sont valides\n• Dans quel ordre elles s'appliquent\n• Quel ledger devient la référence\n• Comment éviter les doubles dépenses"],
         ["PoW vs PoS vs fédéré", "PoW : compétition de calcul\nPoS : validateurs avec enjeu\nFédéré : listes de validateurs de confiance\n\nXahau utilise une approche fédérée."],
@@ -2378,27 +2295,6 @@ Chaque nœud maintient une **UNL**, la liste des validateurs dont il considère 
 
 Dans le PoS, la sécurité repose sur un capital économique (jetons mis en jeu). Dans le consensus de Xahau, la sécurité repose sur la **réputation et la diversité** des validateurs. Les validateurs sont exploités par des entités indépendantes (universités, entreprises, fondations ou particuliers).`,
       codeTitles: ["Suivre la fermeture des ledgers en temps réel"],
-      code: [
-`// Écouter les nouveaux ledgers validés en temps réel
-const { Client } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  await client.request({
-    command: "subscribe",
-    streams: ["ledger"],
-  });
-
-  client.on("ledgerClosed", (ledger) => {
-    console.log("Ledger fermé :", ledger.ledger_index);
-    console.log("Hash :", ledger.ledger_hash);
-  });
-}
-
-main().catch(console.error);`,
-      ],
       slides: [
         ["UNL : Unique Node List", "Liste de validateurs qu'un noeud utilise pour décider du consensus\n\nLes UNL qui se recoupent suffisamment permettent au réseau de converger."],
         ["Propriétés du consensus", "• Finalité rapide\n• Accord sans minage\n• Tolérance à certains validateurs défaillants\n• Validation continue des ledgers"],
@@ -2510,79 +2406,6 @@ Comment mesurer si un réseau est réellement décentralisé ? Voici quelques in
         "Consulter server_info et les champs de validation",
         "Consulter les frais actuels du réseau",
       ],
-      code: [
-`// Lire les informations du serveur et les champs liés au consensus
-const { Client } = require("xahau");
-
-async function inspectValidatorInfo() {
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  const response = await client.request({
-    command: "server_info"
-  });
-
-  const info = response.result.info;
-
-  console.log("=== Informations sur le serveur ===");
-  console.log("Version du serveur :", info.build_version);
-  console.log("État :", info.server_state);
-  console.log("");
-
-  console.log("=== État du consensus ===");
-  console.log("Quorum de validation :", info.validation_quorum);
-  console.log("Ledger validé :", info.validated_ledger.seq);
-  console.log("Hash du ledger :", info.validated_ledger.hash);
-  console.log("Âge du ledger :", info.validated_ledger.age, "secondes");
-  console.log("Réserve de base :", info.validated_ledger.reserve_base_xrp, "XAH");
-  console.log("Réserve par objet :", info.validated_ledger.reserve_inc_xrp, "XAH");
-  console.log("");
-
-  console.log("=== Métriques réseau ===");
-  console.log("Pairs connectés :", info.peers);
-  console.log("Temps de fonctionnement :", info.uptime, "secondes");
-  console.log("Charge du serveur :", info.load_factor);
-
-  await client.disconnect();
-}
-
-inspectValidatorInfo();`,
-`const { Client } = require("xahau");
-
-async function checkNetworkFees() {
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  // Commande fee : affiche les frais actuels du réseau
-  const feeResponse = await client.request({
-    command: "fee"
-  });
-
-  const fee = feeResponse.result;
-  console.log("=== Frais actuels du réseau ===");
-  console.log("Frais de base (drops) :", fee.drops.base_fee);
-  console.log("Frais médian (drops) :", fee.drops.median_fee);
-  console.log("Frais minimum (drops) :", fee.drops.minimum_fee);
-  console.log("Frais du ledger ouvert (drops) :", fee.drops.open_ledger_fee);
-  console.log("");
-
-  // Convertir les drops en XAH (1 XAH = 1 000 000 drops)
-  const baseFeeXAH = Number(fee.drops.base_fee) / 1_000_000;
-  const medianFeeXAH = Number(fee.drops.median_fee) / 1_000_000;
-  console.log("=== En XAH ===");
-  console.log("Frais de base :", baseFeeXAH, "XAH");
-  console.log("Frais médian :", medianFeeXAH, "XAH");
-  console.log("");
-
-  console.log("=== État du ledger ===");
-  console.log("Ledger actuel :", fee.ledger_current_index);
-  console.log("Niveaux de charge attendus :", fee.levels.median_level);
-
-  await client.disconnect();
-}
-
-checkNetworkFees();`,
-      ],
       slides: [
         ["Qui opère les validateurs ?", "Des organisations, équipes techniques et membres de l'écosystème\n\nL'objectif est d'éviter qu'un seul acteur contrôle le consensus."],
         ["Amendments : gouvernance décentralisée", "Les amendments modifient le protocole\n\nLes validateurs signalent leur support\n\nL'activation dépend d'un seuil et d'une période définis par le réseau."],
@@ -2607,7 +2430,6 @@ function applyFrenchTranslations(module) {
       if (typeof block.code === "string") {
         block.code = { en: block.code };
       }
-      block.code.fr = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2620,5 +2442,8 @@ function applyFrenchTranslations(module) {
 }
 
 applyFrenchTranslations(moduleData);
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

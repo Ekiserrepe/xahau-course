@@ -1,3 +1,10 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
+import { MISSING_ROLE } from "../course-accounts.js";
+
+// The line that stops a script when .env lacks the account it signs with
+const missingRole = (lang, role) =>
+  `if (!process.env.${role}) throw new Error(${JSON.stringify((MISSING_ROLE[lang] ?? MISSING_ROLE.en)(role))});`;
+
 const allLanguages = (value) => ({
   es: value,
   pt: value,
@@ -99,7 +106,11 @@ Un Oracle consume 1 reserva de propietario si guarda entre 1 y 5 pares, y 2 rese
 - \`temARRAY_TOO_LARGE\`: se enviaron más de 10 pares
 - \`tecINVALID_UPDATE_TIME\`: la marca temporal no es más reciente
 - \`tecINSUFFICIENT_RESERVE\`: la cuenta no tiene reserva suficiente
-- \`tecNO_ENTRY\`: el Oracle no existe al intentar eliminarlo`,
+- \`tecNO_ENTRY\`: el Oracle no existe al intentar eliminarlo
+
+### Ejecutar los scripts de esta lección
+
+Estos scripts firman con \`ORACLE_SEED\` de \`.env\`, que crea \`create-accounts.js\` ([módulo 3](?m=3&l=1)). Una cuenta aparte mantiene el objeto Oracle, y la reserva que bloquea, separados de tu cuenta principal. Si falta la variable, los scripts se detienen antes de enviar nada y dicen qué ejecutar.`,
   pt: `Um **Price Oracle** é um objeto do ledger que permite que uma conta publique preços de ativos diretamente na Xahau. Aplicações e Hooks podem ler esses preços do ledger, sem depender de um valor fixo no código nem de um único servidor privado.
 
 ### Que problema ele resolve?
@@ -155,7 +166,11 @@ Um Oracle consome 1 reserva de proprietário quando armazena de 1 a 5 pares, e 2
 - \`temARRAY_TOO_LARGE\`: mais de 10 pares foram enviados
 - \`tecINVALID_UPDATE_TIME\`: o timestamp não é mais recente
 - \`tecINSUFFICIENT_RESERVE\`: a conta não tem reserva suficiente
-- \`tecNO_ENTRY\`: o Oracle não existe ao tentar removê-lo`,
+- \`tecNO_ENTRY\`: o Oracle não existe ao tentar removê-lo
+
+### Executar os scripts desta lição
+
+Estes scripts assinam com \`ORACLE_SEED\` do \`.env\`, criada por \`create-accounts.js\` ([módulo 3](?m=3&l=1)). Uma conta separada mantém o objeto Oracle, e a reserva que ele bloqueia, longe da sua conta principal. Se a variável faltar, os scripts param antes de enviar e dizem o que executar.`,
   en: `A **Price Oracle** is a ledger object that lets an account publish asset prices directly on Xahau. Applications and Hooks can then read those prices from the ledger instead of trusting a hard-coded value or a single private server.
 
 ### What problem does it solve?
@@ -201,7 +216,11 @@ Oracle objects consume 1 owner reserve for 1-5 price pairs, and 2 owner reserves
 - \`temARRAY_TOO_LARGE\`: more than 10 price pairs were provided
 - \`tecINVALID_UPDATE_TIME\`: update timestamp is invalid or not newer
 - \`tecINSUFFICIENT_RESERVE\`: the account does not have enough reserve
-- \`tecNO_ENTRY\`: the Oracle object does not exist when trying to delete it`,
+- \`tecNO_ENTRY\`: the Oracle object does not exist when trying to delete it
+
+### Run this lesson's scripts
+
+These scripts sign with \`ORACLE_SEED\` from \`.env\`, created by \`create-accounts.js\` ([Module 3](?m=3&l=1)). A separate account keeps the Oracle object, and the reserve it locks, apart from your main account. If the variable is missing, the scripts stop before submitting and say what to run.`,
   jp: `**Price Oracle** は、アカウントが資産価格をXahau上へ直接公開できるledgerオブジェクトです。アプリケーションやHooksは、コードに固定された値や単一の非公開サーバーではなく、ledger上の価格を参照できます。
 
 ### 何を解決するのか？
@@ -247,7 +266,11 @@ Oracleは価格ペア1から5件でowner reserveを1つ、6から10件で2つ消
 - \`temARRAY_TOO_LARGE\`: 価格ペアが10件を超えている
 - \`tecINVALID_UPDATE_TIME\`: 更新時刻が新しくない
 - \`tecINSUFFICIENT_RESERVE\`: 予約金が不足している
-- \`tecNO_ENTRY\`: 削除対象のOracleが存在しない`,
+- \`tecNO_ENTRY\`: 削除対象のOracleが存在しない
+
+### このレッスンのスクリプトを実行する
+
+これらのスクリプトは、\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成する \`.env\` の \`ORACLE_SEED\` で署名します。別のアカウントを使うことで、Oracle オブジェクトとそれがロックするリザーブをメインアカウントから切り離せます。変数がない場合、スクリプトは送信前に停止し、何を実行すべきかを表示します。`,
   ko: `**Price Oracle**는 계정이 자산 가격을 Xahau에 직접 게시할 수 있게 해 주는 ledger 객체입니다. 애플리케이션과 Hooks는 코드에 고정된 값이나 단일 사설 서버 대신 ledger의 가격을 읽을 수 있습니다.
 
 ### 어떤 문제를 해결하나요?
@@ -293,7 +316,11 @@ Oracle은 가격 쌍 1-5개에 owner reserve 1개, 6-10개에 owner reserve 2개
 - \`temARRAY_TOO_LARGE\`: 가격 쌍이 10개를 초과함
 - \`tecINVALID_UPDATE_TIME\`: 업데이트 시간이 더 최신이 아님
 - \`tecINSUFFICIENT_RESERVE\`: reserve가 부족함
-- \`tecNO_ENTRY\`: 삭제하려는 Oracle이 존재하지 않음`,
+- \`tecNO_ENTRY\`: 삭제하려는 Oracle이 존재하지 않음
+
+### 이 레슨의 스크립트 실행
+
+이 스크립트들은 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만든 \`.env\`의 \`ORACLE_SEED\`로 서명합니다. 별도 계정을 쓰면 Oracle 객체와 그것이 묶는 준비금을 메인 계정과 분리할 수 있습니다. 변수가 없으면 스크립트는 제출 전에 멈추고 무엇을 실행해야 하는지 알려 줍니다.`,
   zh: `**Price Oracle** 是一种 ledger 对象，允许账户直接在 Xahau 上发布资产价格。应用和 Hooks 可以从 ledger 读取这些价格，而不必依赖代码里的固定值或单个私有服务器。
 
 ### 它解决什么问题？
@@ -339,7 +366,11 @@ Oracle 存储 1 到 5 个价格对时消耗 1 个 owner reserve，存储 6 到 1
 - \`temARRAY_TOO_LARGE\`: 价格对超过 10 个
 - \`tecINVALID_UPDATE_TIME\`: 更新时间不是更新的时间
 - \`tecINSUFFICIENT_RESERVE\`: 账户 reserve 不足
-- \`tecNO_ENTRY\`: 删除时 Oracle 对象不存在`,
+- \`tecNO_ENTRY\`: 删除时 Oracle 对象不存在
+
+### 运行本课的脚本
+
+这些脚本使用 \`.env\` 中由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建的 \`ORACLE_SEED\` 签名。使用单独的账户，可以让 Oracle 对象及其锁定的储备与主账户分开。缺少该变量时，脚本会在提交前停止，并说明应运行什么。`,
 };
 
 const iouRewardLessonTitle = {
@@ -403,7 +434,11 @@ Esto separa el **seguimiento** de la **lógica de pago**: el ledger mide balance
 
 ### Requisitos y errores comunes
 
-Necesitas la enmienda \`IOURewardClaim\` activa, una trustline entre \`Account\` y \`ClaimCurrency.issuer\`, un Hook instalado en \`Issuer\`, que ese Hook se dispare en \`ClaimReward\`, y \`ClaimCurrency\` no puede ser XAH. Errores habituales: \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\` y \`tecNO_LINE\`.`,
+Necesitas la enmienda \`IOURewardClaim\` activa, una trustline entre \`Account\` y \`ClaimCurrency.issuer\`, un Hook instalado en \`Issuer\`, que ese Hook se dispare en \`ClaimReward\`, y \`ClaimCurrency\` no puede ser XAH. Errores habituales: \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\` y \`tecNO_LINE\`.
+
+### Ejecutar los scripts de esta lección
+
+Estos scripts firman con \`HOLDER_SEED\` de \`.env\`, que crea \`create-accounts.js\` ([módulo 3](?m=3&l=1)). El holder solo necesita XAH para la reserva de la TrustLine y los fees; el emisor de RWD y el programa de recompensas son cuentas de testnet ya existentes. Si falta la variable, los scripts se detienen antes de enviar nada y dicen qué ejecutar.`,
   pt: `O recurso se chama **IOURewardClaim**, mas a transação enviada continua sendo **ClaimReward**. A emenda estende \`ClaimReward\` para que emissores de tokens possam criar programas de recompensa personalizados para holders de IOUs.
 
 ### Que problema ele resolve?
@@ -428,7 +463,11 @@ Isso separa **rastreamento** de **lógica de pagamento**: o ledger mede saldo ao
 
 ### Requisitos e erros comuns
 
-Você precisa da emenda \`IOURewardClaim\` ativa, uma trustline entre \`Account\` e \`ClaimCurrency.issuer\`, um Hook instalado em \`Issuer\`, esse Hook disparando em \`ClaimReward\`, e \`ClaimCurrency\` não pode ser XAH. Erros comuns: \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\` e \`tecNO_LINE\`.`,
+Você precisa da emenda \`IOURewardClaim\` ativa, uma trustline entre \`Account\` e \`ClaimCurrency.issuer\`, um Hook instalado em \`Issuer\`, esse Hook disparando em \`ClaimReward\`, e \`ClaimCurrency\` não pode ser XAH. Erros comuns: \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\` e \`tecNO_LINE\`.
+
+### Executar os scripts desta lição
+
+Estes scripts assinam com \`HOLDER_SEED\` do \`.env\`, criada por \`create-accounts.js\` ([módulo 3](?m=3&l=1)). O holder só precisa de XAH para a reserva da TrustLine e os fees; o emissor de RWD e o programa de recompensas são contas de testnet já existentes. Se a variável faltar, os scripts param antes de enviar e dizem o que executar.`,
   en: `The feature is called **IOURewardClaim**, but the transaction you submit is still **ClaimReward**. The amendment extends \`ClaimReward\` so token issuers can run custom reward programs for IOU holders.
 
 ### What problem does it solve?
@@ -517,7 +556,11 @@ This separates **tracking** from **payout logic**. The ledger tracks balance ove
 - \`tecNO_ISSUER\`: the \`Issuer\` account does not exist
 - \`tecNO_PERMISSION\`: the issuer is an AMM account
 - \`tecNO_TARGET\`: issuer has no Hook, or no Hook fires on \`ClaimReward\`
-- \`tecNO_LINE\`: no trustline exists for the requested IOU`,
+- \`tecNO_LINE\`: no trustline exists for the requested IOU
+
+### Run this lesson's scripts
+
+These scripts sign with \`HOLDER_SEED\` from \`.env\`, created by \`create-accounts.js\` ([Module 3](?m=3&l=1)). The holder only needs XAH for the TrustLine reserve and fees; the RWD issuer and the reward programme are existing testnet accounts. If the variable is missing, the scripts stop before submitting and say what to run.`,
   jp: `この機能の名前は **IOURewardClaim** ですが、送信するトランザクションは **ClaimReward** のままです。このamendmentは \`ClaimReward\` を拡張し、トークン発行者がIOU holder向けのカスタム報酬プログラムを実行できるようにします。
 
 ### 何を解決するのか？
@@ -542,7 +585,11 @@ holderにはIOUのtrustlineが必要です。報酬issuerアカウントには \
 
 ### 要件とよくあるエラー
 
-\`IOURewardClaim\` amendment、\`Account\` と \`ClaimCurrency.issuer\` のtrustline、\`Issuer\` にインストールされたHook、そのHookが \`ClaimReward\` で発火すること、そして \`ClaimCurrency\` がXAHではないことが必要です。よくあるエラーは \`temDISABLED\`、\`temMALFORMED\`、\`tecNO_ISSUER\`、\`tecNO_TARGET\`、\`tecNO_LINE\` です。`,
+\`IOURewardClaim\` amendment、\`Account\` と \`ClaimCurrency.issuer\` のtrustline、\`Issuer\` にインストールされたHook、そのHookが \`ClaimReward\` で発火すること、そして \`ClaimCurrency\` がXAHではないことが必要です。よくあるエラーは \`temDISABLED\`、\`temMALFORMED\`、\`tecNO_ISSUER\`、\`tecNO_TARGET\`、\`tecNO_LINE\` です。
+
+### このレッスンのスクリプトを実行する
+
+これらのスクリプトは、\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成する \`.env\` の \`HOLDER_SEED\` で署名します。保有者に必要なのは TrustLine のリザーブと手数料のための XAH だけです。RWD の発行者とリワードプログラムはテストネット上の既存のアカウントです。変数がない場合、スクリプトは送信前に停止し、何を実行すべきかを表示します。`,
   ko: `이 기능의 이름은 **IOURewardClaim** 이지만, 제출하는 트랜잭션은 여전히 **ClaimReward** 입니다. 이 amendment는 토큰 발행자가 IOU holder를 위한 맞춤형 보상 프로그램을 실행할 수 있도록 \`ClaimReward\` 를 확장합니다.
 
 ### 어떤 문제를 해결하나요?
@@ -567,7 +614,11 @@ holder는 IOU 통화에 대한 trustline이 있어야 합니다. 보상 issuer �
 
 ### 요구 사항과 흔한 오류
 
-\`IOURewardClaim\` amendment 활성화, \`Account\` 와 \`ClaimCurrency.issuer\` 사이의 trustline, \`Issuer\` 에 설치된 Hook, 그 Hook이 \`ClaimReward\` 에서 실행되는 것, 그리고 \`ClaimCurrency\` 가 XAH가 아니어야 합니다. 흔한 오류는 \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\`, \`tecNO_LINE\` 입니다.`,
+\`IOURewardClaim\` amendment 활성화, \`Account\` 와 \`ClaimCurrency.issuer\` 사이의 trustline, \`Issuer\` 에 설치된 Hook, 그 Hook이 \`ClaimReward\` 에서 실행되는 것, 그리고 \`ClaimCurrency\` 가 XAH가 아니어야 합니다. 흔한 오류는 \`temDISABLED\`, \`temMALFORMED\`, \`tecNO_ISSUER\`, \`tecNO_TARGET\`, \`tecNO_LINE\` 입니다.
+
+### 이 레슨의 스크립트 실행
+
+이 스크립트들은 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만든 \`.env\`의 \`HOLDER_SEED\`로 서명합니다. 보유자에게는 TrustLine 준비금과 수수료를 위한 XAH만 있으면 됩니다. RWD 발행자와 보상 프로그램은 테스트넷에 이미 있는 계정입니다. 변수가 없으면 스크립트는 제출 전에 멈추고 무엇을 실행해야 하는지 알려 줍니다.`,
   zh: `这个功能叫 **IOURewardClaim**，但实际提交的交易仍然是 **ClaimReward**。该 amendment 扩展了 \`ClaimReward\`，让代币发行方可以为 IOU holder 运行自定义奖励程序。
 
 ### 它解决什么问题？
@@ -592,7 +643,11 @@ holder 必须拥有该 IOU 的 trustline。奖励 issuer 账户必须安装一�
 
 ### 要求与常见错误
 
-需要启用 \`IOURewardClaim\` amendment；\`Account\` 和 \`ClaimCurrency.issuer\` 之间需要 trustline；\`Issuer\` 上需要安装 Hook；该 Hook 必须在 \`ClaimReward\` 时触发；且 \`ClaimCurrency\` 不能是 XAH。常见错误包括 \`temDISABLED\`、\`temMALFORMED\`、\`tecNO_ISSUER\`、\`tecNO_TARGET\` 和 \`tecNO_LINE\`。`,
+需要启用 \`IOURewardClaim\` amendment；\`Account\` 和 \`ClaimCurrency.issuer\` 之间需要 trustline；\`Issuer\` 上需要安装 Hook；该 Hook 必须在 \`ClaimReward\` 时触发；且 \`ClaimCurrency\` 不能是 XAH。常见错误包括 \`temDISABLED\`、\`temMALFORMED\`、\`tecNO_ISSUER\`、\`tecNO_TARGET\` 和 \`tecNO_LINE\`。
+
+### 运行本课的脚本
+
+这些脚本使用 \`.env\` 中由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建的 \`HOLDER_SEED\` 签名。持有者只需要支付 TrustLine 储备和手续费的 XAH；RWD 发行者和奖励计划都是测试网上已有的账户。缺少该变量时，脚本会在提交前停止，并说明应运行什么。`,
 };
 
 const priceOracleSlides = [
@@ -673,7 +728,8 @@ const iouRewardSlides = [
   },
 ];
 
-const makeIouRewardClaimCode = (comments) => `require("dotenv").config();
+const makeIouRewardClaimCode = (comments, lang) => `require("dotenv").config();
+${missingRole(lang, "HOLDER_SEED")}
 const { Client, Wallet } = require("xahau");
 
 function normalizeCurrency(currency) {
@@ -726,7 +782,8 @@ async function claimIouReward() {
 
 claimIouReward().catch(console.error);`;
 
-const makeIouRewardTrustlineCode = (comments) => `require("dotenv").config();
+const makeIouRewardTrustlineCode = (comments, lang) => `require("dotenv").config();
+${missingRole(lang, "HOLDER_SEED")}
 const { Client, Wallet } = require("xahau");
 
 async function createRewardTrustline() {
@@ -761,7 +818,8 @@ async function createRewardTrustline() {
 
 createRewardTrustline().catch(console.error);`;
 
-const makeIouRewardInspectCode = (comments) => `require("dotenv").config();
+const makeIouRewardInspectCode = (comments, lang) => `require("dotenv").config();
+${missingRole(lang, "HOLDER_SEED")}
 const { Client, Wallet } = require("xahau");
 
 async function inspectRewardTrustline() {
@@ -804,7 +862,7 @@ const iouRewardComments = {
     rewardIssuer: "cuenta con el Hook de recompensas instalado",
     tokenIssuer: "issuer real del token RWD",
     trustline: "El holder necesita una TrustLine hacia el issuer real del token RWD antes de reclamar.",
-    inspect: "Consultamos la TrustLine del holder contra el issuer real de RWD.",
+    inspect: "Consulta la TrustLine del holder hacia el issuer real de RWD.",
   },
   pt: {
     existingToken: "Este exercicio aponta para o token RWD ja criado no exemplo Learning Xahau.",
@@ -812,7 +870,7 @@ const iouRewardComments = {
     rewardIssuer: "conta com o Hook de recompensas instalado",
     tokenIssuer: "issuer real do token RWD",
     trustline: "O holder precisa de uma TrustLine para o issuer real do token RWD antes de reclamar.",
-    inspect: "Consultamos a TrustLine do holder contra o issuer real de RWD.",
+    inspect: "Consulte a TrustLine do holder para o issuer real de RWD.",
   },
   en: {
     existingToken: "This exercise points to the RWD token already created in the Learning Xahau example.",
@@ -820,7 +878,7 @@ const iouRewardComments = {
     rewardIssuer: "account with the reward Hook installed",
     tokenIssuer: "real issuer of the RWD token",
     trustline: "The holder needs a TrustLine to the real RWD token issuer before claiming.",
-    inspect: "We query the holder TrustLine against the real RWD issuer.",
+    inspect: "Query the holder's TrustLine to the real RWD issuer.",
   },
   jp: {
     existingToken: "この演習は Learning Xahau の例で作成済みの RWD トークンを参照します。",
@@ -849,16 +907,17 @@ const iouRewardComments = {
 };
 
 const iouRewardClaimCode = Object.fromEntries(
-  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardClaimCode(comments)])
+  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardClaimCode(comments, lang)])
 );
 const iouRewardTrustlineCode = Object.fromEntries(
-  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardTrustlineCode(comments)])
+  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardTrustlineCode(comments, lang)])
 );
 const iouRewardInspectCode = Object.fromEntries(
-  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardInspectCode(comments)])
+  Object.entries(iouRewardComments).map(([lang, comments]) => [lang, makeIouRewardInspectCode(comments, lang)])
 );
 
-const makePriceOracleSetCode = (comments) => `require("dotenv").config();
+const makePriceOracleSetCode = (comments, lang) => `require("dotenv").config();
+${missingRole(lang, "ORACLE_SEED")}
 const { Client, Wallet } = require("xahau");
 
 function toHex(value) {
@@ -938,7 +997,8 @@ async function queryAggregatePrice() {
 
 queryAggregatePrice().catch(console.error);`;
 
-const makePriceOracleDeleteCode = (comments) => `require("dotenv").config();
+const makePriceOracleDeleteCode = (comments, lang) => `require("dotenv").config();
+${missingRole(lang, "ORACLE_SEED")}
 const { Client, Wallet } = require("xahau");
 
 async function deleteOracle() {
@@ -993,7 +1053,7 @@ const priceOracleComments = {
     quoteAsset: "moeda em que expressamos o preco",
     scale: "74560 * 10^-4 = 7.456 USD",
     knownOracles: "Estas sao direcoes publicas de Oracles ja publicados no exemplo Learning Xahau.",
-    aggregate: "get_aggregate_price calcula mediana/media a partir de varios provedores.",
+    aggregate: "get_aggregate_price calcula mediana/média a partir de vários provedores.",
     trim: "remove outliers antes de calcular a media aparada",
     timeThreshold: "ignora updates antigos demais",
     onlyOwner: "Apenas a conta que criou o Oracle pode apaga-lo.",
@@ -1061,13 +1121,13 @@ const priceOracleComments = {
 };
 
 const priceOracleSetCode = Object.fromEntries(
-  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleSetCode(comments)])
+  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleSetCode(comments, lang)])
 );
 const priceOracleQueryCode = Object.fromEntries(
-  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleQueryCode(comments)])
+  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleQueryCode(comments, lang)])
 );
 const priceOracleDeleteCode = Object.fromEntries(
-  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleDeleteCode(comments)])
+  Object.entries(priceOracleComments).map(([lang, comments]) => [lang, makePriceOracleDeleteCode(comments, lang)])
 );
 
 const moduleData = {
@@ -1086,7 +1146,7 @@ const moduleData = {
       id: "m10l1",
       title: {
         es: "Escrows: pagos condicionales",
-        pt: "Escrows: pagamentos condicionales",
+        pt: "Escrows: pagamentos condicionais",
         en: "Escrows: Conditional Payments",
         jp: "エスクロー：条件付き支払い",
         ko: "Escrow: 조건부 결제",
@@ -1150,20 +1210,20 @@ Xahau soporta crypto-condiciones del protocolo **Interledger (ILP)**:
 O tipo de transação \`EscrowCreate\` bloqueia uma quantidade de XAH com condições:
 | Campo | Descrição |
 |---|---|
-| \`Amount\` | Quantidade de XAH u otros ativos a bloquear (em drops para XAH, objeto Amount para tokens) |
+| \`Amount\` | Quantidade de XAH ou outros ativos a bloquear (em drops para XAH, objeto Amount para tokens) |
 | \`Destination\` | Conta que receberá os fundos |
 | \`FinishAfter\` | Timestamp mínimo para completar o escrow |
 | \`CancelAfter\` | Timestamp a partir do cual se pode cancelar |
 | \`Condition\` | Crypto-condição opcional para a liberacioun |
-**Reglas importantes**:
+**Regras importantes**:
 - Você deve especificar ao menos \`FinishAfter\` ou \`Condition\` (ou ambos)
 - Se usas \`CancelAfter\`, deve ser posterior a \`FinishAfter\`
-- Os timestamps usan a **Ripple Epoch** (segundos desde 01/01/2000 00:00:00 UTC)
+- Os timestamps usam a **Ripple Epoch** (segundos desde 01/01/2000 00:00:00 UTC)
 ### EscrowFinish: completar o escrow
 Qualquer conta pode executar \`EscrowFinish\` para liberar os fundos ao destinatário:
 - Sou funciona depois de \`FinishAfter\` (se foi especificado)
 - Se houver \`Condition\`, deve ser fornecido o \`Fulfillment\` correto
-- Os campos \`Owner\` e \`OfferSequence\` identifican qué escrow completar
+- Os campos \`Owner\` e \`OfferSequence\` identificam qual escrow concluir
 ### EscrowCancel: cancelar o escrow
 Com \`EscrowCancel\` se retornam os fundos ao criador:
 - Sou funciona depois de \`CancelAfter\`
@@ -1409,7 +1469,7 @@ async function createTimeLockedEscrow() {
       "CancelAfter:",
       new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
     );
-    console.log("¡Salvao Sequence! Lo você precisa para EscrowFinish.");
+    console.log("Guarde o Sequence! Você precisa dele para o EscrowFinish.");
     console.log(\`Sequence do escrow: \${prepared.Sequence}\`);
     console.log(\`Seu endereço: \${sender.address}\`);
   }
@@ -1717,7 +1777,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
     await client.disconnect();
     return;
   }
-  console.log("O tempo de bloqueio ha pasado. Completando escrow...");
+  console.log("O tempo de bloqueio já passou. Concluindo o escrow...");
   const escrowFinish = {
     TransactionType: "EscrowFinish",
     Account: executor.address,
@@ -1731,7 +1791,7 @@ async function finishEscrow(ownerAddress, escrowSequence) {
   console.log("=== EscrowFinish ===");
   console.log("Resultado:", txResult);
   if (txResult === "tesSUCCESS") {
-    console.log("¡Escrow completado! Os fundos foram entregues.");
+    console.log("Escrow concluído! Os fundos foram entregues.");
     console.log("Hash:", signed.hash);
   } else if (txResult === "tecNO_TARGET") {
     console.log("O escrow não foi encontrado. Pode ter sido cancelado.");
@@ -2089,7 +2149,28 @@ Cualquiera de las dos partes (emisor o receptor) puede cancelar un cheque. Tambi
 - \`tecNO_ENTRY\`: El CheckID no existe (ya fue cobrado o cancelado)
 - \`tecNO_LINE\`: Para IOUs, el receptor no tiene TrustLine con el emisor del token
 - \`tecUNFUNDED\`: El emisor del cheque no tiene fondos suficientes al momento de cobrar
-- \`tecEXPIRED\`: El cheque ha expirado`,
+- \`tecEXPIRED\`: El cheque ha expirado
+
+### Ejecutar los scripts de esta lección
+
+El script de CheckCreate firma con \`WALLET_SEED\` y extiende el Check a la cuenta \`CASH_SEED\`; \`cash-check.js\` firma con \`CASH_SEED\`, que crea \`create-accounts.js\` ([módulo 3](?m=3&l=1)). El primer script imprime el comando exacto para el segundo. Salida en testnet:
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`**: ahora existe un objeto Check; todavía no se ha movido XAH. Su **CheckID** es el índice de ese objeto en el ledger.
+- **CheckCash \`tesSUCCESS\`**: CASH cobró exactamente 50 XAH y el objeto Check se eliminó. Cobrarlo otra vez devuelve \`tecNO_ENTRY\`.
+
+\`cash-check.js\` no envía nada sin un CheckID hex de 64 caracteres y dice qué pasar.`,
         pt: `Um **Check** (cheque) é similar a um cheque bancário tradicional: o emissor cria um cheque por uma quantidade determinada, e o receptor pode cobrá-lo quando quiser. Diferentemente de um pagamento direto, os fundos **não são transferidos imediatamente**, o receptor deve executar uma accioun para cobrar o cheque.
 ### Por que usar Cheques em vez de pagamentos diretos?
 - **O receptor controla quando cobra**: Útil quando o receptor quer decidir o momento exato
@@ -2103,7 +2184,7 @@ Cualquiera de las dos partes (emisor o receptor) puede cancelar un cheque. Tambi
 | \`Account\` | Conta que emite o cheque |
 | \`Destination\` | Conta que pode cobrar o cheque |
 | \`SendMax\` | Quantidade máxima que se pode cobrar |
-| \`Expiration\` | (Opcional) Timestamp tras o cual o cheque caduca |
+| \`Expiration\` | (Opcional) Timestamp após o qual o cheque expira |
 | \`InvoiceID\` | (Opcional) Hash de 256 bits para identificar o motivo do cheque |
 \`SendMax\` pode ser um string (drops de XAH) ou um objeto Amount para IOUs:
 \`\`\`
@@ -2129,17 +2210,38 @@ O receptor cobra o cheque com \`CheckCash\`. Tem dois modos:
 | \`DeliverMin\` | Quantidade mínima aceitable (opcioun 2) |
 **Importante**: Você deve usar \`Amount\` **ou** \`DeliverMin\`, nunca ambos.
 ### CheckCancel: cancelar um cheque
-Qualquera das dos partes (emissor ou receptor) pode cancelar um cheque. También se pode cancelar um cheque expirado.
+Qualquer uma das duas partes (emissor ou destinatário) pode cancelar um cheque. Também é possível cancelar um cheque expirado.
 | Campo | Descrição |
 |---|---|
 | \`TransactionType\` | \`"CheckCancel"\` |
 | \`Account\` | Conta que executa a cancelacioun |
 | \`CheckID\` | ID do cheque a cancelar |
-### Erroes comunes
-- \`tecNO_ENTRY\`: O CheckID não existe (ya foi cobrado ou cancelado)
+### Erros comuns
+- \`tecNO_ENTRY\`: o CheckID não existe (já foi descontado ou cancelado)
 - \`tecNO_LINE\`: Para IOUs, o receptor não tem TrustLine com o emissor do token
 - \`tecUNFUNDED\`: O emissor do cheque não tem fundos suficientes ao momento de cobrar
-- \`tecEXPIRED\`: O cheque ha expirado`,
+- \`tecEXPIRED\`: o cheque expirou
+
+### Executar os scripts desta lição
+
+O script de CheckCreate assina com \`WALLET_SEED\` e emite o Check para a conta \`CASH_SEED\`; \`cash-check.js\` assina com \`CASH_SEED\`, criada por \`create-accounts.js\` ([módulo 3](?m=3&l=1)). O primeiro script imprime o comando exato para o segundo. Saída na testnet:
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`**: agora existe um objeto Check; nenhum XAH se moveu ainda. Seu **CheckID** é o índice desse objeto no ledger.
+- **CheckCash \`tesSUCCESS\`**: a CASH descontou exatamente 50 XAH e o objeto Check foi removido. Descontá-lo de novo retorna \`tecNO_ENTRY\`.
+
+\`cash-check.js\` não envia nada sem um CheckID hex de 64 caracteres e diz o que passar.`,
         en: `A **Check** is similar to a traditional bank check: the sender creates a check for a certain amount, and the recipient can cash it whenever they wish. Unlike a direct payment, funds are **not transferred immediately** — the recipient must take action to cash the check.
 
 ### Why use Checks instead of direct payments?
@@ -2205,7 +2307,28 @@ Either party (sender or recipient) can cancel a check. An expired check can also
 - \`tecNO_ENTRY\`: The CheckID does not exist (already cashed or cancelled)
 - \`tecNO_LINE\`: For IOUs, the recipient has no TrustLine with the token issuer
 - \`tecUNFUNDED\`: The check issuer has insufficient funds at the time of cashing
-- \`tecEXPIRED\`: The check has expired`,
+- \`tecEXPIRED\`: The check has expired
+
+### Run this lesson's scripts
+
+The CheckCreate script signs with \`WALLET_SEED\` and writes the Check to the \`CASH_SEED\` account; \`cash-check.js\` signs with \`CASH_SEED\`, created by \`create-accounts.js\` ([Module 3](?m=3&l=1)). The first script prints the exact command for the second. Output on testnet:
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`**: a Check object now exists; no XAH has moved yet. Its **CheckID** is the ledger index of that object.
+- **CheckCash \`tesSUCCESS\`**: CASH claimed exactly 50 XAH and the Check object was removed. Cashing it again returns \`tecNO_ENTRY\`.
+
+\`cash-check.js\` refuses to submit without a 64-character hex CheckID and says what to pass.`,
         jp: `**チェック**は従来の銀行小切手に似ています。送信者は特定の金額のチェックを作成し、受取人はいつでも換金できます。直接支払いとは異なり、資金は**即座に転送されません**。受取人がチェックを換金するための行動を取る必要があります。
 
 ### 直接支払いの代わりにチェックを使う理由は？
@@ -2271,7 +2394,28 @@ Either party (sender or recipient) can cancel a check. An expired check can also
 - \`tecNO_ENTRY\`：CheckIDが存在しません（すでに換金またはキャンセル済み）
 - \`tecNO_LINE\`：IOUの場合、受取人がトークン発行者とのTrustLineを持っていません
 - \`tecUNFUNDED\`：換金時にチェック発行者の残高が不足しています
-- \`tecEXPIRED\`：チェックが失効しています`,
+- \`tecEXPIRED\`：チェックが失効しています
+
+### このレッスンのスクリプトを実行する
+
+CheckCreate スクリプトは \`WALLET_SEED\` で署名し、\`CASH_SEED\` のアカウント宛てに Check を振り出します。\`cash-check.js\` は\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成する \`CASH_SEED\` で署名します。1つ目のスクリプトが2つ目の正確なコマンドを表示します。テストネットでの出力:
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate の \`tesSUCCESS\`**: Check オブジェクトができましたが、XAH はまだ動いていません。**CheckID** はそのオブジェクトのレジャーインデックスです。
+- **CheckCash の \`tesSUCCESS\`**: CASH がちょうど 50 XAH を受け取り、Check オブジェクトは削除されました。もう一度換金すると \`tecNO_ENTRY\` が返ります。
+
+\`cash-check.js\` は64文字の hex CheckID がなければ送信せず、渡すべき値を表示します。`,
         ko: `**Check**는 은행 수표처럼 발행자가 금액을 약속하고, 수신자가 나중에 이를 현금화하는 방식입니다. 즉시 송금과 달리 수신자가 실행 시점을 결정합니다.
 
 ### 장점
@@ -2287,7 +2431,28 @@ Either party (sender or recipient) can cancel a check. An expired check can also
 - \`CheckCash\`
 - \`CheckCancel\`
 
-즉시 결제보다 유연하지만, 만료와 잔액 상태를 함께 관리해야 합니다.`,
+즉시 결제보다 유연하지만, 만료와 잔액 상태를 함께 관리해야 합니다.
+
+### 이 레슨의 스크립트 실행
+
+CheckCreate 스크립트는 \`WALLET_SEED\`로 서명해 \`CASH_SEED\` 계정 앞으로 Check를 발행하고, \`cash-check.js\`는 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만든 \`CASH_SEED\`로 서명합니다. 첫 번째 스크립트가 두 번째 스크립트의 정확한 명령을 출력합니다. 테스트넷 출력:
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`**: 이제 Check 객체가 있지만 아직 XAH는 움직이지 않았습니다. **CheckID**는 그 객체의 레저 인덱스입니다.
+- **CheckCash \`tesSUCCESS\`**: CASH가 정확히 50 XAH를 받았고 Check 객체는 삭제되었습니다. 다시 현금화하면 \`tecNO_ENTRY\`가 반환됩니다.
+
+\`cash-check.js\`는 64자 hex CheckID가 없으면 제출하지 않고 무엇을 전달해야 하는지 알려 줍니다.`,
         zh: `**Check** 类似银行支票：发送方承诺一笔金额，接收方稍后再去兑现。与即时转账不同，兑现时机由接收方决定。
 
 ### 优点
@@ -2303,7 +2468,28 @@ Either party (sender or recipient) can cancel a check. An expired check can also
 - \`CheckCash\`
 - \`CheckCancel\`
 
-它比即时支付更灵活，但也需要一起管理到期时间和余额状态。`,
+它比即时支付更灵活，但也需要一起管理到期时间和余额状态。
+
+### 运行本课的脚本
+
+CheckCreate 脚本用 \`WALLET_SEED\` 签名，向 \`CASH_SEED\` 账户开出 Check；\`cash-check.js\` 用由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建的 \`CASH_SEED\` 签名。第一个脚本会打印第二个脚本的确切命令。测试网上的输出：
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`**：现在有了一个 Check 对象，但还没有任何 XAH 转移。它的 **CheckID** 就是该对象在账本中的索引。
+- **CheckCash \`tesSUCCESS\`**：CASH 恰好领取了 50 XAH，Check 对象被删除。再次兑现会返回 \`tecNO_ENTRY\`。
+
+没有 64 字符的 hex CheckID 时，\`cash-check.js\` 不会提交，并说明应传入什么。`,
       },
       codeBlocks: [
         {
@@ -2317,6 +2503,7 @@ Either party (sender or recipient) can cancel a check. An expired check can also
           language: "javascript",
           code: {
             es: `require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function checkExample() {
@@ -2324,7 +2511,7 @@ async function checkExample() {
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rDireccionDelReceptor"; // Reemplaza con la dirección del receptor y guarda la seed de esa cuenta en tu .env como CASH_SEED para el próximo ejemplo
+  const receiverAddress = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // === 1. Crear el cheque ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -2354,7 +2541,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("Guarda este CheckID para poder cobrar el cheque de tu cuenta. " + sender.address);
+      console.log("Cóbralo como CASH con:", "node cash-check.js " + checkID);
     }
   }
 
@@ -2363,12 +2550,13 @@ async function checkExample() {
 
 checkExample();`,
             pt: `require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 async function checkExample() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rDireccionDelReceptor"; // Reemplaza com a endereço do receptor e guarda a seed de esa conta em tu .env como CASH_SEED para o prouximo exemplo
+  const receiverAddress = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
   // === 1. Criar o cheque ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
   const expiration = Math.floor(Date.now() / 1000) - RIPPLE_EPOCH_OFFSET + 7 * 24 * 60 * 60; // Expira em 7 dias
@@ -2392,13 +2580,14 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("Salva este CheckID para poder cobrar o cheque de seu conta. " + sender.address);
+      console.log("Desconte-o como CASH com:", "node cash-check.js " + checkID);
     }
   }
   await client.disconnect();
 }
 checkExample();`,
             en: `require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function checkExample() {
@@ -2406,7 +2595,7 @@ async function checkExample() {
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rReceiverAddress"; // Replace with the recipient's address and save that account's seed in your .env as CASH_SEED for the next example
+  const receiverAddress = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // === 1. Create the check ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -2436,7 +2625,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("Save this CheckID to cash the check from your account: " + sender.address);
+      console.log("Cash it as CASH with:", "node cash-check.js " + checkID);
     }
   }
 
@@ -2445,6 +2634,7 @@ async function checkExample() {
 
 checkExample();`,
             jp: `require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function checkExample() {
@@ -2452,7 +2642,7 @@ async function checkExample() {
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rReceiverAddress"; // 受取人のアドレスに置き換え、次の例のためにそのアカウントのシードを.envにCASH_SEEDとして保存
+  const receiverAddress = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // === 1. チェックの作成 ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -2482,7 +2672,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("このCheckIDを保存してください。あなたのアカウントでチェックを換金するために必要です: " + sender.address);
+      console.log("CASH として換金するには:", "node cash-check.js " + checkID);
     }
   }
 
@@ -2491,6 +2681,7 @@ async function checkExample() {
 
 checkExample();`,
             zh: `require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 async function checkExample() {
@@ -2498,7 +2689,7 @@ async function checkExample() {
   await client.connect();
 
   const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rReceiverAddress"; // 替换成接收方地址，并把该账户 seed 保存到 .env 的 CASH_SEED，供下个示例使用
+  const receiverAddress = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'}).address;
 
   // === 1. 创建 Check ===
   const RIPPLE_EPOCH_OFFSET = 946684800;
@@ -2528,7 +2719,7 @@ async function checkExample() {
     if (createdNode) {
       const checkID = createdNode.CreatedNode.LedgerIndex;
       console.log("CheckID:", checkID);
-      console.log("请保存这个 CheckID，之后要用它从你的账户兑现支票: " + sender.address);
+      console.log("以 CASH 身份兑现：", "node cash-check.js " + checkID);
     }
   }
 
@@ -2548,8 +2739,15 @@ checkExample();`,
           },
           language: "javascript",
           code: {
-            es: `require("dotenv").config();
+            es: `// Archivo: cash-check.js
+// node cash-check.js <CheckID>
+require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const checkID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(checkID ?? "")) {
+  throw new Error("Pasa el CheckID que imprimió el script de CheckCreate: node cash-check.js <CheckID>");
+}
 
 async function cashCheck(checkID) {
   const client = new Client("wss://xahau-test.net");
@@ -2600,9 +2798,16 @@ async function cashCheck(checkID) {
 }
 
 // Usa el CheckID obtenido al crear el cheque
-cashCheck("TU_CHECK_ID_AQUI");`,
-            pt: `require("dotenv").config();
+cashCheck(checkID);`,
+            pt: `// Arquivo: cash-check.js
+// node cash-check.js <CheckID>
+require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const checkID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(checkID ?? "")) {
+  throw new Error("Passe o CheckID que o script de CheckCreate imprimiu: node cash-check.js <CheckID>");
+}
 async function cashCheck(checkID) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -2629,12 +2834,12 @@ async function cashCheck(checkID) {
   console.log("=== CheckCash ===");
   console.log("Resultado:", txResult);
   if (txResult === "tesSUCCESS") {
-    console.log("¡Cheque cobrado com éxito!");
+    console.log("Cheque descontado com sucesso!");
     const delivered = result.result.meta.delivered_amount;
     if (typeof delivered === "string") {
-      console.log("Quantidade recibida:", Number(delivered) / 1_000_000, "XAH");
+      console.log("Quantidade recebida:", Number(delivered) / 1_000_000, "XAH");
     } else {
-      console.log("Quantidade recibida:", delivered.value, delivered.currency);
+      console.log("Quantidade recebida:", delivered.value, delivered.currency);
     }
   } else if (txResult === "tecNO_ENTRY") {
     console.log("O cheque não existe. Pode ter sido cancelado ou já cobrado.");
@@ -2644,9 +2849,16 @@ async function cashCheck(checkID) {
   await client.disconnect();
 }
 // Use o CheckID obtido ao criar o cheque
-cashCheck("TU_CHECK_ID_AQUI");`,
-            en: `require("dotenv").config();
+cashCheck(checkID);`,
+            en: `// File: cash-check.js
+// node cash-check.js <CheckID>
+require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const checkID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(checkID ?? "")) {
+  throw new Error("Pass the CheckID the CheckCreate script printed: node cash-check.js <CheckID>");
+}
 
 async function cashCheck(checkID) {
   const client = new Client("wss://xahau-test.net");
@@ -2697,9 +2909,16 @@ async function cashCheck(checkID) {
 }
 
 // Use the CheckID obtained when creating the check
-cashCheck("YOUR_CHECK_ID_HERE");`,
-            jp: `require("dotenv").config();
+cashCheck(checkID);`,
+            jp: `// ファイル: cash-check.js
+// node cash-check.js <CheckID>
+require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const checkID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(checkID ?? "")) {
+  throw new Error("CheckCreate スクリプトが表示した CheckID を渡してください: node cash-check.js <CheckID>");
+}
 
 async function cashCheck(checkID) {
   const client = new Client("wss://xahau-test.net");
@@ -2750,9 +2969,16 @@ async function cashCheck(checkID) {
 }
 
 // チェック作成時に取得したCheckIDを使用
-cashCheck("YOUR_CHECK_ID_HERE");`,
-            zh: `require("dotenv").config();
+cashCheck(checkID);`,
+            zh: `// 文件: cash-check.js
+// node cash-check.js <CheckID>
+require("dotenv").config();
+if (!process.env.CASH_SEED) throw new Error("CASH_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet, xahToDrops } = require("xahau");
+const checkID = process.argv[2];
+if (!/^[0-9A-F]{64}$/i.test(checkID ?? "")) {
+  throw new Error("请传入 CheckCreate 脚本打印的 CheckID：node cash-check.js <CheckID>");
+}
 
 async function cashCheck(checkID) {
   const client = new Client("wss://xahau-test.net");
@@ -2803,7 +3029,7 @@ async function cashCheck(checkID) {
 }
 
 // 使用创建支票时得到的 CheckID
-cashCheck("YOUR_CHECK_ID_HERE");`,
+cashCheck(checkID);`,
           },
         },
       ],
@@ -2908,11 +3134,11 @@ Cada conta na Xahau tem um número de \`Sequence\` que incrementa a cada transa�
 - Um Ticket **reserva** um número de sequência para uso futuro
 - A transação que usa um Ticket especifica \`TicketSequence\` em lugar de \`Sequence\`
 - Os Tickets se podem usar em **qualquer ordem**, não importa quando foram criados
-### ¿Para qué sirven os Tickets?
+### Para que servem os Tickets?
 - **Transações paralelas**: Preparar e assinar múltiplas transações sem depender do ordem
 - **Transações pre-firmadas**: Assinar transações antecipadamente e enviá-las quando convier
-- **Multi-signing**: Diferentes firmantes podem preparar transações independemtes sem bloquear a sequência
-- **Contingências**: Tener transações de respaldo listas sem consumir a sequência normal
+- **Multi-signing**: diferentes signatários podem preparar transações independentes sem bloquear a sequência
+- **Contingências**: ter transações de reserva prontas sem consumir a sequência normal
 ### TicketCreate: reservar Tickets
 A transação \`TicketCreate\` reserva um ou mais números de sequência:
 | Campo | Descrição |
@@ -2932,7 +3158,7 @@ Para usar um Ticket, inclua estes campos na sua transação:
 - \`TicketSequence: N\` — o número do Ticket a consumir
 O Ticket é destruído automaticamente ao ser usado, liberando a reserva.
 ### Cancelar Tickets não usados
-Se ya no você precisa um Ticket, você pode cancelarlo para liberar a reserva. No existe uma transação específica para cancelar Tickets. Em su lugar, você pode usar uma transação \`AccountSet\` vacía (sem alteraçãos) que consuma o Ticket.`,
+Se você não precisa mais de um Ticket, pode cancelá-lo para liberar a reserva. Não existe uma transação específica para cancelar Tickets. Em vez disso, você pode usar uma transação \`AccountSet\` vazia (sem alterações) que consuma o Ticket.`,
         en: `A **Ticket** is a mechanism that allows sending transactions **outside the normal sequential order**. Normally, each transaction on Xahau must use the next \`Sequence\` number of the account. Tickets eliminate this restriction by reserving sequence numbers in advance.
 
 ### What is a Ticket?
@@ -3187,7 +3413,7 @@ async function paymentsWithTickets() {
     { address: "rDestino3XXXXXXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Pagamento C" },
   ];
   // Podemos enviá-los em qualquer ordem, inclusive em paralelo
-  // Aqui os enviamos em ordem inverso para demonstrar a flexibilidad
+  // Aqui eles são enviados em ordem inversa para mostrar essa flexibilidade
   for (let i = destinations.length - 1; i >= 0; i--) {
     const dest = destinations[i];
     const ticketSeq = ticketSequences[i];
@@ -3200,7 +3426,7 @@ async function paymentsWithTickets() {
       TicketSequence: ticketSeq,  // Usar o Ticket reservado
     };
     const prepared = await client.autofill(payment);
-    // autofill pode sobreescribir Sequence, asi que lo forzamos
+    // o autofill pode sobrescrever o Sequence, então ele é forçado
     prepared.Sequence = 0;
     prepared.TicketSequence = ticketSeq;
     const signed = sender.sign(prepared);
@@ -3208,8 +3434,8 @@ async function paymentsWithTickets() {
     const txResult = result.result.meta.TransactionResult;
     console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
   }
-  console.log("¡Todos os pagamentos enviados com Tickets!");
-  console.log("Os Tickets usados se han destruido e a reserva liberada.");
+  console.log("Todos os pagamentos enviados com Tickets!");
+  console.log("Os Tickets usados foram destruídos e a reserva foi liberada.");
   await client.disconnect();
 }
 paymentsWithTickets();`,
@@ -3537,7 +3763,7 @@ Si por algún motivo quieres dejar de participar en el sistema de recompensas, p
 - El fee de la transacción \`ClaimReward\` es estándar (como cualquier otra transacción)
 - Es compatible con cuentas que tengan Hooks instalados
 - La dirección de \`Issuer\` es específica de cada red (testnet vs mainnet)`,
-        pt: `Xahau conta com um sistema de **recompensas nativa** que distribuye XAH a as contas que participan ativamente na rede. A transação \`ClaimReward\` permite reclamar estas recompensas acumuladas.
+        pt: `A Xahau tem um sistema de **recompensas nativas** que distribui XAH às contas que participam ativamente da rede. A transação \`ClaimReward\` permite reclamar essas recompensas acumuladas.
 ### Como funcionam as recompensas na Xahau?
 Diferentemente de blockchains Proof of Stake em que você precisa fazer staking, na Xahau as recompensas são distribuídas a contas que mantêm um saldo ativo na rede. O mecanismo funciona assim:
 - As recompensas se acumulan automaticamente em função de seu saldo de XAH
@@ -3548,14 +3774,14 @@ Diferentemente de blockchains Proof of Stake em que você precisa fazer staking,
 | Campo | Descrição |
 |---|---|
 | \`TransactionType\` | \`"ClaimReward"\` |
-| \`Account\` | Tu conta que reclama a recompensa |
+| \`Account\` | Sua conta, que reclama a recompensa |
 | \`Issuer\` | A endereço do emissor de recompensas (genesis account da rede) |
 | \`Flags\` |  \`1\` para cancelar o receber recompensas |
 ### Ativar e reclamar recompensas
-Na primeira vez que você envia \`ClaimReward\`, **ativa** sua conta para receber recompensas. As execuções seguintes reivindicam as recompensas acumuladas desde a última vez. É recomendable reclamar periodicamente (por exemplo, uma vez em diao à semana) para manter suas recompensas em dia.
+Na primeira vez que você envia \`ClaimReward\`, **ativa** sua conta para receber recompensas. As execuções seguintes reivindicam as recompensas acumuladas desde a última vez. É recomendável reclamar periodicamente (por exemplo, uma vez por dia ou por semana) para manter suas recompensas em dia.
 ### Desativar recompensas
 Se por algum motivo quiser deixar de participar no sistema de recompensas, você pode enviar \`ClaimReward\` com \`Flags: 1\`. Isso desativa sua conta do sistema de recompensas.
-### Consideraciones
+### Considerações
 - As recompensas dependem do saldo e do tempo transcorrido desde a última reivindicação
 - O fee da transação \`ClaimReward\` é padrão (como qualquer outra transação)
 - É compatible com contas que tenham Hooks instalados
@@ -3738,12 +3964,12 @@ async function claimReward() {
     account: wallet.address,
     ledger_index: "validated",
   });
-  const saldoBefore = Number(accountInfo.result.account_data.Saldo) / 1_000_000;
+  const saldoBefore = Number(accountInfo.result.account_data.Balance) / 1_000_000;
   console.log("=== Estado antes de reclamar ===");
   console.log("Conta:", wallet.address);
   console.log("Saldo atual:", saldoBefore, "XAH");
   // Enviar ClaimReward
-  // Issuer: conta genesis da rede (varía entre testnet e mainnet)
+  // Issuer: conta genesis da rede (varia entre testnet e mainnet)
   const claimReward = {
     TransactionType: "ClaimReward",
     Account: wallet.address,
@@ -3763,7 +3989,7 @@ async function claimReward() {
       account: wallet.address,
       ledger_index: "validated",
     });
-    const saldoAfter = Number(accountAfter.result.account_data.Saldo) / 1_000_000;
+    const saldoAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
     console.log("=== Estado depois de reclamar ===");
     console.log("Saldo novo:", saldoAfter, "XAH");
     console.log("Recompensa obtenida:", (saldoAfter - saldoBefore).toFixed(6), "XAH");
@@ -3958,7 +4184,15 @@ claimReward();`,
           title: { es: "Cómo reclamar", pt: "Como reivindicar", en: "How to claim", jp: "請求方法", zh: "如何领取" },
           content: {
             es: "1ª vez → Activa tu cuenta para recompensas\nSiguientes → Reclama lo acumulado\n\nCampos:\n• Account: tu cuenta\n• Issuer: genesis account de la red\n• Flags: 0 (reclamar) / 1 (desactivar)\n\nFee estándar, compatible con Hooks",
-            pt: "1ª vez → Activa seu conta para recompensas\nProuximos → Reclama lo acumulado\n\nCampos:\n• Account: seu conta\n• Issuer: genesis account da rede\n• Flags: 0 (reclamar) / 1 (desativar)\n\nFee padrão, compatible com Hooks",
+            pt: `1ª vez → Activa seu conta para recompensas
+Próximos → Reclame o acumulado
+
+Campos:
+• Account: seu conta
+• Issuer: genesis account da rede
+• Flags: 0 (reclamar) / 1 (desativar)
+
+Fee padrão, compatible com Hooks`,
             en: "1st time → Activates your account for rewards\nSubsequent → Claims accumulated amount\n\nFields:\n• Account: your account\n• Issuer: network genesis account\n• Flags: 0 (claim) / 1 (deactivate)\n\nStandard fee, compatible with Hooks",
             jp: "1回目 → アカウントを報酬システムに有効化\n以降 → 累積分を請求\n\nフィールド：\n• Account: あなたのアカウント\n• Issuer: ネットワークのジェネシスアカウント\n• Flags: 0（請求）/ 1（無効化）\n\n標準fee、Hooksと互換",
             zh: "第一次 → 启用你的奖励账户\n之后 → 领取累计金额\n\n字段：\n• Account: 你的账户\n• Issuer: 网络 genesis 账户\n• Flags: 0（领取）/ 1（停用）\n\n手续费为标准费用，兼容 Hooks",
@@ -4011,26 +4245,26 @@ Podemos usar Invoke por distintos motivos:
 - El Hook que queramos activar, deberá tener \`Invoke\` habilitado en su \`HookOn\` para reaccionar.
 - El fee es estándar, como cualquier otra transacción
 - Más adelante se implementó en Xahau la transacción \`CronSet\` para programar tareas de forma nativa, pero \`Invoke\` sigue siendo útil para casos personalizados o para activar Hooks de otras cuentas`,
-        pt: `A transação \`Invoke\` é um tipo de transação exclusivo de Xahau que permite **ativar um Hook deliberadamente**, sem necessidade de enviar um pagamento u outra transação com efecto econoumico. É a forma de "llamar" a um Hook de forma directa.
+        pt: `A transação \`Invoke\` é um tipo de transação exclusivo da Xahau que permite **ativar um Hook deliberadamente**, sem precisar enviar um pagamento ou outra transação com efeito econômico. É a forma de "chamar" um Hook diretamente.
 ### Por que existe Invoke?
-Os Hooks são executados reativamente cuando uma transação passa pela conta. Mas há situações em que você precisa ativar um Hook **sem que ocorra nenhuma outra ação**:
+Os Hooks são executados de forma reativa quando uma transação passa pela conta. Mas há situações em que você precisa ativar um Hook **sem que ocorra nenhuma outra ação**:
 ### Transação Invoke
 | Campo | Descrição |
 |---|---|
 | \`TransactionType\` | \`"Invoke"\` |
 | \`Account\` | Conta que envíao Invoke |
-| \`Destination\` | (Opcional) Conta cujo Hook queremos ativar. Se não for especificada, ativa os Hooks da própria conta |
+| \`Destination\` | (Opcional) Conta cujo Hook se quer ativar. Se não for especificada, ativa os Hooks da própria conta |
 ### Invoke como mecanismo
 Podemos usar Invoke por distintos motivos:
 - Que um Hook emita um \`Invoke\` para ativar outro Hook distinto
 - Utilizar o \`Invoke\` como um trigger manual para ativar a lógica de um Hook quando precisarmos dele periodicamente
-- Añadir informação na transação \`Invoke\` (por exemplo, em \`Memos\` ou \`HookParameters\`) para passar informação a um Hook
+- Adicionar informação à transação \`Invoke\` (por exemplo, em \`Memos\` ou \`HookParameters\`) para passar dados a um Hook
 ### Invoke a seu própria conta vs a outra conta
 - **Sem Destination**: O \`Invoke\` ativa os Hooks de sua própria conta. Útil para Hooks de manutenção ou autogestão
-- **Com Destination**: O \`Invoke\` ativa os Hooks da conta de destino. O Hook de destino pode distinguir quién enviou o Invoke e actuar em consecuencia
-### Consideraciones
+- **Com Destination**: o \`Invoke\` ativa os Hooks da conta de destino. O Hook de destino pode distinguir quem enviou o Invoke e agir de acordo
+### Considerações
 - \`Invoke\` não transfere fundos, é apenas um trigger
-- O Hook que queramos ativar, deberá ter \`Invoke\` habilitado em su \`HookOn\` para reaccionar.
+- O Hook que você quer ativar precisa ter \`Invoke\` habilitado no seu \`HookOn\` para reagir.
 - O fee é padrão, como qualquer outra transação
 - Mais adiante se implementou na Xahau a transação \`CronSet\` para programar tarefas de forma nativa, mas \`Invoke\` continua sendo útil para casos personalizados ou para ativar Hooks de outras contas`,
         en: `The \`Invoke\` transaction is a transaction type exclusive to Xahau that allows **deliberately activating a Hook**, without needing to send a payment or any other transaction with economic effect. It is the way to "call" a Hook directly.
@@ -4178,7 +4412,7 @@ async function invokeHook() {
   const invoke = {
     TransactionType: "Invoke",
     Account: wallet.address,
-    Destination: "rCuentaConHookInstalado", // Conta cujo Hook queremos ativar
+    Destination: "rCuentaConHookInstalado", // Conta cujo Hook se quer ativar
   };
   const prepared = await client.autofill(invoke);
   const signed = wallet.sign(prepared);
@@ -4188,7 +4422,7 @@ async function invokeHook() {
   console.log("Resultado:", txResult);
   console.log("Hash:", signed.hash);
   if (txResult === "tesSUCCESS") {
-    console.log("Se había um Hook instalado, comteste se se ha invocado corretamente.");
+    console.log("Se havia um Hook instalado, verifique se ele foi invocado corretamente.");
   }
   await client.disconnect();
 }
@@ -4332,7 +4566,7 @@ invokeHook();`,
         zh: "SetRemarks：账本对象元数据",
       },
       theory: {
-        es: `La transacción \`SetRemarks\` permite adjuntar **pares clave-valor** a objetos existentes del ledger de Xahau. No es una forma de enviar mensajes ni de registrar datos en transacciones: es un mecanismo para **anotar objetos del ledger** (cuentas, ofertas, escrows, cheques, URITokens, TrustLines...) con metadata que queda asociada al propio objeto.
+        es: `La transacción \`SetRemarks\` permite adjuntar **pares clave-valor** a objetos existentes del ledger en la red Xahau. No es una forma de enviar mensajes ni de registrar datos en transacciones: es un mecanismo para **anotar objetos del ledger** (cuentas, ofertas, escrows, cheques, URITokens, TrustLines...) con metadata que queda asociada al propio objeto.
 
 ### ¿Qué tipos de objetos admiten Remarks?
 
@@ -4409,16 +4643,16 @@ Si añades \`Flags: 1\` (\`tfImmutable\`) al crear una Remark, **no podrá ser m
 | \`tecNO_PERMISSION\` | La cuenta no es propietaria/emisora del objeto |
 | \`tecIMMUTABLE\` | Se intenta modificar una Remark con \`tfImmutable\` |
 | \`tecTOO_MANY_REMARKS\` | El objeto ya tiene 32 Remarks (el máximo permitido) |`,
-        pt: `A transação \`SetRemarks\` permite anexar **pares chave-valor** a objetos existentes do ledger de Xahau. Não é uma forma de enviar mensagens nem de registrar dados em transações: é um mecanismo para **anotar objetos do ledger** (contas, ofertas, escrows, cheques, URITokens, TrustLines...) com metadados que fica associada ao próprio objeto.
-### ¿Qué tipos de objetos admiten Remarks?
-\`SetRemarks\` pode anexar metadatà os siguientes tipos de objetos do ledger:
+        pt: `A transação \`SetRemarks\` permite anexar **pares chave-valor** a objetos existentes do ledger na rede Xahau. Não é uma forma de enviar mensagens nem de registrar dados em transações: é um mecanismo para **anotar objetos do ledger** (contas, ofertas, escrows, cheques, URITokens, TrustLines...) com metadados que fica associada ao próprio objeto.
+### Que tipos de objetos aceitam Remarks?
+\`SetRemarks\` pode anexar metadados aos seguintes tipos de objetos do ledger:
 - **AccountRoot** — a conta em si (endereço, saldo, flags)
 - **Offer** — ofertas no DEX
-- **Escrow** — pagamentos condicionales
+- **Escrow** — pagamentos condicionais
 - **Ticket** — tickets de sequência
 - **PayChannel** — canales de pagamento
 - **Check** — cheques
-- **DepositPreauth** — preautorizaciones de depousito
+- **DepositPreauth** — pré-autorizações de depósito
 - **URIToken** — tokens não fungíveis
 - **RippleState** — TrustLines
 Somente o **proprietário ou emissor** do objeto pode modificar suas Remarks (exceto em URITokens e TrustLines, em que é o emissor do token quem tem permissão).
@@ -4429,16 +4663,16 @@ Somente o **proprietário ou emissor** do objeto pode modificar suas Remarks (ex
 | \`Account\` | String | Sim | Conta que envíà transação (deve ser proprietário/emissor do objeto) |
 | \`ObjectID\` | Hash256 | Sim | ID do objeto do ledger ao que se adjuntan as Remarks |
 | \`Remarks\` | Array | Sim | Array de objetos \`Remark\` a criar, modificar ou eliminar |
-### Estructura de cada Remark
+### Estrutura de cada Remark
 Cada elemento do array contem um objeto \`Remark\` com:
 | Campo | Tipo | Requerido | Descrição |
 |---|---|---|---|
-| \`RemarkName\` | Blob | Sim | Nombre/chave da Remark (1–256 bytes). Debe ser único por objeto |
+| \`RemarkName\` | Blob | Sim | Nome/chave da Remark (1–256 bytes). Deve ser único por objeto |
 | \`RemarkValue\` | Blob | Não | Valor da Remark (1–256 bytes). **Omitir para eliminar** a Remark |
-| \`Flags\` | UInt32 | Não | \`1\` (\`tfImmutable\`) hace a Remark **permanente e inmodificable** |
+| \`Flags\` | UInt32 | Não | \`1\` (\`tfImmutable\`) torna a Remark **permanente e imodificável** |
 Os valores de \`RemarkName\` e \`RemarkValue\` são expressas em **hexadecimal**.
 ### Obter ou ObjectID de uma conta
-Para anexar Remarks a sua própria conta (AccountRoot), você precisa su \`ObjectID\`, que é o campo \`index\` do objeto no ledger:
+Para anexar Remarks à sua própria conta (AccountRoot), você precisa do \`ObjectID\` dela, que é o campo \`index\` do objeto no ledger:
 \`\`\`javascript
 const info = await client.request({
   command: "account_info",
@@ -4447,24 +4681,24 @@ const info = await client.request({
 });
 const objectID = info.result.account_data.index;
 \`\`\`
-Para otros objetos (Escrow, Check, Offer...) o \`ObjectID\` é o \`LedgerIndex\` que aparece nos \`AffectedNodes\` ao criar o objeto.
+Para outros objetos (Escrow, Check, Offer...), o \`ObjectID\` é o \`LedgerIndex\` que aparece nos \`AffectedNodes\` ao criar o objeto.
 ### Eliminar uma Remark
-Omite \`RemarkValue\` no objeto \`Remark\` correspondiente. Xahau eliminará esa entrada do objeto.
+Omita \`RemarkValue\` no objeto \`Remark\` correspondente. A Xahau removerá essa entrada do objeto.
 ### Remarks imutávels
-Se adicionas \`Flags: 1\` (\`tfImmutable\`) ao criar uma Remark, **no podrá ser modificada nem eliminada** no futuro. Útil para certificaciones ou dados que deban quedar selados permanentemente.
-### Limites e costes
+Se você adicionar \`Flags: 1\` (\`tfImmutable\`) ao criar uma Remark, ela **não poderá ser modificada nem removida** no futuro. Útil para certificações ou dados que devem ficar selados permanentemente.
+### Limites e custos
 - **Máximo 32 Remarks** por objeto do ledger
 - **Fee adicional**: 1 drop por cada byte de \`RemarkName\` + \`RemarkValue\` na transação
-- Nombre e valor: entre 1 e 256 bytes cada uno
-- Os nomes devem ser únicos dentro do mismo objeto
-### Erroes comunes
-| Error | Causa |
+- Nome e valor: entre 1 e 256 bytes cada um
+- Os nomes devem ser únicos dentro do mesmo objeto
+### Erros comuns
+| Erro | Causa |
 |---|---|
 | \`temDISABLED\` | A amendment Remarks no está ativa na rede |
 | \`tecNO_PERMISSION\` | A conta no é propietaria/emissora do objeto |
 | \`tecIMMUTABLE\` | Se intenta modificar uma Remark com \`tfImmutable\` |
-| \`tecTOO_MANY_REMARKS\` | O objeto ya tem 32 Remarks (o máximo permitido) |`,
-        en: `The \`SetRemarks\` transaction allows you to attach **key-value pairs** to existing Xahau ledger objects. It is not a way to send messages or record data in transactions: it is a mechanism to **annotate ledger objects** (accounts, offers, escrows, checks, URITokens, TrustLines...) with metadados that remains associated with the object itself.
+| \`tecTOO_MANY_REMARKS\` | O objeto já tem 32 Remarks (o máximo permitido) |`,
+        en: `The \`SetRemarks\` transaction allows you to attach **key-value pairs** to existing ledger objects on the Xahau Network. It is not a way to send messages or record data in transactions: it is a mechanism to **annotate ledger objects** (accounts, offers, escrows, checks, URITokens, TrustLines...) with metadados that remains associated with the object itself.
 
 ### What types of objects support Remarks?
 
@@ -4661,7 +4895,7 @@ Remarks를 설계할 때는 누가 수정 권한을 가지는지와 값 구조�
         {
           title: {
             es: "Añadir y actualizar Remarks en tu cuenta (AccountRoot)",
-            pt: "Añadir e atualizar Remarks em seu conta (AccountRoot)",
+            pt: "Adicionar e atualizar Remarks na sua conta (AccountRoot)",
             en: "Add and update Remarks on your account (AccountRoot)",
             jp: "アカウント（AccountRoot）へのRemarksの追加と更新",
             zh: "在你的账户上添加和更新 Remarks（AccountRoot）",
@@ -4777,7 +5011,7 @@ async function setAccountRemarks() {
         },
       },
       {
-        // Remark imutável: não se podrá modificar nem eliminar nunca
+        // Remark imutável: nunca poderá ser modificada nem removida
         Remark: {
           RemarkName: toHex("criado"),
           RemarkValue: toHex(new Date().toISOString()),
@@ -5346,7 +5580,7 @@ deleteRemark();`,
           visual: "✏️",
         },
         {
-          title: { es: "ObjectID: ¿qué objeto anotar?", pt: "ObjectID: ¿qual objeto anotar?", en: "ObjectID: which object to annotate?", jp: "ObjectID：どのオブジェクトに注釈するか？", zh: "ObjectID：要标注哪个对象？" },
+          title: { es: "ObjectID: ¿qué objeto anotar?", pt: "ObjectID: qual objeto anotar?", en: "ObjectID: which object to annotate?", jp: "ObjectID：どのオブジェクトに注釈するか？", zh: "ObjectID：要标注哪个对象？" },
           content: {
             es: "Cada objeto del ledger tiene un ID único:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  de los AffectedNodes al crear el objeto\n\nSetRemarks necesita ese ID para saber\na qué objeto adjuntar la metadata",
             pt: "Cada objeto do ledger tem um ID único:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  dos AffectedNodes ao criar o objeto\n\nSetRemarks precisa esse ID para saber\na qual objeto anexar a metadados",
@@ -5470,13 +5704,13 @@ O campo \`MintURIToken\` permite criar um novo URIToken que se asigna diretament
 ### Transferir URITokens
 Com \`URITokenIDs\` você pode transferir até 32 URITokens existentes ao destino em uma única transação. Os URITokens devem pertenecer à conta que envia e ter os permisos necesarios.
 ### Fees e reservas
-Remit paga automaticamente os costes adicionales asociados a cada accioun:
+O Remit paga automaticamente os custos adicionais associados a cada ação:
 - **Ativação de conta**: Se a conta de destino não existe, se ativa com a reserva base
-- **TrustLines**: Se se envían IOUs e a conta de destino precisa nuevas TrustLines, se crian e se cubre a reserva
+- **TrustLines**: se forem enviados IOUs e a conta de destino precisar de novas TrustLines, elas são criadas e a reserva é coberta
 - **Reservas de URITokens**: As reservas por URITokens transferidos ou minteados são cobertas automaticamente
-Todos estos costes se deducen da conta que envíà transação (\`Account\`), además do fee padrão da transação.
+Todos esses custos são deduzidos da conta que envia a transação (\`Account\`), além da fee padrão da transação.
 ### Mais informação
-Para uma referencia completa de \`Remit\`, incluyendo todos os campos e errores posibles, consulta a [documentacioun oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
+Para uma referência completa do \`Remit\`, incluindo todos os campos e erros possíveis, consulte a [documentação oficial](https://xahau.network/docs/protocol-reference/transactions/transaction-types/remit/).`,
         en: `The \`Remit\` transaction is an operation exclusive to Xahau that combines multiple actions in a single transaction. It can **activate accounts**, **send payments** (XAH or IOUs) and perform **URIToken operations** (transfer or mint), all at once. It also **pays all fees** for account activation, TrustLines and URIToken reserves.
 
 ### Why use Remit?
@@ -5644,7 +5878,7 @@ Remitは各アクションに関連する追加コストを自動的に支払い
         {
           title: {
             es: "Remit: pago + minteo de URIToken en una sola transacción",
-            pt: "Remit: pagamento + minteo de URIToken em uma sou transação",
+            pt: "Remit: pagamento + mint de URIToken em uma única transação",
             en: "Remit: payment + URIToken minting in a single transaction",
             jp: "Remit：単一トランザクションでの支払い + URITokenのミント",
             zh: "Remit：在单笔交易中完成支付 + URIToken 铸造",
@@ -5931,7 +6165,15 @@ sendRemit();`,
           title: { es: "Remit paga las reservas", pt: "Remit paga as reservas", en: "Remit pays the reserves", jp: "Remitはリザーブを支払う", zh: "Remit 支付准备金" },
           content: {
             es: "El emisor cubre todos los costes:\n\n• Activación de cuenta destino\n• Creación de TrustLines necesarias\n• Reservas de URITokens\n• Fee estándar de la transacción\n\nAhorra fees y garantiza atomicidad\nvs múltiples transacciones separadas",
-            pt: "O emissor cubre todos os costes:\n\n• Ativação de conta destino\n• Criação de TrustLines necessárias\n• Reservas de URITokens\n• Fee padrão da transação\n\nAhorra fees e garante atomicidad\nvs múltiplas transações separadas",
+            pt: `O emissor cobre todos os custos:
+
+• Ativação de conta destino
+• Criação de TrustLines necessárias
+• Reservas de URITokens
+• Fee padrão da transação
+
+Economiza fees e garante atomicidade
+vs múltiplas transações separadas`,
             en: "The sender covers all costs:\n\n• Destination account activation\n• Creation of required TrustLines\n• URIToken reserves\n• Standard transaction fee\n\nSaves fees and guarantees atomicity\nvs multiple separate transactions",
             jp: "送信者がすべてのコストをカバー：\n\n• 宛先アカウントの有効化\n• 必要なTrustLineの作成\n• URITokenのリザーブ\n• 標準トランザクションfee\n\n複数の別々のトランザクションと比較して\nfeeを節約しアトミック性を保証",
             zh: "发送方承担所有成本：\n\n• 目标账户激活\n• 创建所需 TrustLines\n• URIToken 准备金\n• 标准交易手续费\n\n相比多笔分开的交易，\n它更省手续费，也能保证原子性",
@@ -6041,7 +6283,7 @@ Com \`CronSet\` você pode indicar à Xahau que execute o Hook de sua conta de f
 Diferentemente do padrão \`Invoke\` periódico (em que um serviço externo envia transações), \`CronSet\` é **completamente on-chain**: no você precisa nenhum script externo que esteja rodando constantemente.
 ### Requisitos previos
 Antes de usar \`CronSet\` você deve preparar a conta com seu Hook em dois passos:
-1. **Instalar um Hook com o flag \`hsfCOLLECT\`**: Este flag indica que o Hook está diseñado para ser invocado automaticamente por o sistema de crons da rede.
+1. **Instalar um Hook com o flag \`hsfCOLLECT\`**: este flag indica que o Hook foi projetado para ser invocado automaticamente pelo sistema de crons da rede.
 2. **Ativar TSH Collect em sua conta** (\`asfTshCollect\`, \`SetFlag: 11\`): Permite que a rede execute seu Hook por meio do mecanismo de Transaction Signature Hook Collection.
 \`\`\`javascript
 // Ativar TSH Collect
@@ -6059,7 +6301,7 @@ const accountSet = {
 | \`StartTime\` | Number | Não | Ripple Epoch do primeiro disparo. Usa \`0\` para execução inmediata. Omitir ao eliminar |
 | \`RepeatCount\` | Number | Não | Número de vezes que é executadará o Hook (máximo 256 por transação). Omitir ao eliminar |
 | \`DelaySeconds\` | Number | Não | Segundos entre cada execução. Omitir ao eliminar |
-**Reglas importantes**:
+**Regras importantes**:
 - \`DelaySeconds\` e \`RepeatCount\` devem estar presentes os dos, ou ausentes os dos
 - Para eliminar um cron ativo: omite todos os campos de programacioun e adiciona \`Flags: 1\` (\`tfCronUnset\`)
 - No você pode combinar \`tfCronUnset\` com campos de programacioun
@@ -6072,14 +6314,14 @@ const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
 const startIn1Hour = rippleEpoch + 3600;
 \`\`\`
 Usa \`0\` em \`StartTime\` para que o cron empiece a ejecutarse desde o prouximo ledger válido.
-### Limites e restricciones
+### Limites e restrições
 | Parámetro | Limite |
 |---|---|
 | \`RepeatCount\` máximo por transação | 256 |
 | \`DelaySeconds\` máximo | 31.536.000 s (365 dias) |
-| \`StartTime\` máximo hacia o futuro | 365 dias |
+| \`StartTime\` máximo no futuro | 365 dias |
 | \`StartTime\` no pasado | No permitido (\`tecEXPIRED\`) |
-Se você precisa más de 256 repetições, envia otro \`CronSet\` antes de que se agoten para ampliar o contador.
+Se você precisar de mais de 256 repetições, envie outro \`CronSet\` antes que elas acabem para ampliar o contador.
 ### Eliminar um CronSet
 Para cancelar um cron ativo, envia \`CronSet\` com \`Flags: 1\`:
 \`\`\`javascript
@@ -6089,12 +6331,12 @@ const cronDelete = {
   Flags: 1, // tfCronUnset — remova o cron ativo
 };
 \`\`\`
-### Erroes comunes
-| Error | Causa |
+### Erros comuns
+| Erro | Causa |
 |---|---|
 | \`temDISABLED\` | A feature CronSet não está ativada na rede |
 | \`temMALFORMED\` | Combinação de campos inválida (por exemplo apenas um de \`DelaySeconds\`/\`RepeatCount\`) |
-| \`tecEXPIRED\` | \`StartTime\` no pasado ou más de 365 dias no futuro |`,
+| \`tecEXPIRED\` | \`StartTime\` no passado ou mais de 365 dias no futuro |`,
         en: `The \`CronSet\` transaction allows scheduling the **automatic and periodic execution** of a Hook directly from the Xahau protocol, without depending on any external service. It is the network's native cron job mechanism.
 
 ### What is CronSet?
@@ -6402,8 +6644,8 @@ async function setupCron() {
     TransactionType: "CronSet",
     Account: wallet.address,
     StartTime: 0,       // 0 = comenzar desde o prouximo ledger válido
-    DelaySeconds: 3600, // Ejecutar cada 1 hora (3600 segundos)
-    RepeatCount: 24,    // Ejecutar 24 vezes em total (= 24 horas)
+    DelaySeconds: 3600, // Executar a cada 1 hora (3600 segundos)
+    RepeatCount: 24,    // Executar 24 vezes no total (= 24 horas)
   };
   const prepCron = await client.autofill(cronSet);
   const signedCron = wallet.sign(prepCron);
@@ -6412,7 +6654,7 @@ async function setupCron() {
   console.log("CronSet resultado:", txResult);
   console.log("Hash:", signedCron.hash);
   if (txResult === "tesSUCCESS") {
-    console.log("¡CronSet criado corretamente!");
+    console.log("CronSet criado corretamente!");
     console.log("O Hook se executará automaticamente cada 1 hora durante 24 horas.");
     console.log("Certifique-se de que o Hook está instalado com ou flag hsfCOLLECT.");
   }
@@ -6676,7 +6918,7 @@ async function deleteCron() {
   console.log("=== Eliminar CronSet ativo ===");
   console.log("Conta:", wallet.address);
   // Para eliminar um cron: omitir todos os campos de programação
-  // e añadir Flags: 1 (tfCronUnset)
+  // e adicionar Flags: 1 (tfCronUnset)
   const cronDelete = {
     TransactionType: "CronSet",
     Account: wallet.address,
@@ -6898,897 +7140,7 @@ deleteCron();`,
   ],
 };
 
-const arabicCode = {
-  m10l1: [
-`require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
 
-async function createTimeLockedEscrow() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Ripple Epoch: الثواني منذ 01/01/2000 00:00:00 UTC
-  // الفرق عن Unix Epoch: 946684800 ثانية
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-  const now = Math.floor(Date.now() / 1000);
-
-  // FinishAfter: بعد دقيقتين من الآن
-  const finishAfter = now - RIPPLE_EPOCH_OFFSET + 2 * 60;
-  // CancelAfter: بعد 24 ساعة من الآن (إذا لم يكمله أحد يمكن إلغاؤه)
-  const cancelAfter = now - RIPPLE_EPOCH_OFFSET + 24 * 60 * 60;
-
-  const escrowCreate = {
-    TransactionType: "EscrowCreate",
-    Account: sender.address,
-    Destination: "rDestinationAddress",
-    Amount: xahToDrops(10), // قفل 10 XAH
-    FinishAfter: finishAfter,
-    CancelAfter: cancelAfter,
-  };
-
-  const prepared = await client.autofill(escrowCreate);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== EscrowCreate ===");
-  console.log("Result:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Hash:", signed.hash);
-    console.log("Sequence:", prepared.Sequence);
-    console.log(
-      "FinishAfter:",
-      new Date((finishAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
-    );
-    console.log(
-      "CancelAfter:",
-      new Date((cancelAfter + RIPPLE_EPOCH_OFFSET) * 1000).toISOString()
-    );
-    console.log("\\Save the Sequence! You need it for EscrowFinish.");
-    console.log(\`Escrow Sequence: \${prepared.Sequence}\`);
-    console.log(\`Your address: \${sender.address}\`);
-
-  }
-
-  await client.disconnect();
-}
-
-createTimeLockedEscrow();`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function finishEscrow(ownerAddress, escrowSequence) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // يمكن لأي حساب تنفيذ EscrowFinish
-  const executor = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // أولا، تحقق من وجود الـ Escrow عبر استعلام account_objects
-  const objects = await client.request({
-    command: "account_objects",
-    account: ownerAddress,
-    type: "escrow",
-    ledger_index: "validated",
-  });
-
-  const escrow = objects.result.account_objects.find(
-    (obj) => obj.PreviousTxnLgrSeq !== undefined
-  );
-
-  if (!escrow) {
-    console.log("Escrow not found. It may have already been completed or cancelled.");
-    await client.disconnect();
-    return;
-  }
-
-  console.log("=== Escrow found ===");
-  console.log("Amount:", Number(escrow.Amount) / 1_000_000, "XAH");
-  console.log("Destination:", escrow.Destination);
-
-  // تحقق مما إذا مر وقت FinishAfter بالفعل
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-  const now = Math.floor(Date.now() / 1000);
-  const finishAfterUnix = escrow.FinishAfter + RIPPLE_EPOCH_OFFSET;
-
-  if (now < finishAfterUnix) {
-    const remaining = finishAfterUnix - now;
-    console.log(
-      \`Cannot finish this escrow yet. \${remaining} seconds remaining.\`
-    );
-    console.log(
-      \`Available from: \${new Date(finishAfterUnix * 1000).toISOString()}\`
-    );
-    await client.disconnect();
-    return;
-  }
-
-  console.log("The lock period has passed. Finishing escrow...");
-
-  const escrowFinish = {
-    TransactionType: "EscrowFinish",
-    Account: executor.address,
-    Owner: ownerAddress,
-    OfferSequence: escrowSequence,
-  };
-
-  const prepared = await client.autofill(escrowFinish);
-  const signed = executor.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== EscrowFinish ===");
-  console.log("Result:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Escrow finished! Funds have been delivered.");
-    console.log("Hash:", signed.hash);
-  } else if (txResult === "tecNO_TARGET") {
-    console.log("Escrow not found. It may have been cancelled.");
-  }
-
-  await client.disconnect();
-}
-
-// استخدم عنوان المنشئ و Sequence من EscrowCreate
-finishEscrow("rCreatorAddress", 12345);`,
-  ],
-  m10l2: [
-`require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function checkExample() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  const receiverAddress = "rReceiverAddress"; // استبدل بعنوان المستلم واحفظ seed ذلك الحساب في .env باسم CASH_SEED للمثال التالي
-
-  // === 1. إنشاء الشيك ===
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-  const expiration = Math.floor(Date.now() / 1000) - RIPPLE_EPOCH_OFFSET + 7 * 24 * 60 * 60; // تنتهي الصلاحية بعد 7 أيام
-
-  const checkCreate = {
-    TransactionType: "CheckCreate",
-    Account: sender.address,
-    Destination: receiverAddress,
-    SendMax: xahToDrops(50), // حتى 50 XAH
-    Expiration: expiration,
-  };
-
-  const prepared = await client.autofill(checkCreate);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("=== CheckCreate ===");
-  console.log("Result:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    // ابحث عن CheckID داخل affected nodes
-    const createdNode = result.result.meta.AffectedNodes.find(
-      (node) => node.CreatedNode && node.CreatedNode.LedgerEntryType === "Check"
-    );
-
-    if (createdNode) {
-      const checkID = createdNode.CreatedNode.LedgerIndex;
-      console.log("CheckID:", checkID);
-      console.log("Save this CheckID to cash the check from your account: " + sender.address);
-    }
-  }
-
-  await client.disconnect();
-}
-
-checkExample();`,
-`require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function cashCheck(checkID) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // المستلم يصرف الشيك
-  const receiver = Wallet.fromSeed(process.env.CASH_SEED, {algorithm: 'secp256k1'});
-
-  // الخيار 1: صرف مبلغ محدد بالضبط
-  const checkCash = {
-    TransactionType: "CheckCash",
-    Account: receiver.address,
-    CheckID: checkID,
-    Amount: xahToDrops(50), // صرف 50 XAH بالضبط
-  };
-
-  // الخيار 2 (بديل): صرف حد أدنى على الأقل
-  // const checkCash = {
-  //   TransactionType: "CheckCash",
-  //   Account: receiver.address,
-  //   CheckID: checkID,
-  //   DeliverMin: xahToDrops(40), // 40 XAH على الأقل
-  // };
-
-  const prepared = await client.autofill(checkCash);
-  const signed = receiver.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== CheckCash ===");
-  console.log("Result:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Check cashed successfully!");
-    const delivered = result.result.meta.delivered_amount;
-    if (typeof delivered === "string") {
-      console.log("Amount received:", Number(delivered) / 1_000_000, "XAH");
-    } else {
-      console.log("Amount received:", delivered.value, delivered.currency);
-    }
-  } else if (txResult === "tecNO_ENTRY") {
-    console.log("Check not found. It may have been cancelled or already cashed.");
-  } else if (txResult === "tecUNFUNDED") {
-    console.log("The check issuer has insufficient funds.");
-  }
-
-  await client.disconnect();
-}
-
-// استخدم CheckID الذي حصلت عليه عند إنشاء الشيك
-cashCheck("YOUR_CHECK_ID_HERE");`,
-  ],
-  m10l3: [
-`require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function paymentsWithTickets() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // === الخطوة 1: إنشاء 3 Tickets ===
-  console.log("=== Step 1: Create Tickets ===");
-  const ticketCreate = {
-    TransactionType: "TicketCreate",
-    Account: sender.address,
-    TicketCount: 3, // حجز 3 tickets
-  };
-
-  const prepTicket = await client.autofill(ticketCreate);
-  const signedTicket = sender.sign(prepTicket);
-  const resultTicket = await client.submitAndWait(signedTicket.tx_blob);
-
-  console.log("TicketCreate:", resultTicket.result.meta.TransactionResult);
-
-  if (resultTicket.result.meta.TransactionResult !== "tesSUCCESS") {
-    console.log("Error creating tickets.");
-    await client.disconnect();
-    return;
-  }
-
-  // استخراج قيم TicketSequence من العقد المنشأة
-  const ticketSequences = resultTicket.result.meta.AffectedNodes
-    .filter((n) => n.CreatedNode?.LedgerEntryType === "Ticket")
-    .map((n) => n.CreatedNode.NewFields.TicketSequence)
-    .sort((a, b) => a - b);
-
-  console.log("Tickets created:", ticketSequences);
-
-  // === الخطوة 2: استخدام Tickets لإرسال المدفوعات (بأي ترتيب) ===
-  console.log("=== Step 2: Send payments with Tickets ===");
-
-  const destinations = [
-    { address: "rDestination1XXXXXXXXXXXXXXXXXXXXX", amount: 5,  label: "Payment A" },
-    { address: "rDestination2XXXXXXXXXXXXXXXXXXXXX", amount: 10, label: "Payment B" },
-    { address: "rDestination3XXXXXXXXXXXXXXXXXXXXX", amount: 15, label: "Payment C" },
-  ];
-
-  // يمكن إرسالها بأي ترتيب، وحتى بالتوازي
-  // هنا نرسلها بترتيب معكوس لإظهار هذه المرونة
-  for (let i = destinations.length - 1; i >= 0; i--) {
-    const dest = destinations[i];
-    const ticketSeq = ticketSequences[i];
-
-    const payment = {
-      TransactionType: "Payment",
-      Account: sender.address,
-      Destination: dest.address,
-      Amount: xahToDrops(dest.amount),
-      Sequence: 0,               // لا تستخدم Sequence العادي
-      TicketSequence: ticketSeq,  // استخدم Ticket المحجوز
-    };
-
-    const prepared = await client.autofill(payment);
-    // قد يعيد autofill كتابة Sequence، لذلك نفرضه يدويا
-    prepared.Sequence = 0;
-    prepared.TicketSequence = ticketSeq;
-
-    const signed = sender.sign(prepared);
-    const result = await client.submitAndWait(signed.tx_blob);
-
-    const txResult = result.result.meta.TransactionResult;
-    console.log(\`\${dest.label} (Ticket \${ticketSeq}): \${txResult} → \${dest.amount} XAH\`);
-  }
-
-  console.log("All payments sent with Tickets!");
-  console.log("Used Tickets have been destroyed and the reserve released.");
-
-  await client.disconnect();
-}
-
-paymentsWithTickets();`,
-  ],
-  m10l4: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function claimReward() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // استعلام عن معلومات الحساب قبل المطالبة
-  const accountInfo = await client.request({
-    command: "account_info",
-    account: wallet.address,
-    ledger_index: "validated",
-  });
-
-  const balanceBefore = Number(accountInfo.result.account_data.Balance) / 1_000_000;
-  console.log("=== State before claiming ===");
-  console.log("Account:", wallet.address);
-  console.log("Current balance:", balanceBefore, "XAH");
-
-  // إرسال ClaimReward
-  // Issuer: حساب genesis للشبكة (يختلف بين testnet وmainnet)
-  const claimReward = {
-    TransactionType: "ClaimReward",
-    Account: wallet.address,
-    Issuer: "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh", // حساب genesis لـ testnet
-  };
-
-  const prepared = await client.autofill(claimReward);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== ClaimReward ===");
-  console.log("Result:", txResult);
-  console.log("Hash:", signed.hash);
-
-  if (txResult === "tesSUCCESS") {
-    // استعلام الرصيد بعد المطالبة
-    const accountAfter = await client.request({
-      command: "account_info",
-      account: wallet.address,
-      ledger_index: "validated",
-    });
-
-    const balanceAfter = Number(accountAfter.result.account_data.Balance) / 1_000_000;
-    console.log("=== State after claiming ===");
-    console.log("New balance:", balanceAfter, "XAH");
-    console.log("Reward received:", (balanceAfter - balanceBefore).toFixed(6), "XAH");
-  }
-
-  await client.disconnect();
-}
-
-claimReward();`,
-  ],
-  m10l5: [
-`// Invoke يستدعي Hook على حساب آخر بدون إرسال دفعة عادية
-import { Client, Wallet, convertStringToHex } from "xahau";
-
-const client = new Client("wss://xahau-test.net");
-await client.connect();
-
-const wallet = Wallet.fromSeed(process.env.SEED);
-
-const tx = {
-  TransactionType: "Invoke",
-  Account: wallet.address,
-  Destination: "rHOOK_ACCOUNT_ADDRESS",
-  Blob: convertStringToHex("رسالة اختيارية للـ Hook"),
-};
-
-const prepared = await client.autofill(tx);
-const result = await client.submitAndWait(wallet.sign(prepared).tx_blob);
-console.log("نتيجة Invoke:", result.result.meta.TransactionResult);
-await client.disconnect();`,
-  ],
-  m10l6: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// يتم التعبير عن RemarkName وRemarkValue بصيغة hexadecimal
-function toHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-
-async function setAccountRemarks() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // احصل على ObjectID الخاص بـ AccountRoot (حقل "index" من account_info)
-  const info = await client.request({
-    command: "account_info",
-    account: wallet.address,
-    ledger_index: "validated",
-  });
-  const objectID = info.result.account_data.index;
-
-  console.log("=== SetRemarks on AccountRoot ===");
-  console.log("Account:", wallet.address);
-  console.log("ObjectID:", objectID);
-
-  const setRemarks = {
-    TransactionType: "SetRemarks",
-    Account: wallet.address,
-    ObjectID: objectID,
-    Remarks: [
-      {
-        Remark: {
-          RemarkName: toHex("name"),
-          RemarkValue: toHex("Learn Xahau Demo"),
-        },
-      },
-      {
-        Remark: {
-          RemarkName: toHex("web"),
-          RemarkValue: toHex("https://learnxahau.inftf.org"),
-        },
-      },
-      {
-        // Remark غير قابلة للتعديل: لا يمكن تعديلها أو حذفها أبدا
-        Remark: {
-          RemarkName: toHex("created"),
-          RemarkValue: toHex(new Date().toISOString()),
-          Flags: 1, // tfImmutable
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(setRemarks);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Result:", txResult);
-  console.log("Hash:", signed.hash);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Remarks attached to the AccountRoot.");
-    console.log("Note: the 'created' Remark is immutable and cannot be changed.");
-  }
-
-  await client.disconnect();
-}
-
-setAccountRemarks();`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-function toHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-
-async function deleteRemark() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // احصل على ObjectID الخاص بـ AccountRoot
-  const info = await client.request({
-    command: "account_info",
-    account: wallet.address,
-    ledger_index: "validated",
-  });
-  const objectID = info.result.account_data.index;
-
-  // لحذف Remark: أدرج RemarkName فقط بدون RemarkValue
-  const setRemarks = {
-    TransactionType: "SetRemarks",
-    Account: wallet.address,
-    ObjectID: objectID,
-    Remarks: [
-      {
-        Remark: {
-          RemarkName: toHex("web"), // احذف الـ Remark المسماة "web"
-          // بدون RemarkValue ← يتم حذف الإدخال
-        },
-      },
-      {
-        Remark: {
-          RemarkName: toHex("name"), // حدّث قيمة "name"
-          RemarkValue: toHex("Updated account"),
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(setRemarks);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== Delete/update Remarks ===");
-  console.log("Result:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Remark 'web' deleted.");
-    console.log("Remark 'name' updated.");
-  } else if (txResult === "tecIMMUTABLE") {
-    console.log("Cannot modify: one of the Remarks has the tfImmutable flag.");
-  }
-
-  await client.disconnect();
-}
-
-deleteRemark();`,
-  ],
-  m10l7: [
-`require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-function stringToHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-
-async function sendRemit() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // Remit: إرسال 25 XAH + إنشاء URIToken للوجهة
-  const remit = {
-    TransactionType: "Remit",
-    Account: wallet.address,
-    Destination: "rDestinationAddress",
-    // إرسال 25 XAH
-    Amounts: [
-      {
-        AmountEntry: {
-          Amount: xahToDrops(25),
-        },
-      },
-    ],
-    // إنشاء URIToken مباشرة في حساب الوجهة
-    MintURIToken: {
-      URI: stringToHex("ipfs://bafybeieza5w4rkes55paw7jgpo4kzsbyywhw7ildltk3kjx2ttkmt7texa/106.json"),
-      Digest: "A".repeat(64), // hash بصيغة SHA-256 للمحتوى (64 حرف hex)
-      Flags: 1, // tfBurnable: يمكن لـ issuer حرق التوكن
-    },
-  };
-
-  const prepared = await client.autofill(remit);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("=== Remit ===");
-  console.log("Result:", txResult);
-  console.log("Hash:", signed.hash);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("In a single transaction:");
-    console.log("- 25 XAH sent to the destination");
-    console.log("- URIToken minted directly in the destination account");
-    console.log("- Reserve fees covered automatically");
-  }
-
-  await client.disconnect();
-}
-
-sendRemit();`,
-  ],
-  m10l8: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function setupCron() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  console.log("Account:", wallet.address);
-
-  // === الخطوة 1: تفعيل TSH Collect على الحساب ===
-  // مطلوب حتى تتمكن الشبكة من تشغيل Hook تلقائيا
-  console.log("=== Step 1: Enable TSH Collect (asfTshCollect) ===");
-
-  const accountSet = {
-    TransactionType: "AccountSet",
-    Account: wallet.address,
-    SetFlag: 11, // asfTshCollect
-  };
-
-  const prepAccountSet = await client.autofill(accountSet);
-  const signedAccountSet = wallet.sign(prepAccountSet);
-  const resultAccountSet = await client.submitAndWait(signedAccountSet.tx_blob);
-
-  console.log("AccountSet result:", resultAccountSet.result.meta.TransactionResult);
-
-  if (resultAccountSet.result.meta.TransactionResult !== "tesSUCCESS") {
-    console.log("Error enabling TSH Collect.");
-    await client.disconnect();
-    return;
-  }
-
-  // === الخطوة 2: إنشاء CronSet ===
-  // يجب تثبيت Hook مع hsfCOLLECT قبل هذه الخطوة
-  console.log("=== Step 2: Create CronSet ===");
-
-  // Ripple Epoch: الثواني منذ 01/01/2000 00:00:00 UTC
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-
-  const cronSet = {
-    TransactionType: "CronSet",
-    Account: wallet.address,
-    StartTime: 0,       // 0 = يبدأ من أقرب ledger صالح
-    DelaySeconds: 3600, // ينفذ كل ساعة واحدة (3600 ثانية)
-    RepeatCount: 24,    // ينفذ 24 مرة إجمالا (= 24 ساعة)
-  };
-
-  const prepCron = await client.autofill(cronSet);
-  const signedCron = wallet.sign(prepCron);
-  const resultCron = await client.submitAndWait(signedCron.tx_blob);
-
-  const txResult = resultCron.result.meta.TransactionResult;
-  console.log("CronSet result:", txResult);
-  console.log("Hash:", signedCron.hash);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("CronSet created successfully!");
-    console.log("The Hook will run automatically every 1 hour for 24 hours.");
-    console.log("Make sure the Hook is installed with the hsfCOLLECT flag.");
-  }
-
-  await client.disconnect();
-}
-
-setupCron();`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function deleteCron() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  console.log("=== Delete active CronSet ===");
-  console.log("Account:", wallet.address);
-
-  // لحذف cron: احذف كل حقول الجدولة
-  // وأضف Flags: 1 (tfCronUnset)
-  const cronDelete = {
-    TransactionType: "CronSet",
-    Account: wallet.address,
-    Flags: 1, // tfCronUnset — يحذف cron النشط
-  };
-
-  const prepared = await client.autofill(cronDelete);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Result:", txResult);
-  console.log("Hash:", signed.hash);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("CronSet deleted. The Hook will no longer run automatically.");
-  } else {
-    console.log("No active CronSet found for this account.");
-  }
-
-  await client.disconnect();
-}
-
-deleteCron();`,
-  ],
-  m10l9: [
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-function toHex(value) {
-  return Buffer.from(value, "utf8").toString("hex").toUpperCase();
-}
-
-async function setOraclePrice() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // يوقّع هذا الـ seed كمزود Oracle الذي ينشر الأسعار.
-  const oracle = Wallet.fromSeed(process.env.ORACLE_SEED, { algorithm: "secp256k1" });
-
-  const oracleSet = {
-    TransactionType: "OracleSet",
-    Account: oracle.address,
-    OracleDocumentID: 1, // معرف فريد لمستند Oracle داخل هذا الحساب
-    Provider: toHex("CourseOracle"), // اسم المزود مرمّز بصيغة hex
-    AssetClass: toHex("currency"), // فئة الأصل مرمّزة بصيغة hex
-    LastUpdateTime: Math.floor(Date.now() / 1000), // يتطلب OracleSet طابعا زمنيا حديثا
-    PriceDataSeries: [
-      {
-        PriceData: {
-          BaseAsset: "XAH", // الأصل الذي يتم نشر سعره
-          QuoteAsset: "USD", // العملة المستخدمة للتعبير عن السعر
-          AssetPrice: 74560,
-          Scale: 4, // 74560 * 10^-4 = 7.456 USD
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(oracleSet);
-  const signed = oracle.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("=== OracleSet ===");
-  console.log("Account:", oracle.address);
-  console.log("Result:", result.result.meta.TransactionResult);
-  console.log("Hash:", signed.hash);
-
-  await client.disconnect();
-}
-
-setOraclePrice().catch(console.error);`,
-`const { Client } = require("xahau");
-
-async function queryAggregatePrice() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // هذه عناوين Oracle عامة منشورة مسبقا في مثال Learning Xahau.
-  // يحسب get_aggregate_price الوسيط/المتوسط من عدة مزودين.
-  const response = await client.request({
-    command: "get_aggregate_price",
-    ledger_index: "current",
-    base_asset: "XAH",
-    quote_asset: "USD",
-    trim: 20, // يقص القيم الشاذة قبل حساب المتوسط المقصوص
-    time_threshold: 300, // يتجاهل التحديثات القديمة جدا
-    oracles: [
-      { account: "rEhZSNh9pVRTcA79tQjYezg9V44HfcToR1", oracle_document_id: 1 },
-      { account: "rD1rh9ffewxVb9QBqkr5ph98QXqCM1xsEP", oracle_document_id: 1 },
-      { account: "r35gjkjZL4mhqyrabpxVUE9K9T5JW1nng9", oracle_document_id: 1 },
-    ],
-  });
-
-  console.log("=== Aggregate Price ===");
-  console.log("Median:", response.result.median);
-  console.log("Mean:", response.result.entire_set?.mean);
-  console.log("Trimmed mean:", response.result.trimmed_set?.mean);
-  console.log("Oracle count:", response.result.entire_set?.size);
-
-  await client.disconnect();
-}
-
-queryAggregatePrice().catch(console.error);`,
-`// OracleDelete يحذف مستند Oracle لم يعد مستخدما
-import { Client, Wallet } from "xahau";
-
-const client = new Client("wss://xahau-test.net");
-await client.connect();
-
-const wallet = Wallet.fromSeed(process.env.SEED);
-
-const tx = {
-  TransactionType: "OracleDelete",
-  Account: wallet.address,
-  OracleDocumentID: 1,
-};
-
-const prepared = await client.autofill(tx);
-const result = await client.submitAndWait(wallet.sign(prepared).tx_blob);
-console.log("نتيجة OracleDelete:", result.result.meta.TransactionResult);
-await client.disconnect();`,
-  ],
-  m10l10: [
-`// هذا المثال يستخدم توكن RWD موجودا مسبقا من Learning Xahau
-// يجب إنشاء Trustline نحو issuer التوكن قبل المطالبة بالمكافأة
-import { Client, Wallet } from "xahau";
-
-const client = new Client("wss://xahau-test.net");
-await client.connect();
-
-const holder = Wallet.fromSeed(process.env.HOLDER_SEED);
-const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
-
-const tx = {
-  TransactionType: "TrustSet",
-  Account: holder.address,
-  LimitAmount: {
-    currency: "RWD",
-    issuer: tokenIssuer,
-    value: "1000000",
-  },
-};
-
-const prepared = await client.autofill(tx);
-const result = await client.submitAndWait(holder.sign(prepared).tx_blob);
-console.log("نتيجة TrustSet:", result.result.meta.TransactionResult);
-await client.disconnect();`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-function normalizeCurrency(currency) {
-  if (currency.length <= 3) return currency;
-
-  const hex = Buffer.from(currency, "utf8").toString("hex").toUpperCase();
-  if (hex.length > 40) {
-    throw new Error("رمز العملة طويل جدا لصيغة IOU الخاصة بـ Xahau.");
-  }
-
-  return hex.padEnd(40, "0");
-}
-
-async function claimIouReward() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
-
-  // يشير هذا التمرين إلى توكن RWD المنشأ مسبقا في مثال Learning Xahau.
-  // يستدعي ClaimReward حساب RESERVE الذي يملك بالفعل Hook برنامج المكافآت مثبتا.
-  const rewardIssuer = "rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm";
-  const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
-  const currency = normalizeCurrency("RWD");
-
-  const claimReward = {
-    TransactionType: "ClaimReward",
-    Account: holder.address,
-    Issuer: rewardIssuer, // الحساب الذي يملك Hook المكافآت مثبتا
-    ClaimCurrency: {
-      currency,
-      issuer: tokenIssuer, // issuer الحقيقي لتوكن RWD
-    },
-  };
-
-  const prepared = await client.autofill(claimReward);
-  const signed = holder.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("=== IOU Reward Claim ===");
-  console.log("Holder:", holder.address);
-  console.log("Reward issuer:", rewardIssuer);
-  console.log("Token issuer:", tokenIssuer);
-  console.log("Currency:", currency);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-  console.log("Hash:", signed.hash);
-
-  await client.disconnect();
-}
-
-claimIouReward().catch(console.error);`,
-`// فحص Trustline لمعرفة رصيد RWD بعد المطالبة
-import { Client } from "xahau";
-
-const client = new Client("wss://xahau-test.net");
-await client.connect();
-
-const holderAddress = "rHOLDER_ADDRESS";
-const tokenIssuer = "rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf";
-
-const lines = await client.request({
-  command: "account_lines",
-  account: holderAddress,
-  peer: tokenIssuer,
-});
-
-const rwdLine = lines.result.lines.find((line) => line.currency === "RWD");
-console.log("رصيد RWD:", rwdLine?.balance ?? "لا توجد Trustline");
-await client.disconnect();`,
-  ],
-};
 
 const arabicModuleTranslations = {
   title: "معاملات أخرى متاحة",
@@ -7955,7 +7307,6 @@ function applyArabicTranslations(data) {
       if (typeof block.code === "string") {
         block.code = { en: block.code };
       }
-      block.code.ar = arabicCode[lesson.id]?.[index] ?? block.code.en ?? block.code.es;
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -7995,9 +7346,6 @@ function applyFrenchTranslations(module) {
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.fr = translation.codeTitles[index];
       if (typeof block.code === "string") block.code = { en: block.code };
-      block.code.fr = localizeFrenchCode(
-        `// ${translation.codeTitles[index]}\n// Exemple commenté en français : utilise des comptes testnet et vérifie les champs avant de signer.\n\n${block.code.en ?? block.code.es}`,
-      );
     });
     lesson.slides?.forEach((slide, index) => {
       const slideTranslation = translation.slides[index];
@@ -8006,22 +7354,6 @@ function applyFrenchTranslations(module) {
       slide.content.fr = slideTranslation[1];
     });
   }
-}
-
-function localizeFrenchCode(code) {
-  return code
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("//") && !/[éèàùçîô]/i.test(trimmed)) {
-        return `${line.match(/^\s*/)?.[0] ?? ""}// Note : adapte cette étape à la transaction et aux comptes de testnet.`;
-      }
-      if (trimmed.startsWith("#") && /[A-Za-z]{4,}/.test(trimmed) && !/[éèàùçîô]/i.test(trimmed)) {
-        return `${line.match(/^\s*/)?.[0] ?? ""}# Note : adapte cette étape à ton environnement local.`;
-      }
-      return line;
-    })
-    .join("\n");
 }
 
 applyFrenchTranslations(moduleData);
@@ -8142,7 +7474,7 @@ On peut ajouter des donnees dans \`Memos\` ou \`HookParameters\` afin que le Hoo
 \`Invoke\` لا ينقل أموالا. يجب أن يكون Hook مستعدا لـ Invoke في \`HookOn\`. الرسوم عادية. \`CronSet\` يغطي الجدولة الأصلية، لكن \`Invoke\` يبقى مفيدا للتشغيل اليدوي والتدفقات الخاصة.`,
   },
   m10l6: {
-    fr: `\`SetRemarks\` attache des **paires cle-valeur** a des objets existants du ledger Xahau. Ce n'est pas un systeme de messages dans les transactions : c'est une annotation persistante associee a l'objet lui-meme.
+    fr: `\`SetRemarks\` attache des **paires cle-valeur** a des objets existants du ledger sur le réseau Xahau. Ce n'est pas un systeme de messages dans les transactions : c'est une annotation persistante associee a l'objet lui-meme.
 
 ### Objets compatibles
 
@@ -8159,7 +7491,7 @@ Pour AccountRoot, l'ObjectID est le champ \`index\` retourne par \`account_info\
 ### Limites, couts et erreurs
 
 Maximum 32 Remarks par objet. Les frais ajoutent 1 drop par byte de nom et valeur. Les noms doivent etre uniques par objet. Erreurs courantes : \`temDISABLED\`, \`tecNO_PERMISSION\`, \`tecIMMUTABLE\`, \`tecTOO_MANY_REMARKS\`.`,
-    ar: `\`SetRemarks\` تضيف **أزواج مفتاح/قيمة** إلى كائنات موجودة في Ledger Xahau. ليست رسائل داخل المعاملة، بل ملاحظات دائمة مرتبطة بالكائن نفسه.
+    ar: `\`SetRemarks\` تضيف **أزواج مفتاح/قيمة** إلى كائنات موجودة في ledger شبكة Xahau. ليست رسائل داخل المعاملة، بل ملاحظات دائمة مرتبطة بالكائن نفسه.
 
 ### الكائنات المدعومة
 
@@ -8363,7 +7695,11 @@ Les champs principaux sont \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`Asse
 
 \`Provider\` et \`AssetClass\` sont requis a la creation. \`PriceDataSeries\` doit contenir 1 a 10 entrees, base et quote doivent differer, \`Scale\` va de 0 a 10 et \`LastUpdateTime\` doit etre plus recent. Omettre \`AssetPrice\` pour une paire existante la supprime.
 
-Les Oracles consomment 1 owner reserve pour 1-5 paires et 2 reserves pour 6-10. En production, on agrege plusieurs providers via \`get_aggregate_price\`; \`trim\` et \`time_threshold\` reduisent outliers et prix obsoletes. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.`,
+Les Oracles consomment 1 owner reserve pour 1-5 paires et 2 reserves pour 6-10. En production, on agrege plusieurs providers via \`get_aggregate_price\`; \`trim\` et \`time_threshold\` reduisent outliers et prix obsoletes. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.
+
+### Lancer les scripts de cette leçon
+
+Ces scripts signent avec \`ORACLE_SEED\` de \`.env\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Un compte distinct garde l'objet Oracle, et la réserve qu'il bloque, à l'écart de ton compte principal. Si la variable manque, les scripts s'arrêtent avant d'envoyer quoi que ce soit et indiquent quoi lancer.`,
     ar: `**Price Oracle** هو كائن ledger يسمح لحساب بنشر أسعار الأصول مباشرة على Xahau. يمكن للتطبيقات وHooks قراءة هذه الأسعار من ledger بدلا من الاعتماد على قيمة ثابتة أو خادم خاص.
 
 ### المشكلة
@@ -8380,7 +7716,11 @@ Les Oracles consomment 1 owner reserve pour 1-5 paires et 2 reserves pour 6-10. 
 
 \`Provider\` و\`AssetClass\` مطلوبان عند الإنشاء. \`PriceDataSeries\` من 1 إلى 10، ويجب اختلاف base وquote، و\`Scale\` من 0 إلى 10، و\`LastUpdateTime\` يجب أن يكون أحدث. حذف \`AssetPrice\` لزوج موجود يحذف الزوج.
 
-تستهلك Oracles احتياطيا واحدا لـ 1-5 أزواج واحتياطيين لـ 6-10. في الإنتاج يتم تجميع عدة providers عبر \`get_aggregate_price\`; وتقلل \`trim\` و\`time_threshold\` القيم الشاذة والأسعار القديمة. الأخطاء: \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.`,
+تستهلك Oracles احتياطيا واحدا لـ 1-5 أزواج واحتياطيين لـ 6-10. في الإنتاج يتم تجميع عدة providers عبر \`get_aggregate_price\`; وتقلل \`trim\` و\`time_threshold\` القيم الشاذة والأسعار القديمة. الأخطاء: \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.
+
+### تشغيل سكربتات هذا الدرس
+
+تُوقّع هذه السكربتات بـ \`ORACLE_SEED\` من \`.env\`، الذي ينشئه \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)). حساب منفصل يُبقي كائن Oracle، والاحتياطي الذي يحجزه، بعيدًا عن حسابك الرئيسي. إذا كان المتغير مفقودًا تتوقف السكربتات قبل الإرسال وتوضح ما يجب تشغيله.`,
   },
   m10l10: {
     fr: `La fonctionnalite s'appelle **IOURewardClaim**, mais la transaction envoyee reste **ClaimReward**. L'amendment etend \`ClaimReward\` pour que des issuers de tokens puissent executer des programmes de recompenses personnalises pour les detenteurs d'IOUs.
@@ -8433,8 +7773,50 @@ applyExpandedM10Theory(moduleData);
 
 const additionalM10TheoryDetails = {
   m10l2: {
-    fr: `\n\n### Exemple de SendMax\n\nPour un check en XAH, \`SendMax\` est une string en drops, par exemple \`\"10000000\"\` pour 10 XAH. Pour un IOU, \`SendMax\` est un objet avec \`currency\`, \`issuer\` et \`value\`. Cela permet au meme mecanisme de fonctionner avec l'actif natif et avec des tokens emis.\n\n### Details pratiques\n\nLe \`CheckID\` est l'identifiant de l'objet Check dans le ledger. Apres un \`CheckCreate\`, tu le recuperes en inspectant les objets crees dans les metadonnees ou avec les commandes de lecture du compte. Pour verifier un encaissement, regarde toujours \`TransactionResult\` et les \`AffectedNodes\` afin de voir si le Check a ete supprime et si le solde a change.`,
-    ar: `\n\n### مثال SendMax\n\nفي Check بـ XAH يكون \`SendMax\` نصا بالدروبس مثل \`\"10000000\"\` لـ 10 XAH. أما IOU فيكون \`SendMax\` كائنا يحتوي \`currency\` و\`issuer\` و\`value\`. لذلك يعمل نفس النظام مع الأصل الأصلي والتوكنات الصادرة.\n\n### تفاصيل عملية\n\n\`CheckID\` هو معرف كائن Check في ledger. بعد \`CheckCreate\` يمكنك الحصول عليه من الكائنات المنشأة في metadata أو عبر أوامر قراءة الحساب. للتحقق من الصرف، اقرأ دائما \`TransactionResult\` و\`AffectedNodes\` لمعرفة هل حذف Check وهل تغير الرصيد.`,
+    fr: `\n\n### Exemple de SendMax\n\nPour un check en XAH, \`SendMax\` est une string en drops, par exemple \`\"10000000\"\` pour 10 XAH. Pour un IOU, \`SendMax\` est un objet avec \`currency\`, \`issuer\` et \`value\`. Cela permet au meme mecanisme de fonctionner avec l'actif natif et avec des tokens emis.\n\n### Details pratiques\n\nLe \`CheckID\` est l'identifiant de l'objet Check dans le ledger. Apres un \`CheckCreate\`, tu le recuperes en inspectant les objets crees dans les metadonnees ou avec les commandes de lecture du compte. Pour verifier un encaissement, regarde toujours \`TransactionResult\` et les \`AffectedNodes\` afin de voir si le Check a ete supprime et si le solde a change.
+
+### Lancer les scripts de cette leçon
+
+Le script CheckCreate signe avec \`WALLET_SEED\` et établit le Check au profit du compte \`CASH_SEED\` ; \`cash-check.js\` signe avec \`CASH_SEED\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Le premier script affiche la commande exacte pour le second. Sortie sur le testnet :
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`** : un objet Check existe maintenant ; aucun XAH n'a encore bougé. Son **CheckID** est l'index de cet objet dans le ledger.
+- **CheckCash \`tesSUCCESS\`** : CASH a encaissé exactement 50 XAH et l'objet Check a été supprimé. L'encaisser à nouveau renvoie \`tecNO_ENTRY\`.
+
+\`cash-check.js\` n'envoie rien sans CheckID hex de 64 caractères et indique quoi passer.`,
+    ar: `\n\n### مثال SendMax\n\nفي Check بـ XAH يكون \`SendMax\` نصا بالدروبس مثل \`\"10000000\"\` لـ 10 XAH. أما IOU فيكون \`SendMax\` كائنا يحتوي \`currency\` و\`issuer\` و\`value\`. لذلك يعمل نفس النظام مع الأصل الأصلي والتوكنات الصادرة.\n\n### تفاصيل عملية\n\n\`CheckID\` هو معرف كائن Check في ledger. بعد \`CheckCreate\` يمكنك الحصول عليه من الكائنات المنشأة في metadata أو عبر أوامر قراءة الحساب. للتحقق من الصرف، اقرأ دائما \`TransactionResult\` و\`AffectedNodes\` لمعرفة هل حذف Check وهل تغير الرصيد.
+
+### تشغيل سكربتات هذا الدرس
+
+يوقّع سكربت CheckCreate بـ \`WALLET_SEED\` ويحرّر الـ Check لحساب \`CASH_SEED\`، ويوقّع \`cash-check.js\` بـ \`CASH_SEED\` الذي ينشئه \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)). يطبع السكربت الأول الأمر الدقيق للثاني. المخرجات على testnet:
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`**: أصبح هناك كائن Check، ولم ينتقل أي XAH بعد. الـ **CheckID** هو فهرس ذلك الكائن في ledger.
+- **CheckCash \`tesSUCCESS\`**: صرف CASH مبلغ 50 XAH بالضبط وحُذف كائن Check. صرفه مرة أخرى يعيد \`tecNO_ENTRY\`.
+
+لا يرسل \`cash-check.js\` شيئًا بدون CheckID بصيغة hex من 64 حرفًا، ويوضح ما يجب تمريره.`,
   },
   m10l6: {
     fr: `\n\n### Pourquoi ce n'est pas un Memo\n\nUn Memo est attache a une transaction historique. Une Remark est attachee a un objet encore present dans le ledger. Cela signifie qu'elle reste consultable avec l'objet, par exemple un AccountRoot, une TrustLine ou un URIToken, et qu'elle peut etre mise a jour ou supprimee selon les regles.\n\n### Champs en detail\n\n\`ObjectID\` est obligatoire et pointe vers l'objet a annoter. \`Remarks\` est un tableau, ce qui permet de creer ou modifier plusieurs entrees dans une seule transaction. \`RemarkName\` doit etre unique pour cet objet. \`RemarkValue\` est facultatif uniquement parce que son absence signifie suppression. \`tfImmutable\` doit etre choisi avec prudence, car il rend l'entree definitive.\n\n### Conseils de conception\n\nUtilise des noms courts et stables, encode proprement en hexadecimal, evite de stocker des donnees personnelles, et reserve les Remarks immutables aux certifications ou references qui ne doivent jamais changer.`,
@@ -8449,8 +7831,16 @@ const additionalM10TheoryDetails = {
     ar: `\n\n### الفرق عن Invoke الدوري\n\nفي Invoke الدوري يجب أن يرسل سكربت أو خادم أو bot معاملات على فترات منتظمة. إذا توقف هذا النظام الخارجي فلن يعمل Hook. أما CronSet فيسجل الجدولة في ledger وتدير الشبكة التنفيذ بنفسها.\n\n### تمديد العداد\n\n\`RepeatCount\` محدود بـ 256 لكل معاملة. إذا احتجت تشغيل طويل الأمد، أرسل \`CronSet\` جديدا قبل انتهاء العداد لتمديد البرنامج. هذا يعطي تحكما صريحا ويمنع تشغيلات لا نهائية بالخطأ.\n\n### أفضل الممارسات\n\nاختبر بفواصل قصيرة على testnet، واستعمل trace داخل Hook، وتأكد أن \`hsfCOLLECT\` و\`asfTshCollect\` مفعّلان، ثم احذف crons غير الضرورية بـ \`tfCronUnset\` لتجنب سلوك غير متوقع.`,
   },
   m10l10: {
-    fr: `\n\n### Trois comptes typiques\n\nUn systeme de recompenses IOU utilise souvent trois roles : le token issuer qui cree la devise, le reward issuer ou reserve qui detient les fonds et installe le Hook, et le holder qui possede l'IOU et envoie \`ClaimReward\`. Ces roles peuvent parfois etre combines, mais les separer rend le modele plus clair.\n\n### Separation tracking / payout\n\nLe ledger suit l'exposition du holder dans le temps via les compteurs de TrustLine. Le Hook ne fait pas ce suivi lui-meme : il lit la valeur accumulee et applique la logique metier, comme cooldowns, plafonds, conversion vers un autre token ou refus si les conditions ne sont pas remplies.\n\n### Erreurs de configuration frequentes\n\nSi \`Issuer\` pointe vers le mauvais compte, aucun Hook ne sera declenche. Si \`ClaimCurrency.issuer\` ne correspond pas au token, la TrustLine attendue ne sera pas trouvee. Si le holder n'a pas cree de TrustLine RWD, la reclamation echouera avec une erreur de ligne manquante.`,
-    ar: `\n\n### ثلاثة حسابات نموذجية\n\nيستخدم نظام مكافآت IOU غالبا ثلاثة أدوار: token issuer الذي ينشئ العملة، وreward issuer أو reserve الذي يحتفظ بالمكافآت ويثبت Hook، وholder الذي يملك IOU ويرسل \`ClaimReward\`. يمكن دمج بعض الأدوار، لكن فصلها يجعل النموذج أوضح.\n\n### فصل التتبع عن الدفع\n\nيتتبع ledger تعرض holder عبر الزمن بواسطة عدادات TrustLine. لا يقوم Hook بهذا التتبع بنفسه؛ بل يقرأ القيمة المتراكمة ويطبق منطق الأعمال مثل cooldowns والحدود والتحويل إلى توكن آخر أو الرفض إذا لم تتحقق الشروط.\n\n### أخطاء إعداد شائعة\n\nإذا أشار \`Issuer\` إلى حساب خاطئ فلن يعمل Hook. إذا لم يطابق \`ClaimCurrency.issuer\` issuer للتوكن فلن توجد TrustLine المتوقعة. وإذا لم ينشئ holder TrustLine لـ RWD فستفشل المطالبة بخطأ line مفقودة.`,
+    fr: `\n\n### Trois comptes typiques\n\nUn systeme de recompenses IOU utilise souvent trois roles : le token issuer qui cree la devise, le reward issuer ou reserve qui detient les fonds et installe le Hook, et le holder qui possede l'IOU et envoie \`ClaimReward\`. Ces roles peuvent parfois etre combines, mais les separer rend le modele plus clair.\n\n### Separation tracking / payout\n\nLe ledger suit l'exposition du holder dans le temps via les compteurs de TrustLine. Le Hook ne fait pas ce suivi lui-meme : il lit la valeur accumulee et applique la logique metier, comme cooldowns, plafonds, conversion vers un autre token ou refus si les conditions ne sont pas remplies.\n\n### Erreurs de configuration frequentes\n\nSi \`Issuer\` pointe vers le mauvais compte, aucun Hook ne sera declenche. Si \`ClaimCurrency.issuer\` ne correspond pas au token, la TrustLine attendue ne sera pas trouvee. Si le holder n'a pas cree de TrustLine RWD, la reclamation echouera avec une erreur de ligne manquante.
+
+### Lancer les scripts de cette leçon
+
+Ces scripts signent avec \`HOLDER_SEED\` de \`.env\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Le détenteur n'a besoin de XAH que pour la réserve de la TrustLine et les frais ; l'émetteur de RWD et le programme de récompenses sont des comptes testnet existants. Si la variable manque, les scripts s'arrêtent avant d'envoyer quoi que ce soit et indiquent quoi lancer.`,
+    ar: `\n\n### ثلاثة حسابات نموذجية\n\nيستخدم نظام مكافآت IOU غالبا ثلاثة أدوار: token issuer الذي ينشئ العملة، وreward issuer أو reserve الذي يحتفظ بالمكافآت ويثبت Hook، وholder الذي يملك IOU ويرسل \`ClaimReward\`. يمكن دمج بعض الأدوار، لكن فصلها يجعل النموذج أوضح.\n\n### فصل التتبع عن الدفع\n\nيتتبع ledger تعرض holder عبر الزمن بواسطة عدادات TrustLine. لا يقوم Hook بهذا التتبع بنفسه؛ بل يقرأ القيمة المتراكمة ويطبق منطق الأعمال مثل cooldowns والحدود والتحويل إلى توكن آخر أو الرفض إذا لم تتحقق الشروط.\n\n### أخطاء إعداد شائعة\n\nإذا أشار \`Issuer\` إلى حساب خاطئ فلن يعمل Hook. إذا لم يطابق \`ClaimCurrency.issuer\` issuer للتوكن فلن توجد TrustLine المتوقعة. وإذا لم ينشئ holder TrustLine لـ RWD فستفشل المطالبة بخطأ line مفقودة.
+
+### تشغيل سكربتات هذا الدرس
+
+تُوقّع هذه السكربتات بـ \`HOLDER_SEED\` من \`.env\`، الذي ينشئه \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)). يحتاج الحامل إلى XAH فقط لاحتياطي TrustLine والرسوم؛ أما مُصدر RWD وبرنامج المكافآت فهما حسابان موجودان على testnet. إذا كان المتغير مفقودًا تتوقف السكربتات قبل الإرسال وتوضح ما يجب تشغيله.`,
   },
 };
 
@@ -8464,5 +7854,8 @@ function applyAdditionalM10TheoryDetails(module) {
 }
 
 applyAdditionalM10TheoryDetails(moduleData);
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

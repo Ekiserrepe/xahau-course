@@ -1,3 +1,6 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
+import { addCourseAccounts } from "../course-accounts.js";
+
 const moduleData = {
   id: "m3",
   icon: "👛",
@@ -216,7 +219,7 @@ console.log("Chave pública:", wallet2.publicKey);
 console.log("Seed:", wallet2.seed);`,
             en: `const { ECDSA, Wallet } = require("xahau");
 
-// Generate wallet with default algorithm (secp256k1)
+// Generate wallet with the secp256k1 algorithm
 const wallet1 = Wallet.generate(ECDSA.secp256k1);
 console.log("=== Wallet secp256k1 ===");
 console.log("Address:", wallet1.address);
@@ -310,8 +313,8 @@ const wallet = Wallet.fromSeed(seed, {algorithm: 'secp256k1'});
 console.log("Endereço:", wallet.address);
 console.log("Chave pública:", wallet.publicKey);
 console.log("Seed:", wallet.seed);
-// O mesmo seed sempre generà misma endereço
-// ¡Nunca compartilhe seu seed!`,
+// A mesma seed sempre gera o mesmo endereço
+// Nunca compartilhe sua seed!`,
             en: `const { Wallet } = require("xahau");
 
 // Restore wallet from an existing seed
@@ -400,7 +403,12 @@ console.log("Seed:", wallet.seed);
           title: { es: "Activación de cuenta", pt: "Ativação da conta", en: "Account activation", jp: "アカウントのアクティベーション", ko: "계정 활성화", zh: "账户激活" },
           content: {
             es: "Una cuenta NO existe hasta que recibe\nsu primer depósito\n\n• Mínimo 1 XAH de reserva base\n• Este XAH queda bloqueado\n• En testnet: usa el faucet gratuito",
-            pt: "Uma conta NÃO existe até que recebe\nsu primeiro depósito\n\n• Mínimo 1 XAH de reserva base\n• Este XAH queda blocoado\n• Em testnet: usao faucet gratuito",
+            pt: `Uma conta NÃO existe até que recebe
+seu primeiro depósito
+
+• Mínimo 1 XAH de reserva base
+• Este XAH queda blocoado
+• Em testnet: usao faucet gratuito`,
             en: "An account does NOT exist until it receives\nits first deposit\n\n• Minimum 1 XAH base reserve\n• This XAH remains locked\n• On testnet: use the free faucet",
             jp: "アカウントは最初の入金を受け取るまで\n存在しない\n\n• 最低1 XAHのベースリザーブが必要\n• このXAHはロックされる\n• テストネット：無料フォーセットを使用",
             ko: "계정은 첫 입금을 받기 전까지\n존재하지 않습니다\n\n• 최소 1 XAH의 기본 준비금 필요\n• 이 XAH는 잠겨 있습니다\n• testnet에서는 무료 faucet 사용",
@@ -450,9 +458,9 @@ A testnet é uma cópia da rede Xahau projetada para desenvolvimento:
 - As transações funcionan igual que em mainnet
 - É o lugar perfecto para aprender e experimentar
 ### Faucet
-O faucet é um servicio que envia tokens de pruebà tu wallet. Você pode usarlo diretamente desde código com a biblioteca \`xahau\`. También você pode conseguir uma wallet com test XAH desde a interfaz web do faucet: [xahau-test.net](https://xahau-test.net). Você pode utilizar a seed después em seu código ou importarlà Xaman.
+O faucet é um serviço que envia tokens de teste para a sua wallet. Você pode usá-lo diretamente pelo código com a biblioteca \`xahau\`. Também pode obter uma wallet com XAH de teste pela interface web do faucet: [xahau-test.net](https://xahau-test.net). Depois, pode usar a seed no seu código ou importá-la na Xaman.
 ### Verificar seu conta
-Uma vez ativada sua conta, você pode verificar su existemcia consultando o comando \`account_info\`. Este te mostrará:
+Depois que sua conta estiver ativada, você pode verificar se ela existe consultando o comando \`account_info\`. Ele mostrará:
 - **Saldo**: Quantidade de XAH em sua conta (em drops: 1 XAH = 1,000,000 drops)
 - **Sequence**: Número de sequência para a próxima transação
 - **Flags**: Configuração da conta
@@ -594,15 +602,15 @@ createTestnetWallet();`,
 async function createTestnetWallet() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Generar uma nova wallet
+  // Gerar uma nova wallet
   const wallet = Wallet.generate();
   console.log("Wallet gerada:");
   console.log("  Endereço:", wallet.address);
   console.log("  Seed:", wallet.seed);
-  // Solicitar fondos do faucet de testnet
-  console.log("Solicitando fondos do faucet...");
+  // Solicitar fundos ao faucet da testnet
+  console.log("Solicitando fundos ao faucet...");
   const fundResult = await client.fundWallet(wallet);
-  console.log("¡Wallet financiada!");
+  console.log("Wallet financiada!");
   console.log("  Saldo:", fundResult.balance, "XAH");
   // Verificar a conta no ledger
   const response = await client.request({
@@ -612,8 +620,8 @@ async function createTestnetWallet() {
   });
   const account = response.result.account_data;
   console.log("Dados da conta no ledger:");
-  console.log("  Saldo:", account.Saldo, "drops");
-  console.log("  Saldo:", Number(account.Saldo) / 1_000_000, "XAH");
+  console.log("  Saldo:", account.Balance, "drops");
+  console.log("  Saldo:", Number(account.Balance) / 1_000_000, "XAH");
   console.log("  Sequência:", account.Sequence);
   await client.disconnect();
 }
@@ -819,20 +827,20 @@ async function checkSaldo(address) {
     });
     const account = response.result.account_data;
     console.log("Conta:", account.Account);
-    console.log("Saldo:", Number(account.Saldo) / 1_000_000, "XAH");
+    console.log("Saldo:", Number(account.Balance) / 1_000_000, "XAH");
     console.log("Sequência:", account.Sequence);
     console.log("Objetos do proprietário:", account.OwnerCount);
   } catch (error) {
     if (error.data?.error === "actNotFound") {
       console.log("A conta não existe no ledger.");
-      console.log("Necesita receber ao menos 1 XAH para ativarse.");
+      console.log("Precisa receber pelo menos 1 XAH para ser ativada.");
     } else {
       console.error("Erro:", error.message);
     }
   }
   await client.disconnect();
 }
-// Reemplaza com seu endereço de testnet
+// Substitua pelo seu endereço de testnet
 checkSaldo("rYourXahauAddressHere");`,
             en: `const { Client } = require("xahau");
 
@@ -994,7 +1002,15 @@ checkBalance("rYourXahauAddressHere");`,
           title: { es: "Verificar con account_info", pt: "Verificar com account_info", en: "Verify with account_info", jp: "account_infoで確認する", ko: "account_info로 확인하기", zh: "用 account_info 验证" },
           content: {
             es: "Comando account_info para confirmar activación:\n\n• Balance → XAH disponible (en drops)\n• Sequence → Número de próxima transacción\n• Flags → Configuración de la cuenta\n• OwnerCount → Objetos en el ledger\n\nSi la cuenta no existe: error actNotFound\n1 XAH = 1,000,000 drops",
-            pt: "Comando account_info para conassinar ativação:\n\n• Saldo → XAH disponible (em drops)\n• Sequence → Número de próxima transação\n• Flags → Configuração da conta\n• OwnerCount → Objetos no ledger\n\nSi a conta não existe: erro actNotFound\n1 XAH = 1,000,000 drops",
+            pt: `Comando account_info para conassinar ativação:
+
+• Saldo → XAH disponível (em drops)
+• Sequence → Número de próxima transação
+• Flags → Configuração da conta
+• OwnerCount → Objetos no ledger
+
+Se a conta não existe: erro actNotFound
+1 XAH = 1,000,000 drops`,
             en: "account_info command to confirm activation:\n\n• Balance → Available XAH (in drops)\n• Sequence → Next transaction number\n• Flags → Account configuration\n• OwnerCount → Objects on the ledger\n\nIf the account does not exist: actNotFound error\n1 XAH = 1,000,000 drops",
             jp: "アクティベーションを確認するaccount_infoコマンド：\n\n• Balance → 利用可能なXAH（dropsで）\n• Sequence → 次のトランザクション番号\n• Flags → アカウント設定\n• OwnerCount → レジャー上のオブジェクト\n\nアカウントが存在しない場合：actNotFoundエラー\n1 XAH = 1,000,000 drops",
             ko: "활성화를 확인하는 account_info 명령:\n\n• Balance → 사용 가능한 XAH(drops 단위)\n• Sequence → 다음 트랜잭션 번호\n• Flags → 계정 설정\n• OwnerCount → ledger의 객체 수\n\n계정이 없으면: actNotFound 오류\n1 XAH = 1,000,000 drops",
@@ -1075,13 +1091,13 @@ Cada transacción tiene un **hash** único (una cadena hexadecimal larga). Puede
 - **Aprendizaje**: Ver transacciones reales te ayuda a entender cómo funciona la red por dentro`,
         pt: `Uma vez que sua conta está ativada na testnet (ou em mainnet), você pode verificar seu estado usando **exploradores de blocos**: aplicações web que permitem consultar qualquer conta, transação ou ledger de forma visual e sem necessidade de escrever código.
 ### O que é um explorador de blocos?
-Um **explorador de blocos** é uma herramienta web que se conectà os nós de Xahau e te presenta a informação da blockchain de forma legible. É como um "buscador" da blockchain.
+Um **explorador de blocos** é uma ferramenta web que se conecta aos nós da Xahau e apresenta a informação da blockchain de forma legível. É como um "buscador" da blockchain.
 Com um explorer você pode:
 - Ver o **balance** e os **tokens** de qualquer conta
 - Consultar o **histórico de transações** completo
-- Inspecionar os **detalhes** de cualquier transação (hash, campos, resultado)
+- Inspecionar os **detalhes** de qualquer transação (hash, campos, resultado)
 - Ver os **objetos do ledger** associados a uma conta (trust lines, ofertas, hooks)
-- Verificar se uma transação se procesó corretamente
+- Verificar se uma transação foi processada corretamente
 ### Exploradores da Xahau Mainnet
 **Xahau Explorer** — [xahauexplorer.com](https://xahauexplorer.com)
 **XRPLWin Xahau** — [xahau.xrplwin.com](https://xahau.xrplwin.com)
@@ -1093,9 +1109,9 @@ Para consultar contas da **testnet** (que é a que usamos no curso), usa estos e
 - [xahau-testnet.xrplwin.com](https://xahau-testnet.xrplwin.com)
 - [explorer.xahau-test.net](https://explorer.xahau-test.net)
 ### Como consultar seu conta
-1. Abra cualquiera dos exploradores de testnet
-2. Em a barra de búsqueda, pega tu **endereço** (começa com \`r\`)
-3. Pulsa Enter ou clique em buscar
+1. Abra qualquer um dos exploradores de testnet
+2. Na barra de busca, cole seu **endereço** (começa com \`r\`)
+3. Pressione Enter ou clique em buscar
 4. Você verá a informação de sua conta:
    - **Saldo** em XAH
    - **Tokens** que posees (trust lines)
@@ -1103,7 +1119,7 @@ Para consultar contas da **testnet** (que é a que usamos no curso), usa estos e
    - **Flags** e configuração da conta
    - **Objetos** do ledger associados
 ### Consultar uma transação
-Cada transação tem um **hash** único (uma string hexadecimal larga). Você pode buscar ese hash no explorer para ver:
+Cada transação tem um **hash** único (uma string hexadecimal longa). Você pode buscar esse hash no explorer para ver:
 - **Tipo** de transação (Payment, TrustSet, AccountSet, etc.)
 - **Conta origem** e **destino**
 - **Quantidade** enviada
@@ -1112,9 +1128,9 @@ Cada transação tem um **hash** único (uma string hexadecimal larga). Você po
 - **Ledger** no que se incluyó
 - **Cambios** no estado do ledger (AffectedNodes)
 ### Por que usar explorers?
-- **Verificação visual**: Confirmar que uma transação se procesó corretamente sem escrever código
-- **Depuración**: Cuando algo falla, o explorer muestra todos os detalhes do error
-- **Transparência**: Cualquier persona pode verificar cualquier operação na blockchain
+- **Verificação visual**: confirmar que uma transação foi processada corretamente sem escrever código
+- **Depuração**: quando algo falha, o explorer mostra todos os detalhes do erro
+- **Transparência**: qualquer pessoa pode verificar qualquer operação na blockchain
 - **Aprendizaje**: Ver transações reais te ayudà entender como funciona a rede por dentro`,
         en: `Once your account is activated on the testnet (or on mainnet), you can verify its status using **block explorers**: web applications that allow you to query any account, transaction, or ledger visually and without writing code.
 
@@ -1352,7 +1368,7 @@ Each transaction has a unique **hash** (a long hexadecimal string). You can sear
             codeBlocks: [],
       slides: [
         {
-          title: { es: "¿Qué es un block explorer?", pt: "¿Qué é um block explorer?", en: "What is a block explorer?", jp: "ブロックエクスプローラーとは？", ko: "블록 익스플로러란?", zh: "什么是区块浏览器？" },
+          title: { es: "¿Qué es un block explorer?", pt: "O que é um block explorer?", en: "What is a block explorer?", jp: "ブロックエクスプローラーとは？", ko: "블록 익스플로러란?", zh: "什么是区块浏览器？" },
           content: {
             es: "Una herramienta web para consultar la blockchain\nsin escribir código\n\n• Ver balances y tokens de cualquier cuenta\n• Consultar historial de transacciones\n• Inspeccionar detalles de cada operación\n• Verificar resultados y errores",
             pt: "Uma ferramenta web para consultar a blockchain\nsem escrever código\n\n• Ver saldos e tokens de qualquer conta\n• Consultar histórico de transações\n• Inspecionar detalhes de cada operação\n• Verificar resultados e erros",
@@ -1379,7 +1395,15 @@ Each transaction has a unique **hash** (a long hexadecimal string). You can sear
           title: { es: "Cómo consultar tu cuenta", pt: "Como consultar sua conta", en: "How to check your account", jp: "アカウントの確認方法", ko: "계정 확인 방법", zh: "如何查询账户" },
           content: {
             es: "1️⃣ Abre un explorer de testnet\n2️⃣ Pega tu dirección (r...)\n3️⃣ Verás:\n   • Balance en XAH\n   • Tokens y trust lines\n   • Historial de transacciones\n   • Flags y configuración\n\nTambién puedes buscar por hash de transacción",
-            pt: "1️⃣ Abra um explorer de testnet\n2️⃣ Cole seu endereço (r...)\n3️⃣ Você verá:\n   • Saldo em XAH\n   • Tokens e trust lines\n   • Histórico de transações\n   • Flags e configuração\n\nTambién você pode buscar por hash de transação",
+            pt: `1️⃣ Abra um explorer de testnet
+2️⃣ Cole seu endereço (r...)
+3️⃣ Você verá:
+   • Saldo em XAH
+   • Tokens e trust lines
+   • Histórico de transações
+   • Flags e configuração
+
+Você também pode buscar pelo hash da transação`,
             en: "1️⃣ Open a testnet explorer\n2️⃣ Paste your address (r...)\n3️⃣ You will see:\n   • Balance in XAH\n   • Tokens and trust lines\n   • Transaction history\n   • Flags and configuration\n\nYou can also search by transaction hash",
             jp: "1️⃣ テストネットのエクスプローラーを開く\n2️⃣ アドレス（r...）を貼り付ける\n3️⃣ 表示される情報：\n   • XAHの残高\n   • トークンとトラストライン\n   • トランザクション履歴\n   • フラグと設定\n\nトランザクションハッシュで検索することもできます",
             ko: "1️⃣ testnet 익스플로러 열기\n2️⃣ 주소(r...) 붙여넣기\n3️⃣ 다음 정보를 확인:\n   • XAH 잔액\n   • 토큰과 trust line\n   • 트랜잭션 기록\n   • 플래그와 설정\n\n트랜잭션 해시로도 검색할 수 있습니다",
@@ -1499,75 +1523,75 @@ Multi-signing es ideal para:
 - Cualquier situación donde una sola persona no debería tener control total`,
         pt: `A segurança da sua wallet é o mais importante ao trabalhar com blockchain. Uma wallet comprometida significa a **perda total e irreversível** de seus fundos. Nesta lição você aprenderá as melhores práticas para proteger sua conta.
 ### Nunca compartilhe seu seed/chave secreta
-Tu seed (chave privada) é a **única forma de controlar sua conta**. Quem tenga tu seed pode assinar cualquier transação em tu nombre: enviar todos seus fundos, mudar configurações, etc. Não há forma de revertir esto.
-Reglas fundamentales:
-- **Nunca** envíé tu seed por chat, email ou ningún medio digital
-- **Nunca** a introduzcas em sitios web ou aplicaciones que no sean de absoluta confiança
-- **Nunca** a guardes em texto plano em tu ordenador
-- **Nunca** hagas captura de pantallao foto de tu seed
+Sua seed (chave privada) é a **única forma de controlar sua conta**. Quem tiver sua seed pode assinar qualquer transação em seu nome: enviar todos os seus fundos, mudar configurações etc. Não há como reverter isso.
+Regras fundamentais:
+- **Nunca** envie sua seed por chat, e-mail ou qualquer meio digital
+- **Nunca** a digite em sites ou aplicativos que não sejam de absoluta confiança
+- **Nunca** a guarde em texto simples no seu computador
+- **Nunca** tire print ou foto da sua seed
 ### Hot Wallet vs Cold Wallet
 **Hot Wallet (carteira caliente)**:
 - Conectadà internet permanentemente
 - Conveniente para transações frecuentes
-- Mayor risco de ser comprometida
-- Exemplo: wallet em uma aplicación web, bot de trading
-**Cold Wallet (carteira fría)**:
+- Maior risco de ser comprometida
+- Exemplo: wallet em um aplicativo web, bot de trading
+**Cold Wallet (carteira fria)**:
 - Desconectada de internet
-- Máxima segurança para armazenamiento a largo plazo
+- Máxima segurança para armazenamento de longo prazo
 - Menos conveniente para uso diario
 - Exemplo: wallet gerada offline, hardware wallet, paper wallet
 ### Boas práticas para armazenar seeds
-1. **Offline**: Genera e guarda seeds em um dispositivo que nunca se conecte a internet
+1. **Offline**: gere e guarde seeds em um dispositivo que nunca se conecte à internet
 2. **Hardware wallet**: Dispositivos especializados (Ledger, Trezor) que armazenan chaves de forma segura
-3. **Paper wallet**: Escribe a seed em papel e guárdala em um lugar seguro (caja fuerte, caja de segurança bancaria)
-4. **Múltiples cópias**: Guarda cópias em diferentes ubicaciones físicas por se hay incendio, inundación, etc.
-5. **Metal backup**: Graba tu seed em uma placa de metal resistente ao fuego e ao agua
-### Seeds de testnet: a excepción
+3. **Paper wallet**: escreva a seed em papel e guarde-a em um lugar seguro (cofre, caixa de segurança bancária)
+4. **Várias cópias**: guarde cópias em locais físicos diferentes, para o caso de incêndio, inundação etc.
+5. **Backup em metal**: grave sua seed em uma placa de metal resistente a fogo e água
+### Seeds de testnet: a exceção
 As seeds de **testnet** são seguras de compartilhar em contextos educativos porque:
 - Os tokens de testnet **não têm valor real**
-- A testnet se pode resetear em cualquier momento
-- São útiles para depurar problemas com otros desarrolladores
-Aun así, é buena práctica tratarlas com cuidado para criar buenos hábitos.
-### Estafas comunes e cómo evitarlas
+- A testnet pode ser reiniciada a qualquer momento
+- São úteis para depurar problemas com outros desenvolvedores
+Mesmo assim, é boa prática tratá-las com cuidado, para criar bons hábitos.
+### Golpes comuns e como evitá-los
 **Phishing**:
-- Sitios web falsos que imitan interfaces legítimas
-- Te piden ingresar tu seed para "verificar" sua conta
-- Sempre verifica a URL e no hagas clic em enlaces sospechosos
+- Sites falsos que imitam interfaces legítimas
+- Pedem que você digite sua seed para "verificar" sua conta
+- Sempre verifique a URL e não clique em links suspeitos
 **Fake dApps**:
-- Aplicaciones que prometen rendimientos irreais
-- Piden permisos excesivos ou tu seed diretamente
-- Investiga sempre o código-fonte e a reputación do projeto
-**Ingeniería social**:
-- Personas que se hacen pasar por soporte técnico
-- Ofrecen "ayuda" a alteração de tu seed
-- Ningún soporte legítimo te pedirá jamás sua chave privada
+- Aplicativos que prometem rendimentos irreais
+- Pedem permissões excessivas ou diretamente a sua seed
+- Investigue sempre o código-fonte e a reputação do projeto
+**Engenharia social**:
+- Pessoas que se passam por suporte técnico
+- Oferecem "ajuda" para alterar sua seed
+- Nenhum suporte legítimo jamais vai pedir sua chave privada
 **Airdrops falsos**:
-- Tokens que aparecen em tu wallet sem pedirlos
-- Ao intentar interagir com ellos, te redirigen a sitios maliciosos
-- Ignora tokens desconocidos que no esperabas recibir
+- Tokens que aparecem na sua wallet sem você pedir
+- Ao tentar interagir com eles, você é redirecionado para sites maliciosos
+- Ignore tokens desconhecidos que você não esperava receber
 ### Regular Keys: mudar a chave de assinatura
-Xahau ofrece uma funcionalidad avanzada llamada **Regular Key**: você pode asignar um **par de chaves alternativo** que tenga permiso para assinar transações em nombre de sua conta.
-Ventajas:
-- Se a regular key se compromete, você pode mudarla por otra nova sem mudar tu endereço
-- Você pode desativar a chave maestra e usar solo a regular key para operações diarias
+A Xahau oferece um recurso avançado chamado **Regular Key**: você pode atribuir um **par de chaves alternativo** com permissão para assinar transações em nome da sua conta.
+Vantagens:
+- Se a regular key for comprometida, você pode trocá-la por outra nova sem mudar seu endereço
+- Você pode desativar a chave mestra e usar só a regular key nas operações do dia a dia
 - A endereço de sua conta permanece igual
-### Master Key Disable: segurança avanzada
-Para máxima segurança, você pode **desativar sua chave maestra** (master key disable):
-1. Primero, configuras uma regular key
-2. Luego, desativas a master key com um flag de conta
-3. Ahora solo a regular key pode assinar transações
+### Master Key Disable: segurança avançada
+Para máxima segurança, você pode **desativar sua chave mestra** (master key disable):
+1. Primeiro, você configura uma regular key
+2. Depois, desativa a master key com um flag de conta
+3. Agora só a regular key pode assinar transações
 4. Se a regular key se compromete, você pode reativar a master key para recuperar o control
-Esto añade uma capa extra de proteção: mesmo se alguien obtem tu master seed, no podrá usarlo enquanto esté desativado.
+Isso acrescenta uma camada extra de proteção: mesmo que alguém obtenha sua master seed, não poderá usá-la enquanto estiver desativada.
 ### Multi-signing: múltiplas assinaturas
-Para contas de alto valor ou gobernanza, Xahau soporta **multi-signing**:
-- Se configura uma lista de firmantes autorizados com um **quorum** (peso mínimo exigido)
+Para contas de alto valor ou de governança, a Xahau suporta **multi-signing**:
+- Configura-se uma lista de signatários autorizados com um **quorum** (peso mínimo exigido)
 - Cada firmante tem um peso asignado
-- Uma transação solo é válida se recibe suficientes assinaturas para alcanzar o quorum
-- Exemplo: 3 firmantes com peso 1 cada uno, quorum de 2 → se precisam ao menos 2 de 3 assinaturas
+- Uma transação só é válida se receber assinaturas suficientes para atingir o quorum
+- Exemplo: 3 signatários com peso 1 cada um e quorum de 2 → são necessárias pelo menos 2 de 3 assinaturas
 Multi-signing é ideal para:
-- Tesorerías de organizaciones
+- Tesourarias de organizações
 - Contas compartidas entre socios
-- Cualquier situación donde uma sola persona no debería tener control total`,
+- Qualquer situação em que uma única pessoa não deveria ter controle total`,
         en: `Wallet security is the most important thing when working with blockchain. A compromised wallet means the **total and irreversible loss** of your funds. In this lesson you will learn the best practices to protect your account.
 
 ### Never share your seed/secret key
@@ -1963,7 +1987,15 @@ Xahau 提供名为 **Regular Key** 的高级功能：你可以设置一个**备�
           title: { es: "La regla de oro", pt: "A regra de ouro", en: "The golden rule", jp: "黄金のルール", ko: "황금률", zh: "黄金法则" },
           content: {
             es: "NUNCA compartas tu seed/clave privada\n\n❌ No por chat ni email\n❌ No en sitios web dudosos\n❌ No en texto plano en tu PC\n❌ No en capturas de pantalla\n\nQuien tiene tu seed\ntiene TODOS tus fondos",
-            pt: "NUNCA compartilhe seu seed/chave privada\n\n❌ Não por chat nem email\n❌ Não em sitios web dudosos\n❌ Não em texto plano em seu PC\n❌ Não em capturas de pantalla\n\nQuien tem seu seed\ntem TODOS seus fondos",
+            pt: `NUNCA compartilhe seu seed/chave privada
+
+❌ Não por chat nem email
+❌ Não em sites duvidosos
+❌ Não em texto plano em seu PC
+❌ Não em capturas de tela
+
+Quien tem seu seed
+tem TODOS os seus fundos`,
             en: "NEVER share your seed/private key\n\n❌ Not via chat or email\n❌ Not on suspicious websites\n❌ Not in plain text on your PC\n❌ Not in screenshots\n\nWhoever has your seed\nhas ALL your funds",
             jp: "シード／秘密鍵を絶対に共有しない\n\n❌ チャットやメールでの共有禁止\n❌ 怪しいWebサイトへの入力禁止\n❌ PCにプレーンテキストで保存禁止\n❌ スクリーンショット撮影禁止\n\nあなたのシードを持っている人が\nあなたの全財産を持っている",
             ko: "시드/개인 키를 절대 공유하지 마세요\n\n❌ 채팅이나 이메일로 보내지 않기\n❌ 수상한 웹사이트에 입력하지 않기\n❌ PC에 평문으로 저장하지 않기\n❌ 스크린샷으로 남기지 않기\n\n시드를 가진 사람은\n당신의 모든 자금을 통제할 수 있습니다",
@@ -1975,7 +2007,15 @@ Xahau 提供名为 **Regular Key** 的高级功能：你可以设置一个**备�
           title: { es: "Hot Wallet vs Cold Wallet", pt: "Hot Wallet vs Cold Wallet", en: "Hot Wallet vs Cold Wallet", jp: "ホットウォレット vs コールドウォレット", ko: "핫 월렛 vs 콜드 월렛", zh: "热钱包 vs 冷钱包" },
           content: {
             es: "🔥 Hot Wallet (conectada)\n• Conveniente para uso diario\n• Mayor riesgo\n• Apps, bots de trading\n\n🧊 Cold Wallet (desconectada)\n• Máxima seguridad\n• Almacenamiento largo plazo\n• Hardware wallet, papel, metal",
-            pt: "🔥 Hot Wallet (conectada)\n• Conveniente para uso diario\n• Mayor risco\n• Apps, bots de trading\n\n🧊 Cold Wallet (desconectada)\n• Máxima segurança\n• Armazenamiento largo plazo\n• Hardware wallet, papel, metal",
+            pt: `🔥 Hot Wallet (conectada)
+• Conveniente para uso diario
+• Maior risco
+• Apps, bots de trading
+
+🧊 Cold Wallet (desconectada)
+• Máxima segurança
+• Armazenamento de longo prazo
+• Hardware wallet, papel, metal`,
             en: "🔥 Hot Wallet (connected)\n• Convenient for daily use\n• Higher risk\n• Apps, trading bots\n\n🧊 Cold Wallet (disconnected)\n• Maximum security\n• Long-term storage\n• Hardware wallet, paper, metal",
             jp: "🔥 ホットウォレット（接続済み）\n• 日常使用に便利\n• リスクが高い\n• アプリ、トレーディングボット\n\n🧊 コールドウォレット（切断済み）\n• 最高のセキュリティ\n• 長期保管\n• ハードウェアウォレット、紙、金属",
             ko: "🔥 Hot Wallet(연결됨)\n• 일상 사용에 편리\n• 더 높은 위험\n• 앱, 트레이딩 봇\n\n🧊 Cold Wallet(오프라인)\n• 최고 수준 보안\n• 장기 보관용\n• 하드웨어 지갑, 종이, 금속 백업",
@@ -1987,7 +2027,13 @@ Xahau 提供名为 **Regular Key** 的高级功能：你可以设置一个**备�
           title: { es: "Estafas comunes", pt: "Golpes comuns", en: "Common scams", jp: "よくある詐欺", ko: "흔한 사기", zh: "常见诈骗" },
           content: {
             es: "🎣 Phishing → Sitios web falsos\n🤖 Fake dApps → Rendimientos irreales\n🎭 Ingeniería social → Falso soporte\n🪂 Airdrops falsos → Tokens trampa\n\nRegla: NADIE legítimo te pedirá\ntu clave privada. Jamás.",
-            pt: "🎣 Phishing → Sitios web falsos\n🤖 Fake dApps → Rendimientos irreais\n🎭 Ingeniería social → Falso soporte\n🪂 Airdrops falsos → Tokens trampa\n\nRegla: NADIE legítimo te pedirá\ntu chave privada. Jamás.",
+            pt: `🎣 Phishing → Sites falsos
+🤖 Fake dApps → Rendimientos irreais
+🎭 Engenharia social → Falso suporte
+🪂 Airdrops falsos → Tokens trampa
+
+Regla: NADIE legítimo te pedirá
+sua chave privada. Jamais.`,
             en: "🎣 Phishing → Fake websites\n🤖 Fake dApps → Unrealistic returns\n🎭 Social engineering → Fake support\n🪂 Fake airdrops → Trap tokens\n\nRule: NOBODY legitimate will ask\nfor your private key. Ever.",
             jp: "🎣 フィッシング → 偽のWebサイト\n🤖 偽のdApps → 非現実的なリターン\n🎭 ソーシャルエンジニアリング → 偽サポート\n🪂 偽のエアドロップ → トラップトークン\n\nルール：正規の関係者が\nあなたの秘密鍵を求めることは絶対にない",
             ko: "🎣 피싱 → 가짜 웹사이트\n🤖 가짜 dApp → 비현실적 수익 약속\n🎭 사회공학 → 가짜 지원팀\n🪂 가짜 에어드롭 → 함정 토큰\n\n원칙: 정상적인 누구도\n당신의 개인 키를 요구하지 않습니다",
@@ -1999,7 +2045,17 @@ Xahau 提供名为 **Regular Key** 的高级功能：你可以设置一个**备�
           title: { es: "Seguridad avanzada en Xahau", pt: "Segurança avançada na Xahau", en: "Advanced security in Xahau", jp: "Xahauの高度なセキュリティ", ko: "Xahau의 고급 보안", zh: "Xahau 高级安全" },
           content: {
             es: "🔑 Regular Key\n  Clave alternativa para firmar\n  (se puede cambiar sin cambiar dirección)\n\n🚫 Master Key Disable\n  Desactivar la clave maestra\n  (capa extra de protección)\n\n👥 Multi-signing\n  Múltiples firmas requeridas\n  (ideal para organizaciones)",
-            pt: "🔑 Regular Key\n  Chave alternativa para assinar\n  (é possível mudar sem mudar endereço)\n\n🚫 Master Key Disable\n  Desativar a chave maestra\n  (capa extra de proteção)\n\n👥 Multi-signing\n  Múltiples assinaturas requeridas\n  (ideal para organizaciones)",
+            pt: `🔑 Regular Key
+  Chave alternativa para assinar
+  (é possível mudar sem mudar endereço)
+
+🚫 Master Key Disable
+  Desativar a chave mestra
+  (camada extra de proteção)
+
+👥 Multi-signing
+  Múltiples assinaturas requeridas
+  (ideal para organizações)`,
             en: "🔑 Regular Key\n  Alternative key for signing\n  (can be changed without changing address)\n\n🚫 Master Key Disable\n  Disable the master key\n  (extra layer of protection)\n\n👥 Multi-signing\n  Multiple signatures required\n  (ideal for organizations)",
             jp: "🔑 レギュラーキー\n  署名用の代替キー\n  （アドレスを変えずに変更可能）\n\n🚫 マスターキーの無効化\n  マスターキーを無効にする\n  （追加の保護レイヤー）\n\n👥 マルチシグニング\n  複数の署名が必要\n  （組織に最適）",
             ko: "🔑 Regular Key\n  서명용 대체 키\n  (주소를 바꾸지 않고 교체 가능)\n\n🚫 Master Key Disable\n  master key 비활성화\n  (추가 보호 계층)\n\n👥 Multi-signing\n  여러 서명 필요\n  (조직 운영에 적합)",
@@ -2041,7 +2097,7 @@ Xahau 提供名为 **Regular Key** 的高级功能：你可以设置一个**备�
 - Flag ID: \`3\`
 
 **asfDefaultRipple**
-- Relevante para **emisores de tokens** (lo veremos en profundidad en el módulo de tokens)
+- Relevante para **emisores de tokens** (lo verás en profundidad en el [módulo 7](?m=7&l=2))
 - Permite que los tokens emitidos por tu cuenta puedan fluir entre terceros (rippling)
 - Sin este flag, los tokens solo pueden moverse directamente hacia/desde el emisor
 - Flag ID: \`8\`
@@ -2070,38 +2126,38 @@ Los flags de cuenta se almacenan como un campo numérico donde cada bit represen
 | asfDefaultRipple | 8 | Permitir rippling de tokens emitidos |`,
         pt: `Em Xahau, sua conta tem múltiplas opções de configuração que você pode ativar ou desativar usando a transação **AccountSet**. Estas configurações controlan o comportamento de sua conta frente a pagamentos recebidos, trust lines, e muito mais.
 ### A transação AccountSet
-\`AccountSet\` é o tipo de transação que te permite modificar as propriedadees de sua conta. No envia nem recibe fondos, simplemente muda os **flags** (banderas) e otros campos de configuração de sua conta.
+\`AccountSet\` é o tipo de transação que permite modificar as propriedades da sua conta. Ela não envia nem recebe fundos: apenas muda os **flags** e outros campos de configuração da sua conta.
 ### Flags importantes
 **asfRequireDest (RequireDestTag)**
 - Exige que todos os pagamentos recebidos incluyan um **Destination Tag**
-- Útil para exchanges e servicios que usan um tag para identificar ao usuário
-- Sem este flag, alguien poderia enviarte XAH sem tag e sería imposible saber de quién viene
+- Útil para exchanges e serviços que usam uma tag para identificar o usuário
+- Sem este flag, alguém poderia enviar XAH para você sem tag e seria impossível saber de quem veio
 - Flag ID: \`1\`
 **asfDisallowXRP (DisallowXAH)**
-- Señala que sua conta **no desea recibir XAH diretamente**
-- É solo uma señao, técnicamente os pagos aún podem llegar
-- Útil para contas que solo trabajan com tokens emitidos (IOUs)
+- Indica que sua conta **não deseja receber XAH diretamente**
+- É apenas um sinal; tecnicamente os pagamentos ainda podem chegar
+- Útil para contas que só trabalham com tokens emitidos (IOUs)
 - Flag ID: \`3\`
 **asfDefaultRipple**
-- Relevante para **emisores de tokens** (lo veremos em profundidad no módulo de tokens)
-- Permite que os tokens emitidos por sua conta puedan fluir entre terceros (rippling)
-- Sem este flag, os tokens solo podem moverse diretamente hacia/desde o emisor
+- Relevante para **emissores de tokens** (você verá em profundidade no [módulo 7](?m=7&l=2))
+- Permite que os tokens emitidos por sua conta possam fluir entre terceiros (rippling)
+- Sem este flag, os tokens só podem ir diretamente para ou a partir do emissor
 - Flag ID: \`8\`
 **asfRequireAuth**
-- Exige que sua conta **autorice** cada trust line antes de que alguien pueda manter tus tokens
-- Útil para tokens regulados donde você precisa controlar quién pode poseerlos
+- Exige que sua conta **autorize** cada trust line antes que alguém possa manter seus tokens
+- Útil para tokens regulados, em que você precisa controlar quem pode possuí-los
 - Flag ID: \`2\`
-### Otros campos configurables
-**Domain**: Você pode asociar um dominio web a sua conta. Se armazena como o valor hexadecimal do dominio. Esto permite verificar que a conta pertenece ao dueñou de ese dominio.
-**EmailHash**: Hash MD5 de tu email, utilizado para mostrar um avatar (como Gravatar). No expone tu email diretamente.
+### Outros campos configuráveis
+**Domain**: você pode associar um domínio web à sua conta. Ele é armazenado como o valor hexadecimal do domínio. Isso permite verificar que a conta pertence ao dono desse domínio.
+**EmailHash**: hash MD5 do seu e-mail, usado para exibir um avatar (como o Gravatar). Não expõe seu e-mail diretamente.
 ### Flags como bits
-Os flags de conta são armazenados como um campo numérico donde cada bit representa um flag. Você pode ativar flags com o campo \`SetFlag\` e desativarlos com \`ClearFlag\` na transação AccountSet.
+Os flags de conta são armazenados como um campo numérico em que cada bit representa um flag. Você pode ativar flags com o campo \`SetFlag\` e desativá-los com \`ClearFlag\` na transação AccountSet.
 | Flag | ID | Propósito |
 |------|----|-----------|
 | asfRequireDest | 1 | Requerir Destination Tag |
-| asfRequireAuth | 2 | Requerir autorización de trust lines |
-| asfDisallowXRP | 3 | Señalar que no se desea recibir XAH |
-| asfDisableMaster | 4 | Desativar chave maestra |
+| asfRequireAuth | 2 | Exigir autorização de trust lines |
+| asfDisallowXRP | 3 | Indicar que não deseja receber XAH |
+| asfDisableMaster | 4 | Desativar a chave mestra |
 | asfDefaultRipple | 8 | Permitir rippling de tokens emitidos |`,
         en: `In Xahau, your account has multiple configuration options that you can enable or disable using the **AccountSet** transaction. These settings control your account's behavior regarding incoming payments, trust lines, and more.
 
@@ -2124,7 +2180,7 @@ Os flags de conta são armazenados como um campo numérico donde cada bit repres
 - Flag ID: \`3\`
 
 **asfDefaultRipple**
-- Relevant for **token issuers** (we will cover this in depth in the tokens module)
+- Relevant for **token issuers** (covered in depth in [Module 7](?m=7&l=2))
 - Allows tokens issued by your account to flow between third parties (rippling)
 - Without this flag, tokens can only move directly to/from the issuer
 - Flag ID: \`8\`
@@ -2172,7 +2228,7 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 - フラグID：\`3\`
 
 **asfDefaultRipple**
-- **トークン発行者**に関連（トークンモジュールで詳しく学びます）
+- **トークン発行者**に関連（[モジュール7](?m=7&l=2)で詳しく学びます）
 - アカウントが発行したトークンが第三者間で流れることを可能にする（リップリング）
 - このフラグがないと、トークンは発行者との間でのみ直接移動できる
 - フラグID：\`8\`
@@ -2220,7 +2276,7 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 - Flag ID: \`3\`
 
 **asfDefaultRipple**
-- **토큰 발행자**에게 중요합니다(토큰 모듈에서 더 자세히 다룹니다)
+- **토큰 발행자**에게 중요합니다([모듈 7](?m=7&l=2)에서 더 자세히 다룹니다)
 - 계정이 발행한 토큰이 제3자 간에도 이동할 수 있게 합니다(rippling)
 - 이 플래그가 없으면 토큰은 발행자와 직접 연결된 경로로만 이동합니다
 - Flag ID: \`8\`
@@ -2268,7 +2324,7 @@ Account flags are stored as a numeric field where each bit represents a flag. Yo
 - Flag ID：\`3\`
 
 **asfDefaultRipple**
-- 与**代币发行者**相关（将在代币模块中深入介绍）
+- 与**代币发行者**相关（将在[模块7](?m=7&l=2)中深入介绍）
 - 允许账户发行的代币在第三方之间流转（rippling）
 - 没有此标志，代币只能与发行者直接互转
 - Flag ID：\`8\`
@@ -2359,7 +2415,7 @@ setRequireDestTag();`,
 async function setRequireDestTag() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Usa sua wallet de testnet (reemplaza com seu seed)
+  // Use sua wallet de testnet (substitua pela sua seed)
   const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
   // AccountSet com SetFlag para ativar RequireDestTag
   const tx = {
@@ -2374,8 +2430,8 @@ async function setRequireDestTag() {
   const result = await client.submitAndWait(tx, { wallet });
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡Flag RequireDestTag ativado com éxito!");
-    console.log("Ahora todos os pagamentos entrantes devem incluir um DestinationTag.");
+    console.log("Flag RequireDestTag ativado com sucesso!");
+    console.log("Agora todos os pagamentos recebidos devem incluir um DestinationTag.");
     // Verificar que ou flag foi ativado
     const accountInfo = await client.request({
       command: "account_info",
@@ -2675,19 +2731,19 @@ async function readAccountFlags(address) {
     const flags = account.Flags;
     console.log("=== Informação da conta ===");
     console.log("Endereço:", account.Account);
-    console.log("Saldo:", Number(account.Saldo) / 1_000_000, "XAH");
+    console.log("Saldo:", Number(account.Balance) / 1_000_000, "XAH");
     console.log("Flags (valor numérico):", flags);
     console.log("");
     // Interpretar cada flag individual
     // Os flags do ledger (lsf) têm valores distintos a os de AccountSet (asf)
     const flagDefinitions = [
       { name: "lsfRequireDestTag", mask: 0x00020000, desc: "Exige Destination Tag" },
-      { name: "lsfRequireAuth", mask: 0x00040000, desc: "Exige autorización de trust line" },
-      { name: "lsfDisallowXRP", mask: 0x00080000, desc: "No desea recibir XAH" },
-      { name: "lsfDisableMaster", mask: 0x00100000, desc: "Chave maestra desativada" },
+      { name: "lsfRequireAuth", mask: 0x00040000, desc: "Exige autorização de trust line" },
+      { name: "lsfDisallowXRP", mask: 0x00080000, desc: "Não deseja receber XAH" },
+      { name: "lsfDisableMaster", mask: 0x00100000, desc: "Chave mestra desativada" },
       { name: "lsfDefaultRipple", mask: 0x00800000, desc: "Rippling por padrão ativado" },
     ];
-    console.log("=== Flags activos ===");
+    console.log("=== Flags ativos ===");
     let anyActive = false;
     for (const flag of flagDefinitions) {
       const active = (flags & flag.mask) !== 0;
@@ -2697,10 +2753,10 @@ async function readAccountFlags(address) {
       }
     }
     if (!anyActive) {
-      console.log("  Sem flags especiales activos (configuração por padrão)");
+      console.log("  Sem flags especiais ativos (configuração padrão)");
     }
     console.log("");
-    console.log("=== Otros campos ===");
+    console.log("=== Outros campos ===");
     console.log("Dominio:", account.Domain
       ? Buffer.from(account.Domain, "hex").toString("utf-8")
       : "(no configurado)");
@@ -2717,7 +2773,7 @@ async function readAccountFlags(address) {
   }
   await client.disconnect();
 }
-// Reemplaza com uma endereço de testnet
+// Substitua por um endereço de testnet
 readAccountFlags("rYourXahauAddressHere");`,
             en: `const { Client } = require("xahau");
 
@@ -3003,7 +3059,14 @@ readAccountFlags("rYourXahauAddressHere");`,
           title: { es: "AccountSet: configura tu cuenta", pt: "AccountSet: configura sua conta", en: "AccountSet: configure your account", jp: "AccountSet：アカウントを設定する", ko: "AccountSet: 계정 설정", zh: "AccountSet：配置你的账户" },
           content: {
             es: "La transacción AccountSet modifica\nlos flags y propiedades de tu cuenta\n\nFlags principales:\n🏷️ RequireDestTag → Exigir tag en pagos\n🚫 DisallowXAH → Señal de no recibir XAH\n🔄 DefaultRipple → Para emisores de tokens\n🔐 RequireAuth → Autorizar trust lines",
-            pt: "A transação AccountSet modifica\nlos flags e propriedadees de seu conta\n\nFlags principais:\n🏷️ RequireDestTag → Exigir tag em pagamentos\n🚫 DisallowXAH → Señao de não receber XAH\n🔄 DefaultRipple → Para emissores de tokens\n🔐 RequireAuth → Autorizar trust lines",
+            pt: `A transação AccountSet modifica
+os flags e propriedades da sua conta
+
+Flags principais:
+🏷️ RequireDestTag → Exigir tag em pagamentos
+🚫 DisallowXAH → Sinal de não receber XAH
+🔄 DefaultRipple → Para emissores de tokens
+🔐 RequireAuth → Autorizar trust lines`,
             en: "The AccountSet transaction modifies\nyour account's flags and properties\n\nMain flags:\n🏷️ RequireDestTag → Require tag on payments\n🚫 DisallowXAH → Signal not to receive XAH\n🔄 DefaultRipple → For token issuers\n🔐 RequireAuth → Authorize trust lines",
             jp: "AccountSetトランザクションは\nアカウントのフラグとプロパティを変更する\n\n主なフラグ：\n🏷️ RequireDestTag → ペイメントにタグを要求\n🚫 DisallowXAH → XAHを受け取らない信号\n🔄 DefaultRipple → トークン発行者向け\n🔐 RequireAuth → トラストラインを承認する",
             ko: "AccountSet 트랜잭션은\n계정의 플래그와 속성을 변경합니다\n\n주요 플래그:\n🏷️ RequireDestTag → 결제에 tag 요구\n🚫 DisallowXAH → XAH를 받지 않겠다는 신호\n🔄 DefaultRipple → 토큰 발행자용\n🔐 RequireAuth → trust line 승인 요구",
@@ -3128,74 +3191,74 @@ Esto es útil para:
 - Monitorizar cuentas de otros (exchanges, contratos)
 - Vigilar tu cuenta de mainnet sin exponer el seed en el móvil
 - Comprobar balances rápidamente`,
-        pt: `**Xaman** (anteriormente XUMM) é a wallet móvel mais utilizada do ecossistema XRPL e Xahau. Até agora trabalhamos com wallets com código JavaScript, mas para gerenciar sua conta de forma visual, assinar transações pelo celular e interagir com aplicaciones descentralizadas, você precisa importar sua conta em Xaman.
+        pt: `A **Xaman** (antes XUMM) é a wallet móvel mais usada do ecossistema XRPL e Xahau. Até agora você trabalhou com wallets pelo código JavaScript, mas para gerenciar sua conta visualmente, assinar transações pelo celular e interagir com aplicações descentralizadas, você precisa importar sua conta na Xaman.
 ### O que é Xaman?
-Xaman é uma aplicación móvel disponible para **iOS** e **Android** que funciona como:
-- **Wallet**: Armazena tus chaves de forma segura em tu dispositivo
+A Xaman é um aplicativo móvel disponível para **iOS** e **Android** que funciona como:
+- **Wallet**: armazena suas chaves com segurança no seu dispositivo
 - **Firmador de transações**: Você pode aprovar transações escaneando um QR ou desde uma xApp
 - **Gestor de contas**: Você pode gerenciar múltiplas contas de Xahau e XRPL
-- **Puerta de entradà xApps**: Aplicaciones descentralizadas integradas em Xaman
-Descarga: [xaman.app](https://xaman.app)
+- **Porta de entrada para xApps**: aplicações descentralizadas integradas à Xaman
+Download: [xaman.app](https://xaman.app)
 ### Instalar Xaman
 1. Abra a **App Store** (iOS) ou **Google Play** (Android)
-2. Busca **"Xaman"** (antes se llamaba XUMM)
-3. Descarga e instala a aplicación
-4. Abra Xaman e sigue a configuração inicial:
-   - Configura um **código PIN** ou **biometría** (huella/Face ID)
+2. Procure **"Xaman"** (antes se chamava XUMM)
+3. Baixe e instale o aplicativo
+4. Abra a Xaman e siga a configuração inicial:
+   - Configure um **código PIN** ou **biometria** (digital/Face ID)
    - Aceita os términos de uso
 ### Importar seu conta de testnet
-Uma vez instalado Xaman, você pode importar a conta que geraste por código usando tu **family seed** (a cadeia que começa com \`s\`):
+Com a Xaman instalada, você pode importar a conta que gerou pelo código usando sua **family seed** (a sequência que começa com \`s\`):
 1. Abra Xaman
-2. Toca o botón **"Añadir conta"** (ou o icono \`+\` arriba)
+2. Toque no botão **"Adicionar conta"** (ou no ícone \`+\` no alto)
 3. Selecione **"Importar uma conta existente"**
 4. Selecione **"Family Seed (s...)"** como método de importação
-5. Introduce tu seed (a cadeia que começa com \`s\` que obtuviste ao gerar a wallet)
-6. Selecione o nivel de acceso:
+5. Digite sua seed (a sequência que começa com \`s\`, que você obteve ao gerar a wallet)
+6. Selecione o nível de acesso:
    - **Acesso completo**: Você pode assinar transações (você precisa o seed)
-   - **Solo lectura**: Solo você pode ver o balance e transações (solo você precisa a endereço)
-7. Confirma com tu PIN ou biometría
-8. Tu conta aparecerá na lista de contas de Xaman
-### Añadir a rede Xahau Testnet em Xaman
-Por defecto, Xaman se conectà **XRPL Mainnet**. Para trabalhar com **Xahau Testnet**, você deve añadir a rede:
-1. Em Xaman, ve a **Ajustes** (icono de engranaje)
-2. Busca a sección **"Advanced"** ou **"Avanzado"**
-3. Busca a sección **"Debug"**
-4. Activa **Developer Mode** ou **Modo Desarrollador**
-5. Selecione **Xahau Testnet** como rede ativa no menú principal pulsando na esquina superior derecha.
-6. Ahora sua conta mostrará o balance de XAH em testnet
+   - **Somente leitura**: você só pode ver o saldo e as transações (basta o endereço)
+7. Confirme com seu PIN ou biometria
+8. Sua conta aparecerá na lista de contas da Xaman
+### Adicionar a rede Xahau Testnet na Xaman
+Por padrão, a Xaman se conecta à **XRPL Mainnet**. Para trabalhar com a **Xahau Testnet**, você precisa adicionar a rede:
+1. Na Xaman, vá a **Ajustes** (ícone de engrenagem)
+2. Procure a seção **"Advanced"** ou **"Avançado"**
+3. Procure a seção **"Debug"**
+4. Ative o **Developer Mode** ou **Modo Desenvolvedor**
+5. Selecione **Xahau Testnet** como rede ativa no menu principal, tocando no canto superior direito.
+6. Agora sua conta mostrará o saldo de XAH na testnet
 ### Verificar a importação
-Después de importar, verifica que todo é correcto:
-- A **endereço** que muestra Xaman deve coincidir com a que geraste por código
-- Você pode enviar uma pequeña transação de prueba para confirmar que a assinatura funciona
+Depois de importar, verifique se está tudo certo:
+- O **endereço** que a Xaman mostra deve coincidir com o que você gerou pelo código
+- Você pode enviar uma pequena transação de teste para confirmar que a assinatura funciona
 ### Assinar transações com Xaman
 Xaman pode assinar transações de dos formas:
-**Desde a propia app**:
-- Você pode enviar pagos diretamente desde Xaman
-- Toca **"Enviar"**, introduce a endereço destino e a quantidade
-- Confirma com tu PIN ou biometría
-**Desde uma xApp ou sitio web (QR)**:
-- Algunas aplicaciones muestran um código QR
+**Pelo próprio app**:
+- Você pode enviar pagamentos diretamente pela Xaman
+- Toque em **"Enviar"**, digite o endereço de destino e a quantidade
+- Confirme com seu PIN ou biometria
+**Em uma xApp ou site (QR)**:
+- Alguns aplicativos mostram um QR code
 - Escaneas o QR com Xaman
-- Xaman te muestra os detalhes da transação
-- Apruebas ou rechazas firmando com tu PIN
+- A Xaman mostra os detalhes da transação
+- Você aprova ou rejeita assinando com seu PIN
 ### Segurança em Xaman
-- Tu seed **nunca sale de tu dispositivo**. Xaman armazena as chaves de forma encriptada no armazenamiento seguro do sistema operativo (Keychain em iOS, Keystore em Android)
-- As transações se **firman localmente** em tu dispositivo
-- Xaman **nunca envia** sua chave privadà ningún servidor
-- Se pierdes tu dispositivo, você pode restaurar sua conta em otro dispositivo usando tu seed
-- **Guarda sempre uma cópia de tu seed fora do dispositivo** (papel, metal backup)
-- Xaman no permite exportar tu seed desde a app por segurança, então asegúrate de tenerlo guardado antes de importar
+- Sua seed **nunca sai do seu dispositivo**. A Xaman armazena as chaves criptografadas no armazenamento seguro do sistema operacional (Keychain no iOS, Keystore no Android)
+- As transações são **assinadas localmente** no seu dispositivo
+- A Xaman **nunca envia** sua chave privada a nenhum servidor
+- Se você perder o dispositivo, pode restaurar sua conta em outro usando sua seed
+- **Guarde sempre uma cópia da sua seed fora do dispositivo** (papel, backup em metal)
+- A Xaman não permite exportar sua seed pelo app, por segurança; então garanta que ela esteja guardada antes de importar
 ### Importar com apenas leitura
-Se solo quieres **monitorizar** uma conta sem poder assinar transações:
-1. Em Xaman, toca **"Añadir conta"**
+Se você só quer **monitorar** uma conta, sem poder assinar transações:
+1. Na Xaman, toque em **"Adicionar conta"**
 2. Selecione **"Importar uma conta existente"**
 3. Selecione **"Endereço da conta (r...)"**
-4. Introduce a endereço \`r...\` (no o seed)
-5. A conta é adicionada em modo solo lectura
-Esto é útil para:
-- Monitorizar contas de otros (exchanges, contratos)
+4. Digite o endereço \`r...\` (não a seed)
+5. A conta é adicionada em modo somente leitura
+Isso é útil para:
+- Monitorar contas de terceiros (exchanges, contratos)
 - Vigilar sua conta de mainnet sem exponer o seed no móvel
-- Comprobar balances rápidamente`,
+- Consultar saldos rapidamente`,
         en: `**Xaman** (formerly XUMM) is the most widely used mobile wallet in the XRPL and Xahau ecosystem. So far we have been working with wallets from JavaScript code, but to manage your account visually, sign transactions from your phone, and interact with decentralized applications, you need to import your account into Xaman.
 
 ### What is Xaman?
@@ -3569,7 +3632,7 @@ Xaman 支持两种签署交易的方式：
         {
           title: {
             es: "Generar una wallet y preparar datos para importar en Xaman",
-            pt: "Generar uma wallet e preparar dados para importar em Xaman",
+            pt: "Gerar uma wallet e preparar os dados para importar na Xaman",
             en: "Generate a wallet and prepare data for importing into Xaman",
             jp: "ウォレットを生成してXamanにインポートするためのデータを準備する",
             ko: "지갑 생성 후 Xaman 가져오기용 데이터 준비",
@@ -3618,7 +3681,7 @@ prepareForXaman();`,
 async function prepareForXaman() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Generar e financiar uma wallet
+  // Gerar e financiar uma wallet
   const wallet = Wallet.generate();
   console.log("Generando wallet de testnet...");
   await client.fundWallet(wallet);
@@ -3628,19 +3691,19 @@ async function prepareForXaman() {
     account: wallet.address,
     ledger_index: "validated",
   });
-  const balance = Number(response.result.account_data.Saldo) / 1_000_000;
+  const balance = Number(response.result.account_data.Balance) / 1_000_000;
   console.log("=== Dados para importar em Xaman ===");
   console.log("Endereço:", wallet.address);
   console.log("Seed:", wallet.seed);
   console.log("Saldo:", balance, "XAH");
-  console.log("=== Instrucciones ===");
+  console.log("=== Instruções ===");
   console.log("1. Abra Xaman em seu móvel");
-  console.log("2. Toca 'Añadir conta' → 'Importar conta existente'");
+  console.log("2. Toque em 'Adicionar conta' → 'Importar conta existente'");
   console.log("4. Selecione Acesso Completo");
   console.log("5. Selecione 'Family Seed (s...)'");
-  console.log("6. Introduce ou seed:", wallet.seed);
-  console.log("  Recuerda: estamos em TESTNET.");
-  console.log("    Certifique-se de seleccionar a rede Xahau Testnet em Xaman.");
+  console.log("6. Digite a seed:", wallet.seed);
+  console.log("  Lembre-se: estamos na TESTNET.");
+  console.log("    Certifique-se de selecionar a rede Xahau Testnet na Xaman.");
   await client.disconnect();
 }
 prepareForXaman();`,
@@ -3797,10 +3860,18 @@ prepareForXaman();`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es Xaman?", pt: "¿Qué é Xaman?", en: "What is Xaman?", jp: "Xamanとは？", ko: "Xaman이란?", zh: "什么是 Xaman？" },
+          title: { es: "¿Qué es Xaman?", pt: "O que é a Xaman?", en: "What is Xaman?", jp: "Xamanとは？", ko: "Xaman이란?", zh: "什么是 Xaman？" },
           content: {
             es: "Wallet móvil del ecosistema XRPL/Xahau\n\n• iOS y Android\n• Almacena claves de forma segura\n• Firma transacciones desde el móvil\n• Gestiona múltiples cuentas\n• Acceso a xApps\n\nDescarga: xaman.app",
-            pt: "Wallet móvel do ecossistema XRPL/Xahau\n\n• iOS e Android\n• Armazena chaves de forma segura\n• Assinatura transações a partir do móvel\n• Gestiona múltiplas contas\n• Acesso a xApps\n\nDescarga: xaman.app",
+            pt: `Wallet móvel do ecossistema XRPL/Xahau
+
+• iOS e Android
+• Armazena chaves de forma segura
+• Assinatura transações a partir do móvel
+• Gestiona múltiplas contas
+• Acesso a xApps
+
+Download: xaman.app`,
             en: "Mobile wallet for the XRPL/Xahau ecosystem\n\n• iOS and Android\n• Stores keys securely\n• Sign transactions from your phone\n• Manage multiple accounts\n• Access to xApps\n\nDownload: xaman.app",
             jp: "XRPL/Xahauエコシステムのモバイルウォレット\n\n• iOSとAndroid\n• 鍵を安全に保存\n• スマートフォンからトランザクションに署名\n• 複数のアカウントを管理\n• xAppsへのアクセス\n\nダウンロード：xaman.app",
             ko: "XRPL/Xahau 생태계용 모바일 지갑\n\n• iOS 및 Android 지원\n• 키를 안전하게 저장\n• 모바일에서 트랜잭션 서명\n• 여러 계정 관리\n• xApp 접근 가능\n\n다운로드: xaman.app",
@@ -3812,7 +3883,15 @@ prepareForXaman();`,
           title: { es: "Importar tu cuenta", pt: "Importar sua conta", en: "Import your account", jp: "アカウントのインポート", ko: "계정 가져오기", zh: "导入账户" },
           content: {
             es: "1️⃣ Abre Xaman → 'Añadir cuenta'\n2️⃣ 'Importar cuenta existente'\n3️⃣ Elige 'Acceso completo'\n4️⃣ Selecciona 'Family Seed (s...)\n5️⃣ Introduce tu seed\n6️⃣ Confirma con PIN/biometría\n\n⚠️ Selecciona red Xahau Testnet\nen Ajustes → Redes",
-            pt: "1️⃣ Abra Xaman → 'Añadir conta'\n2️⃣ 'Importar conta existente'\n3️⃣ Escolha 'Acesso completo'\n4️⃣ Selecione 'Family Seed (s...)\n5️⃣ Introduce seu seed\n6️⃣ Conassinatura com PIN/biometría\n\n⚠️ Selecione rede Xahau Testnet\nen Ajustes → Redes",
+            pt: `1️⃣ Abra a Xaman → 'Adicionar conta'
+2️⃣ 'Importar conta existente'
+3️⃣ Escolha 'Acesso completo'
+4️⃣ Selecione 'Family Seed (s...)
+5️⃣ Digite sua seed
+6️⃣ Confirme com PIN/biometria
+
+⚠️ Selecione rede Xahau Testnet
+em Ajustes → Redes`,
             en: "1️⃣ Open Xaman → 'Add account'\n2️⃣ 'Import existing account'\n3️⃣ Choose 'Full access'\n4️⃣ Select 'Family Seed (s...)'\n5️⃣ Enter your seed\n6️⃣ Confirm with PIN/biometrics\n\n⚠️ Select Xahau Testnet network\nin Settings → Networks",
             jp: "1️⃣ Xamanを開く → 「アカウントを追加」\n2️⃣ 「既存のアカウントをインポート」\n3️⃣ 「フルアクセス」を選択\n4️⃣ 「Family Seed（s...）」を選択\n5️⃣ シードを入力\n6️⃣ PINまたは生体認証で確認\n\n⚠️ 設定 → ネットワークで\nXahau Testnetネットワークを選択",
             ko: "1️⃣ Xaman 열기 → '계정 추가'\n2️⃣ '기존 계정 가져오기'\n3️⃣ '전체 접근' 선택\n4️⃣ 'Family Seed (s...)' 선택\n5️⃣ 시드 입력\n6️⃣ PIN/생체 인증으로 확인\n\n⚠️ 설정 → 네트워크에서\nXahau Testnet을 선택하세요",
@@ -3872,31 +3951,6 @@ const arabicModuleTranslations = {
         "إنشاء wallet جديدة",
         "استعادة wallet من seed موجود",
       ],
-      code: [
-        `const { Wallet } = require("xahau");
-
-// إنشاء wallet جديدة باستخدام secp256k1 مثل faucet الخاص بالـ testnet
-const wallet = Wallet.generate("secp256k1");
-
-console.log("=== Wallet جديدة ===");
-console.log("العنوان:", wallet.address);
-console.log("Seed:", wallet.seed);
-console.log("Public key:", wallet.publicKey);
-
-// مهم: لا تشارك seed أبدا، حتى في أمثلة تعليمية.`,
-        `const { Wallet } = require("xahau");
-
-// ضع seed موجودا هنا فقط في testnet أو من ملف .env
-const seed = "sEdYourSeedHere";
-
-// استعادة wallet من seed
-const wallet = Wallet.fromSeed(seed, { algorithm: "secp256k1" });
-
-console.log("العنوان:", wallet.address);
-console.log("Public key:", wallet.publicKey);
-
-// إذا كان seed صحيحا، ستحصل دائما على نفس العنوان.`,
-      ],
       slides: [
         {
           title: "ما هي Wallet؟",
@@ -3938,52 +3992,6 @@ Faucet هو خدمة ترسل XAH اختبارية إلى عنوانك. في ا�
       codeTitles: [
         "إنشاء وتفعيل wallet على testnet باستخدام faucet",
         "فحص رصيد حساب موجود",
-      ],
-      code: [
-        `const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function createAndFundWallet() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // إنشاء wallet جديدة على testnet
-  const wallet = Wallet.generate("secp256k1");
-  console.log("العنوان الجديد:", wallet.address);
-  console.log("Seed:", wallet.seed);
-
-  // طلب تمويل من faucet
-  const funded = await client.fundWallet(wallet);
-  console.log("تم تمويل الحساب:", funded.wallet.address);
-  console.log("الرصيد:", funded.balance, "XAH");
-
-  await client.disconnect();
-}
-
-createAndFundWallet().catch(console.error);`,
-        `const { Client, dropsToXah } = require("xahau");
-
-async function checkBalance() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const address = "rYourAddressHere";
-
-  // account_info يرجع بيانات الحساب إذا كان مفعلا
-  const response = await client.request({
-    command: "account_info",
-    account: address,
-    ledger_index: "validated",
-  });
-
-  const account = response.result.account_data;
-  console.log("العنوان:", account.Account);
-  console.log("الرصيد:", dropsToXah(account.Balance), "XAH");
-  console.log("Sequence:", account.Sequence);
-
-  await client.disconnect();
-}
-
-checkBalance().catch(console.error);`,
       ],
       slides: [
         {
@@ -4060,7 +4068,6 @@ checkBalance().catch(console.error);`,
 - **الشفافية**: يمكن لأي شخص التحقق من أي عملية على البلوكتشين
 - **التعلم**: رؤية معاملات حقيقية تساعدك على فهم كيفية عمل الشبكة داخليا`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "ما هو block explorer؟",
@@ -4176,7 +4183,6 @@ Multi-signing مثالي لـ:
 - الحسابات المشتركة بين شركاء
 - أي موقف لا ينبغي فيه أن يملك شخص واحد السيطرة الكاملة`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "القاعدة الذهبية",
@@ -4219,7 +4225,7 @@ Multi-signing مثالي لـ:
 - Flag ID: \`3\`
 
 **asfDefaultRipple**
-- ذو صلة بـ **مصدري tokens** (سنغطيه بالتفصيل في وحدة tokens)
+- ذو صلة بـ **مصدري tokens** (بالتفصيل في [الوحدة 7](?m=7&l=2))
 - يسمح لـ tokens الصادرة عن حسابك بالتدفق بين أطراف ثالثة (rippling)
 - بدون هذا الـ flag، يمكن لـ tokens التحرك فقط مباشرة من/إلى المُصدر
 - Flag ID: \`8\`
@@ -4249,104 +4255,6 @@ Multi-signing مثالي لـ:
       codeTitles: [
         "تفعيل RequireDestTag على حسابك",
         "قراءة وتفسير account flags",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function enableRequireDestTag() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // قراءة seed من .env بدلا من كتابته في الكود
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  const accountSet = {
-    TransactionType: "AccountSet",
-    Account: wallet.address,
-    SetFlag: 1, // asfRequireDest
-  };
-
-  const prepared = await client.autofill(accountSet);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-  console.log("Hash:", signed.hash);
-
-  await client.disconnect();
-}
-
-enableRequireDestTag().catch(console.error);`,
-        `const { Client } = require("xahau");
-
-async function readAccountFlags(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  try {
-    const response = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "validated",
-    });
-
-    const account = response.result.account_data;
-    const flags = account.Flags;
-
-    console.log("=== معلومات الحساب ===");
-    console.log("العنوان:", account.Account);
-    console.log("الرصيد:", Number(account.Balance) / 1_000_000, "XAH");
-    console.log("Flags (القيمة الرقمية):", flags);
-    console.log("");
-
-    // تفسير كل flag على حدة
-    // flags الخاصة بـ ledger (lsf) لها قيم مختلفة عن flags الخاصة بـ AccountSet (asf)
-    const flagDefinitions = [
-      { name: "lsfRequireDestTag", mask: 0x00020000, desc: "يتطلب Destination Tag" },
-      { name: "lsfRequireAuth", mask: 0x00040000, desc: "يتطلب تفويض trust line" },
-      { name: "lsfDisallowXRP", mask: 0x00080000, desc: "لا يرغب في استقبال XAH" },
-      { name: "lsfDisableMaster", mask: 0x00100000, desc: "master key معطلة" },
-      { name: "lsfDefaultRipple", mask: 0x00800000, desc: "rippling الافتراضي مفعل" },
-    ];
-
-    console.log("=== Flags المفعّلة ===");
-    let anyActive = false;
-    for (const flag of flagDefinitions) {
-      const active = (flags & flag.mask) !== 0;
-      if (active) {
-        console.log(\` \${flag.name}: \${flag.desc}\`);
-        anyActive = true;
-      }
-    }
-
-    if (!anyActive) {
-      console.log("  لا توجد flags خاصة مفعّلة (الإعداد الافتراضي)");
-    }
-
-    console.log("");
-    console.log("=== حقول أخرى ===");
-    console.log("Domain:", account.Domain
-      ? Buffer.from(account.Domain, "hex").toString("utf-8")
-      : "(غير مُعد)");
-    console.log("EmailHash:", account.EmailHash || "(غير مُعد)");
-    console.log("RegularKey:", account.RegularKey || "(غير مُعد)");
-    console.log("Sequence:", account.Sequence);
-    console.log("OwnerCount:", account.OwnerCount);
-
-  } catch (error) {
-    if (error.data?.error === "actNotFound") {
-      console.log("الحساب غير موجود في الـ ledger.");
-    } else {
-      console.error("خطأ:", error.message);
-    }
-  }
-
-  await client.disconnect();
-}
-
-// استبدل بعنوان testnet خاص بك
-readAccountFlags("rYourXahauAddressHere");`,
       ],
       slides: [
         {
@@ -4455,45 +4363,6 @@ Xaman هو تطبيق موبايل متاح لـ **iOS** و **Android** يعمل
       codeTitles: [
         "إنشاء wallet وتجهيز بيانات الاستيراد في Xaman",
       ],
-      code: [
-        `const { Client, Wallet } = require("xahau");
-
-async function prepareForXaman() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // إنشاء وتمويل wallet
-  const wallet = Wallet.generate();
-  console.log("جارٍ إنشاء wallet على testnet...");
-  await client.fundWallet(wallet);
-
-  // التحقق من الرصيد
-  const response = await client.request({
-    command: "account_info",
-    account: wallet.address,
-    ledger_index: "validated",
-  });
-
-  const balance = Number(response.result.account_data.Balance) / 1_000_000;
-
-  console.log("=== بيانات الاستيراد إلى Xaman ===");
-  console.log("العنوان:", wallet.address);
-  console.log("Seed:", wallet.seed);
-  console.log("الرصيد:", balance, "XAH");
-  console.log("=== التعليمات ===");
-  console.log("1. افتح Xaman على هاتفك");
-  console.log("2. اضغط على 'إضافة حساب' ← 'استيراد حساب موجود'");
-  console.log("4. اختر وصول كامل");
-  console.log("5. اختر 'Family Seed (s...)'");
-  console.log("6. أدخل seed:", wallet.seed);
-  console.log("  تذكر: نحن على TESTNET.");
-  console.log("    تأكد من اختيار شبكة Xahau Testnet في Xaman.");
-
-  await client.disconnect();
-}
-
-prepareForXaman();`,
-      ],
       slides: [
         {
           title: "ما هو Xaman؟",
@@ -4524,7 +4393,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -4569,27 +4437,6 @@ Contrairement à Ethereum, dans Xahau un compte **n'existe pas dans le ledger ta
 - Utilise la **testnet** pour tes tests (jetons sans valeur réelle)
 - Conserve tes seeds mainnet dans un endroit sûr et hors ligne`,
       codeTitles: ["Générer un nouveau wallet", "Restaurer un wallet depuis un seed existant"],
-      code: [
-`// Générer un nouveau wallet Xahau
-const { Wallet } = require("xahau");
-
-const wallet = Wallet.generate();
-
-console.log("Adresse publique :", wallet.address);
-console.log("Seed SECRET :", wallet.seed);
-
-// L'adresse peut être partagée.
-// Le seed ne doit jamais être publié ni envoyé à quelqu'un.`,
-`// Restaurer un wallet à partir d'un seed existant
-const { Wallet } = require("xahau");
-
-const seed = "sEdYourTestnetSeedHere";
-const wallet = Wallet.fromSeed(seed, { algorithm: "secp256k1" });
-
-console.log("Adresse restaurée :", wallet.address);
-
-// Si le seed est correct, tu obtiens toujours le même compte.`,
-      ],
       slides: [
         ["Qu'est-ce qu'un Wallet ?", "Un wallet contient les clés nécessaires pour signer\n\n• Adresse publique : recevoir et identifier\n• Seed : secret principal\n• Clé privée : signe les transactions\n• Signature : preuve d'autorisation"],
         ["Algorithmes de signature", "Xahau supporte différents algorithmes selon le type de seed\n\nPendant le cours, nous utiliserons surtout secp256k1 pour garder les exemples simples."],
@@ -4606,49 +4453,6 @@ Après le faucet, vérifie le compte avec \`account_info\`. Si le compte est act
       codeTitles: [
         "Créer et activer un wallet sur testnet avec le faucet",
         "Vérifier le solde d'un compte existant",
-      ],
-      code: [
-`// Créer un wallet et demander des fonds testnet au faucet
-const { Client, Wallet } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.generate();
-  console.log("Nouveau compte :", wallet.address);
-  console.log("Seed à garder secret :", wallet.seed);
-
-  // Selon l'environnement, le faucet peut être appelé via une URL officielle
-  // ou via un outil fourni par le SDK/documentation.
-  console.log("Utilise le faucet testnet pour financer cette adresse.");
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-`// Vérifier le solde d'un compte avec account_info
-const { Client, dropsToXah } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const account = "rYourTestnetAddressHere";
-
-  const response = await client.request({
-    command: "account_info",
-    account,
-    ledger_index: "validated",
-  });
-
-  const balanceDrops = response.result.account_data.Balance;
-  console.log("Solde XAH :", dropsToXah(balanceDrops));
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
       ],
       slides: [
         ["Xahau Testnet", "Réseau de test pour apprendre sans fonds réels\n\n• XAH de test\n• Même logique de transactions\n• Idéal pour scripts et exercices\n• Aucun risque financier réel"],
@@ -4850,7 +4654,7 @@ Le multi-signing est idéal pour :
 - Flag ID : \`3\`
 
 **asfDefaultRipple**
-- Pertinent pour les **émetteurs de tokens** (nous l'aborderons en détail dans le module tokens)
+- Pertinent pour les **émetteurs de tokens** (détaillé dans le [module 7](?m=7&l=2))
 - Permet aux tokens émis par ton compte de circuler entre des tiers (rippling)
 - Sans ce flag, les tokens ne peuvent bouger que directement vers/depuis l'émetteur
 - Flag ID : \`8\`
@@ -4880,124 +4684,6 @@ Les flags de compte sont stockés dans un champ numérique où chaque bit repré
       codeTitles: [
         "Activer le flag RequireDestTag sur ton compte",
         "Lire et interpréter les flags d'un compte",
-      ],
-      code: [
-`const { Client, Wallet } = require("xahau");
-
-async function setRequireDestTag() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Utilise ton wallet testnet (remplace par ton seed)
-  const wallet = Wallet.fromSeed("sEdVHBhkL2next8NH9cMPyPJoXXXXXX", {algorithm: 'secp256k1'});
-
-  // AccountSet avec SetFlag pour activer RequireDestTag
-  const tx = {
-    TransactionType: "AccountSet",
-    Account: wallet.address,
-    // asfRequireDest = 1
-    SetFlag: 1,
-  };
-  console.log("Compte : ",wallet.address);
-  console.log("Envoi de la transaction AccountSet...");
-  console.log("  Activation du flag : RequireDestTag (asfRequireDest = 1)");
-
-  const result = await client.submitAndWait(tx, { wallet });
-
-  console.log("Résultat :", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("Flag RequireDestTag activé avec succès !");
-    console.log("Désormais, tous les paiements entrants doivent inclure un DestinationTag.");
-
-    // Vérifier que le flag a bien été activé
-    const accountInfo = await client.request({
-      command: "account_info",
-      account: wallet.address,
-      ledger_index: "validated",
-    });
-
-    const flags = accountInfo.result.account_data.Flags;
-    console.log("Flags du compte (nombre) :", flags);
-
-    // lsfRequireDestTag = 0x00020000 = 131072
-    const requireDestTag = (flags & 0x00020000) !== 0;
-    console.log("RequireDestTag actif :", requireDestTag);
-  }
-
-  await client.disconnect();
-}
-
-setRequireDestTag();`,
-`const { Client } = require("xahau");
-
-async function readAccountFlags(address) {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  try {
-    const response = await client.request({
-      command: "account_info",
-      account: address,
-      ledger_index: "validated",
-    });
-
-    const account = response.result.account_data;
-    const flags = account.Flags;
-
-    console.log("=== Informations du compte ===");
-    console.log("Adresse :", account.Account);
-    console.log("Solde :", Number(account.Balance) / 1_000_000, "XAH");
-    console.log("Flags (valeur numérique) :", flags);
-    console.log("");
-
-    // Interpréter chaque flag individuellement
-    // Les flags du ledger (lsf) ont des valeurs différentes de celles d'AccountSet (asf)
-    const flagDefinitions = [
-      { name: "lsfRequireDestTag", mask: 0x00020000, desc: "Exige un Destination Tag" },
-      { name: "lsfRequireAuth", mask: 0x00040000, desc: "Exige l'autorisation des trust lines" },
-      { name: "lsfDisallowXRP", mask: 0x00080000, desc: "Ne souhaite pas recevoir de XAH" },
-      { name: "lsfDisableMaster", mask: 0x00100000, desc: "Master key désactivée" },
-      { name: "lsfDefaultRipple", mask: 0x00800000, desc: "Rippling par défaut activé" },
-    ];
-
-    console.log("=== Flags actifs ===");
-    let anyActive = false;
-    for (const flag of flagDefinitions) {
-      const active = (flags & flag.mask) !== 0;
-      if (active) {
-        console.log(\` \${flag.name}: \${flag.desc}\`);
-        anyActive = true;
-      }
-    }
-
-    if (!anyActive) {
-      console.log("  Aucun flag spécial actif (configuration par défaut)");
-    }
-
-    console.log("");
-    console.log("=== Autres champs ===");
-    console.log("Domain :", account.Domain
-      ? Buffer.from(account.Domain, "hex").toString("utf-8")
-      : "(non configuré)");
-    console.log("EmailHash :", account.EmailHash || "(non configuré)");
-    console.log("RegularKey :", account.RegularKey || "(non configuré)");
-    console.log("Sequence :", account.Sequence);
-    console.log("OwnerCount :", account.OwnerCount);
-
-  } catch (error) {
-    if (error.data?.error === "actNotFound") {
-      console.log("Le compte n'existe pas sur le ledger.");
-    } else {
-      console.error("Erreur :", error.message);
-    }
-  }
-
-  await client.disconnect();
-}
-
-// Remplace par une adresse testnet
-readAccountFlags("rYourXahauAddressHere");`,
       ],
       slides: [
         ["AccountSet : configurer ton compte", "AccountSet modifie les paramètres d'un compte\n\n• Activer des flags\n• Désactiver certains flags\n• Ajuster des options de compte\n• Signé par le propriétaire"],
@@ -5098,45 +4784,6 @@ C'est utile pour :
 - Surveiller ton compte mainnet sans exposer le seed sur ton téléphone
 - Vérifier rapidement les soldes`,
       codeTitles: ["Générer un wallet et préparer les données pour l'importer dans Xaman"],
-      code: [
-`const { Client, Wallet } = require("xahau");
-
-async function prepareForXaman() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Générer et financer un wallet
-  const wallet = Wallet.generate();
-  console.log("Génération du wallet testnet...");
-  await client.fundWallet(wallet);
-
-  // Vérifier le solde
-  const response = await client.request({
-    command: "account_info",
-    account: wallet.address,
-    ledger_index: "validated",
-  });
-
-  const balance = Number(response.result.account_data.Balance) / 1_000_000;
-
-  console.log("=== Données à importer dans Xaman ===");
-  console.log("Adresse :", wallet.address);
-  console.log("Seed :", wallet.seed);
-  console.log("Solde :", balance, "XAH");
-  console.log("=== Instructions ===");
-  console.log("1. Ouvre Xaman sur ton téléphone");
-  console.log("2. Appuie sur 'Ajouter un compte' → 'Importer un compte existant'");
-  console.log("4. Sélectionne Accès Complet");
-  console.log("5. Sélectionne 'Family Seed (s...)'");
-  console.log("6. Saisis le seed :", wallet.seed);
-  console.log("  Rappel : nous sommes sur TESTNET.");
-  console.log("    Assure-toi de sélectionner le réseau Xahau Testnet dans Xaman.");
-
-  await client.disconnect();
-}
-
-prepareForXaman();`,
-      ],
       slides: [
         ["Qu'est-ce que Xaman ?", "Un wallet pour XRPL/Xahau\n\n• Gère les comptes\n• Signe les transactions\n• Affiche les demandes de signature\n• Ne donne pas ton seed aux applications"],
         ["Importer ton compte", "1. Ouvre Xaman\n2. Choisis importer un compte\n3. Saisis le seed testnet\n4. Vérifie l'adresse\n5. Utilise-le pour signer les exercices"],
@@ -5161,7 +4808,6 @@ function applyFrenchTranslations(module) {
       if (typeof block.code === "string") {
         block.code = { en: block.code };
       }
-      block.code.fr = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -5174,5 +4820,11 @@ function applyFrenchTranslations(module) {
 }
 
 applyFrenchTranslations(moduleData);
+
+// The course accounts every later lesson reads from .env, in the faucet lesson
+addCourseAccounts(moduleData, "m3l2");
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

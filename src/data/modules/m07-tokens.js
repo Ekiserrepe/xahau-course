@@ -1,9 +1,12 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
+import { addDistributeToken } from "../token-distribution.js";
+
 const moduleData = {
   id: "m6",
   icon: "🪙",
   title: {
     es: "Creación y gestión de tokens propios",
-    pt: "Creación e gestão de tokens próprios",
+    pt: "Criação e gestão de tokens próprios",
     en: "Creating and managing your own tokens",
     jp: "独自トークンの作成と管理",
     ko: "나만의 토큰 생성 및 관리",
@@ -66,13 +69,32 @@ Una de las ventajas del sistema de tokens de Xahau es que la cuenta emisora pued
 
 **Importante**: Algunas configuraciones son irreversibles (\`NoFreeze\`) y otras deben activarse antes de emitir tokens (\`Clawback\`). Planifica la configuración de tu emisor cuidadosamente antes de comenzar a distribuir tokens.
 
-Veremos cada una de estas configuraciones en detalle en las secciones siguientes del módulo.`,
-        pt: `Em Xahau, os tokens fungibles funcionam de manera diferente a ERC-20 em Ethereum. Você não precisa fazer deploy um smart contract para criar um token. Em vez disso, se usa um sistema baseado em **TrustLines** (linhas de confiança).
+Veremos cada una de estas configuraciones en detalle en las secciones siguientes del módulo.
+
+### Ejecutar los scripts de esta lección
+
+Los dos scripts forman un par: el primero firma con \`WALLET_SEED\` y confía en ISSUER para USD; el segundo firma con \`ISSUER_SEED\` y emite 100 USD a \`WALLET\`. \`create-accounts.js\` ([módulo 3](?m=3&l=1)) crea las dos cuentas. Salida en testnet: primero el script de emisión solo, luego los dos en orden:
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**: la emisión se ejecutó antes de que \`WALLET\` tuviera una TrustLine de USD hacia ISSUER, así que el pago no tenía camino. No se emitió nada.
+- **TrustLine \`tesSUCCESS\`**: \`WALLET\` acepta ahora USD de ISSUER, hasta su límite.
+- **Emisión \`tesSUCCESS\`**: ISSUER creó 100 USD en la TrustLine de \`WALLET\`. Un emisor nunca tiene su propio token: pagarlo es lo que lo crea.`,
+        pt: `Na Xahau, os tokens fungíveis funcionam de maneira diferente dos ERC-20 no Ethereum. Você não precisa fazer deploy de um smart contract para criar um token. Em vez disso, usa-se um sistema baseado em **TrustLines** (linhas de confiança).
 ### Como funciona?
 1. **Emissor (Issuer)**: Qualquer conta pode emitir um token. A conta emissora se torna no "banco central" de esse token
 2. **TrustLine**: Para receber um token, o receptor deve criar primeiro uma **TrustLine** para o emissor. Isso é como dizer "confio nesta conta até X quantidade desse token"
 3. **Transferencia**: Uma vez que existe a TrustLine, o emissor pode enviar tokens ao receptor por meio de um Payment
-### Identificación de tokens
+### Identificação de tokens
 Cada token se identifica por dos campos:
 - **currency**: Código de 3 caracteres (ej: "USD", "EUR") ou código hexadecimal de 40 caracteres para nomes largos
 - **issuer**: Endereço da conta emissora
@@ -84,7 +106,7 @@ Dois tokens com o mesmo \`currency\` mas diferente \`issuer\` são **tokens comp
 | Receber token | Automático (sem permissão) | Requer criar TrustLine (opt-in) |
 | Limite de quantidade | Definido no contrato | Definido pelo receptor na TrustLine |
 | Transferencia | Função do contrato | Transação nativa Payment |
-| Custo | Gas costoso | Fee mínimo (~12 drops) |
+| Custo | Gas caro | Fee mínima (~12 drops) |
 ### Reserva de conta
 Cada TrustLine consome uma **reserva de proprietário** (owner reserve) da conta. Isso significa que você precisa ter XAH adicional bloqueado por cada TrustLine que criar.
 ### Configurações do emissor ao criar um token
@@ -94,11 +116,30 @@ Uma das vantagens do sistema de tokens de Xahau é que a conta emissora pode con
 | **DefaultRipple** | \`SetFlag: 8\` | Permite que o token se transfira livremente entre terceiros. Sem este flag, os tokens só podem ir e voltar ao emissor |
 | **TransferFee** | \`TransferRate\` | Cobra um percentual em cada transferência entre terceiros (ej: 0.1%). O fee vai para o emissor |
 | **RequireAuth** | \`SetFlag: 2\` | O emissor deve autorizar cada TrustLine antes que um holder possa receber tokens. Ideal para tokens com KYC |
-| **Freeze** | \`SetFlag: 7\` (global) | Permite congelar TrustLines individuales ou todas à vez, impidiendo transferências |
-| **NoFreeze** | \`SetFlag: 6\` | Renuncia **permanente** e irreversível à capacidade de congelar. Señao de confianza |
+| **Freeze** | \`SetFlag: 7\` (global) | Permite congelar TrustLines individuais ou todas de uma vez, impedindo transferências |
+| **NoFreeze** | \`SetFlag: 6\` | Renúncia **permanente** e irreversível à capacidade de congelar. Sinal de confiança |
 | **Clawback** | \`SetFlag: 17\` | Permite ao emissor recuperar tokens de qualquer holder. Deve ser ativado **antes** de criar qualquer TrustLine |
 **Importante**: Algumas configurações são irreversíveis (\`NoFreeze\`) e outras devem ser ativadas antes de emitir tokens (\`Clawback\`). Planeje a configuração de seu emissor com cuidado antes de começar a distribuir tokens.
-Veremos cada uma de essas configurações em detalhe nas seções siguientes do módulo.`,
+Cada uma dessas configurações é detalhada nas próximas seções do módulo.
+
+### Executar os scripts desta lição
+
+Os dois scripts formam um par: o primeiro assina com \`WALLET_SEED\` e confia no ISSUER para USD; o segundo assina com \`ISSUER_SEED\` e emite 100 USD para a \`WALLET\`. \`create-accounts.js\` ([módulo 3](?m=3&l=1)) cria as duas contas. Saída na testnet: primeiro o script de emissão sozinho, depois os dois em ordem:
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**: a emissão rodou antes de a \`WALLET\` ter uma TrustLine de USD para o ISSUER, então o pagamento não tinha caminho. Nada foi emitido.
+- **TrustLine \`tesSUCCESS\`**: a \`WALLET\` agora aceita USD do ISSUER, até o limite.
+- **Emissão \`tesSUCCESS\`**: o ISSUER criou 100 USD na TrustLine da \`WALLET\`. Um emissor nunca tem o próprio token: pagá-lo é o que o cria.`,
         en: `In Xahau, fungible tokens work differently from ERC-20 on Ethereum. You don't need to deploy a smart contract to create a token. Instead, a system based on **TrustLines** is used.
 
 ### How does it work?
@@ -144,7 +185,26 @@ One of the advantages of Xahau's token system is that the issuing account can co
 
 **Important**: Some configurations are irreversible (\`NoFreeze\`) and others must be activated before issuing tokens (\`Clawback\`). Plan your issuer's configuration carefully before you start distributing tokens.
 
-We will cover each of these configurations in detail in the following sections of this module.`,
+We will cover each of these configurations in detail in the following sections of this module.
+
+### Run this lesson's scripts
+
+The two scripts are a pair: the first signs with \`WALLET_SEED\` and trusts ISSUER for USD; the second signs with \`ISSUER_SEED\` and issues 100 USD to \`WALLET\`. \`create-accounts.js\` ([Module 3](?m=3&l=1)) creates both accounts. Output on testnet: the issue script run first, then both in order:
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**: the issue ran before \`WALLET\` had a USD TrustLine to ISSUER, so there was no path for the payment. Nothing was issued.
+- **TrustLine \`tesSUCCESS\`**: \`WALLET\` now accepts USD from ISSUER, up to its limit.
+- **Issue \`tesSUCCESS\`**: ISSUER created 100 USD in \`WALLET\`'s TrustLine. An issuer never holds its own token: paying it out is what creates it.`,
         jp: `Xahauの(代替可能)トークンは、EthereumのERC-20とは異なる仕組みで動作します。トークンを作成するためにスマートコントラクトをデプロイする必要はありません。代わりに、**TrustLine**（トラストライン）に基づくシステムが使用されます。
 
 ### 仕組み
@@ -190,7 +250,26 @@ Xahauのトークンシステムの利点の一つは、発行アカウントが
 
 **重要**: 一部の設定は取り消し不能（\`NoFreeze\`）で、一部はトークン発行前に有効化する必要があります（\`Clawback\`）。トークンの発行を開始する前に、発行者の設定を慎重に計画してください。
 
-これらの設定の詳細は、このモジュールの以降のセクションで説明します。`,
+これらの設定の詳細は、このモジュールの以降のセクションで説明します。
+
+### このレッスンのスクリプトを実行する
+
+2つのスクリプトは対になっています。1つ目は \`WALLET_SEED\` で署名し、USD について ISSUER を信頼します。2つ目は \`ISSUER_SEED\` で署名し、\`WALLET\` に 100 USD を発行します。両方のアカウントは\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成します。テストネットでの出力:まず発行スクリプトだけを実行し、次に2つを順番に実行した結果です。
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**: \`WALLET\` が ISSUER への USD の TrustLine を持つ前に発行したため、支払いの経路がありませんでした。何も発行されていません。
+- **TrustLine の \`tesSUCCESS\`**: \`WALLET\` は上限まで ISSUER の USD を受け入れるようになりました。
+- **発行の \`tesSUCCESS\`**: ISSUER が \`WALLET\` の TrustLine に 100 USD を作成しました。発行者は自分のトークンを保有しません。支払うことがトークンを作ることです。`,
         ko: `Xahau의 발행형 토큰은 Ethereum의 ERC-20과 다르게 동작합니다. 토큰을 받기 전에는 먼저 **TrustLine**을 열어야 하며, 이는 발행자와 수신자 사이의 신뢰 관계를 나타냅니다.
 
 ### 핵심 개념
@@ -200,7 +279,26 @@ Xahauのトークンシステムの利点の一つは、発行アカウントが
 - TrustLine에는 한도, 상태, 플래그가 포함됩니다
 - 발행자는 직접 토큰을 “민팅”하기보다 잔액 관계를 생성합니다
 
-Xahau 토큰 모델을 이해하려면 “토큰 컨트랙트”가 아니라 “계정 간 관계”라는 관점이 중요합니다.`,
+Xahau 토큰 모델을 이해하려면 “토큰 컨트랙트”가 아니라 “계정 간 관계”라는 관점이 중요합니다.
+
+### 이 레슨의 스크립트 실행
+
+두 스크립트는 한 쌍입니다. 첫 번째는 \`WALLET_SEED\`로 서명해 USD에 대해 ISSUER를 신뢰하고, 두 번째는 \`ISSUER_SEED\`로 서명해 \`WALLET\`에 100 USD를 발행합니다. 두 계정은 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만듭니다. 테스트넷 출력: 먼저 발행 스크립트만 실행한 뒤 두 스크립트를 순서대로 실행한 결과입니다.
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**: \`WALLET\`에 ISSUER로 향하는 USD TrustLine이 생기기 전에 발행을 실행해서 결제 경로가 없었습니다. 아무것도 발행되지 않았습니다.
+- **TrustLine \`tesSUCCESS\`**: 이제 \`WALLET\`은 한도까지 ISSUER의 USD를 받습니다.
+- **발행 \`tesSUCCESS\`**: ISSUER가 \`WALLET\`의 TrustLine에 100 USD를 만들었습니다. 발행자는 자기 토큰을 보유하지 않으며, 지불하는 것이 곧 토큰을 만드는 것입니다.`,
         zh: `Xahau 的发行型代币与 Ethereum 的 ERC-20 不同。用户在接收代币之前，必须先建立 **TrustLine**，它表示发行方与接收方之间的信任关系。
 
 ### 核心概念
@@ -210,7 +308,26 @@ Xahau 토큰 모델을 이해하려면 “토큰 컨트랙트”가 아니라 �
 - TrustLine 包含额度、状态和标志
 - 发行方不是直接“铸造”代币，而是建立余额关系
 
-理解 Xahau 的代币模型时，重点不是“代币合约”，而是“账户之间的关系”。`,
+理解 Xahau 的代币模型时，重点不是“代币合约”，而是“账户之间的关系”。
+
+### 运行本课的脚本
+
+这两个脚本是一对：第一个用 \`WALLET_SEED\` 签名，为 USD 信任 ISSUER；第二个用 \`ISSUER_SEED\` 签名，向 \`WALLET\` 发行 100 USD。两个账户都由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建。测试网上的输出：先单独运行发行脚本，再按顺序运行两个脚本：
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**：发行时 \`WALLET\` 还没有指向 ISSUER 的 USD TrustLine，付款没有路径，什么都没有发行。
+- **TrustLine \`tesSUCCESS\`**：\`WALLET\` 现在接受 ISSUER 的 USD，直到其上限。
+- **发行 \`tesSUCCESS\`**：ISSUER 在 \`WALLET\` 的 TrustLine 上创建了 100 USD。发行者从不持有自己的代币：付出去的那一刻就是创建它的时候。`,
       },
       codeBlocks: [
         {
@@ -225,6 +342,7 @@ Xahau 토큰 모델을 이해하려면 “토큰 컨트랙트”가 아니라 �
           language: "javascript",
           code: {
             es: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
@@ -239,8 +357,8 @@ async function createTrustLine() {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "YourTokenName",
-      issuer: "YourIssuerAddress",
+      currency: "USD",
+      issuer: Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address,
       value: "1000000", // Límite máximo que acepto
     },
   };
@@ -261,20 +379,21 @@ async function createTrustLine() {
 
 createTrustLine();`,
             pt: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet } = require("xahau");
 async function criateTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Wallet do receptor (quien quiere receber ou token)
+  // Wallet do destinatário (quem quer receber o token)
   const receiver = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
   // Criar TrustLine: "confio no emissor para até 1,000,000 USD"
   const trustSet = {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "YourTokenName",
-      issuer: "YourIssuerAddress",
-      value: "1000000", // Límite máximo que acepto
+      currency: "USD",
+      issuer: Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address,
+      value: "1000000", // Limite máximo que aceito
     },
   };
   const prepared = await client.autofill(trustSet);
@@ -282,13 +401,14 @@ async function criateTrustLine() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡TrustLine criada com éxito!");
-    console.log("Ahora você pode receber do emissor a partir da sua conta "+ receiver.address);
+    console.log("TrustLine criada com sucesso!");
+    console.log("Agora você pode receber do emissor na sua conta "+ receiver.address);
   }
   await client.disconnect();
 }
 criateTrustLine();`,
             en: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
@@ -303,8 +423,8 @@ async function createTrustLine() {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "YourTokenName",
-      issuer: "YourIssuerAddress",
+      currency: "USD",
+      issuer: Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address,
       value: "1000000", // Maximum limit I accept
     },
   };
@@ -325,6 +445,7 @@ async function createTrustLine() {
 
 createTrustLine();`,
             jp: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
@@ -339,8 +460,8 @@ async function createTrustLine() {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "YourTokenName",
-      issuer: "YourIssuerAddress",
+      currency: "USD",
+      issuer: Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address,
       value: "1000000", // 受け入れる最大限度額
     },
   };
@@ -361,6 +482,7 @@ async function createTrustLine() {
 
 createTrustLine();`,
             ko: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
@@ -375,8 +497,8 @@ async function createTrustLine() {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "YourTokenName",
-      issuer: "YourIssuerAddress",
+      currency: "USD",
+      issuer: Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address,
       value: "1000000", // 수락할 최대 한도
     },
   };
@@ -397,6 +519,7 @@ async function createTrustLine() {
 
 createTrustLine();`,
             zh: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet } = require("xahau");
 
 async function createTrustLine() {
@@ -411,8 +534,8 @@ async function createTrustLine() {
     TransactionType: "TrustSet",
     Account: receiver.address,
     LimitAmount: {
-      currency: "YourTokenName",
-      issuer: "YourIssuerAddress",
+      currency: "USD",
+      issuer: Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address,
       value: "1000000", // 我愿意接受的最大额度
     },
   };
@@ -445,8 +568,9 @@ createTrustLine();`,
           },
           language: "javascript",
           code: {
-            es: `//Este código fallará si no dispones de los tokens que quieres enviar.
+            es: `// Falla con tecPATH_DRY hasta que WALLET tenga una TrustLine de USD hacia ISSUER: ejecuta antes el script de la TrustLine
 require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -454,13 +578,13 @@ async function issueTokens() {
   await client.connect();
 
   // Wallet del emisor del token
-  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
 
   // Enviar 100 USD al receptor (que ya tiene TrustLine)
   const payment = {
     TransactionType: "Payment",
     Account: issuer.address,
-    Destination: "rDireccionDelReceptor",
+    Destination: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Amount: {
       currency: "USD",
       issuer: issuer.address,
@@ -482,19 +606,20 @@ async function issueTokens() {
 }
 
 issueTokens();`,
-            pt: `//Este código falhará se não dispones dos tokens que quieres enviar.
+            pt: `// Falha com tecPATH_DRY até que a WALLET tenha uma TrustLine de USD para o ISSUER: execute antes o script da TrustLine
 require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet } = require("xahau");
 async function issueTokens() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   // Wallet do emissor do token
-  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
   // Enviar 100 USD ao receptor (que já tem TrustLine)
   const payment = {
     TransactionType: "Payment",
     Account: issuer.address,
-    Destination: "rDireccionDelReceptor",
+    Destination: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Amount: {
       currency: "USD",
       issuer: issuer.address,
@@ -506,13 +631,14 @@ async function issueTokens() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡Tokens emitidos com éxito!");
+    console.log("Tokens emitidos com sucesso!");
   }
   await client.disconnect();
 }
 issueTokens();`,
-            en: `//This code is going to fail if you dont own those tokens
+            en: `// Fails with tecPATH_DRY until WALLET has a USD TrustLine to ISSUER: run the TrustLine script first
 require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -520,13 +646,13 @@ async function issueTokens() {
   await client.connect();
 
   // Token issuer wallet
-  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
 
   // Send 100 USD to the recipient (who already has a TrustLine)
   const payment = {
     TransactionType: "Payment",
     Account: issuer.address,
-    Destination: "rRecipientAddress",
+    Destination: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Amount: {
       currency: "USD",
       issuer: issuer.address,
@@ -548,8 +674,9 @@ async function issueTokens() {
 }
 
 issueTokens();`,
-            jp: `//このコードは、対象のトークンを所持していない場合は失敗します
+            jp: `// WALLET が ISSUER への USD の TrustLine を持つまでは tecPATH_DRY で失敗します。先に TrustLine のスクリプトを実行してください
 require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -557,13 +684,13 @@ async function issueTokens() {
   await client.connect();
 
   // トークン発行者のウォレット
-  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
 
   // 受取人（すでにTrustLineを持っている）に100 USDを送信
   const payment = {
     TransactionType: "Payment",
     Account: issuer.address,
-    Destination: "rRecipientAddress",
+    Destination: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Amount: {
       currency: "USD",
       issuer: issuer.address,
@@ -585,8 +712,9 @@ async function issueTokens() {
 }
 
 issueTokens();`,
-            ko: `// 이 코드는 보내려는 토큰을 보유하지 않으면 실패합니다
+            ko: `// WALLET에 ISSUER로 향하는 USD TrustLine이 생기기 전에는 tecPATH_DRY로 실패합니다. 먼저 TrustLine 스크립트를 실행하세요
 require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -594,13 +722,13 @@ async function issueTokens() {
   await client.connect();
 
   // 토큰 발행자 지갑
-  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
 
   // 수신자(이미 TrustLine 보유)에게 100 USD 전송
   const payment = {
     TransactionType: "Payment",
     Account: issuer.address,
-    Destination: "rRecipientAddress",
+    Destination: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Amount: {
       currency: "USD",
       issuer: issuer.address,
@@ -622,8 +750,9 @@ async function issueTokens() {
 }
 
 issueTokens();`,
-            zh: `// 如果你并不持有要发送的代币，这段代码会失败
+            zh: `// 在 WALLET 建立指向 ISSUER 的 USD TrustLine 之前，会以 tecPATH_DRY 失败：请先运行 TrustLine 脚本
 require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet } = require("xahau");
 
 async function issueTokens() {
@@ -631,13 +760,13 @@ async function issueTokens() {
   await client.connect();
 
   // 代币发行方钱包
-  const issuer = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
+  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
 
   // 向接收方发送 100 USD（对方已拥有 TrustLine）
   const payment = {
     TransactionType: "Payment",
     Account: issuer.address,
-    Destination: "rRecipientAddress",
+    Destination: Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address,
     Amount: {
       currency: "USD",
       issuer: issuer.address,
@@ -705,7 +834,7 @@ issueTokens();`,
       id: "m6l1b",
       title: {
         es: "Proceso completo: crear y distribuir tu propio token",
-        pt: "Proceso completo: criar e distribuir seu propio token",
+        pt: "Processo completo: criar e distribuir seu próprio token",
         en: "Complete process: create and distribute your own token",
         jp: "完全なプロセス：独自トークンの作成と配布",
         ko: "전체 과정: 나만의 토큰 생성 및 배포",
@@ -760,22 +889,22 @@ console.log(currencyToHex("EURZ"));
 | Emitir supply | \`Payment\` (Amount como IOU) | Emisor |
 | Distribuir | \`Payment\` (Amount como IOU) | Cuenta de reserva |`,
         pt: `Agora que você entende como funcionam as TrustLines, vamos ver o processo completo para criar seu próprio token e distribuí-lo. Diferentemente de outras blockchains, na Xahau **você não precisa fazer deploy nenhum contrato**. O processo é realizado inteiramente com transações nativas.
-### Visión geral do processo
+### Visão geral do processo
 O fluxo completo para criar e distribuir um token é:
 1. **Preparar a conta emissora**: Criar (ou usar) uma conta dedicada exclusivamente a emitir o token
 2. **Configurar flags do emissor**: Ativar \`DefaultRipple\` para que o token seja transferível entre terceiros
 3. **Preparar a conta de reserva/distribuição**: Criar (ou usar) uma segunda conta que receberá o supply inicial e a partir da qual serão distribuídos os tokens
 4. **Criar TrustLine desde a conta de reserva**: A conta de distribuição cria uma TrustLine para o emissor
 5. **Emitir os tokens**: O emissor envíao supply total à conta de reserva por meio de um Payment
-6. **Distribuir**: Desde a conta de reserva se distribuyen os tokens a os usuários finales (que previamente devem ter TrustLine)
+6. **Distribuir**: a partir da conta de reserva, os tokens são distribuídos aos usuários finais (que antes precisam ter uma TrustLine)
 ### Por que usar dois contas separadas?
-É uma buena práctica separar a **conta emissora** da **conta de distribuição**:
+É uma boa prática separar a **conta emissora** da **conta de distribuição**:
 - **Conta emissora**: Só é usada para emitir e para configurar o token (freeze, clawback, etc.). Se pode proteger com multi-signing ou desativar a chave mestra uma vez configurada
 - **Conta de distribuição/reserva**: Mantém o supply circulante e é usada para operar no dia a dia (vender no DEX, distribuir a usuários, etc.)
 Esta separação reduz o risco: se a conta de distribuição for comprometida, o emissor pode congelar os tokens. Se tudo estivesse em uma única conta, uma falha comprometeria tanto a emissão como a distribuição.
 ### Código de moeda: 3 caracteres vs hex
 - Tokens com nome de **3 caracteres** (ej: \`USD\`, \`EUR\`, \`EKI\`) se usam diretamente
-- Tokens com nome **más largo** (ej: \`EURZ\`, \`MyToken\`) devem converterse a um código hexadecimal de 40 caracteres
+- Tokens com nome **mais longo** (ex.: \`EURZ\`, \`MyToken\`) devem ser convertidos em um código hexadecimal de 40 caracteres
 \`\`\`
 // Função para converter nome largo a hex de 40 chars
 function currencyToHex(name) {
@@ -917,7 +1046,7 @@ console.log(currencyToHex("EURZ"));
         {
           title: {
             es: "Proceso completo: configurar emisor, crear TrustLine, emitir y distribuir token",
-            pt: "Proceso completo: configurar emissor, criar TrustLine, emitir e distribuir token",
+            pt: "Processo completo: configurar o emissor, criar a TrustLine, emitir e distribuir o token",
             en: "Complete process: configure issuer, create TrustLine, issue and distribute token",
             jp: "完全なプロセス：発行者の設定、トラストラインの作成、トークンの発行と配布",
             ko: "전체 과정: 발행자 설정, TrustLine 생성, 토큰 발행 및 배포",
@@ -926,12 +1055,14 @@ console.log(currencyToHex("EURZ"));
           language: "javascript",
           code: {
             es: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // Necesitas dos wallets con fondos en testnet y definelas en tu .env:
 //   ISSUER_SEED  → Cuenta emisora del token
 //   RESERVE_SEED  → Cuenta de reserva/distribución
-// Puedes obtener fondos del faucet: https://xahau-test.net
+// create-accounts.js (módulo 3, lección 2) crea las dos.
 
 // Si token_currency > 3 chars, convertir a hex de 40 (relleno con 0)
 function normalizeCurrency(token_currency) {
@@ -1061,32 +1192,21 @@ async function createAndDistributeToken() {
     console.log("Límite:", tokenLine.limit, TOKEN_CURRENCY);
   }
 
-  // === PASO 4 (ejemplo): Distribuir tokens a un usuario final ===
-  // El usuario final debe crear primero su TrustLine hacia el emisor
-  // Luego la cuenta de reserva le envía tokens:
-  //
-  // const distribution = {
-  //   TransactionType: "Payment",
-  //   Account: reserve.address,
-  //   Destination: "rDireccionDelUsuarioFinal",
-  //   Amount: {
-  //     currency: TOKEN_CURRENCY,
-  //     issuer: issuer.address,
-  //     value: "100",
-  //   },
-  // };
+  // Siguiente paso: distribute-token.js envía parte del supply a un holder.
 
   await client.disconnect();
 }
 
 createAndDistributeToken();`,
             pt: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
-// Você precisa dois wallets com fondos em testnet e definelas em seu .env:
+// Você precisa de duas wallets com fundos na testnet, definidas no seu .env:
 //   ISSUER_SEED  → Conta emissora do token
 //   RESERVE_SEED  → Conta de reserva/distribuição
-// Você pode obter fondos do faucet: https://xahau-test.net
-// Se token_currency > 3 chars, converter a hex de 40 (relleno com 0)
+// create-accounts.js (módulo 3, lição 2) cria as duas.
+// Se token_currency > 3 caracteres, converter para hex de 40 (preenchido com 0)
 function normalizeCurrency(token_currency) {
   if (typeof token_currency !== "string") return token_currency;
   const cur = token_currency.trim();
@@ -1107,10 +1227,10 @@ async function criateAndDistributeToken() {
   // === CONTAS ===
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
   const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const TOKEN_CURRENCY_INPUT = "YourTokenName";          // Nombre do token (3 chars) ou hex de 40 chars para nomes largos
+  const TOKEN_CURRENCY_INPUT = "YourTokenName";          // Nome do token (3 caracteres) ou hex de 40 caracteres para nomes longos
   const TOTAL_SUPPLY = "1000000";        // Supply total a emitir
   const TOKEN_CURRENCY = normalizeCurrency(TOKEN_CURRENCY_INPUT);
-  console.log("=== Creación de token ===");
+  console.log("=== Criação do token ===");
   console.log("Emissor:", issuer.address);
   console.log("Reserva:", reserve.address);
   console.log("Token:", TOKEN_CURRENCY);
@@ -1166,13 +1286,13 @@ async function criateAndDistributeToken() {
   const prep3 = await client.autofill(issuePayment);
   const signed3 = issuer.sign(prep3);
   const result3 = await client.submitAndWait(signed3.tx_blob);
-  console.log("Emisión:", result3.result.meta.TransactionResult);
+  console.log("Emissão:", result3.result.meta.TransactionResult);
   if (result3.result.meta.TransactionResult !== "tesSUCCESS") {
     console.log("Erro emitiendo tokens. Abortando.");
     await client.disconnect();
     return;
   }
-  console.log("¡Token criado e distribuido à conta de reserva!");
+  console.log("Token criado e distribuído para a conta de reserva!");
   console.log("Supply total:", TOTAL_SUPPLY, TOKEN_CURRENCY);
   // === VERIFICAR: Consultar saldo da conta de reserva ===
   console.log("--- Verificação ---");
@@ -1191,7 +1311,7 @@ async function criateAndDistributeToken() {
   }
   // === PASSO 4 (exemplo): Distribuir tokens a um usuário final ===
   // O usuário final deve criar primeiro sua TrustLine para o emissor
-  // Luego a conta de reserva le envia tokens:
+  // Depois, a conta de reserva envia os tokens a ele:
   //
   // const distribution = {
   //   TransactionType: "Payment",
@@ -1207,28 +1327,30 @@ async function criateAndDistributeToken() {
 }
 criateAndDistributeToken();`,
             en: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // You need two wallets with funds on testnet, define them in your .env:
 //   ISSUER_SEED  → Token issuer account
 //   RESERVE_SEED  → Reserve/distribution account
-// You can get funds from the faucet: https://xahau-test.net
+// create-accounts.js (Module 3, lesson 2) creates both.
 
-// Si token_currency > 3 chars, convertir a hex de 40 (relleno con 0)
+// If token_currency > 3 chars, convert to 40 hex (padded with 0)
 function normalizeCurrency(token_currency) {
   if (typeof token_currency !== "string") return token_currency;
 
   const cur = token_currency.trim();
 
-  // 3 o menos: standard currency code
+  // 3 or less: standard currency code
   if (cur.length <= 3) return cur;
 
-  // >3: convertir a hex y pad a 40 (20 bytes) con 0 a la derecha
+  // >3: convert to hex and pad to 40 (20 bytes) with 0 on the right
   const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency demasiado largo: "\${cur}" -> hex \${hex.length} (>40). Máx ~20 bytes en UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -1342,32 +1464,21 @@ async function createAndDistributeToken() {
     console.log("Limit:", tokenLine.limit, TOKEN_CURRENCY);
   }
 
-  // === STEP 4 (example): Distribute tokens to an end user ===
-  // The end user must first create their TrustLine toward the issuer
-  // Then the reserve account sends them tokens:
-  //
-  // const distribution = {
-  //   TransactionType: "Payment",
-  //   Account: reserve.address,
-  //   Destination: "rEndUserAddress",
-  //   Amount: {
-  //     currency: TOKEN_CURRENCY,
-  //     issuer: issuer.address,
-  //     value: "100",
-  //   },
-  // };
+  // Next: distribute-token.js sends part of the supply to a holder.
 
   await client.disconnect();
 }
 
 createAndDistributeToken();`,
             jp: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // テストネットで資金のある2つのウォレットが必要です。.envに定義してください：
 //   ISSUER_SEED  → トークン発行者アカウント
 //   RESERVE_SEED  → リザーブ/配布アカウント
-// ファウセットから資金を取得できます: https://xahau-test.net
+// create-accounts.js（モジュール3・レッスン2）が両方を作成します。
 
 // token_currencyが3文字超の場合、40文字のhex（右側0埋め）に変換
 function normalizeCurrency(token_currency) {
@@ -1497,32 +1608,21 @@ async function createAndDistributeToken() {
     console.log("限度額:", tokenLine.limit, TOKEN_CURRENCY);
   }
 
-  // === ステップ4（例）：エンドユーザーにトークンを配布 ===
-  // エンドユーザーは先に発行者へのTrustLineを作成する必要があります
-  // その後、リザーブアカウントからトークンを送信：
-  //
-  // const distribution = {
-  //   TransactionType: "Payment",
-  //   Account: reserve.address,
-  //   Destination: "rEndUserAddress",
-  //   Amount: {
-  //     currency: TOKEN_CURRENCY,
-  //     issuer: issuer.address,
-  //     value: "100",
-  //   },
-  // };
+  // 次へ: distribute-token.js が供給量の一部を保有者に送ります。
 
   await client.disconnect();
 }
 
 createAndDistributeToken();`,
             ko: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // 테스트넷에서 자금이 있는 두 개의 지갑이 필요합니다. .env에 정의하세요:
 //   ISSUER_SEED  → 토큰 발행자 계정
 //   RESERVE_SEED → reserve/배포 계정
-// faucet에서 자금을 받을 수 있습니다: https://xahau-test.net
+// create-accounts.js (모듈 3, 레슨 2)가 둘 다 만듭니다.
 
 // token_currency가 3자를 넘으면 40자리 hex로 변환
 function normalizeCurrency(token_currency) {
@@ -1652,12 +1752,14 @@ async function createAndDistributeToken() {
 
 createAndDistributeToken();`,
             zh: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // 你需要两个在测试网上有资金的钱包，并在 .env 中定义：
 //   ISSUER_SEED   → 代币发行账户
 //   RESERVE_SEED  → 储备/分发账户
-// 你可以从水龙头获取测试资金：https://xahau-test.net
+// create-accounts.js（模块 3，第 2 课）会创建这两个账户。
 
 // 如果 token_currency 超过 3 个字符，则转成 40 位十六进制
 function normalizeCurrency(token_currency) {
@@ -1794,7 +1896,14 @@ createAndDistributeToken();`,
           title: { es: "Proceso de creación de un token", pt: "Processo de criação de um token", en: "Token creation process", jp: "トークン作成プロセス", ko: "토큰 생성 과정", zh: "代币创建流程" },
           content: {
             es: "No necesitas smart contracts\n\n1️⃣ Configurar emisor (DefaultRipple)\n2️⃣ Crear TrustLine desde cuenta reserva\n3️⃣ Emitir supply (Payment del emisor)\n4️⃣ Distribuir a usuarios finales\n\nTodo con transacciones nativas",
-            pt: "Você não precisa de smart contracts\n\n1️⃣ Configurar emissor (DefaultRipple)\n2️⃣ Criar TrustLine a partir de conta reserva\n3️⃣ Emitir supply (Payment do emissor)\n4️⃣ Distribuir a usuários finales\n\nTudo com transações nativas",
+            pt: `Você não precisa de smart contracts
+
+1️⃣ Configurar emissor (DefaultRipple)
+2️⃣ Criar TrustLine a partir de conta reserva
+3️⃣ Emitir supply (Payment do emissor)
+4️⃣ Distribuir aos usuários finais
+
+Tudo com transações nativas`,
             en: "No smart contracts needed\n\n1️⃣ Configure issuer (DefaultRipple)\n2️⃣ Create TrustLine from reserve account\n3️⃣ Issue supply (Payment from issuer)\n4️⃣ Distribute to end users\n\nAll with native transactions",
             jp: "スマートコントラクト不要\n\n1️⃣ 発行者を設定（DefaultRipple）\n2️⃣ リザーブアカウントからTrustLineを作成\n3️⃣ サプライを発行（発行者からPayment）\n4️⃣ エンドユーザーに配布\n\nすべてネイティブトランザクションで",
             ko: "스마트 컨트랙트가 필요 없음\n\n1️⃣ 발행자 설정 (DefaultRipple)\n2️⃣ reserve 계정에서 TrustLine 생성\n3️⃣ 공급량 발행 (발행자의 Payment)\n4️⃣ 최종 사용자에게 배포\n\n모두 네이티브 트랜잭션으로 처리",
@@ -1818,7 +1927,13 @@ createAndDistributeToken();`,
           title: { es: "Resumen de transacciones", pt: "Resumo das transações", en: "Transaction summary", jp: "トランザクションまとめ", ko: "트랜잭션 요약", zh: "交易总结" },
           content: {
             es: "AccountSet → DefaultRipple en emisor\nTrustSet → Reserva confía en emisor\nPayment → Emisor envía supply a reserva\nPayment → Reserva distribuye a usuarios\n\nUsuarios finales necesitan TrustLine\nantes de poder recibir el token",
-            pt: "AccountSet → DefaultRipple em emissor\nTrustSet → Reserva confía em emissor\nPayment → Emissor envia supply a reserva\nPayment → Reserva distribuye a usuários\n\nUsuarios finales necesitan TrustLine\nantes de poder receber ou token",
+            pt: `AccountSet → DefaultRipple em emissor
+TrustSet → A reserva confia no emissor
+Payment → Emissor envia supply a reserva
+Payment → A reserva distribui aos usuários
+
+Usuários finais precisam de TrustLine
+antes de poder receber ou token`,
             en: "AccountSet -> DefaultRipple on issuer\nTrustSet -> Reserve trusts issuer\nPayment -> Issuer sends supply to reserve\nPayment -> Reserve distributes to users\n\nEnd users need a TrustLine\nbefore they can receive the token",
             jp: "AccountSet -> 発行者にDefaultRipple\nTrustSet -> リザーブが発行者を信頼\nPayment -> 発行者がリザーブにサプライを送信\nPayment -> リザーブがユーザーに配布\n\nエンドユーザーはトークンを\n受け取る前にTrustLineが必要",
             ko: "AccountSet → 발행자에 DefaultRipple 설정\nTrustSet → reserve가 발행자를 신뢰\nPayment → 발행자가 reserve에 공급량 전송\nPayment → reserve가 사용자에게 배포\n\n최종 사용자는 토큰을 받기 전에\nTrustLine이 필요함",
@@ -1831,8 +1946,8 @@ createAndDistributeToken();`,
     {
       id: "m6l2",
       title: {
-        es: "Gestión avanzada de tokens",
-        pt: "Gestión avanzada de tokens",
+        es: "Gestão avançada de tokens",
+        pt: "Gestão avançada de tokens",
         en: "Advanced token management",
         jp: "高度なトークン管理",
         ko: "고급 토큰 관리",
@@ -1863,17 +1978,17 @@ Para nombres de token de más de 3 caracteres, se usa un código hexadecimal de 
 - Ejemplo: "EURZ" → hex → relleno a 40 chars`,
         pt: `Uma vez criado seu token, você pode gerenciar diversos aspectos: consultar saldos, configurar a conta emissora e transferir tokens entre usuários.
 ### Consultar TrustLines e saldos
-O comando \`account_lines\` retorna todas as TrustLines de uma conta, mostrando cada token que posee ou ha emitido, com seu saldo atual.
+O comando \`account_lines\` retorna todas as TrustLines de uma conta, mostrando cada token que ela possui ou emitiu, com o saldo atual.
 ### Configuração do emissor
 A conta emissora pode configurar flags importantes:
-- **DefaultRipple**: Permite que os tokens sejam transferidos entre terceiros sem acontecer por o emissor. **É necessário ativá-lo** se você quer que seus tokens sejam libremente transferibles
-- **RequireAuth**: Requer que o emissor autorice cada TrustLine antes que alguien possa receber tokens
+- **DefaultRipple**: permite que os tokens sejam transferidos entre terceiros sem passar pelo emissor. **É necessário ativá-lo** se você quer que seus tokens sejam livremente transferíveis
+- **RequireAuth**: exige que o emissor autorize cada TrustLine antes que alguém possa receber tokens
 ### Transferencia entre terceiros (Rippling)
 Sem o flag **DefaultRipple**, os tokens só podem ser transferidos de volta ao emissor. Com ele ativado, os tokens podem "ripplear" — ou seja, ser transferidos entre contas que têm TrustLine com o mesmo emissor.
 ### Códigos de moeda especiales
-Para nomes de token de más de 3 caracteres, se usa um código hexadecimal de 40 caracteres:
-- Formato: o nome convertido a hex, rellenado com ceros
-- Exemplo: "EURZ" → hex → relleno a 40 chars`,
+Para nomes de token com mais de 3 caracteres, usa-se um código hexadecimal de 40 caracteres:
+- Formato: o nome convertido para hex, preenchido com zeros
+- Exemplo: "EURZ" → hex → preenchido até 40 caracteres`,
         en: `Once your token is created, you can manage various aspects: query balances, configure the issuing account, and transfer tokens between users.
 
 ### Querying TrustLines and balances
@@ -2226,21 +2341,42 @@ El DEX de Xahau puede enrutar operaciones multi-salto automáticamente a través
 1. Vender USD por XAH
 2. Comprar EUR con XAH
 
-Todo en una sola transacción, de forma transparente. Esto mejora la liquidez del DEX significativamente.`,
+Todo en una sola transacción, de forma transparente. Esto mejora la liquidez del DEX significativamente.
+
+### Ejecutar los scripts de esta lección
+
+Los dos scripts firman con \`RESERVE_SEED\`, que tiene el token después del [proceso completo](?m=7&l=1), y leen la dirección de ISSUER de \`ISSUER_SEED\`. \`create-accounts.js\` ([módulo 3](?m=3&l=1)) crea las dos. Ejecuta primero el script de la oferta. Salida en testnet:
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+El **Sequence** de la oferta la identifica. \`cancel-offer.js\` lo recibe como argumento:
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+Imprime \`Result: tesSUCCESS\` y \`Offer cancelled successfully!\`. Sin un Sequence válido se detiene antes de enviar nada y dice qué pasar.
+
+**Caso a vigilar:** \`OfferCancel\` también devuelve \`tesSUCCESS\` cuando la oferta ya no existe (ya se ejecutó o ya se canceló). Una cancelación exitosa no prueba que la oferta no se negociara: consulta \`account_offers\` antes de cancelar si eso importa.`,
         pt: `Xahau inclui um **exchange descentralizado (DEX) nativo** diretamente no protocolo. Você não precisa de smart contracts nem plataformas externas para trocar tokens, tudo é feito com transações nativas.
 ### OfferCreate: colocar ordens no DEX
 A transação \`OfferCreate\` permite colocar uma ordem de compra ou venda no livro de ofertas do DEX. Tem dois campos chave:
-- **TakerPays**: Lo que quieres **receber** (lo que o "taker" paga)
-- **TakerGets**: Lo que estás **dispuesto a dar** (lo que o "taker" obtiene)
-Por exemplo, se quieres vender 100 USD por XAH, configurarías:
-- TakerPays: quantidade de XAH que quieres receber
-- TakerGets: 100 USD (lo que entregas)
+- **TakerPays**: o que você quer **receber** (o que o "taker" paga)
+- **TakerGets**: o que você está **disposto a dar** (o que o "taker" obtém)
+Por exemplo, se você quer vender 100 USD por XAH, configuraria:
+- TakerPays: quantidade de XAH que você quer receber
+- TakerGets: 100 USD (o que você entrega)
 ### OfferCancel: cancelar ordens abertas
 Se você tem uma ordem aberta no DEX que ainda não foi executada, você pode cancelá-la com \`OfferCancel\`, especificando o \`OfferSequence\` da ordem original.
 ### Como funciona o livro de ofertas
 O DEX mantiene um **order book** (livro de ofertas) para cada par de tokens:
-- **Bids (ofertas de compra)**: Órdenes que quieren comprar um token
-- **Asks (ofertas de venda)**: Órdenes que quieren vender um token
+- **Bids (ofertas de compra)**: ordens que querem comprar um token
+- **Asks (ofertas de venda)**: ordens que querem vender um token
 Quando uma nova ordem coincide com uma existente (o preço cruza), é executada automaticamente, total ou parcialmente.
 ### Flags especiais de OfferCreate
 - **tfImmediateOrCancel**: A ordem é executada imediatamente contra as ordens existentes. O que não for preenchido é cancelado no instante. Não fica nada no livro de ofertas
@@ -2254,7 +2390,28 @@ O comando \`book_offers\` permite ver as ordens abertas para um par de tokens. R
 O DEX de Xahau pode rotear operações multi-salto automaticamente por meio de XAH. Se você quiser trocar USD por EUR e não há ofertas diretas USD/EUR, o DEX pode:
 1. Vender USD por XAH
 2. Comprar EUR com XAH
-Todo em uma única transação, de forma transparente. Isso melhora a liquidez do DEX significativamente.`,
+Todo em uma única transação, de forma transparente. Isso melhora a liquidez do DEX significativamente.
+
+### Executar os scripts desta lição
+
+Os dois scripts assinam com \`RESERVE_SEED\`, que tem o token depois do [processo completo](?m=7&l=1), e leem o endereço do ISSUER de \`ISSUER_SEED\`. \`create-accounts.js\` ([módulo 3](?m=3&l=1)) cria as duas. Execute primeiro o script da oferta. Saída na testnet:
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+O **Sequence** da oferta a identifica. \`cancel-offer.js\` o recebe como argumento:
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+Ele imprime \`Result: tesSUCCESS\` e \`Offer cancelled successfully!\`. Sem um Sequence válido, para antes de enviar e diz o que passar.
+
+**Caso para observar:** \`OfferCancel\` também retorna \`tesSUCCESS\` quando a oferta não existe mais (já executada ou já cancelada). Um cancelamento bem-sucedido não prova que a oferta não foi negociada: consulte \`account_offers\` antes de cancelar se isso importar.`,
         en: `Xahau includes a **native decentralized exchange (DEX)** directly in the protocol. You don't need smart contracts or external platforms to exchange tokens, everything is done with native transactions.
 
 ### OfferCreate: placing orders on the DEX
@@ -2299,7 +2456,28 @@ The Xahau DEX can automatically route multi-hop trades through XAH. If you want 
 1. Sell USD for XAH
 2. Buy EUR with XAH
 
-All in a single transaction, transparently. This significantly improves DEX liquidity.`,
+All in a single transaction, transparently. This significantly improves DEX liquidity.
+
+### Run this lesson's scripts
+
+Both scripts sign with \`RESERVE_SEED\`, which holds the token after [the complete process](?m=7&l=1), and read ISSUER's address from \`ISSUER_SEED\`. \`create-accounts.js\` ([Module 3](?m=3&l=1)) creates both. Run the offer script first. Output on testnet:
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+The offer's **Sequence** identifies it. \`cancel-offer.js\` takes it as its argument:
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+It prints \`Result: tesSUCCESS\` and \`Offer cancelled successfully!\`. Without a valid Sequence it stops before submitting and says what to pass.
+
+**Case to watch:** \`OfferCancel\` also returns \`tesSUCCESS\` when the offer no longer exists (already filled, or already cancelled). A successful cancel doesn't prove the offer never traded: read \`account_offers\` before cancelling if that matters.`,
         jp: `Xahauにはプロトコルに直接組み込まれた**ネイティブ分散型取引所（DEX）**があります。トークンを交換するためにスマートコントラクトや外部プラットフォームは不要で、すべてネイティブトランザクションで行われます。
 
 ### OfferCreate：DEXに注文を出す
@@ -2344,7 +2522,28 @@ XahauのDEXはXAHを通じてマルチホップ取引を自動的にルーティ
 1. USDをXAHに売る
 2. XAHでEURを買う
 
-これによりDEXの流動性が大幅に向上します。`,
+これによりDEXの流動性が大幅に向上します。
+
+### このレッスンのスクリプトを実行する
+
+2つのスクリプトは、[完全なプロセス](?m=7&l=1)の後にトークンを保有する \`RESERVE_SEED\` で署名し、ISSUER のアドレスを \`ISSUER_SEED\` から読み取ります。両方とも\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成します。先に注文スクリプトを実行します。テストネットでの出力:
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+注文は **Sequence** で識別されます。\`cancel-offer.js\` はそれを引数に取ります。
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+\`Result: tesSUCCESS\` と \`Offer cancelled successfully!\` が表示されます。有効な Sequence がない場合は、何も送信せずに停止し、渡すべき値を表示します。
+
+**注意するケース:** \`OfferCancel\` は注文がもう存在しない場合（約定済み、またはキャンセル済み）にも \`tesSUCCESS\` を返します。キャンセルの成功は、注文が約定しなかったことの証明になりません。それが重要なら、キャンセル前に \`account_offers\` を確認してください。`,
         ko: `Xahau에는 네이티브 DEX가 있어 별도 스마트 컨트랙트 없이도 토큰 거래가 가능합니다. 거래는 오퍼북과 경로 탐색을 기반으로 이루어집니다.
 
 ### 기본 구성요소
@@ -2358,7 +2557,28 @@ XahauのDEXはXAHを通じてマルチホップ取引を自動的にルーティ
 
 - 가격과 수량 단위를 정확히 이해해야 합니다
 - 부분 체결 가능성을 고려해야 합니다
-- 유동성이 적으면 원하는 가격으로 체결되지 않을 수 있습니다`,
+- 유동성이 적으면 원하는 가격으로 체결되지 않을 수 있습니다
+
+### 이 레슨의 스크립트 실행
+
+두 스크립트는 [전체 과정](?m=7&l=1) 후 토큰을 보유한 \`RESERVE_SEED\`로 서명하고, ISSUER의 주소는 \`ISSUER_SEED\`에서 읽습니다. 둘 다 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만듭니다. 오퍼 스크립트를 먼저 실행하세요. 테스트넷 출력:
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+오퍼는 **Sequence**로 식별됩니다. \`cancel-offer.js\`는 이를 인자로 받습니다.
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+\`Result: tesSUCCESS\`와 \`Offer cancelled successfully!\`가 출력됩니다. 유효한 Sequence가 없으면 아무것도 제출하지 않고 멈추며 무엇을 전달해야 하는지 알려 줍니다.
+
+**주의할 경우:** \`OfferCancel\`은 오퍼가 더 이상 없을 때(이미 체결되었거나 이미 취소됨)도 \`tesSUCCESS\`를 반환합니다. 취소 성공이 오퍼가 체결되지 않았다는 증거는 아닙니다. 그게 중요하다면 취소 전에 \`account_offers\`를 확인하세요.`,
         zh: `Xahau 内置原生 DEX，因此无需额外的智能合约也能进行代币交易。交易基于订单簿和路径查找机制。
 
 ### 基本组成
@@ -2372,7 +2592,28 @@ XahauのDEXはXAHを通じてマルチホップ取引を自動的にルーティ
 
 - 必须准确理解价格和数量单位
 - 要考虑部分成交的可能性
-- 如果流动性不足，可能无法按理想价格成交`,
+- 如果流动性不足，可能无法按理想价格成交
+
+### 运行本课的脚本
+
+两个脚本都用 \`RESERVE_SEED\` 签名（它在[完整流程](?m=7&l=1)之后持有代币），并从 \`ISSUER_SEED\` 读取 ISSUER 的地址。两者都由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建。先运行挂单脚本。测试网上的输出：
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+订单由其 **Sequence** 标识。\`cancel-offer.js\` 把它作为参数：
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+它会打印 \`Result: tesSUCCESS\` 和 \`Offer cancelled successfully!\`。没有有效的 Sequence 时，它在提交前就停止，并说明应传入什么。
+
+**需要注意的情况：** 当订单已不存在（已成交或已取消）时，\`OfferCancel\` 同样返回 \`tesSUCCESS\`。取消成功并不能证明订单没有成交；如果这很重要，取消前先查询 \`account_offers\`。`,
       },
       codeBlocks: [
         {
@@ -2434,7 +2675,7 @@ async function viewOrderBook() {
   const client = new Client("wss://xahau.network");
   await client.connect();
   const issuerAddress = "rEvernodee8dJLaFsujS6q1EiXvZYmHXr8";
-  // Consultar ofertas: ¿quién vende EVR a alteração de XAH?
+  // Consultar ofertas: quem vende EVR em troca de XAH?
   const response = await client.request({
     command: "book_offers",
     taker_pays: {
@@ -2644,6 +2885,8 @@ viewOrderBook();`,
           language: "javascript",
           code: {
             es: `require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // Si token_currency > 3 chars, convertir a hex de 40 (relleno con 0)
@@ -2673,7 +2916,7 @@ async function createOffer() {
 
   const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
 
-  const issuerAddress = "rDireccionDelEmisorToken";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -2710,8 +2953,10 @@ async function createOffer() {
 
 createOffer();`,
             pt: `require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
-// Se token_currency > 3 chars, converter a hex de 40 (relleno com 0)
+// Se token_currency > 3 caracteres, converter para hex de 40 (preenchido com 0)
 function normalizeCurrency(token_currency) {
   if (typeof token_currency !== "string") return token_currency;
   const cur = token_currency.trim();
@@ -2730,16 +2975,16 @@ async function criateOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rDireccionDelEmisorToken";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
   // Vender 100 Token a alteração de 50 XAH
   const offer = {
     TransactionType: "OfferCreate",
     Account: trader.address,
-    // Lo que quiero receber: 50 XAH
+    // O que quero receber: 50 XAH
     TakerPays: xahToDrops(50),
-    // Lo que estoy dispuesto a dar: 100 Tokens
+    // O que estou disposto a dar: 100 tokens
     TakerGets: {
       currency: token_currency,
       issuer: issuerAddress,
@@ -2751,7 +2996,7 @@ async function criateOffer() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡Oferta criada no DEX!");
+    console.log("Oferta criada no DEX!");
     console.log(\`Vendiendo 100 Tokens por 50 XAH (0.5 XAH/Token)\`);
     console.log(\`Sequence da oferta: \${prepared.Sequence}\`);
   }
@@ -2759,6 +3004,8 @@ async function criateOffer() {
 }
 criateOffer();`,
             en: `require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // If token_currency > 3 chars, convert to 40 hex
@@ -2775,7 +3022,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -2788,7 +3035,7 @@ async function createOffer() {
   await client.connect();
 
   const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rTokenIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -2824,6 +3071,8 @@ async function createOffer() {
 
 createOffer();`,
             jp: `require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // token_currencyが3文字超の場合、40文字のhex（右側0埋め）に変換
@@ -2853,7 +3102,7 @@ async function createOffer() {
   await client.connect();
 
   const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rTokenIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -2889,6 +3138,8 @@ async function createOffer() {
 
 createOffer();`,
             ko: `require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // token_currency가 3자를 넘으면 40자리 hex로 변환
@@ -2914,7 +3165,7 @@ async function createOffer() {
   await client.connect();
 
   const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rTokenIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
 
@@ -2949,6 +3200,8 @@ async function createOffer() {
 
 createOffer();`,
             zh: `require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet, xahToDrops } = require("xahau");
 
 // 如果 token_currency 超过 3 个字符，则转成 40 位十六进制
@@ -2975,7 +3228,7 @@ async function createOffer() {
   await client.connect();
 
   const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rTokenIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -3023,8 +3276,15 @@ createOffer();`,
           },
           language: "javascript",
           code: {
-            es: `require("dotenv").config();
+            es: `// Archivo: cancel-offer.js
+// node cancel-offer.js <OfferSequence>
+require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet } = require("xahau");
+const offerSequence = Number(process.argv[2]);
+if (!Number.isInteger(offerSequence) || offerSequence <= 0) {
+  throw new Error("Pasa el Sequence de la oferta a cancelar (lo imprime el script que crea la oferta): node cancel-offer.js <OfferSequence>");
+}
 
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
@@ -3036,7 +3296,7 @@ async function cancelOffer() {
   const cancel = {
     TransactionType: "OfferCancel",
     Account: trader.address,
-    OfferSequence: 12345, // Sequence de la oferta a cancelar
+    OfferSequence: offerSequence,
   };
 
   const prepared = await client.autofill(cancel);
@@ -3054,8 +3314,15 @@ async function cancelOffer() {
 }
 
 cancelOffer();`,
-            pt: `require("dotenv").config();
+            pt: `// Arquivo: cancel-offer.js
+// node cancel-offer.js <OfferSequence>
+require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet } = require("xahau");
+const offerSequence = Number(process.argv[2]);
+if (!Number.isInteger(offerSequence) || offerSequence <= 0) {
+  throw new Error("Passe o Sequence da oferta a cancelar (o script que cria a oferta o imprime): node cancel-offer.js <OfferSequence>");
+}
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
@@ -3064,21 +3331,28 @@ async function cancelOffer() {
   const cancel = {
     TransactionType: "OfferCancel",
     Account: trader.address,
-    OfferSequence: 12345, // Sequence da ofertà cancelar
+    OfferSequence: offerSequence,
   };
   const prepared = await client.autofill(cancel);
   const signed = trader.sign(prepared);
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡Oferta cancelada com éxito!");
+    console.log("Oferta cancelada com sucesso!");
     console.log("Endereçou do trader:", trader.address);
   }
   await client.disconnect();
 }
 cancelOffer();`,
-            en: `require("dotenv").config();
+            en: `// File: cancel-offer.js
+// node cancel-offer.js <OfferSequence>
+require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet } = require("xahau");
+const offerSequence = Number(process.argv[2]);
+if (!Number.isInteger(offerSequence) || offerSequence <= 0) {
+  throw new Error("Pass the Sequence of the offer to cancel (the create-offer script prints it): node cancel-offer.js <OfferSequence>");
+}
 
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
@@ -3090,7 +3364,7 @@ async function cancelOffer() {
   const cancel = {
     TransactionType: "OfferCancel",
     Account: trader.address,
-    OfferSequence: 12345, // Sequence of the offer to cancel
+    OfferSequence: offerSequence,
   };
 
   const prepared = await client.autofill(cancel);
@@ -3109,8 +3383,15 @@ async function cancelOffer() {
 }
 
 cancelOffer();`,
-            jp: `require("dotenv").config();
+            jp: `// ファイル: cancel-offer.js
+// node cancel-offer.js <OfferSequence>
+require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet } = require("xahau");
+const offerSequence = Number(process.argv[2]);
+if (!Number.isInteger(offerSequence) || offerSequence <= 0) {
+  throw new Error("キャンセルする注文の Sequence を渡してください（注文作成スクリプトが表示します）: node cancel-offer.js <OfferSequence>");
+}
 
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
@@ -3122,7 +3403,7 @@ async function cancelOffer() {
   const cancel = {
     TransactionType: "OfferCancel",
     Account: trader.address,
-    OfferSequence: 12345, // キャンセルする注文のSequence
+    OfferSequence: offerSequence,
   };
 
   const prepared = await client.autofill(cancel);
@@ -3141,8 +3422,15 @@ async function cancelOffer() {
 }
 
 cancelOffer();`,
-            ko: `require("dotenv").config();
+            ko: `// 파일: cancel-offer.js
+// node cancel-offer.js <OfferSequence>
+require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet } = require("xahau");
+const offerSequence = Number(process.argv[2]);
+if (!Number.isInteger(offerSequence) || offerSequence <= 0) {
+  throw new Error("취소할 오퍼의 Sequence를 전달하세요 (오퍼 생성 스크립트가 출력합니다): node cancel-offer.js <OfferSequence>");
+}
 
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
@@ -3154,7 +3442,7 @@ async function cancelOffer() {
   const cancel = {
     TransactionType: "OfferCancel",
     Account: trader.address,
-    OfferSequence: 12345,
+    OfferSequence: offerSequence,
   };
 
   const prepared = await client.autofill(cancel);
@@ -3172,8 +3460,15 @@ async function cancelOffer() {
 }
 
 cancelOffer();`,
-            zh: `require("dotenv").config();
+            zh: `// 文件: cancel-offer.js
+// node cancel-offer.js <OfferSequence>
+require("dotenv").config();
+if (!process.env.RESERVE_SEED) throw new Error("RESERVE_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet } = require("xahau");
+const offerSequence = Number(process.argv[2]);
+if (!Number.isInteger(offerSequence) || offerSequence <= 0) {
+  throw new Error("请传入要取消的订单的 Sequence（创建订单的脚本会打印）：node cancel-offer.js <OfferSequence>");
+}
 
 async function cancelOffer() {
   const client = new Client("wss://xahau-test.net");
@@ -3185,7 +3480,7 @@ async function cancelOffer() {
   const cancel = {
     TransactionType: "OfferCancel",
     Account: trader.address,
-    OfferSequence: 12345, // 要取消的订单 Sequence
+    OfferSequence: offerSequence,
   };
 
   const prepared = await client.autofill(cancel);
@@ -3249,7 +3544,7 @@ cancelOffer();`,
       id: "m6l4",
       title: {
         es: "Control avanzado de tokens: Freeze y Clawback",
-        pt: "Control avanzado de tokens: Freeze e Clawback",
+        pt: "Controle avançado de tokens: Freeze e Clawback",
         en: "Advanced token control: Freeze and Clawback",
         jp: "高度なトークン制御：FreezeとClawback",
         ko: "고급 토큰 제어: Freeze와 Clawback",
@@ -3295,8 +3590,26 @@ El emisor puede cobrar un porcentaje en cada transferencia de su token entre ter
 
 ### Authorized TrustLines: RequireAuth
 
-El flag \`RequireAuth\` (asfRequireAuth) en la cuenta emisora requiere que el emisor **autorice explícitamente** cada TrustLine antes de que un holder pueda recibir tokens. Útil para tokens que necesitan KYC o verificación previa.`,
-        pt: `Xahau ofrece a os emissores de tokens ferramentas avanzadas de control: **Freeze** (congelación), **Clawback** (recuperación forzada), **Transfer fees** (comisiones de transferência) e **Authorized TrustLines** (linhas de confiança autorizadas).
+El flag \`RequireAuth\` (asfRequireAuth) en la cuenta emisora requiere que el emisor **autorice explícitamente** cada TrustLine antes de que un holder pueda recibir tokens. Útil para tokens que necesitan KYC o verificación previa.
+
+### Ejecutar los scripts de esta lección
+
+El primer script firma con \`FROZEN_SEED\` y crea la TrustLine del holder; el segundo firma con \`ISSUER_SEED\` y la congela. \`create-accounts.js\` ([módulo 3](?m=3&l=1)) crea las dos cuentas, y los dos scripts leen de \`.env\` la dirección de la otra parte. Ejecútalos en este orden. Salida en testnet:
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **Primer \`tesSUCCESS\`**: el holder tiene ahora una TrustLine hacia ISSUER para el token. Un freeze se aplica a una TrustLine, así que primero tiene que existir.
+- **Segundo \`tesSUCCESS\`**: el emisor activó el freeze en su lado de esa línea. El holder aún puede devolver el token al emisor, pero no enviarlo a nadie más.`,
+        pt: `A Xahau oferece aos emissores de tokens ferramentas avançadas de controle: **Freeze** (congelamento), **Clawback** (recuperação forçada), **Transfer fees** (taxas de transferência) e **Authorized TrustLines** (linhas de confiança autorizadas).
 ### Freeze: congelar linhas de confiança
 O emissor de um token pode congelar TrustLines para impedir que os holders transfiram seus tokens. Há três níveis:
 ### Freeze individual
@@ -3308,20 +3621,38 @@ Ao ativar \`SetFlag: 6\` (asfNoFreeze) em \`AccountSet\`, o emissor renuncia **p
 ### Casos de uso para Freeze
 - **Conformidade regulatória**: Congelar fundos diante de uma ordem judicial
 - **Brechas de segurança**: Deter transferências se uma conta é comprometida
-- **Resolução de disputas**: Congelar temporalmente enquanto se investiga
+- **Resolução de disputas**: congelar temporariamente enquanto se investiga
 ### Clawback: recuperar tokens de holders
-O **Clawback** permite ao emissor reclamar tokens de vuelta desde qualquer holder. É uma ferramenta poderosa que deve configurarse **antes** de emitir tokens:
+O **Clawback** permite ao emissor recuperar tokens de qualquer holder. É uma ferramenta poderosa que deve ser configurada **antes** de emitir tokens:
 1. Ativar \`asfAllowTrustLineClawback\` (flag 17) com \`AccountSet\` **antes** de criar qualquer TrustLine
 2. Uma vez ativado, usar a transação \`Clawback\` para reclamar tokens
 3. **Não é possível combinar** com NoFreeze — se você renuncia a congelar, você não pode fazer clawback
-### Transfer fees: comisiones em transferências
+### Transfer fees: taxas sobre transferências
 O emissor pode cobrar um percentual em cada transferência de seu token entre terceiros:
 - É configurada com o campo \`TransferRate\` em \`AccountSet\`
 - O valor é um inteiro: 1000000000 = 0%, 1001000000 = 0.1%, 1010000000 = 1%
 - Só se aplica em transferências entre terceiros, não quando você envia ao emissor
 - Exemplo: Com 0.1% de fee, ao enviar 100 tokens é cobradon 99.9 do receptor
 ### Authorized TrustLines: RequireAuth
-O flag \`RequireAuth\` (asfRequireAuth) na conta emissora exige que o emissor **autorice explicitamente** cada TrustLine antes que um holder possa receber tokens. Útil para tokens que necesitan KYC ou verificação previa.`,
+O flag \`RequireAuth\` (asfRequireAuth) na conta emissora exige que o emissor **autorize explicitamente** cada TrustLine antes que um holder possa receber tokens. Útil para tokens que precisam de KYC ou verificação prévia.
+
+### Executar os scripts desta lição
+
+O primeiro script assina com \`FROZEN_SEED\` e cria a TrustLine do holder; o segundo assina com \`ISSUER_SEED\` e a congela. \`create-accounts.js\` ([módulo 3](?m=3&l=1)) cria as duas contas, e os dois scripts leem do \`.env\` o endereço da outra parte. Execute-os nesta ordem. Saída na testnet:
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **Primeiro \`tesSUCCESS\`**: o holder agora tem uma TrustLine para o ISSUER para o token. Um freeze se aplica a uma TrustLine, então ela precisa existir antes.
+- **Segundo \`tesSUCCESS\`**: o emissor ativou o freeze do seu lado dessa linha. O holder ainda pode devolver o token ao emissor, mas não enviá-lo a mais ninguém.`,
         en: `Xahau offers token issuers advanced control tools: **Freeze** (freezing), **Clawback** (forced recovery), **Transfer fees**, and **Authorized TrustLines**.
 
 ### Freeze: freezing trust lines
@@ -3361,7 +3692,25 @@ The issuer can charge a percentage on each transfer of their token between third
 
 ### Authorized TrustLines: RequireAuth
 
-The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the issuer to **explicitly authorize** each TrustLine before a holder can receive tokens. Useful for tokens that need KYC or prior verification.`,
+The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the issuer to **explicitly authorize** each TrustLine before a holder can receive tokens. Useful for tokens that need KYC or prior verification.
+
+### Run this lesson's scripts
+
+The first script signs with \`FROZEN_SEED\` and creates the holder's TrustLine; the second signs with \`ISSUER_SEED\` and freezes it. \`create-accounts.js\` ([Module 3](?m=3&l=1)) creates both accounts, and both scripts read the other side's address from \`.env\`. Run them in this order. Output on testnet:
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **First \`tesSUCCESS\`**: the holder now has a TrustLine to ISSUER for the token. A freeze applies to a TrustLine, so there must be one first.
+- **Second \`tesSUCCESS\`**: the issuer set the freeze flag on its side of that line. The holder can still send the token back to the issuer, but not to anyone else.`,
         jp: `Xahauはトークン発行者に**Freeze**（凍結）、**Clawback**（強制回収）、**Transfer fees**（転送手数料）、**Authorized TrustLines**（承認済みトラストライン）のような高度な制御ツールを提供します。
 
 ### Freeze：トラストラインの凍結
@@ -3401,7 +3750,25 @@ The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the is
 
 ### Authorized TrustLines：RequireAuth
 
-発行アカウントの\`RequireAuth\`フラグ（asfRequireAuth）は、ホルダーがトークンを受け取れるようになる前に、発行者が**各トラストラインを明示的に承認**することを要求します。KYCや事前確認が必要なトークンに便利です。`,
+発行アカウントの\`RequireAuth\`フラグ（asfRequireAuth）は、ホルダーがトークンを受け取れるようになる前に、発行者が**各トラストラインを明示的に承認**することを要求します。KYCや事前確認が必要なトークンに便利です。
+
+### このレッスンのスクリプトを実行する
+
+1つ目のスクリプトは \`FROZEN_SEED\` で署名して保有者の TrustLine を作成し、2つ目は \`ISSUER_SEED\` で署名してそれを凍結します。両方のアカウントは\`create-accounts.js\`（[モジュール3](?m=3&l=1)）が作成し、各スクリプトは相手側のアドレスを \`.env\` から読み取ります。この順番で実行してください。テストネットでの出力:
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **1つ目の \`tesSUCCESS\`**: 保有者はトークンについて ISSUER への TrustLine を持ちました。凍結は TrustLine に対して行うため、先に TrustLine が必要です。
+- **2つ目の \`tesSUCCESS\`**: 発行者がそのラインの自分側に凍結フラグを設定しました。保有者はトークンを発行者に返すことはできますが、他の誰にも送れません。`,
         ko: `일부 발행자는 규정 준수나 운영상 이유로 더 강한 통제 기능이 필요합니다. Xahau는 **Freeze**와 **Clawback** 같은 고급 제어 기능을 제공합니다.
 
 ### 주요 기능
@@ -3412,7 +3779,25 @@ The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the is
 
 ### 왜 민감한가?
 
-이 기능들은 강력하지만 사용자 신뢰와 직결됩니다. 발행자는 언제, 왜, 어떤 범위로 사용할지 명확한 정책을 가져야 하며, 사용자도 해당 토큰의 중앙화 수준을 이해해야 합니다.`,
+이 기능들은 강력하지만 사용자 신뢰와 직결됩니다. 발행자는 언제, 왜, 어떤 범위로 사용할지 명확한 정책을 가져야 하며, 사용자도 해당 토큰의 중앙화 수준을 이해해야 합니다.
+
+### 이 레슨의 스크립트 실행
+
+첫 번째 스크립트는 \`FROZEN_SEED\`로 서명해 보유자의 TrustLine을 만들고, 두 번째는 \`ISSUER_SEED\`로 서명해 그 라인을 동결합니다. 두 계정은 \`create-accounts.js\`([모듈 3](?m=3&l=1))가 만들며, 각 스크립트는 상대방 주소를 \`.env\`에서 읽습니다. 이 순서로 실행하세요. 테스트넷 출력:
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **첫 번째 \`tesSUCCESS\`**: 보유자에게 이제 토큰에 대한 ISSUER 방향 TrustLine이 있습니다. 동결은 TrustLine에 적용되므로 먼저 라인이 있어야 합니다.
+- **두 번째 \`tesSUCCESS\`**: 발행자가 그 라인의 자기 쪽에 동결 플래그를 설정했습니다. 보유자는 토큰을 발행자에게 돌려보낼 수는 있지만 다른 누구에게도 보낼 수 없습니다.`,
         zh: `有些发行方出于合规或运营原因，需要更强的控制能力。Xahau 提供了 **Freeze** 和 **Clawback** 等高级控制功能。
 
 ### 主要功能
@@ -3423,7 +3808,25 @@ The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the is
 
 ### 为什么这很敏感？
 
-这些功能非常强大，也直接影响用户信任。发行方需要明确说明何时、为何以及在多大范围内使用它们，用户也应了解该代币的中心化程度。`,
+这些功能非常强大，也直接影响用户信任。发行方需要明确说明何时、为何以及在多大范围内使用它们，用户也应了解该代币的中心化程度。
+
+### 运行本课的脚本
+
+第一个脚本用 \`FROZEN_SEED\` 签名，创建持有者的 TrustLine；第二个用 \`ISSUER_SEED\` 签名并冻结它。两个账户都由 \`create-accounts.js\`（[模块3](?m=3&l=1)） 创建，每个脚本都从 \`.env\` 读取对方的地址。按这个顺序运行。测试网上的输出：
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **第一个 \`tesSUCCESS\`**：持有者现在有了针对该代币、指向 ISSUER 的 TrustLine。冻结作用于 TrustLine，所以必须先有一条。
+- **第二个 \`tesSUCCESS\`**：发行者在这条线自己的一侧设置了冻结标志。持有者仍可以把代币退回给发行者，但不能发送给其他任何人。`,
       },
       codeBlocks: [
         {
@@ -3438,6 +3841,8 @@ The \`RequireAuth\` flag (asfRequireAuth) on the issuing account requires the is
           language: "javascript",
           code: {
             es: `require("dotenv").config();
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet } = require("xahau");
 
 // Este código crea una TrustLine desde una cuenta (holder)
@@ -3458,7 +3863,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -3471,7 +3876,7 @@ async function createHolderTrustLine() {
 
   // El holder que quiere recibir el token y luego congelaremos su TrustLine si es necesario
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rDireccionDelEmisor";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -3505,9 +3910,11 @@ async function createHolderTrustLine() {
 
 createHolderTrustLine();`,
             pt: `require("dotenv").config();
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet } = require("xahau");
 // Este código cria uma TrustLine a partir de uma conta (holder)
-// para um emissor de token. É necessário para que luego
+// para um emissor de token. É necessário para que depois
 // o emissor possa congelar essa TrustLine se precisar.
 // If token_currency > 3 chars, convert to 40 hex
 function normalizeCurrency(token_currency) {
@@ -3519,7 +3926,7 @@ function normalizeCurrency(token_currency) {
   const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
   return hex.padEnd(40, "0");
@@ -3527,9 +3934,9 @@ function normalizeCurrency(token_currency) {
 async function criateHolderTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // O holder que quiere receber ou token e luego congelaremos sua TrustLine se é necessário
+  // O holder que quer receber o token; depois a TrustLine dele poderá ser congelada, se necessário
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rDireccionDelEmisor";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
   const trustSet = {
@@ -3538,7 +3945,7 @@ async function criateHolderTrustLine() {
     LimitAmount: {
       currency: token_currency,
       issuer: issuerAddress,
-      value: "1000000", // Límite máximo que acepto
+      value: "1000000", // Limite máximo que aceito
     },
   };
   const prepared = await client.autofill(trustSet);
@@ -3546,7 +3953,7 @@ async function criateHolderTrustLine() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡TrustLine criada!");
+    console.log("TrustLine criada!");
     console.log("Holder:", holder.address);
     console.log("Emissor:", issuerAddress);
     console.log("\\nAhorao emissor pode enviar ou token a esta conta.");
@@ -3556,6 +3963,8 @@ async function criateHolderTrustLine() {
 }
 criateHolderTrustLine();`,
             en: `require("dotenv").config();
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet } = require("xahau");
 
 // This code creates a TrustLine from an account (holder)
@@ -3576,7 +3985,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -3589,7 +3998,7 @@ async function createHolderTrustLine() {
 
   // The holder who wants to receive the token; their TrustLine can be frozen later if needed
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -3623,6 +4032,8 @@ async function createHolderTrustLine() {
 
 createHolderTrustLine();`,
             jp: `require("dotenv").config();
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet } = require("xahau");
 
 // このコードはアカウント（ホルダー）からトークン発行者への
@@ -3643,7 +4054,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -3656,7 +4067,7 @@ async function createHolderTrustLine() {
 
   // トークンを受け取り、必要に応じてTrustLineを凍結されるホルダー
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -3690,6 +4101,8 @@ async function createHolderTrustLine() {
 
 createHolderTrustLine();`,
             ko: `require("dotenv").config();
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet } = require("xahau");
 
 // 이 코드는 계정(홀더)에서 토큰 발행자로 향하는 TrustLine을 생성합니다.
@@ -3715,7 +4128,7 @@ async function createHolderTrustLine() {
   await client.connect();
 
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
 
@@ -3748,6 +4161,8 @@ async function createHolderTrustLine() {
 
 createHolderTrustLine();`,
             zh: `require("dotenv").config();
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet } = require("xahau");
 
 // 这段代码会从一个账户（持有人）指向代币发行方创建 TrustLine。
@@ -3773,7 +4188,7 @@ async function createHolderTrustLine() {
   await client.connect();
 
   const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rIssuerAddress";
+  const issuerAddress = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
 
@@ -3819,6 +4234,8 @@ createHolderTrustLine();`,
           language: "javascript",
           code: {
             es: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED no está en .env: ejecuta primero create-accounts.js (módulo 3, lección 2)");
 const { Client, Wallet } = require("xahau");
 
 // If token_currency > 3 chars, convert to 40 hex
@@ -3835,7 +4252,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -3847,7 +4264,7 @@ async function freezeTrustLine() {
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rDireccionDelHolder";
+  const holderAddress = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -3880,6 +4297,8 @@ async function freezeTrustLine() {
 
 freezeTrustLine();`,
             pt: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED não está no .env: execute primeiro create-accounts.js (módulo 3, lição 2)");
 const { Client, Wallet } = require("xahau");
 // If token_currency > 3 chars, convert to 40 hex
 function normalizeCurrency(token_currency) {
@@ -3891,7 +4310,7 @@ function normalizeCurrency(token_currency) {
   const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
   return hex.padEnd(40, "0");
@@ -3900,7 +4319,7 @@ async function freezeTrustLine() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rDireccionDelHolder";
+  const holderAddress = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
   // Congelar a TrustLine de USD com este holder
@@ -3926,6 +4345,8 @@ async function freezeTrustLine() {
 }
 freezeTrustLine();`,
             en: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED is not in .env: run create-accounts.js first (Module 3, lesson 2)");
 const { Client, Wallet } = require("xahau");
 
 // If token_currency > 3 chars, convert to 40 hex
@@ -3942,7 +4363,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -3954,7 +4375,7 @@ async function freezeTrustLine() {
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rHolderAddress";
+  const holderAddress = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -3987,6 +4408,8 @@ async function freezeTrustLine() {
 
 freezeTrustLine();`,
             jp: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED が .env にありません。先に create-accounts.js を実行してください（モジュール3・レッスン2）");
 const { Client, Wallet } = require("xahau");
 
 // token_currencyが3文字超の場合、40文字のhex（右側0埋め）に変換
@@ -4003,7 +4426,7 @@ function normalizeCurrency(token_currency) {
 
   if (hex.length > 40) {
     throw new Error(
-      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). MMax ~20 bytes in UTF-8.\`
+      \`token_currency too long: "\${cur}" -> hex \${hex.length} (>40). Max ~20 bytes in UTF-8.\`
     );
   }
 
@@ -4015,7 +4438,7 @@ async function freezeTrustLine() {
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rHolderAddress";
+  const holderAddress = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
 
   const token_currency = normalizeCurrency(tokenCurrencyInput);
@@ -4048,6 +4471,8 @@ async function freezeTrustLine() {
 
 freezeTrustLine();`,
             ko: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED가 .env에 없습니다. 먼저 create-accounts.js를 실행하세요 (모듈 3, 레슨 2)");
 const { Client, Wallet } = require("xahau");
 
 function normalizeCurrency(token_currency) {
@@ -4068,7 +4493,7 @@ async function freezeTrustLine() {
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rHolderAddress";
+  const holderAddress = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
 
@@ -4100,6 +4525,8 @@ async function freezeTrustLine() {
 
 freezeTrustLine();`,
             zh: `require("dotenv").config();
+if (!process.env.ISSUER_SEED) throw new Error("ISSUER_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
+if (!process.env.FROZEN_SEED) throw new Error("FROZEN_SEED 不在 .env 中：请先运行 create-accounts.js（模块 3，第 2 课）");
 const { Client, Wallet } = require("xahau");
 
 function normalizeCurrency(token_currency) {
@@ -4120,7 +4547,7 @@ async function freezeTrustLine() {
   await client.connect();
 
   const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rHolderAddress";
+  const holderAddress = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'}).address;
   const tokenCurrencyInput = "YourTokenName";
   const token_currency = normalizeCurrency(tokenCurrencyInput);
 
@@ -4159,7 +4586,13 @@ freezeTrustLine();`,
           title: { es: "Freeze: congelación de tokens", pt: "Freeze: congelamento de tokens", en: "Freeze: token freezing", jp: "Freeze：トークンの凍結", ko: "Freeze: 토큰 동결", zh: "Freeze：代币冻结" },
           content: {
             es: "El emisor puede congelar transferencias\n\n• Individual Freeze → Una TrustLine específica\n• Global Freeze → TODAS las TrustLines\n• NoFreeze → Renunciar permanentemente\n\nCasos: regulación, seguridad, disputas",
-            pt: "O emissor pode congelar transferências\n\n• Individual Freeze → Uma TrustLine específica\n• Global Freeze → TODAS as TrustLines\n• NoFreeze → Renunciar permanentemente\n\nCasos: regulación, segurança, disputas",
+            pt: `O emissor pode congelar transferências
+
+• Individual Freeze → Uma TrustLine específica
+• Global Freeze → TODAS as TrustLines
+• NoFreeze → Renunciar permanentemente
+
+Casos: regulação, segurança, disputas`,
             en: "The issuer can freeze transfers\n\n• Individual Freeze -> A specific TrustLine\n• Global Freeze -> ALL TrustLines\n• NoFreeze -> Permanently renounce\n\nUse cases: regulation, security, disputes",
             jp: "発行者は転送を凍結できます\n\n• 個別Freeze -> 特定のTrustLine\n• グローバルFreeze -> すべてのTrustLine\n• NoFreeze -> 恒久的に放棄\n\nユースケース：規制、セキュリティ、紛争",
             ko: "발행자는 전송을 동결할 수 있습니다\n\n• 개별 Freeze → 특정 TrustLine\n• Global Freeze → 모든 TrustLine\n• NoFreeze → 영구적으로 권한 포기\n\n사례: 규제, 보안, 분쟁",
@@ -4246,71 +4679,29 @@ token بنفس \`currency\` ولكن بـ\`issuer\` مختلف يُعتبر **to
 
 **مهم**: بعض الإعدادات لا رجعة فيها (\`NoFreeze\`) وأخرى يجب تفعيلها قبل إصدار tokens (\`Clawback\`). خطط لإعدادات المُصدر الخاص بك بعناية قبل البدء في توزيع tokens.
 
-سنتناول كل واحد من هذه الإعدادات بالتفصيل في الأقسام التالية من هذه الوحدة.`,
+سنتناول كل واحد من هذه الإعدادات بالتفصيل في الأقسام التالية من هذه الوحدة.
+
+### تشغيل سكربتات هذا الدرس
+
+السكربتان زوج: الأول يوقّع بـ \`WALLET_SEED\` ويثق بـ ISSUER لعملة USD، والثاني يوقّع بـ \`ISSUER_SEED\` ويُصدر 100 USD إلى \`WALLET\`. ينشئ \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)) الحسابين. المخرجات على testnet: سكربت الإصدار وحده أولًا، ثم الاثنان بالترتيب:
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`**: شُغّل الإصدار قبل أن يملك \`WALLET\` خط TrustLine لـ USD نحو ISSUER، فلم يكن للدفعة مسار. لم يُصدر شيء.
+- **TrustLine \`tesSUCCESS\`**: أصبح \`WALLET\` يقبل USD من ISSUER حتى حده.
+- **الإصدار \`tesSUCCESS\`**: أنشأ ISSUER مبلغ 100 USD في TrustLine الخاصة بـ \`WALLET\`. المُصدر لا يملك الـ token الخاص به أبدًا: دفعه هو ما ينشئه.`,
       codeTitles: [
         "إنشاء TrustLine نحو issuer",
         "إصدار tokens إلى حساب لديه TrustLine",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function createTrustLine() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const holder = Wallet.fromSeed(process.env.HOLDER_SEED, { algorithm: "secp256k1" });
-
-  // holder يعلن أنه يقبل token من issuer حتى حد معين
-  const trustSet = {
-    TransactionType: "TrustSet",
-    Account: holder.address,
-    LimitAmount: {
-      currency: "USD",
-      issuer: process.env.ISSUER_ADDRESS,
-      value: "1000",
-    },
-  };
-
-  const prepared = await client.autofill(trustSet);
-  const signed = holder.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-createTrustLine().catch(console.error);`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function issueTokens() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, { algorithm: "secp256k1" });
-
-  // issuer يرسل IOU إلى holder الذي أنشأ TrustLine مسبقا
-  const payment = {
-    TransactionType: "Payment",
-    Account: issuer.address,
-    Destination: process.env.HOLDER_ADDRESS,
-    Amount: {
-      currency: "USD",
-      issuer: issuer.address,
-      value: "100",
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = issuer.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-issueTokens().catch(console.error);`,
       ],
       slides: [
         {
@@ -4379,163 +4770,6 @@ console.log(currencyToHex("EURZ"));
       codeTitles: [
         "العملية الكاملة: إعداد issuer وإنشاء TrustLine وإصدار وتوزيع token",
       ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-// تحتاج إلى محفظتين لديهما رصيد على testnet، عرّفهما في ملف .env الخاص بك:
-//   ISSUER_SEED  → حساب مُصدر الـtoken
-//   RESERVE_SEED  → حساب الاحتياطي/التوزيع
-// يمكنك الحصول على رصيد من الـfaucet: https://xahau-test.net
-
-// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
-function normalizeCurrency(token_currency) {
-  if (typeof token_currency !== "string") return token_currency;
-
-  const cur = token_currency.trim();
-
-  // 3 أحرف أو أقل: رمز عملة قياسي
-  if (cur.length <= 3) return cur;
-
-  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
-  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
-
-  if (hex.length > 40) {
-    throw new Error(
-      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
-    );
-  }
-
-  return hex.padEnd(40, "0");
-}
-
-async function createAndDistributeToken() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // === الحسابات ===
-  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const reserve = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-
-  const TOKEN_CURRENCY_INPUT = "YourTokenName";          // اسم الـtoken (3 أحرف) أو hex من 40 حرفًا للأسماء الأطول
-  const TOTAL_SUPPLY = "1000000";        // إجمالي العرض المراد إصداره
-
-  const TOKEN_CURRENCY = normalizeCurrency(TOKEN_CURRENCY_INPUT);
-
-
-  console.log("=== إنشاء token ===");
-  console.log("المُصدر:", issuer.address);
-  console.log("الاحتياطي:", reserve.address);
-  console.log("Token:", TOKEN_CURRENCY);
-  console.log("العرض:", TOTAL_SUPPLY);
-
-  // === الخطوة 1: ضبط الحساب المُصدر بـ DefaultRipple ===
-  console.log("--- الخطوة 1: ضبط DefaultRipple على المُصدر ---");
-  const accountSet = {
-    TransactionType: "AccountSet",
-    Account: issuer.address,
-    SetFlag: 8, // asfDefaultRipple
-  };
-
-  const prep1 = await client.autofill(accountSet);
-  const signed1 = issuer.sign(prep1);
-  const result1 = await client.submitAndWait(signed1.tx_blob);
-  console.log("DefaultRipple:", result1.result.meta.TransactionResult);
-
-  if (result1.result.meta.TransactionResult !== "tesSUCCESS") {
-    console.log("خطأ في ضبط المُصدر. جارٍ الإيقاف.");
-    await client.disconnect();
-    return;
-  }
-
-  // === الخطوة 2: يُنشئ حساب الاحتياطي TrustLine نحو المُصدر ===
-  console.log("--- الخطوة 2: إنشاء TrustLine (الاحتياطي ← المُصدر) ---");
-  const trustSet = {
-    TransactionType: "TrustSet",
-    Account: reserve.address,
-    LimitAmount: {
-      currency: TOKEN_CURRENCY,
-      issuer: issuer.address,
-      value: TOTAL_SUPPLY, // قبول ما يصل إلى إجمالي العرض
-    },
-  };
-
-  const prep2 = await client.autofill(trustSet);
-  const signed2 = reserve.sign(prep2);
-  const result2 = await client.submitAndWait(signed2.tx_blob);
-  console.log("TrustLine:", result2.result.meta.TransactionResult);
-
-  if (result2.result.meta.TransactionResult !== "tesSUCCESS") {
-    console.log("خطأ في إنشاء TrustLine. جارٍ الإيقاف.");
-    await client.disconnect();
-    return;
-  }
-
-  // === الخطوة 3: يرسل المُصدر إجمالي العرض إلى حساب الاحتياطي ===
-  console.log("--- الخطوة 3: إصدار tokens (المُصدر ← الاحتياطي) ---");
-  const issuePayment = {
-    TransactionType: "Payment",
-    Account: issuer.address,
-    Destination: reserve.address,
-    Amount: {
-      currency: TOKEN_CURRENCY,
-      issuer: issuer.address,
-      value: TOTAL_SUPPLY,
-    },
-  };
-
-  const prep3 = await client.autofill(issuePayment);
-  const signed3 = issuer.sign(prep3);
-  const result3 = await client.submitAndWait(signed3.tx_blob);
-  console.log("الإصدار:", result3.result.meta.TransactionResult);
-
-  if (result3.result.meta.TransactionResult !== "tesSUCCESS") {
-    console.log("خطأ في إصدار tokens. جارٍ الإيقاف.");
-    await client.disconnect();
-    return;
-  }
-
-  console.log("تم إنشاء الـtoken وتوزيعه على حساب الاحتياطي!");
-  console.log("إجمالي العرض:", TOTAL_SUPPLY, TOKEN_CURRENCY);
-
-  // === التحقق: استعلام رصيد حساب الاحتياطي ===
-  console.log("--- التحقق ---");
-  const lines = await client.request({
-    command: "account_lines",
-    account: reserve.address,
-    ledger_index: "validated",
-  });
-
-  const tokenLine = lines.result.lines.find(
-    (l) => l.currency === TOKEN_CURRENCY && l.account === issuer.address
-  );
-
-  if (tokenLine) {
-    console.log("رصيد الاحتياطي:", tokenLine.balance, TOKEN_CURRENCY);
-    console.log("المُصدر:", tokenLine.account);
-    console.log("الحد:", tokenLine.limit, TOKEN_CURRENCY);
-  }
-
-  // === الخطوة 4 (مثال): توزيع tokens على مستخدم نهائي ===
-  // يجب على المستخدم النهائي أولاً إنشاء TrustLine نحو المُصدر
-  // بعدها يرسل له حساب الاحتياطي tokens:
-  //
-  // const distribution = {
-  //   TransactionType: "Payment",
-  //   Account: reserve.address,
-  //   Destination: "rEndUserAddress",
-  //   Amount: {
-  //     currency: TOKEN_CURRENCY,
-  //     issuer: issuer.address,
-  //     value: "100",
-  //   },
-  // };
-
-  await client.disconnect();
-}
-
-createAndDistributeToken();`,
-      ],
       slides: [
         {
           title: "عملية إنشاء token",
@@ -4568,34 +4802,6 @@ createAndDistributeToken();`,
 \`RequireAuth\` للتحكم في من يستطيع فتح TrustLine فعالة، \`TransferRate\` لرسوم تحويل، \`Freeze\` لتجميد خطوط معينة، و\`Clawback\` لاسترداد tokens في سيناريوهات منظمة.`,
       codeTitles: [
         "استعلام tokens / TrustLines لحساب",
-      ],
-      code: [
-        `const { Client } = require("xahau");
-
-async function queryTrustLines() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const account = "rYourAddressHere";
-
-  // account_lines يعرض TrustLines والـ IOUs المرتبطة بالحساب
-  const response = await client.request({
-    command: "account_lines",
-    account,
-    ledger_index: "validated",
-  });
-
-  for (const line of response.result.lines) {
-    console.log("Currency:", line.currency);
-    console.log("Issuer/Counterparty:", line.account);
-    console.log("Balance:", line.balance);
-    console.log("Limit:", line.limit);
-  }
-
-  await client.disconnect();
-}
-
-queryTrustLines().catch(console.error);`,
       ],
       slides: [
         {
@@ -4658,145 +4864,32 @@ queryTrustLines().catch(console.error);`,
 1. يبيع USD مقابل XAH
 2. يشتري EUR بواسطة XAH
 
-كل ذلك في معاملة واحدة، بشكل شفاف. هذا يُحسّن سيولة DEX بشكل كبير.`,
+كل ذلك في معاملة واحدة، بشكل شفاف. هذا يُحسّن سيولة DEX بشكل كبير.
+
+### تشغيل سكربتات هذا الدرس
+
+يوقّع السكربتان بـ \`RESERVE_SEED\` الذي يحمل الـ token بعد [العملية الكاملة](?m=7&l=1)، ويقرآن عنوان ISSUER من \`ISSUER_SEED\`. ينشئ \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)) الحسابين. شغّل سكربت العرض أولًا. المخرجات على testnet:
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+الـ **Sequence** يعرّف العرض. يأخذه \`cancel-offer.js\` كوسيط:
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+يطبع \`Result: tesSUCCESS\` و \`Offer cancelled successfully!\`. بدون Sequence صالح يتوقف قبل الإرسال ويوضح ما يجب تمريره.
+
+**حالة يجب الانتباه لها:** يعيد \`OfferCancel\` النتيجة \`tesSUCCESS\` أيضًا حين لا يعود العرض موجودًا (نُفّذ أو أُلغي مسبقًا). نجاح الإلغاء لا يثبت أن العرض لم يُتداول: راجع \`account_offers\` قبل الإلغاء إن كان ذلك مهمًا.`,
       codeTitles: [
         "استعلام order book لزوج token / XAH",
         "إنشاء offer على DEX",
         "إلغاء offer موجود",
-      ],
-      code: [
-        `const { Client } = require("xahau");
-
-async function viewOrderBook() {
- // نتصل بشبكة Xahau Mainnet في هذا المثال لأن احتمال نشاط DEX هناك أكبر. عادة ما يكون نشاط DEX في testnet قليلاً، لكن يمكنك تجربة كلتيهما.
-  const client = new Client("wss://xahau.network");
-  await client.connect();
-
-  const issuerAddress = "rEvernodee8dJLaFsujS6q1EiXvZYmHXr8";
-
-  // استعلام عن العروض: من يبيع EVR مقابل XAH؟
-  const response = await client.request({
-    command: "book_offers",
-    taker_pays: {
-      currency: "XAH",
-    },
-    taker_gets: {
-      currency: "EVR",
-      issuer: issuerAddress,
-    },
-    limit: 10,
-  });
-
-  console.log("=== دفتر الأوامر: EVR → XAH ===");
-  console.log(\`عدد العروض الموجودة: \${response.result.offers.length}\`);
-
-  for (const offer of response.result.offers) {
-    const getsUSD = offer.TakerGets.value || offer.TakerGets;
-    const paysXAH =
-      typeof offer.TakerPays === "string"
-        ? Number(offer.TakerPays) / 1_000_000
-        : offer.TakerPays.value;
-
-    console.log(\`الحساب: \${offer.Account}\`);
-    console.log(\`  يبيع: \${getsUSD} EVR\`);
-    console.log(\`  يطلب: \${paysXAH} XAH\`);
-    console.log(\`  Sequence: \${offer.Sequence}\`);
-  }
-
-  await client.disconnect();
-}
-
-viewOrderBook();`,
-        `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
-function normalizeCurrency(token_currency) {
-  if (typeof token_currency !== "string") return token_currency;
-
-  const cur = token_currency.trim();
-
-  // 3 أحرف أو أقل: رمز عملة قياسي
-  if (cur.length <= 3) return cur;
-
-  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
-  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
-
-  if (hex.length > 40) {
-    throw new Error(
-      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
-    );
-  }
-
-  return hex.padEnd(40, "0");
-}
-
-
-async function createOffer() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const trader = Wallet.fromSeed(process.env.RESERVE_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rTokenIssuerAddress";
-  const tokenCurrencyInput = "YourTokenName";
-
-  const token_currency = normalizeCurrency(tokenCurrencyInput);
-
-  // بيع 100 Token مقابل 50 XAH
-  const offer = {
-    TransactionType: "OfferCreate",
-    Account: trader.address,
-    // ما أريد استلامه: 50 XAH
-    TakerPays: xahToDrops(50),
-    // ما أنا مستعد لتقديمه: 100 Tokens
-    TakerGets: {
-      currency: token_currency,
-      issuer: issuerAddress,
-      value: "100",
-    },
-  };
-
-  const prepared = await client.autofill(offer);
-  const signed = trader.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("تم إنشاء العرض في DEX!");
-    console.log(\`بيع 100 Tokens مقابل 50 XAH (0.5 XAH/Token)\`);
-    console.log(\`Sequence الخاص بالعرض: \${prepared.Sequence}\`);
-  }
-
-  await client.disconnect();
-}
-
-createOffer();`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-async function cancelOffer() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  // OfferSequence هو Sequence الخاص بمعاملة OfferCreate الأصلية
-  const cancel = {
-    TransactionType: "OfferCancel",
-    Account: wallet.address,
-    OfferSequence: Number(process.env.OFFER_SEQUENCE),
-  };
-
-  const prepared = await client.autofill(cancel);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-cancelOffer().catch(console.error);`,
       ],
       slides: [
         {
@@ -4854,140 +4947,28 @@ cancelOffer().catch(console.error);`,
 
 ### Authorized TrustLines: RequireAuth
 
-يتطلب flag \`RequireAuth\` (asfRequireAuth) على الحساب المُصدر أن يُصرِّح المُصدر **صراحة** كل TrustLine قبل أن يتمكن holder من استقبال tokens. مفيد لـtokens التي تحتاج KYC أو تحققًا مسبقًا.`,
+يتطلب flag \`RequireAuth\` (asfRequireAuth) على الحساب المُصدر أن يُصرِّح المُصدر **صراحة** كل TrustLine قبل أن يتمكن holder من استقبال tokens. مفيد لـtokens التي تحتاج KYC أو تحققًا مسبقًا.
+
+### تشغيل سكربتات هذا الدرس
+
+السكربت الأول يوقّع بـ \`FROZEN_SEED\` وينشئ TrustLine الحامل، والثاني يوقّع بـ \`ISSUER_SEED\` ويجمّدها. ينشئ \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)) الحسابين، ويقرأ كل سكربت عنوان الطرف الآخر من \`.env\`. شغّلهما بهذا الترتيب. المخرجات على testnet:
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **أول \`tesSUCCESS\`**: أصبح لدى الحامل TrustLine نحو ISSUER لهذا الـ token. التجميد يُطبَّق على TrustLine، لذلك يجب أن توجد أولًا.
+- **ثاني \`tesSUCCESS\`**: فعّل المُصدر علامة التجميد على جهته من الخط. ما زال بإمكان الحامل إعادة الـ token إلى المُصدر، لكن لا يمكنه إرساله إلى أي أحد آخر.`,
       codeTitles: [
         "إنشاء TrustLine من holder نحو issuer",
         "تجميد TrustLine لمستخدم محدد",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// ينشئ هذا الكود TrustLine من حساب (holder)
-// نحو مُصدر token. هذا ضروري حتى يتمكن المُصدر
-// لاحقًا من تجميد تلك TrustLine إذا لزم الأمر.
-
-// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
-function normalizeCurrency(token_currency) {
-  if (typeof token_currency !== "string") return token_currency;
-
-  const cur = token_currency.trim();
-
-  // 3 أحرف أو أقل: رمز عملة قياسي
-  if (cur.length <= 3) return cur;
-
-  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
-  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
-
-  if (hex.length > 40) {
-    throw new Error(
-      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
-    );
-  }
-
-  return hex.padEnd(40, "0");
-}
-
-async function createHolderTrustLine() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // الـholder الذي يريد استقبال الـtoken؛ يمكن تجميد TrustLine الخاصة به لاحقًا إذا لزم الأمر
-  const holder = Wallet.fromSeed(process.env.FROZEN_SEED, {algorithm: 'secp256k1'});
-  const issuerAddress = "rIssuerAddress";
-  const tokenCurrencyInput = "YourTokenName";
-
-  const token_currency = normalizeCurrency(tokenCurrencyInput);
-
-  const trustSet = {
-    TransactionType: "TrustSet",
-    Account: holder.address,
-    LimitAmount: {
-      currency: token_currency,
-      issuer: issuerAddress,
-      value: "1000000", // الحد الأقصى الذي أقبله
-    },
-  };
-
-  const prepared = await client.autofill(trustSet);
-  const signed = holder.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("تم إنشاء TrustLine!");
-    console.log("Holder:", holder.address);
-    console.log("المُصدر:", issuerAddress);
-    console.log("\\nيمكن للمُصدر الآن إرسال الـtoken إلى هذا الحساب.");
-    console.log("يمكنه أيضًا تجميد هذه TrustLine إذا لزم الأمر.");
-  }
-
-  await client.disconnect();
-}
-
-createHolderTrustLine();`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// إذا كان token_currency أطول من 3 أحرف، حوّله إلى hex من 40 حرفًا
-function normalizeCurrency(token_currency) {
-  if (typeof token_currency !== "string") return token_currency;
-
-  const cur = token_currency.trim();
-
-  // 3 أحرف أو أقل: رمز عملة قياسي
-  if (cur.length <= 3) return cur;
-
-  // أكثر من 3: تحويل إلى hex وإكمال إلى 40 (20 بايت) بأصفار من اليمين
-  const hex = Buffer.from(cur, "utf8").toString("hex").toUpperCase();
-
-  if (hex.length > 40) {
-    throw new Error(
-      \`token_currency طويل جدًا: "\${cur}" -> hex \${hex.length} (>40). الحد الأقصى ~20 بايت بترميز UTF-8.\`
-    );
-  }
-
-  return hex.padEnd(40, "0");
-}
-
-async function freezeTrustLine() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const issuer = Wallet.fromSeed(process.env.ISSUER_SEED, {algorithm: 'secp256k1'});
-  const holderAddress = "rHolderAddress";
-  const tokenCurrencyInput = "YourTokenName";
-
-  const token_currency = normalizeCurrency(tokenCurrencyInput);
-
-  // تجميد TrustLine الخاصة بالـtoken مع هذا الـholder
-  const trustSet = {
-    TransactionType: "TrustSet",
-    Account: issuer.address,
-    LimitAmount: {
-      currency: token_currency,
-      issuer: holderAddress,
-      value: "0", // القيمة لا تهم في حالة التجميد
-    },
-    Flags: 1048576, // tfSetFreeze
-  };
-
-  const prepared = await client.autofill(trustSet);
-  const signed = issuer.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-
-  if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log(\`تم تجميد TrustLine الخاصة بالـtoken لـ \${holderAddress}\`);
-    console.log("لا يمكن لهذا الـholder إرسال أو استقبال هذا الـtoken");
-  }
-
-  await client.disconnect();
-}
-
-freezeTrustLine().catch(console.error);`,
       ],
       slides: [
         {
@@ -5019,7 +5000,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -5081,7 +5061,26 @@ L'un des avantages du système de tokens de Xahau est que le compte émetteur pe
 
 **Important** : certaines configurations sont irréversibles (\`NoFreeze\`) et d'autres doivent être activées avant d'émettre des tokens (\`Clawback\`). Planifie soigneusement la configuration de ton émetteur avant de commencer à distribuer des tokens.
 
-Nous verrons chacune de ces configurations en détail dans les sections suivantes de ce module.`,
+Nous verrons chacune de ces configurations en détail dans les sections suivantes de ce module.
+
+### Lancer les scripts de cette leçon
+
+Les deux scripts vont ensemble : le premier signe avec \`WALLET_SEED\` et fait confiance à ISSUER pour l'USD ; le second signe avec \`ISSUER_SEED\` et émet 100 USD vers \`WALLET\`. \`create-accounts.js\` ([module 3](?m=3&l=1)) crée les deux comptes. Sortie sur le testnet : d'abord le script d'émission seul, puis les deux dans l'ordre :
+
+\`\`\`
+Result: tecPATH_DRY
+
+Result: tesSUCCESS
+TrustLine created successfully!
+You can now receive from the issuer at your account rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+
+Result: tesSUCCESS
+Tokens issued successfully!
+\`\`\`
+
+- **\`tecPATH_DRY\`** : l'émission a été lancée avant que \`WALLET\` ait une TrustLine USD vers ISSUER, le paiement n'avait donc pas de chemin. Rien n'a été émis.
+- **TrustLine \`tesSUCCESS\`** : \`WALLET\` accepte désormais l'USD d'ISSUER, jusqu'à sa limite.
+- **Émission \`tesSUCCESS\`** : ISSUER a créé 100 USD sur la TrustLine de \`WALLET\`. Un émetteur ne détient jamais son propre token : c'est en le payant qu'il le crée.`,
       codeTitles: ["Créer une TrustLine vers un émetteur de token", "Émettre des tokens vers un compte avec TrustLine"],
       slides: [
         ["Modèle de tokens dans Xahau", "Les tokens sont des IOUs émis par un compte\n\n• Pas de contrat ERC-20\n• Une devise + un issuer\n• Le détenteur accepte avec TrustLine\n• Le solde vit sur la ligne de confiance"],
@@ -5222,7 +5221,28 @@ Le DEX de Xahau peut router automatiquement des échanges multi-sauts via XAH. S
 1. Vendre des USD contre du XAH
 2. Acheter des EUR avec du XAH
 
-Le tout en une seule transaction, de manière transparente. Cela améliore considérablement la liquidité du DEX.`,
+Le tout en une seule transaction, de manière transparente. Cela améliore considérablement la liquidité du DEX.
+
+### Lancer les scripts de cette leçon
+
+Les deux scripts signent avec \`RESERVE_SEED\`, qui détient le token après le [processus complet](?m=7&l=1), et lisent l'adresse d'ISSUER dans \`ISSUER_SEED\`. \`create-accounts.js\` ([module 3](?m=3&l=1)) crée les deux. Lance d'abord le script de l'offre. Sortie sur le testnet :
+
+\`\`\`
+Result: tesSUCCESS
+Offer created on the DEX!
+Selling 100 Tokens for 50 XAH (0.5 XAH/Token)
+Offer Sequence: 843750863
+\`\`\`
+
+Le **Sequence** de l'offre l'identifie. \`cancel-offer.js\` le prend en argument :
+
+\`\`\`bash
+node cancel-offer.js 843750863
+\`\`\`
+
+Il affiche \`Result: tesSUCCESS\` et \`Offer cancelled successfully!\`. Sans Sequence valide, il s'arrête avant d'envoyer quoi que ce soit et indique quoi passer.
+
+**Cas à surveiller :** \`OfferCancel\` renvoie aussi \`tesSUCCESS\` quand l'offre n'existe plus (déjà exécutée ou déjà annulée). Une annulation réussie ne prouve pas que l'offre n'a pas été négociée : consulte \`account_offers\` avant d'annuler si c'est important.`,
       codeTitles: ["Consulter le carnet d'ordres d'une paire de tokens (USD/XAH)", "Créer une offre sur le DEX (vendre 100 tokens contre XAH)", "Annuler une offre existante sur le DEX"],
       slides: [
         ["DEX natif Xahau", "Le DEX est intégré au protocole\n\n• Pas de smart contract externe\n• Offres dans le ledger\n• Carnets consultables par API\n• Règlement atomique"],
@@ -5271,7 +5291,25 @@ L'émetteur peut prélever un pourcentage sur chaque transfert de son token entr
 
 ### Authorized TrustLines : RequireAuth
 
-Le flag \`RequireAuth\` (asfRequireAuth) sur le compte émetteur exige que l'émetteur **autorise explicitement** chaque TrustLine avant qu'un détenteur puisse recevoir des tokens. Utile pour les tokens nécessitant un KYC ou une vérification préalable.`,
+Le flag \`RequireAuth\` (asfRequireAuth) sur le compte émetteur exige que l'émetteur **autorise explicitement** chaque TrustLine avant qu'un détenteur puisse recevoir des tokens. Utile pour les tokens nécessitant un KYC ou une vérification préalable.
+
+### Lancer les scripts de cette leçon
+
+Le premier script signe avec \`FROZEN_SEED\` et crée la TrustLine du détenteur ; le second signe avec \`ISSUER_SEED\` et la gèle. \`create-accounts.js\` ([module 3](?m=3&l=1)) crée les deux comptes, et chaque script lit dans \`.env\` l'adresse de l'autre partie. Lance-les dans cet ordre. Sortie sur le testnet :
+
+\`\`\`
+Result: tesSUCCESS
+TrustLine created!
+Holder: r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+Issuer: rDSFWxUH586ztyZ25SwUZzvArdicYJf82z
+
+Result: tesSUCCESS
+Token TrustLine frozen for r3BWrzUfHx5QdSWdDjHoA6Km6jN8HRGde7
+The holder cannot send or receive this token
+\`\`\`
+
+- **Premier \`tesSUCCESS\`** : le détenteur a maintenant une TrustLine vers ISSUER pour le token. Un gel s'applique à une TrustLine, il en faut donc une d'abord.
+- **Second \`tesSUCCESS\`** : l'émetteur a activé le gel de son côté de cette ligne. Le détenteur peut encore renvoyer le token à l'émetteur, mais pas l'envoyer à quelqu'un d'autre.`,
       codeTitles: ["Créer une TrustLine du détenteur vers l'émetteur", "Geler la TrustLine d'un utilisateur précis"],
       slides: [
         ["Freeze : gel de tokens", "Freeze bloque les mouvements sur une ligne de confiance\n\nUtile pour conformité, litiges ou incidents, mais très sensible pour l'utilisateur."],
@@ -5292,9 +5330,6 @@ function applyFrenchTranslations(module) {
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.fr = translation.codeTitles[index];
       if (typeof block.code === "string") block.code = { en: block.code };
-      block.code.fr = localizeFrenchCode(
-        `// ${translation.codeTitles[index]}\n// Exemple commenté en français : adapte les adresses, seeds et devises à ton testnet.\n\n${block.code.en ?? block.code.es}`,
-      );
     });
     lesson.slides?.forEach((slide, index) => {
       const slideTranslation = translation.slides[index];
@@ -5305,22 +5340,12 @@ function applyFrenchTranslations(module) {
   }
 }
 
-function localizeFrenchCode(code) {
-  return code
-    .split("\n")
-    .map((line) => {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("//") && !/[éèàùçîô]/i.test(trimmed)) {
-        return `${line.match(/^\s*/)?.[0] ?? ""}// Note : adapte cette étape à tes comptes et paramètres de testnet.`;
-      }
-      if (trimmed.startsWith("#") && /[A-Za-z]{4,}/.test(trimmed) && !/[éèàùçîô]/i.test(trimmed)) {
-        return `${line.match(/^\s*/)?.[0] ?? ""}# Note : adapte cette étape à ton environnement local.`;
-      }
-      return line;
-    })
-    .join("\n");
-}
-
 applyFrenchTranslations(moduleData);
+
+// Step 4 of the complete process: the course's first IOU Payment
+addDistributeToken(moduleData, "m6l1b");
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

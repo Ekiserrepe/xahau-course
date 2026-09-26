@@ -21,6 +21,10 @@ import { MODULE_FILES } from '../src/data/module-list.js'
 import { LOCALES } from '../src/data/locales.js'
 import { UI_LABELS } from '../src/data/i18n.js'
 import { COURSE_MANIFEST } from '../src/data/generated/manifest.js'
+import { codeFile } from '../src/data/code-files.js'
+import { localizeCode, untranslatedIn } from '../src/data/code-i18n.js'
+import { FR } from '../src/data/code-i18n-fr.js'
+import { AR } from '../src/data/code-i18n-ar.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -83,6 +87,81 @@ describe('modules', () => {
       }
     }
   })
+
+  it('every source file the theory names is shown in some Code tab', () => {
+    // Theory links `hola-xahau.js` to the file's Code tab; a name with nothing
+    // to link to is a lesson talking about code the reader can't see. Same
+    // matching as LessonView: a bare name may match a longer path only in its
+    // own lesson. Headers (.h) ship with the Hooks toolchain and aren't sources.
+    const NOT_COURSE_FILES = {
+      'index.js': "npm's default `main`, which the course never creates",
+      'src/main.jsx': 'Vite scaffold the lesson says not to touch',
+      'index.html': 'Vite scaffold the lesson says not to touch',
+      'contracts/base.c': 'the sample Hook `hooks-cli init` writes into a new project',
+    }
+    const shown = modules.flatMap(({ mod }) =>
+      mod.lessons.flatMap((l) => (l.codeBlocks ?? []).map(codeFile).filter(Boolean)),
+    )
+    for (const { mod } of modules) {
+      for (const lesson of mod.lessons) {
+        const own = (lesson.codeBlocks ?? []).map(codeFile).filter(Boolean)
+        for (const [lang, text] of Object.entries(lesson.theory ?? {})) {
+          for (const [, name] of text.matchAll(/`((?:[\w-]+\/)*[\w.-]+\.(?:js|mjs|cjs|jsx|c|sh|toml|txt|html|json))`/g)) {
+            if (NOT_COURSE_FILES[name]) continue
+            expect(
+              shown.includes(name) || own.some((f) => f.endsWith('/' + name)),
+              `${lesson.id} (${lang}) names ${name}, which no Code tab shows`,
+            ).toBe(true)
+          }
+        }
+      }
+    }
+  })
+
+  it('the French and Arabic code is the English code, line by line, fully translated', () => {
+    // Both are derived from the English code (src/data/code-i18n.js): the code
+    // is identical and only comments, messages and UI text change. A text with
+    // no dictionary entry would stay in English.
+    const missing = []
+    for (const { mod } of modules) {
+      for (const lesson of mod.lessons) {
+        for (const block of lesson.codeBlocks ?? []) {
+          if (block.manual) continue
+          const en = block.code.en ?? ''
+          expect(block.code.fr, `${lesson.id}: French code is not derived`).toBe(localizeCode(en, block.language, FR))
+          expect(block.code.ar, `${lesson.id}: Arabic code is not derived`).toBe(localizeCode(en, block.language, AR))
+          expect(block.code.fr.split('\n').length, `${lesson.id}: French line count`).toBe(en.split('\n').length)
+          for (const [lang, dict] of [['fr', FR], ['ar', AR]]) {
+            for (const text of untranslatedIn(en, block.language, dict)) missing.push(`${lesson.id} (${lang}): ${text}`)
+          }
+        }
+      }
+    }
+    expect(missing, 'add these to src/data/code-i18n-fr.js / code-i18n-ar.js').toEqual([])
+  })
+
+  it('every link to a lesson points at one that exists, outside headings and code', () => {
+    // Inserting or moving a lesson shifts every `?m=X&l=Y` after it. A link in
+    // a `###` heading breaks its anchor; one in a fence renders as raw text.
+    for (const { mod } of modules) {
+      for (const lesson of mod.lessons) {
+        for (const [lang, text] of Object.entries(lesson.theory ?? {})) {
+          let fenced = false
+          for (const line of text.split('\n')) {
+            if (line.trimStart().startsWith('```')) fenced = !fenced
+            const links = [...line.matchAll(/\]\(\?m=(\d+)&l=(\d+)[^)]*\)/g)]
+            if (!links.length) continue
+            const where = `${lesson.id} (${lang}): ${line.slice(0, 80)}`
+            expect(fenced, `link inside a code block in ${where}`).toBe(false)
+            expect(/^#{1,6} /.test(line), `link inside a heading in ${where}`).toBe(false)
+            for (const [, m, l] of links) {
+              expect(modules[+m]?.mod.lessons[+l], `no lesson ?m=${m}&l=${l} in ${where}`).toBeTruthy()
+            }
+          }
+        }
+      }
+    }
+  })
 })
 
 describe('manifest', () => {
@@ -104,6 +183,8 @@ describe('manifest', () => {
         // wrong flag means a dead tab or a hidden one.
         expect(meta.hasCode).toBe(!!lesson.codeBlocks?.length)
         expect(meta.hasSlides).toBe(!!lesson.slides?.length)
+        // Theory links and ?f= deep links resolve against this list
+        expect(meta.files).toEqual((lesson.codeBlocks ?? []).map(codeFile).filter(Boolean))
       })
     })
   })

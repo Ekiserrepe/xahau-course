@@ -1,3 +1,4 @@
+import { deriveCodeTranslations } from "../code-i18n.js";
 const moduleData = {
   id: "m5",
   icon: "💸",
@@ -65,6 +66,8 @@ Cuando envías XAH nativo, el campo \`Amount\` es un **string** con la cantidad 
 - **El emisor debe tener fondos**: Tu cuenta debe poseer saldo de ese IOU. Puedes obtenerlo mediante un pago previo, un intercambio en el DEX, o directamente del emisor del token.
 - **El receptor debe tener una TrustLine**: La cuenta de destino debe haber creado previamente una TrustLine (\`TrustSet\`) para ese IOU con el mismo emisor. Sin TrustLine, el pago fallará con \`tecPATH_DRY\` o \`tecNO_LINE\`.
 
+Los dos requisitos se construyen en el módulo de tokens, así que el script del pago IOU está allí: \`distribute-token.js\`, en el [módulo 7](?m=7&l=1), envía tu primer IOU justo después de emitir un token.
+
 ### ¿Por qué los IOUs o tokens diferentes de XAH necesitan estos campos?
 
 Puede darse el caso de que varias entidades emitan el mismo tipo de IOU. Por ejemplo, distintos bancos podrían emitir su propio EUR o USD token. La única forma de diferenciarlos sería especificando quién es el emisor si comparten el mismo nombre de token.
@@ -113,6 +116,8 @@ Quando você envia XAH nativo, o campo \`Amount\` é um **string** com a quantid
 **Requisitos prévios para enviar IOUs:**
 - **O emissor deve ter fundos**: Sua conta deve possuir saldo desse IOU. Você pode obtê-lo por meio de um pagamento prévio, uma troca no DEX, ou diretamente do emissor do token.
 - **O receptor deve ter uma TrustLine**: A conta de destino deve ter criado previamente uma TrustLine (\`TrustSet\`) para esse IOU com o mesmo emissor. Sem TrustLine, o pagamento falhará com \`tecPATH_DRY\` ou \`tecNO_LINE\`.
+
+Os dois requisitos são construídos no módulo de tokens, então o script do pagamento IOU está lá: \`distribute-token.js\`, no [módulo 7](?m=7&l=1), envia seu primeiro IOU logo depois de você emitir um token.
 ### Por que os IOUs ou tokens diferentes de XAH precisam desses campos?
 Pode acontecer de várias entidades emitirem o mesmo tipo de IOU. Por exemplo, bancos diferentes poderiam emitir seu próprio EUR ou USD token. A única forma de diferenciá-los seria especificar quem é o emissor se compartilharem o mesmo nome de token.
 ### Mais informação sobre Payment
@@ -120,8 +125,8 @@ A transação Payment tem muitos outros campos opcionais, flags e possíveis err
 Lá você encontrará:
 - Todos os campos opcionais (SendMax, DeliverMin, InvoiceID, etc.)
 - Flags disponíveis (tfPartialPayment, tfLimitQuality, etc.)
-- Lista completa de códigos de error e sus causas
-- Casos especiales e comportamientos avanzados`,
+- Lista completa de códigos de erro e suas causas
+- Casos especiais e comportamentos avançados`,
         en: `The **Payment** is the most fundamental transaction on Xahau. It allows you to send XAH (or tokens) from one account to another.
 
 ### Payment transaction fields
@@ -165,6 +170,8 @@ When you send native XAH, the \`Amount\` field is a **string** with the amount i
 **Prerequisites for sending IOUs:**
 - **The sender must have funds**: Your account must hold a balance of that IOU. You can obtain it through a previous payment, a DEX trade, or directly from the token issuer.
 - **The recipient must have a TrustLine**: The destination account must have previously created a TrustLine (\`TrustSet\`) for that IOU with the same issuer. Without a TrustLine, the payment will fail with \`tecPATH_DRY\` or \`tecNO_LINE\`.
+
+Both prerequisites are built in the token module, so the IOU payment script lives there: \`distribute-token.js\` in [Module 7](?m=7&l=1) sends your first IOU right after you issue a token.
 
 ### Why do IOUs or tokens other than XAH need these fields?
 
@@ -225,6 +232,8 @@ XahauのFeeは非常に低く予測可能です：
 - **送信者に残高が必要**：あなたのアカウントはそのIOUの残高を持っている必要があります。以前の支払い、DEXでの取引、またはトークン発行者から直接取得できます。
 - **受信者にトラストラインが必要**：宛先アカウントは同じ発行者のそのIOUに対して事前にトラストライン（\`TrustSet\`）を作成している必要があります。トラストラインなしでは、\`tecPATH_DRY\`または\`tecNO_LINE\`で支払いが失敗します。
 
+この2つの前提条件はトークンのモジュールで用意するため、IOU 支払いのスクリプトもそこにあります。[モジュール7](?m=7&l=1)の \`distribute-token.js\` が、トークンを発行した直後に最初の IOU を送ります。
+
 ### なぜXAH以外のIOUやトークンにこれらのフィールドが必要なのか？
 
 複数のエンティティが同じ種類のIOUを発行することがあります。例えば、異なる銀行がそれぞれ独自のEURまたはUSDトークンを発行できます。同じトークン名を共有する場合、発行者を指定することだけが区別する方法です。
@@ -281,6 +290,8 @@ Xahau의 수수료는 매우 낮고 예측 가능합니다:
 **IOU 전송을 위한 사전 조건:**
 - **발신자는 잔액을 보유해야 합니다**: 계정에 해당 IOU 잔액이 있어야 합니다. 이전 결제, DEX 거래, 또는 토큰 발행자로부터 직접 얻을 수 있습니다.
 - **수신자는 TrustLine이 있어야 합니다**: 목적지 계정은 동일한 발행자의 해당 IOU에 대해 사전에 TrustLine(\`TrustSet\`)을 생성해야 합니다. TrustLine 없이는 결제가 \`tecPATH_DRY\` 또는 \`tecNO_LINE\`으로 실패합니다.
+
+두 전제 조건은 토큰 모듈에서 만들어지므로 IOU 결제 스크립트도 그곳에 있습니다. [모듈 7](?m=7&l=1)의 \`distribute-token.js\`가 토큰을 발행한 직후 첫 IOU를 보냅니다.
 
 ### XAH 이외의 IOU나 토큰에 이러한 필드가 필요한 이유는?
 
@@ -340,6 +351,8 @@ Xahau 上的费用非常低且可预测：
 **发送 IOU 的前提条件：**
 - **发送方必须持有该 IOU 余额**：你的账户必须拥有这种 IOU。你可以通过之前的支付、DEX 交易或直接从代币发行方获得
 - **接收方必须有 TrustLine**：目标账户必须事先为该 IOU 以及相同发行方创建好 TrustLine（\`TrustSet\`）。没有 TrustLine 时，支付会因 \`tecPATH_DRY\` 或 \`tecNO_LINE\` 失败
+
+这两个前提条件都在代币模块中建立，所以 IOU 支付脚本也放在那里：[模块7](?m=7&l=1)中的 \`distribute-token.js\` 会在你发行代币后立即发送第一笔 IOU。
 
 ### 为什么 XAH 之外的 IOU 或代币需要这些字段？
 
@@ -431,7 +444,7 @@ async function sendPayment() {
   const result = await client.submitAndWait(signed.tx_blob);
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
-    console.log("¡Pagamento enviado com éxito!");
+    console.log("Pagamento enviado com sucesso!");
   } else {
     console.log("Erro no pagamento");
   }
@@ -600,287 +613,6 @@ async function sendPayment() {
 sendPayment();`,
           },
         },
-        {
-          title: {
-            es: "Enviar un pago de IOU (token) entre dos cuentas",
-            pt: "Enviar um pagamento de IOU (token) entre dois contas",
-            en: "Send an IOU (token) payment between two accounts",
-            jp: "2つのアカウント間でIOU（トークン）支払いを送信",
-            ko: "두 계정 간 IOU(토큰) 결제 전송",
-            zh: "在两个账户之间发送 IOU（代币）支付",
-          },
-          language: "javascript",
-          code: {
-            es: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// El código no va a funcionar a no ser que tengas saldo del IOU y el destino tenga TrustLine activa. Modifica los campos según tu configuración de testnet.
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Wallet del emisor (usa tu seed de testnet), si tienes una seed que no es secp256k1, elimina la parte ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Para enviar un IOU, Amount es un objeto con currency, issuer y value
-  // Requisitos:
-  //   1. El sender debe tener saldo de este IOU
-  //   2. El destino debe tener una TrustLine para este IOU
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
-    //Aquí modificarías el currency, issuer y value según el token que quieras enviar
-    Amount: {
-      currency: "USD",
-      issuer: "rDireccionDelEmisorDelToken",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Resultado:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("¡Pago de IOU enviado con éxito!");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("Error: No hay ruta de pago. ¿Tiene el destino una TrustLine?");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("Error: No tienes suficiente saldo de este IOU.");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
-            pt: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-// O código não vai funcionar a não ser que você tenha saldo do IOU e o destino tenha TrustLine ativa. Modifique os campos conforme sua configuração de testnet.
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-  // Wallet do emissor (usa seu seed de testnet), se você tiver uma seed que não é secp256k1, elimine a parte ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-  // Para enviar um IOU, Amount é um objeto com currency, issuer e value
-  // Requisitos:
-  //   1. O sender deve ter saldo de este IOU
-  //   2. O destino deve ter uma TrustLine para este IOU
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rDireccionDelDestinatario",
-    //Aquí modificarías ou currency, issuer e value conforme ou token que quieras enviar
-    Amount: {
-      currency: "USD",
-      issuer: "rDireccionDelEmisorDelToken",
-      value: "50", // 50 USD
-    },
-  };
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Resultado:", txResult);
-  if (txResult === "tesSUCCESS") {
-    console.log("¡Pagamento de IOU enviado com éxito!");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("Erro: Não há rota de pagamento. O destino tem uma TrustLine?");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("Erro: Não tems suficiente saldo de este IOU.");
-  }
-  await client.disconnect();
-}
-sendIOUPayment();`,
-            en: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// This code will not work unless you have an IOU balance and the destination has an active TrustLine. Modify the fields according to your testnet configuration.
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Sender wallet (use your testnet seed), if you have a seed that is not secp256k1, remove the part ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // To send an IOU, Amount is an object with currency, issuer and value
-  // Requirements:
-  //   1. The sender must have a balance of this IOU
-  //   2. The destination must have a TrustLine for this IOU
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rRecipientAddress",
-    //Here you would modify currency, issuer and value according to the token you want to send
-    Amount: {
-      currency: "USD",
-      issuer: "rTokenIssuerAddress",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Result:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("IOU payment sent successfully!");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("Error: No payment path. Does the destination have a TrustLine?");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("Error: Insufficient IOU balance.");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
-            jp: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// IOU残高があり、宛先にアクティブなTrustLineがない限り、このコードは動作しません。テストネットの設定に応じてフィールドを変更してください。
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // 送信者ウォレット（テストネットのシードを使用）、secp256k1でないシードの場合は", {algorithm: 'secp256k1'}"の部分を削除してください
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // IOUを送る場合、Amountはcurrency、issuer、valueを持つオブジェクト
-  // 要件：
-  //   1. 送信者はこのIOUの残高を持っている必要がある
-  //   2. 宛先はこのIOUのTrustLineを持っている必要がある
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rRecipientAddress",
-    //送りたいトークンに応じてcurrency、issuer、valueを変更してください
-    Amount: {
-      currency: "USD",
-      issuer: "rTokenIssuerAddress",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("結果：", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("IOU支払いが正常に送信されました！");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("エラー：支払いルートがありません。宛先にTrustLineがありますか？");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("エラー：このIOUの残高が不足しています。");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
-            ko: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// IOU 잔액이 있고 목적지에 활성 TrustLine이 있어야 이 코드가 작동합니다. 테스트넷 구성에 맞게 필드를 수정하세요.
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // 발신자 지갑 (테스트넷 시드 사용), secp256k1이 아닌 시드를 가지고 있다면 ", {algorithm: 'secp256k1'}" 부분을 제거하세요
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // IOU를 전송할 때 Amount는 currency, issuer, value를 가진 객체
-  // 요건:
-  //   1. 발신자는 이 IOU의 잔액을 보유해야 함
-  //   2. 목적지는 이 IOU에 대한 TrustLine이 있어야 함
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rRecipientAddress",
-    //전송하려는 토큰에 맞게 currency, issuer, value를 수정하세요
-    Amount: {
-      currency: "USD",
-      issuer: "rTokenIssuerAddress",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("결과:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("IOU 결제가 성공적으로 전송되었습니다!");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("오류: 결제 경로가 없습니다. 목적지에 TrustLine이 있나요?");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("오류: IOU 잔액이 부족합니다.");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
-            zh: `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// 这段代码只有在你持有该 IOU，且目标账户拥有有效 TrustLine 时才能工作。请根据你的测试网配置修改字段。
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // 发送方钱包（使用你的测试网 seed），如果你的 seed 不是 secp256k1，请删除 ", {algorithm: 'secp256k1'}" 这一部分
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // 发送 IOU 时，Amount 是一个包含 currency、issuer 和 value 的对象
-  // 前提：
-  //   1. 发送方必须持有这种 IOU 的余额
-  //   2. 目标账户必须拥有该 IOU 的 TrustLine
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rRecipientAddress",
-    // 根据你想发送的代币修改 currency、issuer 和 value
-    Amount: {
-      currency: "USD",
-      issuer: "rTokenIssuerAddress",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("结果:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("IOU 支付发送成功！");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("错误：没有支付路径。目标账户有 TrustLine 吗？");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("错误：你的 IOU 余额不足。");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
-          },
-        },
       ],
       slides: [
         {
@@ -910,12 +642,18 @@ sendIOUPayment();`,
         {
           title: { es: "Documentación oficial", pt: "Documentação oficial", en: "Official documentation", jp: "公式ドキュメント", ko: "공식 문서", zh: "官方文档" },
           content: {
-            es: "Referencia completa de Payment:\ https://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• Campos opcionales (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Códigos de error completos\n• Casos especiales y avanzados",
-            pt: "Referencia completa de Payment:\ https://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• Campos opcionales (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Códigos de erro completos\n• Casos especiales e avanzados",
-            en: "Complete Payment reference:\ https://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• Optional fields (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Complete error codes\n• Special cases and advanced behaviors",
+            es: "Referencia completa de Payment:\nhttps://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/\n\n• Campos opcionales (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Códigos de error completos\n• Casos especiales y avanzados",
+            pt: `Referência completa de Payment:
+https://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/
+
+• Campos opcionales (SendMax, DeliverMin...)
+• Flags (tfPartialPayment, tfLimitQuality...)
+• Códigos de erro completos
+• Casos especiais e avançados`,
+            en: "Complete Payment reference:\nhttps://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/\n\n• Optional fields (SendMax, DeliverMin...)\n• Flags (tfPartialPayment, tfLimitQuality...)\n• Complete error codes\n• Special cases and advanced behaviors",
             jp: "Paymentの完全リファレンス：\nhttps://xahau.network/docs/...\n\n• オプションフィールド（SendMax、DeliverMinなど）\n• フラグ（tfPartialPayment、tfLimitQualityなど）\n• 完全なエラーコード\n• 特殊ケースと高度な動作",
-            ko: "Payment 전체 참조:\nhttps://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• 선택적 필드 (SendMax, DeliverMin...)\n• 플래그 (tfPartialPayment, tfLimitQuality...)\n• 전체 오류 코드\n• 특수 사례 및 고급 동작",
-            zh: "Payment 完整参考：\nhttps://xahau.network/docs/technical/protocol-reference/transactions/transaction-types/payment\n\n• 可选字段（SendMax、DeliverMin...）\n• Flags（tfPartialPayment、tfLimitQuality...）\n• 完整错误代码\n• 特殊情况与高级行为",
+            ko: "Payment 전체 참조:\nhttps://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/\n\n• 선택적 필드 (SendMax, DeliverMin...)\n• 플래그 (tfPartialPayment, tfLimitQuality...)\n• 전체 오류 코드\n• 특수 사례 및 고급 동작",
+            zh: "Payment 完整参考：\nhttps://xahau.network/docs/protocol-reference/transactions/transaction-types/payment/\n\n• 可选字段（SendMax、DeliverMin...）\n• Flags（tfPartialPayment、tfLimitQuality...）\n• 完整错误代码\n• 特殊情况与高级行为",
           },
           visual: "📖",
         },
@@ -1224,7 +962,7 @@ async function sendPaymentWithMemo() {
   const txResult = result.result.meta.TransactionResult;
   console.log("Resultado:", txResult);
   if (txResult === "tesSUCCESS") {
-    console.log("¡Pagamento com memo enviado!");
+    console.log("Pagamento com memo enviado!");
     console.log("Hash:", signed.hash);
     const lookup = await client.request({
       command: "tx",
@@ -1601,7 +1339,7 @@ async function verifyPayment(txHash) {
     transaction: txHash,
   });
   const tx = response.result;
-  console.log("=== Detalles do pagamento ===");
+  console.log("=== Detalhes do pagamento ===");
   console.log("Tipo:", tx.TransactionType);
   console.log("De:", tx.Account);
   console.log("A:", tx.Destination);
@@ -1622,7 +1360,7 @@ async function verifyPayment(txHash) {
   await client.disconnect();
 }
 // Exemplo de hash de transação: "4B56BD61E7E7F59FF191A779FC0C9ACF68DC25C174930FCB906AC06EB812F38C"
-verifyPayment("TU_HASH_DE_TRANSACCION_AQUI");`,
+verifyPayment("SEU_HASH_DE_TRANSACAO_AQUI");`,
             en: `const { Client } = require("xahau");
 
 async function verifyPayment(txHash) {
@@ -1779,7 +1517,12 @@ verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
           title: { es: "Destination Tag", pt: "Destination Tag", en: "Destination Tag", jp: "Destination Tag", ko: "Destination Tag", zh: "Destination Tag" },
           content: {
             es: "Número para identificar pagos individuales\n\n• Usado por exchanges y servicios\n• Asocia pagos con usuarios/pedidos\n• Algunas cuentas lo requieren\n• Es un número entero (uint32)",
-            pt: "Número para identificar pagamentos individuales\n\n• Usado por exchanges e servicios\n• Asocia pagamentos com usuários/pedidos\n• Algunas contas lo exigen\n• É um número inteiro (uint32)",
+            pt: `Número para identificar pagamentos individuais
+
+• Usado por exchanges e serviços
+• Asocia pagamentos com usuários/pedidos
+• Algumas contas o exigem
+• É um número inteiro (uint32)`,
             en: "A number to identify individual payments\n\n• Used by exchanges and services\n• Associates payments with users/orders\n• Some accounts require it\n• It is an integer (uint32)",
             jp: "個別の支払いを識別する番号\n\n• 取引所やサービスで使用\n• 支払いをユーザー/注文と関連付け\n• 一部のアカウントでは必須\n• 整数（uint32）",
             ko: "개별 결제를 식별하는 번호\n\n• 거래소 및 서비스에서 사용\n• 결제를 사용자/주문과 연결\n• 일부 계정에서는 필수\n• 정수 (uint32)",
@@ -1791,7 +1534,12 @@ verifyPayment("YOUR_TRANSACTION_HASH_HERE");`,
           title: { es: "Memos", pt: "Memos", en: "Memos", jp: "Memo", ko: "메모", zh: "Memos" },
           content: {
             es: "Datos adjuntos a una transacción\n\n• MemoType → Tipo (text/plain, etc.)\n• MemoData → Contenido\n• Codificados en hexadecimal\n• Públicos en el ledger",
-            pt: "Dados adjuntos a uma transação\n\n• MemoType → Tipo (text/plain, etc.)\n• MemoData → Conteúdo\n• Codificados em hexadecimal\n• Públicos no ledger",
+            pt: `Dados anexados a uma transação
+
+• MemoType → Tipo (text/plain, etc.)
+• MemoData → Conteúdo
+• Codificados em hexadecimal
+• Públicos no ledger`,
             en: "Data attached to a transaction\n\n• MemoType → Type (text/plain, etc.)\n• MemoData → Content\n• Encoded in hexadecimal\n• Public on the ledger",
             jp: "トランザクションに添付するデータ\n\n• MemoType → タイプ（text/plainなど）\n• MemoData → コンテンツ\n• 16進数でエンコード\n• レジャー上でパブリック",
             ko: "트랜잭션에 첨부된 데이터\n\n• MemoType → 유형 (text/plain 등)\n• MemoData → 내용\n• 16진수로 인코딩\n• 레저에서 공개",
@@ -2119,6 +1867,8 @@ const arabicModuleTranslations = {
 - **يجب أن يملك المرسل رصيدا**: يجب أن يمتلك حسابك رصيدا من ذلك IOU. يمكنك الحصول عليه عبر دفعة سابقة، أو صفقة على الـ DEX، أو مباشرة من مُصدر التوكن.
 - **يجب أن يملك المستلم TrustLine**: يجب أن يكون حساب الوجهة قد أنشأ مسبقا TrustLine (\`TrustSet\`) لذلك IOU مع نفس المُصدر. بدون TrustLine، ستفشل الدفعة بخطأ \`tecPATH_DRY\` أو \`tecNO_LINE\`.
 
+كلا الشرطين يُبنيان في وحدة tokens، لذلك يوجد سكربت دفعة IOU هناك: \`distribute-token.js\` في [الوحدة 7](?m=7&l=1) يرسل أول IOU لك مباشرة بعد إصدار token.
+
 ### لماذا تحتاج IOUs أو التوكنات غير XAH إلى هذه الحقول؟
 
 من الممكن أن تُصدر عدة جهات نفس نوع IOU. على سبيل المثال، يمكن لبنوك مختلفة إصدار توكن EUR أو USD خاص بها. الطريقة الوحيدة للتمييز بينها هي تحديد المُصدر إذا كانت تشترك في نفس اسم التوكن.
@@ -2134,83 +1884,6 @@ const arabicModuleTranslations = {
 - حالات خاصة وسلوكيات متقدمة`,
       codeTitles: [
         "إرسال دفعة XAH بين حسابين",
-        "إرسال IOU token بين حسابين",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function sendXahPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // اقرأ seed من .env ولا تكتبه مباشرة في الكود
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED, { algorithm: "secp256k1" });
-
-  const payment = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: process.env.DESTINATION,
-    Amount: xahToDrops("10"), // 10 XAH بوحدة drops
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = wallet.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  console.log("النتيجة:", result.result.meta.TransactionResult);
-  console.log("Hash:", signed.hash);
-
-  await client.disconnect();
-}
-
-sendXahPayment().catch(console.error);`,
-        `require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// لن يعمل هذا الكود إلا إذا كان لديك رصيد من هذا IOU وكان للوجهة TrustLine نشطة. عدّل الحقول وفق إعدادات testnet الخاصة بك.
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // محفظة المرسل (استخدم seed الخاص بك في testnet)، إذا كان لديك seed ليس من نوع secp256k1، احذف الجزء ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // لإرسال IOU، يكون Amount عبارة عن object يحتوي currency وissuer وvalue
-  // المتطلبات:
-  //   1. يجب أن يملك المرسل رصيدا من هذا IOU
-  //   2. يجب أن تملك الوجهة TrustLine لهذا IOU
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rRecipientAddress",
-    // هنا يمكنك تعديل currency وissuer وvalue وفق التوكن الذي تريد إرساله
-    Amount: {
-      currency: "USD",
-      issuer: "rTokenIssuerAddress",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("النتيجة:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("تم إرسال دفعة IOU بنجاح!");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("خطأ: لا يوجد مسار للدفع. هل تملك الوجهة TrustLine؟");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("خطأ: رصيد IOU غير كافٍ.");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
       ],
       slides: [
         {
@@ -2249,108 +1922,6 @@ sendIOUPayment();`,
       codeTitles: [
         "Payment مع Source Tag و Destination Tag و Memos",
         "التحقق من دفعة مستلمة",
-      ],
-      code: [
-        `require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-// دالة مساعدة لتحويل النص إلى hexadecimal
-function toHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-function hexToString(hex) {
-  if (!hex) return null;
-  return Buffer.from(hex, "hex").toString("utf8");
-}
-
-async function sendPaymentWithMemo() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // محفظة المرسل (استخدم seed الخاص بك في testnet)، إذا كان لديك seed ليس من نوع secp256k1، احذف الجزء ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {
-    algorithm: "secp256k1",
-  });
-
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: xahToDrops(5), // 5 XAH
-    SourceTag: 1, // Tag المرسل لتحديد الدفعة
-    DestinationTag: 12345, // Tag الوجهة لتحديد الدفعة
-    Memos: [
-      {
-        Memo: {
-          MemoType: toHex("text/plain"),
-          MemoData: toHex("دفعة كورس Xahau"),
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("النتيجة:", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("تم إرسال الدفعة مع memo!");
-    console.log("Hash:", signed.hash);
-    const lookup = await client.request({
-      command: "tx",
-      transaction: signed.hash,
-    });
-
-    const tx = lookup.result.tx_json ?? lookup.result;
-    console.log("Source Tag:", tx.SourceTag);
-    console.log("Destination Tag:", tx.DestinationTag);
-
-    if (tx.Memos) {
-      tx.Memos.forEach((memoWrapper, index) => {
-        const memo = memoWrapper.Memo;
-
-        const memoType = hexToString(memo.MemoType);
-        const memoData = hexToString(memo.MemoData);
-
-        console.log("MemoType:", memoType);
-        console.log("MemoData:", memoData);
-      });
-    }
-  }
-
-  await client.disconnect();
-}
-
-sendPaymentWithMemo();`,
-        `const { Client, dropsToXah } = require("xahau");
-
-async function verifyPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const hash = "YOUR_TRANSACTION_HASH";
-
-  // tx يعيد المعاملة و metadata الخاصة بها
-  const response = await client.request({
-    command: "tx",
-    transaction: hash,
-  });
-
-  const tx = response.result;
-  console.log("النوع:", tx.TransactionType);
-  console.log("من:", tx.Account);
-  console.log("إلى:", tx.Destination);
-  console.log("DestinationTag:", tx.DestinationTag);
-  console.log("Amount:", dropsToXah(tx.Amount), "XAH");
-  console.log("Result:", tx.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-verifyPayment().catch(console.error);`,
       ],
       slides: [
         {
@@ -2405,7 +1976,6 @@ verifyPayment().catch(console.error);`,
 - استخدم \`DeliverMin\` لتحديد حد أدنى مقبول
 - **مهم**: عند استلام الدفعات، تحقق دائما من \`delivered_amount\` في الـ metadata، **وليس** من حقل \`Amount\`. يمكن لمهاجم إرسال دفعة جزئية تُظهر \`Amount\` مرتفعا لكنها تسلم أقل بكثير`,
       codeTitles: [],
-      code: [],
       slides: [
         {
           title: "مدفوعات متعددة العملات",
@@ -2436,7 +2006,6 @@ function applyArabicTranslations(module) {
 
     lesson.codeBlocks?.forEach((block, index) => {
       block.title.ar = translation.codeTitles[index];
-      block.code.ar = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2497,6 +2066,8 @@ Quand tu envoies du XAH natif, le champ \`Amount\` est une **string** contenant 
 - **L'expéditeur doit avoir des fonds** : ton compte doit détenir un solde de cet IOU. Tu peux l'obtenir via un paiement précédent, un échange sur le DEX, ou directement auprès de l'émetteur du token.
 - **Le destinataire doit avoir une TrustLine** : le compte de destination doit avoir préalablement créé une TrustLine (\`TrustSet\`) pour cet IOU avec le même émetteur. Sans TrustLine, le paiement échouera avec \`tecPATH_DRY\` ou \`tecNO_LINE\`.
 
+Les deux prérequis sont mis en place dans le module sur les tokens ; le script de paiement IOU s'y trouve donc : \`distribute-token.js\`, dans le [module 7](?m=7&l=1), envoie ton premier IOU juste après l'émission d'un token.
+
 ### Pourquoi les IOUs ou tokens autres que XAH ont-ils besoin de ces champs ?
 
 Il est possible que plusieurs entités émettent le même type d'IOU. Par exemple, différentes banques pourraient émettre leur propre token EUR ou USD. Le seul moyen de les différencier est de préciser l'émetteur si elles partagent le même nom de token.
@@ -2510,80 +2081,7 @@ Tu y trouveras :
 - Les flags disponibles (tfPartialPayment, tfLimitQuality, etc.)
 - La liste complète des codes d'erreur et leurs causes
 - Les cas particuliers et comportements avancés`,
-      codeTitles: ["Envoyer un paiement XAH entre deux comptes", "Envoyer un paiement IOU (token) entre deux comptes"],
-      code: [
-`// Envoyer un paiement XAH
-require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const wallet = Wallet.fromSeed(process.env.WALLET_SEED);
-
-  const tx = {
-    TransactionType: "Payment",
-    Account: wallet.address,
-    Destination: "rDestinationAddressHere",
-    Amount: xahToDrops("1"),
-  };
-
-  const prepared = await client.autofill(tx);
-  const result = await client.submitAndWait(wallet.sign(prepared).tx_blob);
-  console.log("Résultat :", result.result.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-`require("dotenv").config();
-const { Client, Wallet } = require("xahau");
-
-// Ce code ne fonctionnera pas à moins que tu aies un solde de cet IOU et que la destination ait une TrustLine active. Modifie les champs selon ta configuration testnet.
-async function sendIOUPayment() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Wallet de l'expéditeur (utilise ton seed testnet), si tu as un seed qui n'est pas secp256k1, retire la partie ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
-
-  // Pour envoyer un IOU, Amount est un objet avec currency, issuer et value
-  // Prérequis :
-  //   1. L'expéditeur doit avoir un solde de cet IOU
-  //   2. La destination doit avoir une TrustLine pour cet IOU
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rRecipientAddress",
-    // Ici tu modifierais currency, issuer et value selon le token que tu veux envoyer
-    Amount: {
-      currency: "USD",
-      issuer: "rTokenIssuerAddress",
-      value: "50", // 50 USD
-    },
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Résultat :", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Paiement IOU envoyé avec succès !");
-  } else if (txResult === "tecPATH_DRY") {
-    console.log("Erreur : aucun chemin de paiement. La destination a-t-elle une TrustLine ?");
-  } else if (txResult === "tecUNFUNDED_PAYMENT") {
-    console.log("Erreur : solde IOU insuffisant.");
-  }
-
-  await client.disconnect();
-}
-
-sendIOUPayment();`,
-      ],
+      codeTitles: ["Envoyer un paiement XAH entre deux comptes"],
       slides: [
         ["Transaction Payment", "Transaction native pour transférer de la valeur\n\n• XAH en drops\n• Destination reçoit\n• Account signe\n• Résultat visible dans les métadonnées"],
         ["Envoyer des IOUs (tokens)", "Amount devient un objet\n\ncurrency : code du token\nissuer : compte émetteur\nvalue : quantité\n\nUne trustline est généralement nécessaire."],
@@ -2622,105 +2120,6 @@ Chaque transaction renvoie un code de résultat :
 - \`tecDST_TAG_NEEDED\` : un Destination Tag est requis
 - \`tecNO_DST_INSUF_XAH\` : la destination n'a pas assez de XAH pour la réserve`,
       codeTitles: ["Payment avec Source Tag, Destination Tag et Memos", "Vérifier un paiement reçu"],
-      code: [
-`require("dotenv").config();
-const { Client, Wallet, xahToDrops } = require("xahau");
-
-// Fonction utilitaire pour convertir du texte en hexadécimal
-function toHex(str) {
-  return Buffer.from(str, "utf8").toString("hex").toUpperCase();
-}
-function hexToString(hex) {
-  if (!hex) return null;
-  return Buffer.from(hex, "hex").toString("utf8");
-}
-
-async function sendPaymentWithMemo() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  // Wallet de l'expéditeur (utilise ton seed testnet), si tu as un seed qui n'est pas secp256k1, retire la partie ", {algorithm: 'secp256k1'}"
-  const sender = Wallet.fromSeed(process.env.WALLET_SEED, {
-    algorithm: "secp256k1",
-  });
-
-  const payment = {
-    TransactionType: "Payment",
-    Account: sender.address,
-    Destination: "rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r",
-    Amount: xahToDrops(5), // 5 XAH
-    SourceTag: 1, // Tag de l'expéditeur pour identifier le paiement
-    DestinationTag: 12345, // Tag de destination pour identifier le paiement
-    Memos: [
-      {
-        Memo: {
-          MemoType: toHex("text/plain"),
-          MemoData: toHex("Paiement du cours Xahau"),
-        },
-      },
-    ],
-  };
-
-  const prepared = await client.autofill(payment);
-  const signed = sender.sign(prepared);
-  const result = await client.submitAndWait(signed.tx_blob);
-
-  const txResult = result.result.meta.TransactionResult;
-  console.log("Résultat :", txResult);
-
-  if (txResult === "tesSUCCESS") {
-    console.log("Paiement avec memo envoyé !");
-    console.log("Hash :", signed.hash);
-    const lookup = await client.request({
-      command: "tx",
-      transaction: signed.hash,
-    });
-
-    const tx = lookup.result.tx_json ?? lookup.result;
-    console.log("Source Tag :", tx.SourceTag);
-    console.log("Destination Tag :", tx.DestinationTag);
-
-    if (tx.Memos) {
-      tx.Memos.forEach((memoWrapper, index) => {
-        const memo = memoWrapper.Memo;
-
-        const memoType = hexToString(memo.MemoType);
-        const memoData = hexToString(memo.MemoData);
-
-        console.log("MemoType :", memoType);
-        console.log("MemoData :", memoData);
-      });
-    }
-  }
-
-  await client.disconnect();
-}
-
-sendPaymentWithMemo();`,
-`// Vérifier une transaction reçue
-const { Client, dropsToXah } = require("xahau");
-
-async function main() {
-  const client = new Client("wss://xahau-test.net");
-  await client.connect();
-
-  const response = await client.request({
-    command: "tx",
-    transaction: "TRANSACTION_HASH_HERE",
-  });
-
-  const tx = response.result;
-  console.log("Type :", tx.TransactionType);
-  console.log("Destination :", tx.Destination);
-  console.log("DestinationTag :", tx.DestinationTag);
-  console.log("Montant :", dropsToXah(tx.Amount), "XAH");
-  console.log("Résultat :", tx.meta.TransactionResult);
-
-  await client.disconnect();
-}
-
-main().catch(console.error);`,
-      ],
       slides: [
         ["Destination Tag", "Identifiant numérique pour le destinataire\n\nTrès utilisé par les exchanges et services custodial\n\nSans tag, le service peut ne pas savoir à qui créditer le dépôt."],
         ["Memos", "Données facultatives dans une transaction\n\n• Encodées en hexadécimal\n• Utiles pour notes ou références\n• Publiques sur le ledger\n\nN'y mets jamais de secret."],
@@ -2788,7 +2187,6 @@ function applyFrenchTranslations(module) {
       if (typeof block.code === "string") {
         block.code = { en: block.code };
       }
-      block.code.fr = translation.code[index];
     });
 
     lesson.slides?.forEach((slide, index) => {
@@ -2801,5 +2199,8 @@ function applyFrenchTranslations(module) {
 }
 
 applyFrenchTranslations(moduleData);
+
+// French and Arabic code: the English code, line by line, with its prose translated
+deriveCodeTranslations(moduleData);
 
 export default moduleData;

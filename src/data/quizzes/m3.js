@@ -7,13 +7,13 @@ export default [
   {
     id: 'm3q1',
     question: {
-      en: 'When does an account start existing on the Xahau ledger?',
-      es: '¿Cuándo empieza a existir una cuenta en el ledger de Xahau?',
+      en: 'When does an account start existing on the Xahau Network?',
+      es: '¿Cuándo empieza a existir una cuenta en la red Xahau?',
       fr: 'À partir de quand un compte existe-t-il sur le registre Xahau ?',
-      pt: 'Quando uma conta passa a existir no ledger da Xahau?',
-      jp: 'Xahau のレジャー上でアカウントはいつ存在し始めますか？',
-      ko: 'Xahau 원장에서 계정은 언제부터 존재하게 되나요?',
-      zh: '账户从什么时候开始存在于 Xahau 账本上？',
+      pt: 'Quando uma conta passa a existir na rede Xahau?',
+      jp: 'Xahau ネットワーク上でアカウントはいつ存在し始めますか？',
+      ko: 'Xahau 네트워크에서 계정은 언제부터 존재하게 되나요?',
+      zh: '账户从什么时候开始存在于 Xahau 网络上？',
       ar: 'متى يبدأ وجود الحساب على دفتر Xahau؟',
     },
     options: [
