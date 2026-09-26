@@ -45,7 +45,7 @@ export function XahauLockup({ label, compact = false, href = '/' }) {
       aria-label={`Xahau ${label}`}
     >
       <img
-        src="/xahau-logo.svg"
+        src={`${import.meta.env.BASE_URL}xahau-logo.svg`}
         alt="Xahau"
         width={compact ? 108 : 126}
         height={compact ? 20 : 23}

@@ -48,7 +48,7 @@ export default [
   },
   {
     // Node context, not browser
-    files: ['scripts/**/*.mjs', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js'],
+    files: ['scripts/**/*.mjs', 'site.config.js', 'vite.config.js', 'tailwind.config.js', 'postcss.config.js'],
     languageOptions: {
       globals: { ...globals.node },
     },

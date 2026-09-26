@@ -7,6 +7,7 @@
  *                                   time someone opens search
  *   public/sitemap.xml              one entry per lesson deep link
  *   public/robots.txt               points crawlers at the sitemap
+ *   public/CNAME                    the custom domain, when the site owns one
  *
  * Why: courses.js used to import all twelve modules statically, so every
  * visitor downloaded the entire curriculum (~3.1 MB of JS) before the index
@@ -17,7 +18,7 @@
  * Runs automatically via `npm run prebuild` / `predev`.
  */
 
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -27,6 +28,7 @@ const { SITE_URL: SITE } = await import(path.join(ROOT, 'site.config.js'))
 
 const { MODULE_FILES } = await import(path.join(ROOT, 'src/data/module-list.js'))
 const { LOCALES } = await import(path.join(ROOT, 'src/data/locales.js'))
+const { codeFile } = await import(path.join(ROOT, 'src/data/code-files.js'))
 
 /** Markdown is for reading, not matching — flatten it for the search body. */
 function plain(text) {
@@ -57,6 +59,8 @@ const manifest = modules.map(({ file, mod }) => ({
     title: l.title,
     hasCode: !!l.codeBlocks?.length,
     hasSlides: !!l.slides?.length,
+    // Which files the Code tab shows, so theory can link to them
+    files: (l.codeBlocks ?? []).map(codeFile).filter(Boolean),
   })),
 }))
 
@@ -120,10 +124,23 @@ await writeFile(
   `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
 )
 
+// GitHub Pages serves a custom domain only while the deployed site carries a
+// CNAME file naming it. Derive it from SITE_URL too, so moving hosts can't
+// leave a stale one behind. Only a site at the root of its own domain may
+// claim it: on a sub-path (learn.xahau.network/xahau-course) the domain
+// belongs to whichever Pages site serves its root, and a CNAME here would try
+// to take it over. A *.github.io URL needs none.
+const HOST = new URL(SITE).hostname
+const CNAME = path.join(ROOT, 'public/CNAME')
+const ownsDomain = new URL(SITE).pathname === '/' && !HOST.endsWith('.github.io')
+if (ownsDomain) await writeFile(CNAME, `${HOST}\n`)
+else await rm(CNAME, { force: true })
+
 const lessons = manifest.reduce((n, m) => n + m.lessons.length, 0)
 console.log(
   `course data: ${manifest.length} modules, ${lessons} lessons\n` +
     `  manifest  src/data/generated/manifest.js\n` +
     `  search    ${sizes.join(', ')}\n` +
-    `  sitemap   ${urls.length} urls at ${SITE}`,
+    `  sitemap   ${urls.length} urls at ${SITE}\n` +
+    `  CNAME     ${ownsDomain ? HOST : 'none (not at the root of its own domain)'}`,
 )

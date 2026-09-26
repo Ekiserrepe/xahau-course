@@ -16,7 +16,11 @@ function siteUrl() {
   }
 }
 
+// Served from a sub-path (learn.xahau.network/xahau-course)? Build for it.
+const BASE = new URL(SITE_URL).pathname.replace(/\/?$/, '/')
+
 export default defineConfig({
+  base: BASE,
   plugins: [react(), siteUrl()],
   server: {
     port: 3000,
@@ -27,6 +31,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // The French and Arabic code dictionaries every module shares: one chunk,
+          // fetched once, instead of riding inside whichever module imports them first
+          if (id.includes('/src/data/code-i18n')) return 'code-i18n'
           if (id.includes('/src/data/modules/')) {
             return id.split('/').pop().replace('.js', '')
           }

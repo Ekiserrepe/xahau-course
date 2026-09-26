@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "pretest": "node scripts/build-course-data.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check-links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

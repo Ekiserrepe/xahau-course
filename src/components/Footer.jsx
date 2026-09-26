@@ -74,7 +74,7 @@ export default function Footer({ labels, onOpenModules, onStart }) {
           {/* Brand column */}
           <div className="md:col-span-5 flex flex-col gap-5">
             <img
-              src="/xahau-logo.svg"
+              src={`${import.meta.env.BASE_URL}xahau-logo.svg`}
               alt="Xahau"
               width={168}
               height={30}

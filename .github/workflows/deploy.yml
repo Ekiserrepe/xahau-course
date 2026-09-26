@@ -1,8 +1,10 @@
 name: Deploy to GitHub Pages
 
-# Manual only, on purpose: this repo publishes to learnxahau.inftf.org and
-# whoever owns that host should confirm Pages is the right target before this
-# starts running on its own. To deploy automatically on every push to main,
+# Manual only, on purpose: this repo publishes to the SITE_URL in
+# site.config.js (learn.xahau.network/xahau-course by default), and whoever
+# owns that host should confirm Pages is the right target before this starts
+# running on its own. To build for another host, set a repository variable
+# SITE_URL (Settings -> Secrets and variables -> Actions -> Variables). To deploy automatically on every push to main,
 # uncomment the `push` trigger below and enable Pages (Settings -> Pages ->
 # Source: GitHub Actions).
 on:
@@ -42,6 +44,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Empty unless the repository variable is set: site.config.js then
+          # falls back to its default
+          SITE_URL: ${{ vars.SITE_URL }}
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

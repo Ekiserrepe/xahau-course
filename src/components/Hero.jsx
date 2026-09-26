@@ -24,7 +24,7 @@ export default function Hero({
         aria-hidden="true"
       >
         <img
-          src="/worldmap.svg"
+          src={`${import.meta.env.BASE_URL}worldmap.svg`}
           alt=""
           className="x-hero-map w-full h-full object-contain"
           style={{ maxHeight: 620 }}

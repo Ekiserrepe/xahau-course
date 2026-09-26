@@ -1,13 +1,14 @@
 /**
- * Site-wide configuration — the single source of truth for anything that
+ * Site-wide configuration: the single source of truth for anything that
  * depends on where this is published.
  *
- * SITE_URL feeds four things that all silently break if they disagree with
- * the real host: the canonical link, the Open Graph and Twitter image URLs
- * (social platforms reject relative paths), robots.txt, and sitemap.xml.
+ * SITE_URL feeds everything that silently breaks if it disagrees with the
+ * real host: the canonical link, the Open Graph and Twitter image URLs
+ * (social platforms reject relative paths), robots.txt, sitemap.xml, Vite's
+ * `base` (for a sub-path deploy) and public/CNAME (only when the course has a
+ * custom domain to itself, at its root).
  *
- * No trailing slash. It is injected into index.html by vite.config.js and
- * read by scripts/build-course-data.mjs; nothing else should hardcode it, so
- * moving the site is this one line.
+ * To move the site, change the default below, or set SITE_URL in the
+ * environment to build for another host without touching code. No trailing slash needed.
  */
-export const SITE_URL = 'https://learnxahau.inftf.org'
+export const SITE_URL = (process.env.SITE_URL || 'https://learn.xahau.network/xahau-course').replace(/\/+$/, '')

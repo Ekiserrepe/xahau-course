@@ -2,7 +2,7 @@
 
 A free, open-source **basic course on Xahau**, in eight languages — from your first wallet to your first Hook.
 
-[https://learnxahau.inftf.org](https://learnxahau.inftf.org).
+[https://learn.xahau.network/xahau-course](https://learn.xahau.network/xahau-course).
 
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Languages](https://img.shields.io/badge/languages-ES%20%7C%20EN%20%7C%20JP%7C%20KO%7C%20ZH-blue)
@@ -37,14 +37,34 @@ Shared primitives (`.x-card`, `.x-btn`, `.x-chip`, `.x-act-label`) and the token
 
 ## Deployment
 
-`site.config.js` holds `SITE_URL`, currently `https://learnxahau.inftf.org`.
-It feeds the canonical link, the Open Graph and Twitter image URLs,
-`robots.txt` and `sitemap.xml` — moving the site means changing that one
-line and rebuilding, nothing else hardcodes it.
+`site.config.js` holds `SITE_URL`, by default
+`https://learn.xahau.network/xahau-course`. Everything that depends on the
+host is derived from it at build time, and nothing else hardcodes it:
+
+| Derived | Where |
+|---|---|
+| Canonical link, Open Graph and Twitter image URLs | `index.html`, via `vite.config.js` |
+| Vite's `base` (the sub-path assets are served from) | `vite.config.js` |
+| `sitemap.xml` and `robots.txt` | `scripts/build-course-data.mjs` |
+| `public/CNAME` | `scripts/build-course-data.mjs` |
+
+### Moving the site
+
+- **For one build**, set the variable: `SITE_URL=https://example.org npm run build`.
+- **For every GitHub Pages deploy**, set a repository variable `SITE_URL`
+  (Settings → Secrets and variables → Actions → Variables). The deploy
+  workflow passes it to the build; left unset, the default applies.
+- **For good**, change the default in `site.config.js`.
+
+`public/CNAME` is generated, never committed. It is written only when the
+site sits at the root of a domain of its own (for example
+`https://learnxahau.inftf.org`), and removed otherwise: on a sub-path the
+domain belongs to the Pages site that serves its root, and a *.github.io URL
+needs none. On a sub-path, `robots.txt` is only honoured if the host's root
+serves it, so list this course's `sitemap.xml` there.
 
 `.github/workflows/deploy.yml` is manual-trigger only until someone confirms
-GitHub Pages is the right target. If it is, and the custom domain stays,
-the repo will also need a `public/CNAME` containing the bare hostname.
+GitHub Pages is the right target.
 
 ## Tech Stack
 
@@ -113,6 +133,7 @@ tests/
 | `npm run build` | regenerates course data, then builds |
 | `npm run lint` | ESLint |
 | `npm test` | regenerates course data, then runs the smoke tests |
+| `npm run check-links` | checks every external link in the lessons, quizzes and README |
 
 ## Contributing
 
