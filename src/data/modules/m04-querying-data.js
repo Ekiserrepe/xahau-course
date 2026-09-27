@@ -22,166 +22,306 @@ const moduleData = {
         zh: "连接到 Xahau 节点",
       },
       theory: {
-        es: `Para leer datos de la blockchain Xahau, necesitas conectarte a un **nodo de la red** mediante **WebSocket**. Los nodos exponen una API JSON-RPC que permite consultar toda la información del ledger.
+        es: `Un script no lee el ledger directamente: pregunta a un **nodo**, un servidor que ejecuta \`xahaud\` y tiene una copia del ledger. Esta lección explica cómo funciona esa conversación y las ideas que usa cualquier consulta.
 
-### Tipos de nodos
+### Hablar con un nodo
 
-- **Nodos públicos**: Mantenidos por la comunidad, accesibles para cualquiera. Ideales para desarrollo
-- **Nodos propios**: Puedes ejecutar tu propio nodo para mayor control y fiabilidad
+La librería xahau abre una conexión **WebSocket** con un nodo y la mantiene abierta. Cada petición es un mensaje JSON con un \`command\` y sus parámetros, y el nodo responde con un resultado JSON:
 
-### Endpoints principales
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
 
-| Red | WebSocket URL |
+Los nodos públicos bastan para desarrollar y para este curso:
+
+| Red | URL WebSocket | ID de red |
+|---|---|---|
+| Mainnet | \`wss://xahau.network\` | 21337 |
+| Testnet | \`wss://xahau-test.net\` | 21338 |
+
+En producción puedes ejecutar tu propio nodo: su disponibilidad, sus límites de peticiones y su historial dejan de depender de otros.
+
+### Los comandos
+
+| Para leer | Comandos |
 |---|---|
-| Mainnet | \`wss://xahau.network\` |
-| Testnet | \`wss://xahau-test.net\` |
+| El nodo y la red | \`server_info\`, \`fee\` |
+| Una cuenta | \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\` |
+| Un ledger o un objeto | \`ledger\`, \`ledger_entry\` |
+| Una transacción | \`tx\` |
+| Eventos en el momento | \`subscribe\`, \`unsubscribe\` |
 
-### Tipos de consultas
+### Tres ideas que usa cualquier consulta
 
-La API de Xahau ofrece comandos para consultar:
-- **Información del servidor**: \`server_info\`, \`server_state\`
-- **Cuentas**: \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\`
-- **Ledger**: \`ledger\`, \`ledger_data\`, \`ledger_entry\`
-- **Transacciones**: \`tx\`, \`transaction_entry\`
-- **Suscripciones**: \`subscribe\` / \`unsubscribe\` para eventos en tiempo real
+- **Qué ledger.** \`ledger_index: "validated"\` lee el último ledger en el que la red se puso de acuerdo: sus datos no cambiarán. \`"current"\` lee el ledger en curso, que todavía puede cambiar. Usa \`"validated"\` salvo que necesites lo más reciente.
+- **Drops.** Los importes en XAH viajan como cadenas en **drops**: 1 XAH = 1.000.000 drops. \`"5000000"\` son 5 XAH.
+- **Markers.** Un resultado largo llega por páginas. Cuando una respuesta incluye un \`marker\`, envía la misma petición con ese marker para obtener la página siguiente.
 
-### Conceptos importantes
+### Los ejemplos
 
-- **Ledger index**: Puedes consultar un ledger específico por su número, o usar \`"validated"\` para el último validado
-- **Drops**: Las cantidades de XAH se expresan en drops (1 XAH = 1,000,000 drops)
-- **Marcadores (Markers)**: Para paginar resultados grandes, la API usa marcadores`,
-        pt: `Para ler dados da blockchain Xahau, você precisa se conectar a um **nó da rede** por meio de **WebSocket**. Os nós expõem uma API JSON-RPC que permite consultar toda a informação do ledger.
-### Tipos de nós
-- **Nós públicos**: Mantidos pela comunidade, acessíveis para qualquer pessoa. Ideais para desenvolvimento
-- **Nós próprios**: Você pode executar seu próprio nó para maior controle e confiabilidade
-### Endpoints principais
-| Rede | WebSocket URL |
+El primer ejemplo pregunta al nodo de testnet por sí mismo. Salida:
+
+\`\`\`
+=== Información del servidor ===
+Versión: 2026.6.21-release+3350
+ID de red: 21338
+Estado: full
+Peers conectados: 3
+Ledger validado: 12676349
+Quorum de validación: 2
+\`\`\`
+
+\`full\` significa que el nodo sigue a la red y tiene el ledger actual. El quórum de validación es cuántos validadores de confianza deben ponerse de acuerdo sobre un ledger. El segundo ejemplo lee una cuenta con \`account_info\`, el objeto \`AccountRoot\` de la [lección 1.3](?m=1&l=2).`,
+        pt: `Um script não lê o ledger diretamente: ele pergunta a um **nó**, um servidor que executa o \`xahaud\` e tem uma cópia do ledger. Esta lição explica como funciona essa conversa e as ideias que qualquer consulta usa.
+
+### Conversar com um nó
+
+A biblioteca xahau abre uma conexão **WebSocket** com um nó e a mantém aberta. Cada requisição é uma mensagem JSON com um \`command\` e os seus parâmetros, e o nó responde com um resultado JSON:
+
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
+
+Os nós públicos bastam para desenvolver e para este curso:
+
+| Rede | URL WebSocket | ID de rede |
+|---|---|---|
+| Mainnet | \`wss://xahau.network\` | 21337 |
+| Testnet | \`wss://xahau-test.net\` | 21338 |
+
+Em produção você pode executar o seu próprio nó: a disponibilidade, os limites de requisições e o histórico deixam de depender de terceiros.
+
+### Os comandos
+
+| Para ler | Comandos |
 |---|---|
-| Mainnet | \`wss://xahau.network\` |
-| Testnet | \`wss://xahau-test.net\` |
-### Tipos de consultas
-A API da Xahau oferece comandos para consultar:
-- **Informação do servidor**: \`server_info\`, \`server_state\`
-- **Contas**: \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\`
-- **Ledger**: \`ledger\`, \`ledger_data\`, \`ledger_entry\`
-- **Transações**: \`tx\`, \`transaction_entry\`
-- **Assinaturas**: \`subscribe\` / \`unsubscribe\` para eventos em tempo real
-### Conceitos importantes
-- **Ledger index**: Você pode consultar um ledger específico por seu número, ou usar \`"validated"\` para o último validado
-- **Drops**: as quantidades de XAH são expressas em drops (1 XAH = 1.000.000 drops)
-- **Marcadores (Markers)**: Para paginar resultados grandes, a API usa marcadores`,
-        en: `To read data from the Xahau blockchain, you need to connect to a **network node** via **WebSocket**. Nodes expose a JSON-RPC API that allows you to query all ledger information.
+| O nó e a rede | \`server_info\`, \`fee\` |
+| Uma conta | \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\` |
+| Um ledger ou um objeto | \`ledger\`, \`ledger_entry\` |
+| Uma transação | \`tx\` |
+| Eventos no momento | \`subscribe\`, \`unsubscribe\` |
 
-### Node types
+### Três ideias que qualquer consulta usa
 
-- **Public nodes**: Maintained by the community, accessible to anyone. Ideal for development
-- **Private nodes**: You can run your own node for greater control and reliability
+- **Qual ledger.** \`ledger_index: "validated"\` lê o último ledger em que a rede chegou a acordo: os seus dados não vão mudar. \`"current"\` lê o ledger em andamento, que ainda pode mudar. Use \`"validated"\`, a não ser que precise do mais recente.
+- **Drops.** Os valores em XAH viajam como strings em **drops**: 1 XAH = 1.000.000 drops. \`"5000000"\` são 5 XAH.
+- **Markers.** Um resultado longo chega em páginas. Quando uma resposta inclui um \`marker\`, envie a mesma requisição com esse marker para obter a página seguinte.
 
-### Main endpoints
+### Os exemplos
 
-| Network | WebSocket URL |
+O primeiro exemplo pergunta ao nó da testnet sobre si mesmo. Saída:
+
+\`\`\`
+=== Informação do servidor ===
+Versão: 2026.6.21-release+3350
+ID de rede: 21338
+Estado: full
+Peers conectados: 3
+Ledger validado: 12676350
+Quorum de validação: 2
+\`\`\`
+
+\`full\` significa que o nó acompanha a rede e tem o ledger atual. O quórum de validação é quantos validadores confiáveis precisam concordar sobre um ledger. O segundo exemplo lê uma conta com \`account_info\`, o objeto \`AccountRoot\` da [lição 1.3](?m=1&l=2).`,
+        en: `A script doesn't read the ledger directly: it asks a **node**, a server that runs \`xahaud\` and holds a copy of the ledger. This lesson explains how that conversation works and the ideas every query uses.
+
+### Talking to a node
+
+The xahau library opens a **WebSocket** connection to a node and keeps it open. Each request is a JSON message with a \`command\` and its parameters, and the node answers with a JSON result:
+
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
+
+The public nodes are enough for development and for this course:
+
+| Network | WebSocket URL | Network ID |
+|---|---|---|
+| Mainnet | \`wss://xahau.network\` | 21337 |
+| Testnet | \`wss://xahau-test.net\` | 21338 |
+
+For production you can run your own node: its availability, rate limits and history no longer depend on someone else.
+
+### The commands
+
+| To read | Commands |
 |---|---|
-| Mainnet | \`wss://xahau.network\` |
-| Testnet | \`wss://xahau-test.net\` |
+| The node and the network | \`server_info\`, \`fee\` |
+| An account | \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\` |
+| A ledger or one object | \`ledger\`, \`ledger_entry\` |
+| A transaction | \`tx\` |
+| Events as they happen | \`subscribe\`, \`unsubscribe\` |
 
-### Query types
+### Three ideas every query uses
 
-The Xahau API provides commands to query:
-- **Server information**: \`server_info\`, \`server_state\`
-- **Accounts**: \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\`
-- **Ledger**: \`ledger\`, \`ledger_data\`, \`ledger_entry\`
-- **Transactions**: \`tx\`, \`transaction_entry\`
-- **Subscriptions**: \`subscribe\` / \`unsubscribe\` for real-time events
+- **Which ledger.** \`ledger_index: "validated"\` reads the last ledger the network agreed on: its data won't change. \`"current"\` reads the ledger in progress, which can still change. Use \`"validated"\` unless you need the very latest.
+- **Drops.** Amounts of XAH travel as strings in **drops**: 1 XAH = 1,000,000 drops. \`"5000000"\` is 5 XAH.
+- **Markers.** A long result comes in pages. When a response includes a \`marker\`, send the same request with that marker to get the next page.
 
-### Important concepts
+### The examples
 
-- **Ledger index**: You can query a specific ledger by its number, or use \`"validated"\` for the latest validated one
-- **Drops**: XAH amounts are expressed in drops (1 XAH = 1,000,000 drops)
-- **Markers**: To paginate large result sets, the API uses markers`,
-        jp: `Xahauブロックチェーンからデータを読み取るには、**WebSocket**を使用して**ネットワークノード**に接続する必要があります。ノードはJSON-RPC APIを公開しており、レジャーのすべての情報を照会できます。
+The first example asks the testnet node about itself. Output:
 
-### ノードの種類
+\`\`\`
+=== Server Information ===
+Version: 2026.6.21-release+3350
+Network ID: 21338
+State: full
+Connected peers: 3
+Validated ledger: 12676349
+Validation quorum: 2
+\`\`\`
 
-- **パブリックノード**：コミュニティによって維持管理され、誰でもアクセス可能。開発に最適
-- **プライベートノード**：より高い制御性と信頼性のために自分のノードを実行できる
+\`full\` means the node follows the network and has the current ledger. The validation quorum is how many trusted validators must agree on a ledger. The second example reads an account with \`account_info\`, the \`AccountRoot\` object of [lesson 1.3](?m=1&l=2).`,
+        jp: `スクリプトは台帳を直接読むわけではありません。\`xahaud\` を実行し台帳のコピーを持つサーバー、つまり**ノード**に問い合わせます。このレッスンでは、そのやり取りの仕組みと、どの照会でも使う考え方を説明します。
 
-### 主要なエンドポイント
+### ノードとのやり取り
 
-| ネットワーク | WebSocket URL |
+xahau ライブラリはノードとの **WebSocket** 接続を開き、開いたままにします。各リクエストは \`command\` とそのパラメータを持つ JSON メッセージで、ノードは JSON の結果を返します。
+
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
+
+開発とこのコースには公開ノードで十分です。
+
+| ネットワーク | WebSocket URL | ネットワーク ID |
+|---|---|---|
+| メインネット | \`wss://xahau.network\` | 21337 |
+| テストネット | \`wss://xahau-test.net\` | 21338 |
+
+本番環境では自分のノードを運用することもできます。可用性、リクエスト制限、履歴が他者に左右されなくなります。
+
+### コマンド
+
+| 読むもの | コマンド |
 |---|---|
-| メインネット | \`wss://xahau.network\` |
-| テストネット | \`wss://xahau-test.net\` |
+| ノードとネットワーク | \`server_info\`、\`fee\` |
+| アカウント | \`account_info\`、\`account_lines\`、\`account_objects\`、\`account_tx\` |
+| 台帳や1つのオブジェクト | \`ledger\`、\`ledger_entry\` |
+| トランザクション | \`tx\` |
+| 発生中のイベント | \`subscribe\`、\`unsubscribe\` |
 
-### 照会の種類
+### どの照会でも使う3つの考え方
 
-Xahau APIは次のようなコマンドを提供しています。
-- **サーバー情報**：\`server_info\`、\`server_state\`
-- **アカウント**：\`account_info\`、\`account_lines\`、\`account_objects\`、\`account_tx\`
-- **レジャー**：\`ledger\`、\`ledger_data\`、\`ledger_entry\`
-- **トランザクション**：\`tx\`、\`transaction_entry\`
-- **サブスクリプション**：リアルタイムイベント用の\`subscribe\`/\`unsubscribe\`
+- **どの台帳か。** \`ledger_index: "validated"\` は、ネットワークが合意した最後の台帳を読みます。そのデータは変わりません。\`"current"\` は進行中の台帳を読み、まだ変わる可能性があります。最新の状態が必要な場合を除き、\`"validated"\` を使います。
+- **drops。** XAH の金額は **drops** 単位の文字列でやり取りします。1 XAH = 1,000,000 drops です。\`"5000000"\` は 5 XAH です。
+- **marker。** 長い結果はページに分かれて届きます。レスポンスに \`marker\` が含まれていたら、その marker を付けて同じリクエストを送ると次のページが得られます。
 
-### 重要な概念
+### 例
 
-- **レジャーインデックス** (\`ledger_index\`)：番号で特定のレジャーを照会できる。最後に検証されたものには\`"validated"\`を使用
-- **ドロップ（drops）**：XAHの量はドロップで表現される（1 XAH = 1,000,000ドロップ）
-- **マーカー** (\`marker\`)：大量の結果をページングするために、APIはマーカーを使用する`,
-        ko: `Xahau 블록체인에서 데이터를 읽으려면 **WebSocket**을 통해 **네트워크 노드**에 연결해야 합니다. 노드는 JSON-RPC API를 제공하며, 이를 통해 ledger의 모든 정보를 조회할 수 있습니다.
+最初の例は、テストネットのノードにノード自身の情報を問い合わせます。出力です。
 
-### 노드 유형
+\`\`\`
+=== サーバー情報 ===
+バージョン： 2026.6.21-release+3350
+ネットワークID： 21338
+状態： full
+接続ピア数： 3
+検証済みレジャー： 12676350
+検証クォーラム： 2
+\`\`\`
 
-- **공용 노드**: 커뮤니티가 운영하며 누구나 접근할 수 있습니다. 개발에 적합합니다
-- **자체 노드**: 더 높은 제어력과 안정성을 위해 직접 노드를 운영할 수 있습니다
+\`full\` は、ノードがネットワークに追従し、現在の台帳を持っていることを意味します。検証クォーラムは、1つの台帳について合意しなければならない信頼済みバリデータの数です。2つ目の例は \`account_info\` でアカウント、つまり[レッスン 1.3](?m=1&l=2) の \`AccountRoot\` オブジェクトを読みます。`,
+        ko: `스크립트는 원장을 직접 읽지 않습니다. \`xahaud\`를 실행하고 원장 사본을 가진 서버, 즉 **노드**에 묻습니다. 이 레슨에서는 그 대화가 어떻게 이루어지는지와 모든 조회에 쓰이는 개념을 설명합니다.
 
-### 주요 엔드포인트
+### 노드와 대화하기
 
-| 네트워크 | WebSocket URL |
+xahau 라이브러리는 노드와 **WebSocket** 연결을 열고 열어 둡니다. 각 요청은 \`command\`와 파라미터를 담은 JSON 메시지이며, 노드는 JSON 결과로 응답합니다.
+
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
+
+개발과 이 강좌에는 공개 노드로 충분합니다.
+
+| 네트워크 | WebSocket URL | 네트워크 ID |
+|---|---|---|
+| 메인넷 | \`wss://xahau.network\` | 21337 |
+| 테스트넷 | \`wss://xahau-test.net\` | 21338 |
+
+프로덕션에서는 직접 노드를 운영할 수 있습니다. 가용성, 요청 제한, 이력이 더 이상 다른 사람에게 좌우되지 않습니다.
+
+### 명령
+
+| 읽을 대상 | 명령 |
 |---|---|
-| Mainnet | \`wss://xahau.network\` |
-| Testnet | \`wss://xahau-test.net\` |
+| 노드와 네트워크 | \`server_info\`, \`fee\` |
+| 계정 | \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\` |
+| 원장 또는 객체 하나 | \`ledger\`, \`ledger_entry\` |
+| 트랜잭션 | \`tx\` |
+| 발생하는 이벤트 | \`subscribe\`, \`unsubscribe\` |
 
-### 조회 유형
+### 모든 조회에 쓰이는 세 가지 개념
 
-Xahau API는 다음 명령을 제공합니다:
-- **서버 정보**: \`server_info\`, \`server_state\`
-- **계정**: \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\`
-- **Ledger**: \`ledger\`, \`ledger_data\`, \`ledger_entry\`
-- **트랜잭션**: \`tx\`, \`transaction_entry\`
-- **구독**: 실시간 이벤트를 위한 \`subscribe\` / \`unsubscribe\`
+- **어느 원장인가.** \`ledger_index: "validated"\`는 네트워크가 합의한 마지막 원장을 읽습니다. 그 데이터는 바뀌지 않습니다. \`"current"\`는 진행 중인 원장을 읽으며, 아직 바뀔 수 있습니다. 가장 최신 상태가 필요한 경우가 아니면 \`"validated"\`를 씁니다.
+- **drops.** XAH 금액은 **drops** 단위 문자열로 오갑니다. 1 XAH = 1,000,000 drops입니다. \`"5000000"\`은 5 XAH입니다.
+- **marker.** 긴 결과는 페이지로 나뉘어 옵니다. 응답에 \`marker\`가 있으면, 그 marker를 넣어 같은 요청을 보내 다음 페이지를 받습니다.
 
-### 중요한 개념
+### 예제
 
-- **Ledger index**: 번호로 특정 ledger를 조회하거나, 마지막 검증 ledger에는 \`"validated"\`를 사용할 수 있습니다
-- **Drops**: XAH 수량은 drops 단위로 표현됩니다 (1 XAH = 1,000,000 drops)
-- **Markers**: 많은 결과를 페이지네이션할 때 API가 marker를 사용합니다`,
-        zh: `要从 Xahau 区块链读取数据，你需要通过 **WebSocket** 连接到**网络节点**。节点暴露 JSON-RPC API，可查询账本的所有信息。
+첫 번째 예제는 테스트넷 노드에 노드 자신의 정보를 묻습니다. 출력입니다.
 
-### 节点类型
+\`\`\`
+=== 서버 정보 ===
+버전: 2026.6.21-release+3350
+네트워크 ID: 21338
+상태: full
+연결된 피어 수: 3
+검증된 ledger: 12676350
+검증 쿼럼: 2
+\`\`\`
 
-- **公共节点**：由社区维护，任何人均可访问。适合开发使用
-- **自有节点**：你可以运行自己的节点，以获得更高的控制力和可靠性
+\`full\`은 노드가 네트워크를 따라가며 현재 원장을 가지고 있다는 뜻입니다. 검증 쿼럼은 한 원장에 대해 합의해야 하는 신뢰 검증자의 수입니다. 두 번째 예제는 \`account_info\`로 계정, 즉 [레슨 1.3](?m=1&l=2)의 \`AccountRoot\` 객체를 읽습니다.`,
+        zh: `脚本并不直接读取账本：它向一个**节点**发出请求，节点是运行 \`xahaud\` 并持有账本副本的服务器。本课说明这种通信如何进行，以及每次查询都会用到的概念。
 
-### 主要端点
+### 与节点通信
 
-| 网络 | WebSocket URL |
+xahau 库会与节点建立一个 **WebSocket** 连接并保持打开。每个请求都是一条带有 \`command\` 及其参数的 JSON 消息，节点返回一个 JSON 结果：
+
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
+
+开发和本课程使用公共节点就足够了：
+
+| 网络 | WebSocket URL | 网络 ID |
+|---|---|---|
+| 主网 | \`wss://xahau.network\` | 21337 |
+| 测试网 | \`wss://xahau-test.net\` | 21338 |
+
+在生产环境中，你可以运行自己的节点：它的可用性、请求限制和历史数据不再依赖他人。
+
+### 命令
+
+| 要读取的内容 | 命令 |
 |---|---|
-| 主网 | \`wss://xahau.network\` |
-| 测试网 | \`wss://xahau-test.net\` |
+| 节点与网络 | \`server_info\`、\`fee\` |
+| 一个账户 | \`account_info\`、\`account_lines\`、\`account_objects\`、\`account_tx\` |
+| 一个账本或一个对象 | \`ledger\`、\`ledger_entry\` |
+| 一笔交易 | \`tx\` |
+| 实时事件 | \`subscribe\`、\`unsubscribe\` |
 
-### 查询类型
+### 每次查询都会用到的三个概念
 
-Xahau API 提供以下命令：
-- **服务器信息**：\`server_info\`、\`server_state\`
-- **账户**：\`account_info\`、\`account_lines\`、\`account_objects\`、\`account_tx\`
-- **账本**：\`ledger\`、\`ledger_data\`、\`ledger_entry\`
-- **交易**：\`tx\`、\`transaction_entry\`
-- **订阅**：用于实时事件的 \`subscribe\` / \`unsubscribe\`
+- **哪个账本。** \`ledger_index: "validated"\` 读取网络已达成一致的最新账本：它的数据不会再变。\`"current"\` 读取正在进行中的账本，数据仍可能变化。除非需要最新状态，否则使用 \`"validated"\`。
+- **Drops。** XAH 金额以 **drops** 为单位、以字符串形式传递：1 XAH = 1,000,000 drops。\`"5000000"\` 就是 5 XAH。
+- **Marker。** 较长的结果会分页返回。当响应中包含 \`marker\` 时，带上这个 marker 再发送同样的请求，即可获得下一页。
 
-### 重要概念
+### 示例
 
-- **账本索引（Ledger index）**：可按编号查询特定账本，或使用 \`"validated"\` 查询最新已验证账本
-- **Drops**：XAH 数量以 drops 表示（1 XAH = 1,000,000 drops）
-- **标记（Markers）**：对大量结果分页时，API 使用标记`,
+第一个示例向测试网节点查询它自身的信息。输出：
+
+\`\`\`
+=== 服务器信息 ===
+版本: 2026.6.21-release+3350
+网络 ID: 21338
+状态: full
+已连接节点数: 3
+已验证账本: 12676350
+验证法定人数: 2
+\`\`\`
+
+\`full\` 表示节点正在跟随网络，并拥有当前账本。验证法定人数是指必须就一个账本达成一致的受信任验证者数量。第二个示例用 \`account_info\` 读取一个账户，也就是[第 1.3 课](?m=1&l=2)中的 \`AccountRoot\` 对象。`,
       },
       codeBlocks: [
         {
@@ -546,17 +686,42 @@ getAccountInfo(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algo
         {
           title: { es: "Conexión a Xahau", pt: "Conexão com Xahau", en: "Connecting to Xahau", jp: "Xahauへの接続", ko: "Xahau 연결", zh: "连接到 Xahau" },
           content: {
-            es: "Conexión vía WebSocket a nodos públicos\n\n🌐 Mainnet: wss://xahau.network\n🧪 Testnet: wss://xahau-test.net\n\nAPI JSON-RPC para todas las consultas",
+            es: `Conexión vía WebSocket a nodos públicos
+
+🌐 Mainnet: wss://xahau.network
+🧪 Testnet: wss://xahau-test.net
+
+Peticiones y respuestas en JSON`,
             pt: `Conexão via WebSocket a nós públicos
 
 🌐 Mainnet: wss://xahau.network
 🧪 Testnet: wss://xahau-test.net
 
-API JSON-RPC para todas as consultas`,
-            en: "WebSocket connection to public nodes\n\n🌐 Mainnet: wss://xahau.network\n🧪 Testnet: wss://xahau-test.net\n\nJSON-RPC API for all queries",
-            jp: "パブリックノードへのWebSocket接続\n\n🌐 メインネット：wss://xahau.network\n🧪 テストネット：wss://xahau-test.net\n\nすべての照会にJSON-RPC API",
-            ko: "공용 노드에 WebSocket으로 연결\n\n🌐 Mainnet: wss://xahau.network\n🧪 Testnet: wss://xahau-test.net\n\n모든 조회에 사용하는 JSON-RPC API",
-            zh: "通过 WebSocket 连接到公共节点\n\n🌐 主网: wss://xahau.network\n🧪 测试网: wss://xahau-test.net\n\n所有查询都通过 JSON-RPC API 完成",
+Requisições e respostas em JSON`,
+            en: `WebSocket connection to public nodes
+
+🌐 Mainnet: wss://xahau.network
+🧪 Testnet: wss://xahau-test.net
+
+Requests and responses in JSON`,
+            jp: `パブリックノードへのWebSocket接続
+
+🌐 メインネット：wss://xahau.network
+🧪 テストネット：wss://xahau-test.net
+
+リクエストとレスポンスは JSON`,
+            ko: `공용 노드에 WebSocket으로 연결
+
+🌐 Mainnet: wss://xahau.network
+🧪 Testnet: wss://xahau-test.net
+
+요청과 응답은 JSON`,
+            zh: `通过 WebSocket 连接到公共节点
+
+🌐 主网: wss://xahau.network
+🧪 测试网: wss://xahau-test.net
+
+请求和响应都是 JSON`,
           },
           visual: "🔌",
         },
@@ -597,148 +762,222 @@ API JSON-RPC para todas as consultas`,
         zh: "高级查询与订阅",
       },
       theory: {
-        es: `Más allá de las consultas básicas, Xahau permite consultar objetos específicos del ledger, el historial de transacciones de una cuenta y suscribirse a eventos en tiempo real.
+        es: `La [lección 4.1](?m=4&l=0) leyó el estado actual de una cuenta. Esta lección lee su pasado, las transacciones que la llevaron hasta ahí, y su presente mientras cambia, con eventos que el nodo te envía.
 
-### Historial de transacciones
+### Historial de transacciones: account_tx
 
-El comando \`account_tx\` devuelve las transacciones asociadas a una cuenta. Puedes paginar los resultados usando el campo \`marker\`.
+\`account_tx\` devuelve las transacciones que afectaron a una cuenta, de la más reciente a la más antigua, cada una con sus metadatos y su resultado. \`limit\` fija cuántas llegan por página. Si hay más, la respuesta incluye un \`marker\`: envía la misma petición con él para leer la página siguiente, hasta que no vuelva ningún \`marker\`.
 
-### Objetos de una cuenta
+Para leer una transacción por su hash, usa \`tx\`, como en la verificación del [Módulo 6](?m=6&l=1).
 
-El comando \`account_objects\` devuelve todos los objetos del ledger asociados a una cuenta:
-- TrustLines (líneas de confianza)
-- Offers (órdenes en el DEX)
-- URITokens (NFTs)
-- Hooks instalados
-- Estados de Hooks
+### Lo que posee una cuenta: account_objects
 
-### Suscripciones en tiempo real
+\`account_objects\` devuelve los objetos del ledger que posee una cuenta: trust lines (\`RippleState\`), ofertas, URITokens, Tickets, escrows, checks, sus Hooks. Cada uno cuenta en su \`OwnerCount\` y retiene parte de su reserva. El parámetro \`type\` reduce la lista a un tipo, por ejemplo \`type: "ticket"\`.
 
-Con el comando \`subscribe\` puedes recibir notificaciones cuando ocurren eventos:
-- **ledger**: Notificación cada vez que se cierra un nuevo ledger
-- **transactions**: Todas las transacciones de la red
-- **accounts**: Transacciones que afectan a cuentas específicas
+### Eventos en el momento: subscribe
 
-### Consulta de transacciones individuales
+Una consulta responde una vez. Para seguir una cuenta sin preguntar una y otra vez, \`subscribe\` pide al nodo que envíe eventos por la misma conexión WebSocket:
 
-Puedes consultar los detalles de una transacción específica usando su **hash** con el comando \`tx\`.`,
-        pt: `Além das consultas básicas, Xahau permite consultar objetos específicos do ledger, o histórico de transações de uma conta e assinar eventos em tempo real.
-### Histórico de transações
-O comando \`account_tx\` retorna as transações associadas a uma conta. Você pode paginar os resultados usando o campo \`marker\`.
-### Objetos de uma conta
-O comando \`account_objects\` retorna todos os objetos do ledger associados a uma conta:
-- TrustLines (linhas de confiança)
-- Offers (ordens no DEX)
-- URITokens (NFTs)
-- Hooks instalados
-- Estados de Hooks
-### Assinaturas em tempo real
-Com o comando \`subscribe\` você pode receber notificações quando eventos ocorrem:
-- **ledger**: Notificação sempre que um novo ledger é fechado
-- **transactions**: Todas as transações da rede
-- **accounts**: Transações que afetam contas específicas
-### Consulta de transações individuais
-Você pode consultar os detalhes de uma transação específica usando seu **hash** com o comando \`tx\`.`,
-        en: `Beyond basic queries, Xahau allows you to query specific ledger objects, an account's transaction history, and subscribe to real-time events.
+| Stream | Qué llega |
+|---|---|
+| \`streams: ["ledger"]\` | Un mensaje cada vez que se cierra un ledger |
+| \`streams: ["transactions"]\` | Cada transacción validada de la red |
+| \`accounts: [dirección]\` | Las transacciones que afectan a esas cuentas |
 
-### Transaction history
+La librería xahau los entrega como eventos: \`client.on("transaction", …)\` se ejecuta con cada uno. La conexión debe seguir abierta para que lleguen, y \`unsubscribe\` los detiene.
 
-The \`account_tx\` command returns the transactions associated with an account. You can paginate results using the \`marker\` field.
+### Los ejemplos
 
-### Account objects
+El primer ejemplo lista las 10 últimas transacciones de la cuenta. El segundo lista los objetos que posee y después se suscribe a sus transacciones durante 60 segundos. Con un pago enviado a la cuenta en ese tiempo, el final de la salida es:
 
-The \`account_objects\` command returns all ledger objects associated with an account:
-- TrustLines
-- Offers (DEX orders)
-- URITokens (NFTs)
-- Installed Hooks
-- Hook states
+\`\`\`
+Suscrito a las transacciones de la cuenta...
+¡Nueva transacción detectada!
+Tipo: Payment
+Resultado: tesSUCCESS
+\`\`\`
 
-### Real-time subscriptions
+La transacción llegó por la conexión abierta, sin una petición nueva.`,
+        pt: `A [lição 4.1](?m=4&l=0) leu o estado atual de uma conta. Esta lição lê o seu passado, as transações que a levaram até ali, e o seu presente enquanto muda, com eventos que o nó envia para você.
 
-With the \`subscribe\` command you can receive notifications when events occur:
-- **ledger**: Notification every time a new ledger closes
-- **transactions**: All network transactions
-- **accounts**: Transactions affecting specific accounts
+### Histórico de transações: account_tx
 
-### Querying individual transactions
+\`account_tx\` devolve as transações que afetaram uma conta, da mais recente para a mais antiga, cada uma com os seus metadados e o seu resultado. \`limit\` define quantas chegam por página. Se houver mais, a resposta inclui um \`marker\`: envie a mesma requisição com ele para ler a página seguinte, até que nenhum \`marker\` volte.
 
-You can query the details of a specific transaction using its **hash** with the \`tx\` command.`,
-        jp: `基本的な照会を超えて、Xahauは特定のレジャーオブジェクト、アカウントのトランザクション履歴を照会し、リアルタイムイベントをサブスクライブすることができます。
+Para ler uma transação pelo seu hash, use \`tx\`, como na verificação do [Módulo 6](?m=6&l=1).
 
-### トランザクション履歴
+### O que uma conta possui: account_objects
 
-\`account_tx\`コマンドはアカウントに関連するトランザクションを返します。\`marker\`フィールドを使用して結果をページングできます。
+\`account_objects\` devolve os objetos do ledger que uma conta possui: trust lines (\`RippleState\`), ofertas, URITokens, Tickets, escrows, checks, os seus Hooks. Cada um conta no seu \`OwnerCount\` e retém parte da sua reserva. O parâmetro \`type\` reduz a lista a um tipo, por exemplo \`type: "ticket"\`.
 
-### アカウントオブジェクト
+### Eventos no momento: subscribe
 
-\`account_objects\`コマンドはアカウントに関連するすべてのレジャーオブジェクトを返します。
-- TrustLine（トラストライン）
-- Offer（DEXの注文）
-- URIToken（NFT）
-- インストールされたHook
-- HookState
+Uma consulta responde uma vez. Para acompanhar uma conta sem perguntar de novo e de novo, \`subscribe\` pede ao nó que envie eventos pela mesma conexão WebSocket:
 
-### リアルタイムサブスクリプション
+| Stream | O que chega |
+|---|---|
+| \`streams: ["ledger"]\` | Uma mensagem cada vez que um ledger fecha |
+| \`streams: ["transactions"]\` | Cada transação validada da rede |
+| \`accounts: [endereço]\` | As transações que afetam essas contas |
 
-\`subscribe\`コマンドを使用して、イベントが発生したときに通知を受け取ることができます。
-- **ledger**：新しいレジャーが閉じるたびに通知
-- **transactions**：ネットワークのすべてのトランザクション
-- **accounts**：特定のアカウントに影響するトランザクション
+A biblioteca xahau os entrega como eventos: \`client.on("transaction", …)\` é executado para cada um. A conexão precisa continuar aberta para que cheguem, e \`unsubscribe\` os interrompe.
 
-### 個別トランザクションの照会
+### Os exemplos
 
-\`tx\`コマンドを使用して、**ハッシュ**から特定のトランザクションの詳細を照会できます。`,
-        ko: `기본 조회를 넘어서, Xahau는 특정 ledger 객체, 계정의 트랜잭션 기록을 조회하고 실시간 이벤트를 구독할 수 있게 해 줍니다.
+O primeiro exemplo lista as 10 últimas transações da conta. O segundo lista os objetos que ela possui e depois se inscreve nas suas transações por 60 segundos. Com um pagamento enviado à conta nesse tempo, o final da saída é:
 
-### 트랜잭션 기록
+\`\`\`
+Suscrito a as transações da conta...
+Nova transação detectada!
+Tipo: Payment
+Resultado: tesSUCCESS
+\`\`\`
 
-\`account_tx\` 명령은 계정과 관련된 트랜잭션을 반환합니다. \`marker\` 필드를 사용해 결과를 페이지네이션할 수 있습니다.
+A transação chegou pela conexão aberta, sem uma nova requisição.`,
+        en: `[Lesson 4.1](?m=4&l=0) read the current state of an account. This lesson reads its past, the transactions that brought it there, and its present as it changes, with events the node pushes to you.
 
-### 계정 객체
+### Transaction history: account_tx
 
-\`account_objects\` 명령은 계정과 연결된 모든 ledger 객체를 반환합니다:
-- TrustLine
-- Offer(DEX 주문)
-- URIToken(NFT)
-- 설치된 Hook
-- Hook 상태
+\`account_tx\` returns the transactions that affected an account, newest first, each with its metadata and result. \`limit\` sets how many come per page. When there are more, the response includes a \`marker\`: send the same request with it to read the next page, until no \`marker\` comes back.
 
-### 실시간 구독
+To read one transaction by its hash, use \`tx\`, as in the verification of [Module 6](?m=6&l=1).
 
-\`subscribe\` 명령으로 이벤트가 발생할 때 알림을 받을 수 있습니다:
-- **ledger**: 새 ledger가 닫힐 때마다 알림
-- **transactions**: 네트워크의 모든 트랜잭션
-- **accounts**: 특정 계정에 영향을 주는 트랜잭션
+### What an account owns: account_objects
 
-### 개별 트랜잭션 조회
+\`account_objects\` returns the ledger objects an account owns: trust lines (\`RippleState\`), offers, URITokens, Tickets, escrows, checks, its Hooks. Each one counts in its \`OwnerCount\` and holds part of its reserve. The \`type\` parameter narrows the list to one type, for example \`type: "ticket"\`.
 
-\`tx\` 명령을 사용하면 **해시**로 특정 트랜잭션의 상세 정보를 조회할 수 있습니다.`,
-        zh: `除了基础查询外，Xahau 还允许你查询特定账本对象、某个账户的交易历史，并订阅实时事件。
+### Events as they happen: subscribe
 
-### 交易历史
+A query answers once. To follow an account without asking again and again, \`subscribe\` asks the node to push events down the same WebSocket connection:
 
-\`account_tx\` 命令会返回与某个账户相关的交易。你可以使用 \`marker\` 字段对结果进行分页。
+| Stream | What arrives |
+|---|---|
+| \`streams: ["ledger"]\` | A message each time a ledger closes |
+| \`streams: ["transactions"]\` | Every validated transaction on the network |
+| \`accounts: [address]\` | The transactions that affect those accounts |
 
-### 账户对象
+The xahau library delivers them as events: \`client.on("transaction", …)\` runs for each one. The connection must stay open for them to arrive, and \`unsubscribe\` stops them.
 
-\`account_objects\` 命令会返回与某个账户关联的所有账本对象：
-- TrustLines
-- Offers（DEX 订单）
-- URITokens（NFT）
-- 已安装的 Hooks
-- Hook 状态
+### The examples
 
-### 实时订阅
+The first example lists the last 10 transactions of the account. The second lists the objects it owns and then subscribes to its transactions for 60 seconds. With a payment sent to the account during that time, the end of the output is:
 
-通过 \`subscribe\` 命令，你可以在事件发生时收到通知：
-- **ledger**：每次有新账本关闭时通知
-- **transactions**：网络中的所有交易
-- **accounts**：影响特定账户的交易
+\`\`\`
+Subscribed to account transactions...
+New transaction detected!
+Type: Payment
+Result: tesSUCCESS
+\`\`\`
 
-### 查询单笔交易
+The transaction arrived through the open connection, without a new request.`,
+        jp: `[レッスン 4.1](?m=4&l=0) ではアカウントの現在の状態を読みました。このレッスンでは、その過去、つまり現在に至るまでのトランザクションと、変化していく現在を、ノードから送られてくるイベントで読みます。
 
-你可以使用 \`tx\` 命令，通过交易的 **hash** 查询某一笔交易的详细信息。`,
+### トランザクション履歴：account_tx
+
+\`account_tx\` はアカウントに影響したトランザクションを新しい順に返します。それぞれにメタデータと結果が付きます。\`limit\` で1ページあたりの件数を決めます。続きがある場合、レスポンスに \`marker\` が含まれます。その marker を付けて同じリクエストを送り、\`marker\` が返らなくなるまで次のページを読みます。
+
+ハッシュで1つのトランザクションを読むには、[モジュール 6](?m=6&l=1) の確認と同じように \`tx\` を使います。
+
+### アカウントが所有するもの：account_objects
+
+\`account_objects\` はアカウントが所有する台帳オブジェクトを返します。トラストライン（\`RippleState\`）、オファー、URIToken、Ticket、エスクロー、チェック、その Hooks などです。どれも \`OwnerCount\` に数えられ、リザーブの一部を拘束します。\`type\` パラメータで1つの型に絞り込めます。例えば \`type: "ticket"\` です。
+
+### 発生中のイベント：subscribe
+
+照会は1回答えるだけです。何度も問い合わせずにアカウントを追うには、\`subscribe\` でノードに同じ WebSocket 接続でイベントを送ってもらいます。
+
+| ストリーム | 届くもの |
+|---|---|
+| \`streams: ["ledger"]\` | 台帳が閉じるたびに1件のメッセージ |
+| \`streams: ["transactions"]\` | ネットワーク上で検証されたすべてのトランザクション |
+| \`accounts: [address]\` | それらのアカウントに影響するトランザクション |
+
+xahau ライブラリはこれらをイベントとして渡し、\`client.on("transaction", …)\` がイベントごとに実行されます。届き続けるには接続を開いたままにする必要があり、\`unsubscribe\` で止めます。
+
+### 例
+
+最初の例はアカウントの直近 10 件のトランザクションを一覧表示します。2つ目の例は所有するオブジェクトを一覧表示し、その後 60 秒間アカウントのトランザクションを購読します。その間にアカウントへ支払いを送ると、出力の最後は次のようになります。
+
+\`\`\`
+アカウントのトランザクションをサブスクライブ中...
+新しいトランザクションを検出！
+タイプ： Payment
+結果： tesSUCCESS
+\`\`\`
+
+トランザクションは新しいリクエストなしに、開いている接続を通じて届きました。`,
+        ko: `[레슨 4.1](?m=4&l=0)에서는 계정의 현재 상태를 읽었습니다. 이 레슨에서는 그 과거, 즉 지금에 이르게 한 트랜잭션과, 바뀌어 가는 현재를 노드가 보내 주는 이벤트로 읽습니다.
+
+### 트랜잭션 이력: account_tx
+
+\`account_tx\`는 계정에 영향을 준 트랜잭션을 최신 순으로 반환하며, 각각 메타데이터와 결과가 함께 옵니다. \`limit\`으로 한 페이지에 몇 건을 받을지 정합니다. 더 있으면 응답에 \`marker\`가 포함됩니다. 그 marker를 넣어 같은 요청을 보내 다음 페이지를 읽고, \`marker\`가 더 이상 오지 않을 때까지 반복합니다.
+
+해시로 트랜잭션 하나를 읽으려면 [모듈 6](?m=6&l=1)의 확인처럼 \`tx\`를 씁니다.
+
+### 계정이 소유한 것: account_objects
+
+\`account_objects\`는 계정이 소유한 원장 객체를 반환합니다. 트러스트 라인(\`RippleState\`), 오퍼, URIToken, Ticket, escrow, check, 그리고 Hooks 등입니다. 모두 \`OwnerCount\`에 포함되고 reserve의 일부를 묶어 둡니다. \`type\` 파라미터로 한 타입만 볼 수 있습니다. 예: \`type: "ticket"\`.
+
+### 발생하는 이벤트: subscribe
+
+조회는 한 번만 답합니다. 계속 묻지 않고 계정을 따라가려면 \`subscribe\`로 노드가 같은 WebSocket 연결로 이벤트를 보내도록 요청합니다.
+
+| 스트림 | 도착하는 것 |
+|---|---|
+| \`streams: ["ledger"]\` | 원장이 닫힐 때마다 메시지 하나 |
+| \`streams: ["transactions"]\` | 네트워크에서 검증된 모든 트랜잭션 |
+| \`accounts: [address]\` | 그 계정들에 영향을 주는 트랜잭션 |
+
+xahau 라이브러리는 이를 이벤트로 전달하며, \`client.on("transaction", …)\`이 이벤트마다 실행됩니다. 이벤트가 계속 오려면 연결이 열려 있어야 하고, \`unsubscribe\`로 멈춥니다.
+
+### 예제
+
+첫 번째 예제는 계정의 최근 트랜잭션 10건을 나열합니다. 두 번째 예제는 계정이 소유한 객체를 나열한 뒤 60초 동안 계정의 트랜잭션을 구독합니다. 그동안 계정으로 결제를 보내면 출력의 끝은 다음과 같습니다.
+
+\`\`\`
+계정 트랜잭션 구독 중...
+새 트랜잭션 감지!
+유형: Payment
+결과: tesSUCCESS
+\`\`\`
+
+트랜잭션이 새 요청 없이 열린 연결을 통해 도착했습니다.`,
+        zh: `[第 4.1 课](?m=4&l=0)读取了一个账户的当前状态。本课读取它的过去，也就是让它变成现在这样的那些交易；以及它不断变化的现在，通过节点推送给你的事件。
+
+### 交易历史：account_tx
+
+\`account_tx\` 按从新到旧的顺序返回影响过某个账户的交易，每笔都带有元数据和结果。\`limit\` 设置每页返回多少笔。如果还有更多，响应中会包含 \`marker\`：带上它再发送同样的请求来读取下一页，直到不再返回 \`marker\`。
+
+要按哈希读取一笔交易，使用 \`tx\`，就像[模块 6](?m=6&l=1) 中的验证那样。
+
+### 账户拥有的东西：account_objects
+
+\`account_objects\` 返回账户拥有的账本对象：信任线（\`RippleState\`）、报价、URIToken、Ticket、托管、支票以及它的 Hooks。每一个都计入它的 \`OwnerCount\`，并占用一部分储备金。\`type\` 参数可以把列表限定为一种类型，例如 \`type: "ticket"\`。
+
+### 实时事件：subscribe
+
+一次查询只回答一次。要持续跟踪一个账户而不必反复询问，可以用 \`subscribe\` 请求节点通过同一个 WebSocket 连接推送事件：
+
+| 数据流 | 收到什么 |
+|---|---|
+| \`streams: ["ledger"]\` | 每关闭一个账本收到一条消息 |
+| \`streams: ["transactions"]\` | 网络上每一笔已验证的交易 |
+| \`accounts: [address]\` | 影响这些账户的交易 |
+
+xahau 库以事件的形式传递它们：每个事件都会执行一次 \`client.on("transaction", …)\`。连接必须保持打开，事件才能到达；\`unsubscribe\` 会停止推送。
+
+### 示例
+
+第一个示例列出账户最近的 10 笔交易。第二个示例列出它拥有的对象，然后订阅它的交易 60 秒。在此期间向该账户发送一笔付款，输出的结尾是：
+
+\`\`\`
+已订阅该账户的交易...
+检测到新交易！
+类型: Payment
+结果: tesSUCCESS
+\`\`\`
+
+这笔交易是通过打开的连接到达的，无需发出新的请求。`,
       },
       codeBlocks: [
         {
@@ -1240,12 +1479,42 @@ getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {a
         {
           title: { es: "Historial de transacciones", pt: "Histórico de transações", en: "Transaction history", jp: "トランザクション履歴", ko: "트랜잭션 기록", zh: "交易历史" },
           content: {
-            es: "account_tx → Historial de una cuenta\n\n• Paginar con marker\n• Filtrar por tipo de transacción\n• Ver resultados (éxito/fallo)\n• Consultar metadatos detallados",
-            pt: "account_tx → Histórico de uma conta\n\n• Paginar com marker\n• Filtrar por tipo de transação\n• Ver resultados (sucesso/falha)\n• Consultar metadados detalhados",
-            en: "account_tx → Account history\n\n• Paginate with marker\n• Filter by transaction type\n• View results (success/failure)\n• Query detailed metadata",
-            jp: "account_tx → アカウントの履歴\n\n• markerでページング\n• トランザクションタイプでフィルタリング\n• 結果を確認（成功/失敗）\n• 詳細なメタデータを照会",
-            ko: "account_tx → 계정 기록\n\n• marker로 페이지네이션\n• 트랜잭션 유형별 필터링\n• 결과 확인(성공/실패)\n• 상세 메타데이터 조회",
-            zh: "account_tx → 账户历史\n\n• 使用 marker 分页\n• 按交易类型过滤\n• 查看结果（成功/失败）\n• 查询详细 metadata",
+            es: `account_tx → Historial de una cuenta
+
+• Paginar con marker
+• Más recientes primero, limit por página
+• Ver resultados (éxito/fallo)
+• Consultar metadatos detallados`,
+            pt: `account_tx → Histórico de uma conta
+
+• Paginar com marker
+• Mais recentes primeiro, limit por página
+• Ver resultados (sucesso/falha)
+• Consultar metadados detalhados`,
+            en: `account_tx → Account history
+
+• Paginate with marker
+• Newest first, limit per page
+• View results (success/failure)
+• Query detailed metadata`,
+            jp: `account_tx → アカウントの履歴
+
+• markerでページング
+• 新しい順、ページごとに limit
+• 結果を確認（成功/失敗）
+• 詳細なメタデータを照会`,
+            ko: `account_tx → 계정 기록
+
+• marker로 페이지네이션
+• 최신 순, 페이지당 limit
+• 결과 확인(성공/실패)
+• 상세 메타데이터 조회`,
+            zh: `account_tx → 账户历史
+
+• 使用 marker 分页
+• 从新到旧，每页 limit 条
+• 查看结果（成功/失败）
+• 查询详细 metadata`,
           },
           visual: "📜",
         },
@@ -2532,27 +2801,56 @@ const arabicModuleTranslations = {
   lessons: {
     m4l1: {
       title: "الاتصال بعقد Xahau",
-      theory: `لقراءة بيانات من بلوكتشين Xahau تحتاج إلى الاتصال بـ **عقدة شبكة** عبر **WebSocket**. العقدة تعرض API بنمط JSON-RPC يسمح لك بقراءة معلومات ledger، الحسابات، المعاملات، وobjects.
+      theory: `لا يقرأ السكربت الـ ledger مباشرة: بل يسأل **عقدة**، أي خادمًا يشغّل \`xahaud\` ويحتفظ بنسخة من الـ ledger. يشرح هذا الدرس كيف تجري هذه المحادثة والأفكار التي يستخدمها كل استعلام.
 
-### أنواع العقد
+### التحدث إلى عقدة
 
-- **عقد عامة**: متاحة للمطورين ومناسبة للتجارب.
-- **عقد خاصة**: تشغلها بنفسك للحصول على تحكم وموثوقية أعلى.
+تفتح مكتبة xahau اتصال **WebSocket** مع عقدة وتُبقيه مفتوحًا. كل طلب رسالة JSON فيها \`command\` ومعاملاته، وتجيب العقدة بنتيجة JSON:
 
-### Endpoints مهمة
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
 
-| الشبكة | WebSocket URL |
+تكفي العقد العامة للتطوير ولهذه الدورة:
+
+| الشبكة | عنوان WebSocket | معرّف الشبكة |
+|---|---|---|
+| Mainnet | \`wss://xahau.network\` | 21337 |
+| Testnet | \`wss://xahau-test.net\` | 21338 |
+
+في بيئة الإنتاج يمكنك تشغيل عقدتك الخاصة: فلا يعود توفرها وحدود طلباتها وسجلها التاريخي معتمدًا على طرف آخر.
+
+### الأوامر
+
+| لقراءة | الأوامر |
 |---|---|
-| Mainnet | \`wss://xahau.network\` |
-| Testnet | \`wss://xahau-test.net\` |
+| العقدة والشبكة | \`server_info\`، \`fee\` |
+| حساب | \`account_info\`، \`account_lines\`، \`account_objects\`، \`account_tx\` |
+| ledger أو كائن واحد | \`ledger\`، \`ledger_entry\` |
+| معاملة | \`tx\` |
+| الأحداث لحظة وقوعها | \`subscribe\`، \`unsubscribe\` |
 
-### أوامر الاستعلام
+### ثلاث أفكار يستخدمها كل استعلام
 
-تستخدم API أوامر مثل \`server_info\` و \`account_info\` و \`account_lines\` و \`account_objects\` و \`account_tx\` و \`ledger\` و \`tx\`. وللأحداث الحية توجد أوامر \`subscribe\` و \`unsubscribe\`.
+- **أي ledger.** يقرأ \`ledger_index: "validated"\` آخر ledger اتفقت عليه الشبكة: بياناته لن تتغير. ويقرأ \`"current"\` الـ ledger الجاري، الذي قد يتغير بعد. استخدم \`"validated"\` ما لم تحتج إلى الأحدث تمامًا.
+- **الـ drops.** تنتقل مبالغ XAH كسلاسل نصية بوحدة **drops**: ‏1 XAH = 1,000,000 drops. و\`"5000000"\` تعني 5 XAH.
+- **الـ markers.** تصل النتيجة الطويلة على صفحات. عندما يتضمن الرد \`marker\`، أرسل الطلب نفسه مع ذلك الـ marker للحصول على الصفحة التالية.
 
-### مفاهيم مهمة
+### الأمثلة
 
-\`ledger_index: "validated"\` يعني آخر ledger تم التحقق منه. كميات XAH تظهر غالبا بوحدة drops، حيث 1 XAH = 1,000,000 drops. وعند وجود نتائج كثيرة تستخدم API \`marker\` للصفحات.`,
+يسأل المثال الأول عقدة testnet عن نفسها. المخرجات:
+
+\`\`\`
+=== معلومات الخادم ===
+الإصدار: 2026.6.21-release+3350
+معرّف الشبكة: 21338
+الحالة: full
+الأقران المتصلون: 3
+الـ ledger المُتحقَّق منه: 12676350
+نصاب التحقق: 2
+\`\`\`
+
+تعني \`full\` أن العقدة تتابع الشبكة ولديها الـ ledger الحالي. ونصاب التحقق هو عدد المدققين الموثوقين الذين يجب أن يتفقوا على ledger. أما المثال الثاني فيقرأ حسابًا بـ \`account_info\`، أي كائن \`AccountRoot\` من [الدرس 1.3](?m=1&l=2).`,
       codeTitles: [
         "الاتصال واستعلام معلومات الخادم",
         "استعلام معلومات تفصيلية عن حساب",
@@ -2560,7 +2858,12 @@ const arabicModuleTranslations = {
       slides: [
         {
           title: "الاتصال بـ Xahau",
-          content: "الاتصال يتم عبر WebSocket إلى عقد عامة\n\nMainnet: wss://xahau.network\nTestnet: wss://xahau-test.net\n\nكل الاستعلامات تستخدم JSON-RPC API.",
+          content: `الاتصال يتم عبر WebSocket إلى عقد عامة
+
+Mainnet: wss://xahau.network
+Testnet: wss://xahau-test.net
+
+الطلبات والردود بصيغة JSON.`,
         },
         {
           title: "الأوامر الرئيسية",
@@ -2574,23 +2877,42 @@ const arabicModuleTranslations = {
     },
     m4l2: {
       title: "استعلامات متقدمة واشتراكات",
-      theory: `بعد الاستعلامات الأساسية، يمكنك قراءة تاريخ معاملات الحساب، objects المرتبطة به، أو الاشتراك في أحداث حية من الشبكة.
+      theory: `قرأ [الدرس 4.1](?m=4&l=0) الحالة الحالية لحساب. يقرأ هذا الدرس ماضيه، أي المعاملات التي أوصلته إلى حاله، وحاضره وهو يتغير، عبر أحداث ترسلها إليك العقدة.
 
-### account_tx
+### سجل المعاملات: account_tx
 
-\`account_tx\` يعرض معاملات حساب معين. قد تكون النتائج كثيرة، لذلك تدعم API pagination باستخدام \`marker\`.
+يعيد \`account_tx\` المعاملات التي أثرت في حساب، من الأحدث إلى الأقدم، ومع كل منها بياناتها الوصفية ونتيجتها. يحدد \`limit\` عدد المعاملات في كل صفحة. إذا وُجد المزيد، يتضمن الرد \`marker\`: أرسل الطلب نفسه معه لقراءة الصفحة التالية، حتى لا يعود أي \`marker\`.
 
-### account_objects
+لقراءة معاملة واحدة بالهاش الخاص بها، استخدم \`tx\`، كما في التحقق في [الوحدة 6](?m=6&l=1).
 
-\`account_objects\` يعرض objects التي يملكها الحساب مثل Offers، TrustLines، أو HookState حسب نوع الحساب وما أنشأه.
+### ما يملكه الحساب: account_objects
 
-### subscribe
+يعيد \`account_objects\` كائنات الـ ledger التي يملكها الحساب: خطوط الثقة (\`RippleState\`)، والعروض، والـ URITokens، والـ Tickets، والـ escrows، والـ checks، والـ Hooks الخاصة به. كل منها يُحتسب في \`OwnerCount\` ويحجز جزءًا من احتياطيه. يقصر المعامل \`type\` القائمة على نوع واحد، مثل \`type: "ticket"\`.
 
-الاشتراك يسمح لك باستقبال أحداث مباشرة مثل إغلاق ledger جديد أو معاملة لحساب معين. هذا مفيد للتطبيقات التي تحتاج مراقبة deposits أو نشاط المستخدمين في الوقت الحقيقي.
+### الأحداث لحظة وقوعها: subscribe
 
-### متى تستخدم كل نوع؟
+الاستعلام يجيب مرة واحدة. لمتابعة حساب دون السؤال مرارًا، يطلب \`subscribe\` من العقدة أن ترسل الأحداث عبر اتصال WebSocket نفسه:
 
-استخدم الاستعلام العادي عندما تحتاج لقطة حالية أو تاريخ. استخدم \`subscribe\` عندما تحتاج إلى متابعة مستمرة بدون polling متكرر.`,
+| الـ stream | ما يصل |
+|---|---|
+| \`streams: ["ledger"]\` | رسالة في كل مرة يُغلق فيها ledger |
+| \`streams: ["transactions"]\` | كل معاملة معتمدة على الشبكة |
+| \`accounts: [address]\` | المعاملات التي تؤثر في تلك الحسابات |
+
+تسلّمها مكتبة xahau على شكل أحداث: يُنفَّذ \`client.on("transaction", …)\` مع كل حدث. يجب أن يبقى الاتصال مفتوحًا حتى تصل، ويوقفها \`unsubscribe\`.
+
+### الأمثلة
+
+يسرد المثال الأول آخر 10 معاملات للحساب. ويسرد الثاني الكائنات التي يملكها ثم يشترك في معاملاته لمدة 60 ثانية. عند إرسال دفعة إلى الحساب خلال تلك المدة، تكون نهاية المخرجات:
+
+\`\`\`
+تم الاشتراك في معاملات الحساب...
+تم رصد معاملة جديدة!
+النوع: Payment
+النتيجة: tesSUCCESS
+\`\`\`
+
+وصلت المعاملة عبر الاتصال المفتوح، دون طلب جديد.`,
       codeTitles: [
         "استعلام تاريخ معاملات حساب",
         "استعلام account objects والاشتراك في الأحداث",
@@ -2724,11 +3046,56 @@ const frenchModuleTranslations = {
   lessons: {
     m4l1: {
       title: "Connexion aux noeuds Xahau",
-      theory: `Pour lire des données de Xahau, ton application se connecte à un noeud via WebSocket. Le noeud expose des commandes comme \`server_info\`, \`account_info\`, \`ledger\` ou \`account_objects\`.
+      theory: `Un script ne lit pas le ledger directement : il interroge un **nœud**, un serveur qui exécute \`xahaud\` et détient une copie du ledger. Cette leçon explique comment se déroule cet échange et les notions qu'utilise toute requête.
 
-Une requête ne modifie pas le ledger : elle lit l'état validé ou courant. C'est la base pour vérifier un solde, inspecter un compte ou comprendre ce que le réseau voit.
+### Parler à un nœud
 
-Ferme toujours la connexion quand ton script a terminé, et utilise \`ledger_index: "validated"\` quand tu veux une réponse confirmée.`,
+La bibliothèque xahau ouvre une connexion **WebSocket** avec un nœud et la garde ouverte. Chaque requête est un message JSON avec une \`command\` et ses paramètres, et le nœud répond par un résultat JSON :
+
+\`\`\`json
+{ "command": "account_info", "account": "r...", "ledger_index": "validated" }
+\`\`\`
+
+Les nœuds publics suffisent pour développer et pour ce cours :
+
+| Réseau | URL WebSocket | ID réseau |
+|---|---|---|
+| Mainnet | \`wss://xahau.network\` | 21337 |
+| Testnet | \`wss://xahau-test.net\` | 21338 |
+
+En production, tu peux exécuter ton propre nœud : sa disponibilité, ses limites de requêtes et son historique ne dépendent plus de quelqu'un d'autre.
+
+### Les commandes
+
+| Pour lire | Commandes |
+|---|---|
+| Le nœud et le réseau | \`server_info\`, \`fee\` |
+| Un compte | \`account_info\`, \`account_lines\`, \`account_objects\`, \`account_tx\` |
+| Un ledger ou un objet | \`ledger\`, \`ledger_entry\` |
+| Une transaction | \`tx\` |
+| Les événements en direct | \`subscribe\`, \`unsubscribe\` |
+
+### Trois notions qu'utilise toute requête
+
+- **Quel ledger.** \`ledger_index: "validated"\` lit le dernier ledger sur lequel le réseau s'est accordé : ses données ne changeront pas. \`"current"\` lit le ledger en cours, qui peut encore changer. Utilise \`"validated"\` sauf si tu as besoin du plus récent.
+- **Les drops.** Les montants en XAH circulent sous forme de chaînes en **drops** : 1 XAH = 1 000 000 drops. \`"5000000"\` vaut 5 XAH.
+- **Les markers.** Un long résultat arrive par pages. Quand une réponse contient un \`marker\`, renvoie la même requête avec ce marker pour obtenir la page suivante.
+
+### Les exemples
+
+Le premier exemple interroge le nœud du testnet sur lui-même. Sortie :
+
+\`\`\`
+=== Informations du serveur ===
+Version : 2026.6.21-release+3350
+ID réseau : 21338
+État : full
+Pairs connectés : 3
+Ledger validé : 12676350
+Quorum de validation : 2
+\`\`\`
+
+\`full\` signifie que le nœud suit le réseau et possède le ledger actuel. Le quorum de validation est le nombre de validateurs de confiance qui doivent s'accorder sur un ledger. Le second exemple lit un compte avec \`account_info\`, l'objet \`AccountRoot\` de la [leçon 1.3](?m=1&l=2).`,
       codeTitles: ["Se connecter et consulter les informations du serveur", "Consulter les détails d'un compte"],
       slides: [
         ["Connexion à Xahau", "Les scripts se connectent à un noeud WebSocket\n\n• wss://xahau-test.net pour testnet\n• Client.connect()\n• client.request(...)\n• client.disconnect()"],
@@ -2738,11 +3105,42 @@ Ferme toujours la connexion quand ton script a terminé, et utilise \`ledger_ind
     },
     m4l2: {
       title: "Requêtes avancées et abonnements",
-      theory: `Certaines commandes retournent l'historique ou les objets liés à un compte. \`account_tx\` liste les transactions, tandis que \`account_objects\` montre les objets comme trustlines, escrows ou hooks.
+      theory: `La [leçon 4.1](?m=4&l=0) a lu l'état actuel d'un compte. Cette leçon lit son passé, les transactions qui l'y ont mené, et son présent à mesure qu'il change, avec des événements que le nœud t'envoie.
 
-Les abonnements permettent de recevoir des événements en temps réel. Au lieu de demander en boucle, tu t'abonnes à un stream et le noeud envoie les nouveaux événements.
+### Historique des transactions : account_tx
 
-C'est utile pour suivre des paiements entrants, surveiller les ledgers ou construire une interface qui réagit dès qu'une transaction est validée.`,
+\`account_tx\` renvoie les transactions qui ont touché un compte, de la plus récente à la plus ancienne, chacune avec ses métadonnées et son résultat. \`limit\` fixe combien arrivent par page. S'il y en a d'autres, la réponse contient un \`marker\` : renvoie la même requête avec lui pour lire la page suivante, jusqu'à ce qu'aucun \`marker\` ne revienne.
+
+Pour lire une transaction par son hash, utilise \`tx\`, comme dans la vérification du [Module 6](?m=6&l=1).
+
+### Ce que possède un compte : account_objects
+
+\`account_objects\` renvoie les objets du ledger que possède un compte : trust lines (\`RippleState\`), offres, URITokens, Tickets, escrows, checks, ses Hooks. Chacun compte dans son \`OwnerCount\` et immobilise une partie de sa réserve. Le paramètre \`type\` réduit la liste à un type, par exemple \`type: "ticket"\`.
+
+### Les événements en direct : subscribe
+
+Une requête répond une seule fois. Pour suivre un compte sans redemander sans cesse, \`subscribe\` demande au nœud d'envoyer des événements par la même connexion WebSocket :
+
+| Flux | Ce qui arrive |
+|---|---|
+| \`streams: ["ledger"]\` | Un message à chaque clôture de ledger |
+| \`streams: ["transactions"]\` | Chaque transaction validée du réseau |
+| \`accounts: [adresse]\` | Les transactions qui touchent ces comptes |
+
+La bibliothèque xahau les livre sous forme d'événements : \`client.on("transaction", …)\` s'exécute pour chacun. La connexion doit rester ouverte pour qu'ils arrivent, et \`unsubscribe\` les arrête.
+
+### Les exemples
+
+Le premier exemple liste les 10 dernières transactions du compte. Le second liste les objets qu'il possède puis s'abonne à ses transactions pendant 60 secondes. Avec un paiement envoyé au compte pendant ce temps, la fin de la sortie est :
+
+\`\`\`
+Abonné aux transactions du compte...
+Nouvelle transaction détectée !
+Type : Payment
+Résultat : tesSUCCESS
+\`\`\`
+
+La transaction est arrivée par la connexion ouverte, sans nouvelle requête.`,
       codeTitles: ["Consulter l'historique des transactions d'un compte", "Consulter les objets du compte et s'abonner aux événements"],
       slides: [
         ["Historique de transactions", "account_tx permet de lire les transactions d'un compte\n\nUtilise limit et marker pour parcourir l'historique sans tout charger d'un coup."],
