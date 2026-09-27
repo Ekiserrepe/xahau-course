@@ -172,4 +172,60 @@ export default [
       ar: 'هو تاريخ الانتهاء الذي يحميك من المعاملات "الشبح": بعد ذلك الدفتر لا يمكن تطبيق المعاملة، فلا تعود للظهور وتُنفَّذ بعد أن تكون قد صرفت النظر عنها بوقت طويل.',
     },
   },
+  {
+    "id": "m5bq4",
+    "question": {
+      "en": "You send 5 XAH with a fee of 10 drops. What does the metadata show?",
+      "es": "Envías 5 XAH con un fee de 10 drops. ¿Qué muestran los metadatos?",
+      "fr": "Tu envoies 5 XAH avec des frais de 10 drops. Que montrent les métadonnées ?",
+      "pt": "Você envia 5 XAH com um fee de 10 drops. O que os metadados mostram?",
+      "jp": "手数料 10 drops で 5 XAH を送ります。メタデータには何が表示されますか？",
+      "ko": "수수료 10 drops로 5 XAH를 보냅니다. 메타데이터에는 무엇이 나타나나요?",
+      "zh": "你以 10 drops 的手续费发送 5 XAH。元数据显示什么？",
+      "ar": "ترسل 5 XAH برسوم قدرها 10 drops. ماذا تُظهر البيانات الوصفية؟"
+    },
+    "options": [
+      {
+        "en": "Both AccountRoot balances change by 5.00001 XAH",
+        "es": "Los dos saldos de AccountRoot cambian 5,00001 XAH",
+        "fr": "Les deux soldes AccountRoot changent de 5,00001 XAH",
+        "pt": "Os dois saldos de AccountRoot mudam 5,00001 XAH",
+        "jp": "2つの AccountRoot の残高がどちらも 5.00001 XAH 変わる",
+        "ko": "두 AccountRoot 잔액이 모두 5.00001 XAH 바뀐다",
+        "zh": "两个 AccountRoot 的余额都变化 5.00001 XAH",
+        "ar": "يتغير رصيدا AccountRoot كلاهما بمقدار 5.00001 XAH"
+      },
+      {
+        "en": "A new Payment object is created in the ledger",
+        "es": "Se crea un objeto Payment nuevo en el ledger",
+        "fr": "Un nouvel objet Payment est créé dans le ledger",
+        "pt": "Um novo objeto Payment é criado no ledger",
+        "jp": "台帳に新しい Payment オブジェクトが作成される",
+        "ko": "원장에 새 Payment 객체가 만들어진다",
+        "zh": "账本中创建了一个新的 Payment 对象",
+        "ar": "يُنشأ كائن Payment جديد في الـ ledger"
+      },
+      {
+        "en": "Your AccountRoot loses 5.00001 XAH; the destination gains exactly 5 XAH",
+        "es": "Tu AccountRoot pierde 5,00001 XAH; el destino gana exactamente 5 XAH",
+        "fr": "Ton AccountRoot perd 5,00001 XAH ; la destination gagne exactement 5 XAH",
+        "pt": "O seu AccountRoot perde 5,00001 XAH; o destino ganha exatamente 5 XAH",
+        "jp": "自分の AccountRoot は 5.00001 XAH 減り、送金先はちょうど 5 XAH 増える",
+        "ko": "내 AccountRoot는 5.00001 XAH 줄고, 받는 계정은 정확히 5 XAH 는다",
+        "zh": "你的 AccountRoot 减少 5.00001 XAH；收款方正好增加 5 XAH",
+        "ar": "ينقص AccountRoot الخاص بك 5.00001 XAH، وتزيد الوجهة 5 XAH بالضبط"
+      }
+    ],
+    "answer": 2,
+    "explain": {
+      "en": "The payment modifies two AccountRoot objects: the destination gains the Amount, and you lose the Amount plus the fee. The fee goes to no account: it is burned.",
+      "es": "El pago modifica dos objetos AccountRoot: el destino gana el Amount y tú pierdes el Amount más el fee. El fee no va a ninguna cuenta: se quema.",
+      "fr": "Le paiement modifie deux objets AccountRoot : la destination gagne l'Amount, et tu perds l'Amount plus les frais. Les frais ne vont sur aucun compte : ils sont brûlés.",
+      "pt": "O pagamento modifica dois objetos AccountRoot: o destino ganha o Amount e você perde o Amount mais o fee. O fee não vai para nenhuma conta: é queimado.",
+      "jp": "支払いは2つの AccountRoot オブジェクトを変更します。送金先は Amount の分だけ増え、自分は Amount と手数料の分だけ減ります。手数料はどのアカウントにも入らず、バーンされます。",
+      "ko": "결제는 AccountRoot 객체 두 개를 바꿉니다. 받는 계정은 Amount만큼 늘고, 나는 Amount와 수수료만큼 줄어듭니다. 수수료는 어떤 계정에도 가지 않고 소각됩니다.",
+      "zh": "这笔付款修改了两个 AccountRoot 对象：收款方增加 Amount，你减少 Amount 加上手续费。手续费不进入任何账户：它被销毁了。",
+      "ar": "تعدّل الدفعة كائني AccountRoot: تزيد الوجهة بمقدار الـ Amount، وتنقص أنت بمقدار الـ Amount مضافًا إليه الرسوم. لا تذهب الرسوم إلى أي حساب: بل تُحرق."
+    }
+  },
 ]

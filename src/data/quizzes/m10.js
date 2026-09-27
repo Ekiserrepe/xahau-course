@@ -172,4 +172,60 @@ export default [
       ar: 'تتراكم المكافآت على رصيد نشط — بلا رهن ولا تفويض ولا عقدة تدقيق. تطالب بها عبر ClaimReward، وبالعَلَم Flags 1 في تلك المعاملة توقف استلامها.',
     },
   },
+  {
+    "id": "m10q4",
+    "question": {
+      "en": "A CronSet returns tesSUCCESS, but the Hook never runs. What is missing?",
+      "es": "Un CronSet devuelve tesSUCCESS, pero el Hook nunca se ejecuta. ¿Qué falta?",
+      "fr": "Un CronSet renvoie tesSUCCESS, mais le Hook ne s'exécute jamais. Que manque-t-il ?",
+      "pt": "Um CronSet devolve tesSUCCESS, mas o Hook nunca é executado. O que falta?",
+      "jp": "CronSet は tesSUCCESS を返すのに、Hook が一度も実行されません。何が足りませんか？",
+      "ko": "CronSet은 tesSUCCESS를 반환했는데 Hook이 한 번도 실행되지 않습니다. 무엇이 빠졌나요?",
+      "zh": "CronSet 返回 tesSUCCESS，但 Hook 从未运行。缺少什么？",
+      "ar": "يعيد CronSet القيمة tesSUCCESS، لكن الـ Hook لا يعمل أبدًا. ما الناقص؟"
+    },
+    "options": [
+      {
+        "en": "A Payment to wake the Hook up at each execution",
+        "es": "Un Payment que despierte al Hook en cada ejecución",
+        "fr": "Un Payment pour réveiller le Hook à chaque exécution",
+        "pt": "Um Payment que acorde o Hook em cada execução",
+        "jp": "実行のたびに Hook を起こす Payment",
+        "ko": "실행마다 Hook을 깨우는 Payment",
+        "zh": "每次执行时唤醒 Hook 的 Payment",
+        "ar": "دفعة Payment توقظ الـ Hook في كل تنفيذ"
+      },
+      {
+        "en": "hsfCOLLECT on the Hook (with Cron in HookOn), or asfTshCollect on the account",
+        "es": "hsfCOLLECT en el Hook (con Cron en HookOn), o asfTshCollect en la cuenta",
+        "fr": "hsfCOLLECT sur le Hook (avec Cron dans HookOn), ou asfTshCollect sur le compte",
+        "pt": "hsfCOLLECT no Hook (com Cron no HookOn), ou asfTshCollect na conta",
+        "jp": "Hook の hsfCOLLECT（HookOn に Cron を含む）、またはアカウントの asfTshCollect",
+        "ko": "Hook의 hsfCOLLECT(HookOn에 Cron 포함) 또는 계정의 asfTshCollect",
+        "zh": "Hook 上的 hsfCOLLECT（且 HookOn 包含 Cron），或账户上的 asfTshCollect",
+        "ar": "hsfCOLLECT على الـ Hook (مع Cron في HookOn)، أو asfTshCollect على الحساب"
+      },
+      {
+        "en": "Nothing: CronSet only runs Hooks on Mainnet",
+        "es": "Nada: CronSet solo ejecuta Hooks en Mainnet",
+        "fr": "Rien : CronSet n'exécute les Hooks que sur le Mainnet",
+        "pt": "Nada: o CronSet só executa Hooks na Mainnet",
+        "jp": "何もない：CronSet はメインネットでしか Hook を実行しない",
+        "ko": "없음: CronSet은 메인넷에서만 Hook을 실행한다",
+        "zh": "什么都不缺：CronSet 只在主网上运行 Hook",
+        "ar": "لا شيء: لا يشغّل CronSet الـ Hooks إلا على Mainnet"
+      }
+    ],
+    "answer": 1,
+    "explain": {
+      "en": "Your account doesn't send the Cron transaction, so the Hook runs as a weak stakeholder, a collect call. That only happens when the Hook allows collect calls and the account enables TSH Collect. Without them the cron still runs out, and nothing reports it.",
+      "es": "Tu cuenta no envía la transacción Cron, así que el Hook se ejecuta como stakeholder débil, una collect call. Eso solo ocurre si el Hook permite collect calls y la cuenta activa TSH Collect. Sin ellos, el cron se agota igualmente y nada lo avisa.",
+      "fr": "Ton compte n'envoie pas la transaction Cron : le Hook s'exécute donc comme stakeholder faible, un collect call. Cela n'arrive que si le Hook autorise les collect calls et si le compte active TSH Collect. Sans eux, le cron s'épuise quand même et rien ne le signale.",
+      "pt": "A sua conta não envia a transação Cron, então o Hook é executado como stakeholder fraco, uma collect call. Isso só acontece se o Hook permitir collect calls e a conta ativar o TSH Collect. Sem eles, o cron se esgota do mesmo jeito e nada avisa.",
+      "jp": "Cron トランザクションを送るのは自分のアカウントではないため、Hook は弱い stakeholder として、つまり collect call として実行されます。Hook が collect call を許可し、アカウントが TSH Collect を有効にしている場合にだけ起こります。どちらかがなければ cron は回数を使い切り、何も通知されません。",
+      "ko": "Cron 트랜잭션을 보내는 것은 내 계정이 아니므로 Hook은 약한 stakeholder, 즉 collect call로 실행됩니다. Hook이 collect call을 허용하고 계정이 TSH Collect를 켰을 때만 일어납니다. 없으면 cron은 그대로 소진되고 아무것도 알려 주지 않습니다.",
+      "zh": "Cron 交易不是由你的账户发送的，所以 Hook 以弱利益相关方的身份运行，也就是一次 collect call。只有当 Hook 允许 collect call 且账户启用了 TSH Collect 时才会发生。缺少它们，cron 照样用完次数，而且没有任何提示。",
+      "ar": "لا يرسل حسابك معاملة Cron، لذا يعمل الـ Hook بصفته صاحب مصلحة ضعيفًا، أي collect call. ولا يحدث ذلك إلا إذا سمح الـ Hook بالـ collect calls وفعّل الحساب TSH Collect. من دونهما يستنفد الـ cron مراته على أي حال، ولا شيء ينبّهك."
+    }
+  },
 ]

@@ -172,4 +172,60 @@ export default [
       ar: 'إن hook_param إعداد يضعه من ثبّت الـ Hook ولا يتغيّر إلّا عند تحديثه، بينما يضع otxn_param مُرسِل كل معاملة، فيصلح للتعليمات الخاصة بكل معاملة.',
     },
   },
+  {
+    "id": "m8q4",
+    "question": {
+      "en": "A Hook ends with accept(SBUF(\"ok\"), __LINE__). Where can you read that line number?",
+      "es": "Un Hook termina con accept(SBUF(\"ok\"), __LINE__). ¿Dónde puedes leer ese número de línea?",
+      "fr": "Un Hook se termine par accept(SBUF(\"ok\"), __LINE__). Où peux-tu lire ce numéro de ligne ?",
+      "pt": "Um Hook termina com accept(SBUF(\"ok\"), __LINE__). Onde você pode ler esse número de linha?",
+      "jp": "Hook が accept(SBUF(\"ok\"), __LINE__) で終了します。その行番号はどこで読めますか？",
+      "ko": "Hook이 accept(SBUF(\"ok\"), __LINE__)로 끝납니다. 그 줄 번호는 어디서 읽을 수 있나요?",
+      "zh": "一个 Hook 以 accept(SBUF(\"ok\"), __LINE__) 结束。在哪里可以读到这个行号？",
+      "ar": "ينتهي Hook بـ accept(SBUF(\"ok\"), __LINE__). أين يمكنك قراءة رقم السطر هذا؟"
+    },
+    "options": [
+      {
+        "en": "In HookReturnCode, in the transaction metadata, in hex",
+        "es": "En HookReturnCode, en los metadatos de la transacción, en hex",
+        "fr": "Dans HookReturnCode, dans les métadonnées de la transaction, en hex",
+        "pt": "Em HookReturnCode, nos metadados da transação, em hex",
+        "jp": "トランザクションのメタデータの HookReturnCode に hex で",
+        "ko": "트랜잭션 메타데이터의 HookReturnCode에 hex로",
+        "zh": "在交易元数据的 HookReturnCode 中，以 hex 表示",
+        "ar": "في HookReturnCode ضمن البيانات الوصفية للمعاملة، بصيغة hex"
+      },
+      {
+        "en": "Only in the Debug Stream of Hooks Builder",
+        "es": "Solo en el Debug Stream de Hooks Builder",
+        "fr": "Uniquement dans le Debug Stream de Hooks Builder",
+        "pt": "Só no Debug Stream do Hooks Builder",
+        "jp": "Hooks Builder の Debug Stream だけ",
+        "ko": "Hooks Builder의 Debug Stream에서만",
+        "zh": "只在 Hooks Builder 的 Debug Stream 中",
+        "ar": "فقط في Debug Stream الخاص بـ Hooks Builder"
+      },
+      {
+        "en": "In the account's Hook state",
+        "es": "En el estado del Hook de la cuenta",
+        "fr": "Dans l'état du Hook du compte",
+        "pt": "No estado do Hook da conta",
+        "jp": "アカウントの Hook の状態",
+        "ko": "계정의 Hook 상태",
+        "zh": "在账户的 Hook 状态中",
+        "ar": "في حالة الـ Hook الخاصة بالحساب"
+      }
+    ],
+    "answer": 0,
+    "explain": {
+      "en": "Every execution leaves a HookExecution record in the metadata: HookResult, HookReturnString and HookReturnCode. With __LINE__ as the code, it tells you where the Hook exited, from any node and without a debug stream.",
+      "es": "Cada ejecución deja un registro HookExecution en los metadatos: HookResult, HookReturnString y HookReturnCode. Con __LINE__ como código, te dice por dónde salió el Hook, desde cualquier nodo y sin debug stream.",
+      "fr": "Chaque exécution laisse un enregistrement HookExecution dans les métadonnées : HookResult, HookReturnString et HookReturnCode. Avec __LINE__ comme code, il indique par où le Hook est sorti, depuis n'importe quel nœud et sans debug stream.",
+      "pt": "Cada execução deixa um registro HookExecution nos metadados: HookResult, HookReturnString e HookReturnCode. Com __LINE__ como código, ele diz por onde o Hook saiu, a partir de qualquer nó e sem debug stream.",
+      "jp": "実行のたびにメタデータに HookExecution レコードが残ります。HookResult、HookReturnString、HookReturnCode です。コードに __LINE__ を渡せば、debug stream がなくても、どのノードからでも Hook がどこで終了したかがわかります。",
+      "ko": "실행될 때마다 메타데이터에 HookExecution 레코드가 남습니다. HookResult, HookReturnString, HookReturnCode입니다. 코드로 __LINE__을 넘기면 debug stream 없이도 어느 노드에서든 Hook이 어디서 끝났는지 알 수 있습니다.",
+      "zh": "每次执行都会在元数据中留下一条 HookExecution 记录：HookResult、HookReturnString 和 HookReturnCode。用 __LINE__ 作为代码，就能从任何节点知道 Hook 从哪里退出，无需 debug stream。",
+      "ar": "يترك كل تنفيذ سجل HookExecution في البيانات الوصفية: HookResult وHookReturnString وHookReturnCode. وعندما يكون الرمز __LINE__، يخبرك من أين خرج الـ Hook، من أي عقدة ومن دون debug stream."
+    }
+  },
 ]

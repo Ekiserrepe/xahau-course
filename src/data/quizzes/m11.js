@@ -74,14 +74,14 @@ export default [
     },
     options: [
       {
-        en: 'Yes, the same 12 drops as any transaction',
-        es: 'Sí, los mismos 12 drops que cualquier transacción',
-        fr: 'Oui, les mêmes 12 drops que toute transaction',
-        pt: 'Sim, os mesmos 12 drops de qualquer transação',
-        jp: 'はい、他のトランザクションと同じ 12 drops',
-        ko: '네, 다른 트랜잭션과 같은 12 drops',
-        zh: '需要，和其他交易一样是 12 drops',
-        ar: 'نعم، نفس الـ 12 drop كأي معاملة',
+        en: "Yes, the same 10 drops as any transaction",
+        es: "Sí, los mismos 10 drops que cualquier transacción",
+        fr: "Oui, les mêmes 10 drops que toute transaction",
+        pt: "Sim, os mesmos 10 drops de qualquer transação",
+        jp: "はい、他のトランザクションと同じ 10 drops",
+        ko: "네, 다른 트랜잭션과 같은 10 drops",
+        zh: "需要，和其他交易一样是 10 drops",
+        ar: 'نعم، نفس الـ 10 drops كأي معاملة',
       },
       {
         en: 'No — it is only a signature, nothing is submitted to the ledger',

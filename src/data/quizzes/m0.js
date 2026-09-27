@@ -231,4 +231,60 @@ export default [
       ar: 'يفصل ملف ‎.env الأسرار عن الشيفرة، فلا تُرفَع معها أبدًا.',
     },
   },
+  {
+    "id": "m0q5",
+    "question": {
+      "en": "A script prints a SyntaxError and none of its console.log lines. Why?",
+      "es": "Un script imprime un SyntaxError y ninguna de sus líneas de console.log. ¿Por qué?",
+      "fr": "Un script affiche une SyntaxError et aucune de ses lignes console.log. Pourquoi ?",
+      "pt": "Um script imprime um SyntaxError e nenhuma das suas linhas de console.log. Por quê?",
+      "jp": "スクリプトが SyntaxError を表示し、console.log の行が1つも表示されません。なぜですか？",
+      "ko": "스크립트가 SyntaxError를 출력하고 console.log 줄은 하나도 출력하지 않습니다. 왜일까요?",
+      "zh": "脚本打印了 SyntaxError，却没有打印任何 console.log 行。为什么？",
+      "ar": "يطبع سكربت SyntaxError ولا يطبع أي سطر من أسطر console.log. لماذا؟"
+    },
+    "options": [
+      {
+        "en": "The node rejected the first request",
+        "es": "El nodo rechazó la primera petición",
+        "fr": "Le nœud a rejeté la première requête",
+        "pt": "O nó rejeitou a primeira requisição",
+        "jp": "ノードが最初のリクエストを拒否した",
+        "ko": "노드가 첫 번째 요청을 거부했다",
+        "zh": "节点拒绝了第一个请求",
+        "ar": "رفضت العقدة الطلب الأول"
+      },
+      {
+        "en": "Node checks the whole file before running it, and a syntax error stops it before any line runs",
+        "es": "Node comprueba el archivo entero antes de ejecutarlo, y un error de sintaxis lo detiene antes de que se ejecute ninguna línea",
+        "fr": "Node vérifie tout le fichier avant de l'exécuter, et une erreur de syntaxe l'arrête avant qu'aucune ligne ne s'exécute",
+        "pt": "O Node verifica o arquivo inteiro antes de executá-lo, e um erro de sintaxe o interrompe antes de qualquer linha ser executada",
+        "jp": "Node は実行前にファイル全体を確認し、構文エラーがあると1行も実行されないうちに止まる",
+        "ko": "Node는 실행 전에 파일 전체를 확인하며, 문법 오류가 있으면 어떤 줄도 실행되기 전에 멈춘다",
+        "zh": "Node 在运行前会检查整个文件，语法错误会让它在任何一行运行之前就停止",
+        "ar": "يتحقق Node من الملف كله قبل تشغيله، وخطأ الصياغة يوقفه قبل تنفيذ أي سطر"
+      },
+      {
+        "en": "console.log only prints after the script ends",
+        "es": "console.log solo imprime cuando termina el script",
+        "fr": "console.log n'affiche qu'à la fin du script",
+        "pt": "console.log só imprime quando o script termina",
+        "jp": "console.log はスクリプトの終了後にしか表示しない",
+        "ko": "console.log는 스크립트가 끝난 뒤에만 출력한다",
+        "zh": "console.log 只在脚本结束后才打印",
+        "ar": "لا يطبع console.log إلا بعد انتهاء السكربت"
+      }
+    ],
+    "answer": 1,
+    "explain": {
+      "en": "node runs a file in two stages: it checks that the whole file is valid JavaScript, then runs it. A SyntaxError belongs to the first stage, so nothing ran. An error in the second stage leaves on screen the lines printed before it.",
+      "es": "node ejecuta un archivo en dos fases: comprueba que el archivo entero es JavaScript válido y después lo ejecuta. Un SyntaxError pertenece a la primera fase, así que no se ejecutó nada. Un error en la segunda fase deja en pantalla las líneas impresas antes.",
+      "fr": "node exécute un fichier en deux temps : il vérifie que tout le fichier est du JavaScript valide, puis l'exécute. Une SyntaxError appartient au premier temps : rien ne s'est exécuté. Une erreur dans le second temps laisse à l'écran les lignes affichées avant.",
+      "pt": "O node executa um arquivo em duas fases: verifica se o arquivo inteiro é JavaScript válido e depois o executa. Um SyntaxError pertence à primeira fase, então nada foi executado. Um erro na segunda fase deixa na tela as linhas impressas antes.",
+      "jp": "node はファイルを2段階で実行します。ファイル全体が有効な JavaScript か確認してから実行します。SyntaxError は1段階目のエラーなので、何も実行されていません。2段階目のエラーなら、それまでに表示された行が画面に残ります。",
+      "ko": "node는 파일을 두 단계로 실행합니다. 파일 전체가 올바른 JavaScript인지 확인한 다음 실행합니다. SyntaxError는 첫 단계의 오류라서 아무것도 실행되지 않았습니다. 두 번째 단계의 오류라면 그전에 출력된 줄이 화면에 남습니다.",
+      "zh": "node 分两个阶段运行文件：先检查整个文件是否是有效的 JavaScript，再运行它。SyntaxError 属于第一阶段，所以什么都没有运行。第二阶段的错误会把之前打印的行留在屏幕上。",
+      "ar": "يشغّل node الملف على مرحلتين: يتحقق من أن الملف كله JavaScript صالح، ثم ينفذه. ينتمي SyntaxError إلى المرحلة الأولى، لذا لم يُنفَّذ شيء. أما الخطأ في المرحلة الثانية فيترك على الشاشة الأسطر المطبوعة قبله."
+    }
+  },
 ]
