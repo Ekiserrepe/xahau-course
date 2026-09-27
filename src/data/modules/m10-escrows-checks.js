@@ -6345,346 +6345,648 @@ vs múltiplas transações separadas`,
         zh: "CronSet：自动执行 Hook",
       },
       theory: {
-        es: `La transacción \`CronSet\` permite programar la **ejecución automática y periódica** de un Hook directamente desde el protocolo de Xahau, sin depender de ningún servicio externo. Es el mecanismo nativo de cron jobs de la red.
+        es: `\`CronSet\` hace que la red ejecute el Hook de tu cuenta según un calendario, sin un servicio externo que envíe transacciones. Esta lección explica cómo lo hace la red, qué necesitan el Hook y la cuenta, y cuánto cuesta cada campo y cada ejecución.
 
-### ¿Qué es CronSet?
+### Cómo se ejecuta un cron
 
-Con \`CronSet\` puedes indicar a Xahau que ejecute el Hook de tu cuenta de forma recurrente: cada X segundos, a partir de una fecha concreta, un número determinado de veces. Todo queda registrado en el ledger y la red se encarga de la ejecución.
+\`CronSet\` guarda un objeto **Cron** en tu cuenta: cuándo ejecutar, cada cuántos segundos y cuántas veces más. Cuando llega ese momento, la propia red crea una **pseudotransacción \`Cron\`**. Nadie la firma y no tiene fee; su campo \`Owner\` es tu cuenta. Esa transacción activa el Hook de tu cuenta. Después el objeto Cron pasa al siguiente momento, hasta que no quedan repeticiones y desaparece.
 
-A diferencia del patrón \`Invoke\` periódico (donde un servicio externo envía transacciones), \`CronSet\` es **completamente on-chain**: no necesitas ningún script externo que esté corriendo constantemente.
+Una cuenta tiene como mucho un Cron. Un \`CronSet\` nuevo sustituye al actual.
 
-### Requisitos previos
+### Qué necesitan el Hook y la cuenta
 
-Antes de usar \`CronSet\` debes preparar la cuenta con tu Hook en dos pasos:
+Tu cuenta no envía la transacción \`Cron\`, así que tu Hook se ejecuta como **transactional stakeholder débil** (TSH débil): se le informa de la transacción y no puede rechazarla. Una ejecución débil es una **collect call**, que paga la cuenta del Hook. Solo ocurre cuando las dos partes lo permiten:
 
-1. **Instalar un Hook con el flag \`hsfCOLLECT\`**: Este flag indica que el Hook está diseñado para ser invocado automáticamente por el sistema de crons de la red.
+1. **El Hook permite collect calls**: instalado con el flag \`hsfCOLLECT\` (\`4\`). Con \`hsfOVERRIDE\` (\`1\`), \`Flags: 5\`. Su \`HookOn\` también debe incluir el tipo de transacción \`Cron\`, \`92\`.
+2. **La cuenta permite collect calls**: \`AccountSet\` con \`SetFlag: 11\` (\`asfTshCollect\`).
 
-2. **Activar TSH Collect en tu cuenta** (\`asfTshCollect\`, \`SetFlag: 11\`): Permite que la red ejecute tu Hook mediante el mecanismo de Transaction Signature Hook Collection.
+Si falta uno de los dos, \`CronSet\` sigue devolviendo \`tesSUCCESS\` y el cron sigue agotándose, pero el Hook nunca se ejecuta. Nada lo avisa: comprueba que ambos están configurados.
 
-\`\`\`javascript
-// Activar TSH Collect
-const accountSet = {
-  TransactionType: "AccountSet",
-  Account: wallet.address,
-  SetFlag: 11, // asfTshCollect
-};
+Un Hook que cuenta sus ejecuciones de Cron, y los campos para instalarlo como en la [lección 9.2](?m=9&l=1):
+
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON: solo cuenta la transacción Cron
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
+
+    // El contador vive en el estado del Hook, bajo la clave "CRON"
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
 \`\`\`
 
-### Campos de CronSet
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // Solo lo activa Cron (bit 92). El bit 22 (SetHook) funciona al revés: 0 = no se activa
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
 
-| Campo | Tipo | Requerido | Descripción |
-|---|---|---|---|
-| \`TransactionType\` | String | Sí | \`"CronSet"\` |
-| \`Account\` | String | Sí | La cuenta cuyo Hook se ejecutará periódicamente |
-| \`StartTime\` | Number | No | Ripple Epoch del primer disparo. Usa \`0\` para ejecución inmediata. Omitir al eliminar |
-| \`RepeatCount\` | Number | No | Número de veces que se ejecutará el Hook (máximo 256 por transacción). Omitir al eliminar |
-| \`DelaySeconds\` | Number | No | Segundos entre cada ejecución. Omitir al eliminar |
+Resultado en testnet, con \`StartTime: 0\`, \`DelaySeconds: 10\` y \`RepeatCount: 2\`, leyendo el estado del Hook 50 segundos después:
 
-**Reglas importantes**:
-- \`DelaySeconds\` y \`RepeatCount\` deben estar presentes los dos, o ausentes los dos
-- Para eliminar un cron activo: omite todos los campos de programación y añade \`Flags: 1\` (\`tfCronUnset\`)
-- No puedes combinar \`tfCronUnset\` con campos de programación
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50 s después  estado del Hook CRON = 3
+\`\`\`
 
-### Tiempo en Ripple Epoch
+- **\`RepeatCount: 2\` dio 3 ejecuciones**: la primera en \`StartTime\` y después 2 repeticiones.
+- **\`StartTime: 0\`** pasó a ser la hora de cierre del ledger anterior: "ahora".
+- **La misma prueba sin \`asfTshCollect\`, o con \`Flags: 1\`**, devuelve el mismo \`tesSUCCESS\` y no deja estado: el Hook nunca se ejecutó.
 
-Xahau usa la **Ripple Epoch** (segundos desde el 1 de enero de 2000 UTC), no el Unix timestamp:
+### Los campos
+
+| Campo | Obligatorio | Significado |
+|---|---|---|
+| \`StartTime\` | Sí, para crear | Primera ejecución, en segundos desde el Ripple Epoch. \`0\` = ahora. Como mucho 365 días en el futuro |
+| \`DelaySeconds\` | Con \`RepeatCount\` | Segundos entre ejecuciones, hasta 31.536.000 (365 días) |
+| \`RepeatCount\` | Con \`DelaySeconds\` | Ejecuciones después de la primera, de 1 a 256 |
+| \`Flags\` | Para borrar | \`1\` (\`tfCronUnset\`), sin ninguno de los campos anteriores |
+
+\`DelaySeconds\` y \`RepeatCount\` van juntos o no van. Solo con \`StartTime\`, el Hook se ejecuta una vez. Con los dos, se ejecuta \`1 + RepeatCount\` veces. Para más de 257 ejecuciones, envía un \`CronSet\` nuevo antes de que termine el actual: lo sustituye.
+
+Borrar siempre tiene éxito, aunque no haya ningún Cron.
+
+### El tiempo en Ripple Epoch
+
+\`StartTime\` cuenta segundos desde el 1 de enero de 2000 UTC, no desde 1970 como un timestamp de Unix:
 
 \`\`\`javascript
-// Convertir fecha actual a Ripple Epoch
+// La hora actual en Ripple Epoch
 const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
 
-// Programar para dentro de 1 hora
+// Empezar dentro de una hora
 const startIn1Hour = rippleEpoch + 3600;
 \`\`\`
 
-Usa \`0\` en \`StartTime\` para que el cron empiece a ejecutarse desde el próximo ledger válido.
+### Cuánto cuesta un cron
 
-### Límites y restricciones
+- **El fee del \`CronSet\`** cubre la transacción y las ejecuciones que programa: el fee base × (2 + \`RepeatCount\`). Con un fee base de 10 drops y \`RepeatCount: 2\`, 40 drops, como en el resultado de arriba.
+- **La reserva**: el objeto Cron cuenta en \`OwnerCount\` mientras existe.
+- **Cada ejecución** es una collect call que se cobra a la cuenta. Si el saldo no la cubre por encima de la reserva, esa ejecución del Hook se omite.
 
-| Parámetro | Límite |
-|---|---|
-| \`RepeatCount\` máximo por transacción | 256 |
-| \`DelaySeconds\` máximo | 31.536.000 s (365 días) |
-| \`StartTime\` máximo hacia el futuro | 365 días |
-| \`StartTime\` en el pasado | No permitido (\`tecEXPIRED\`) |
+### Los ejemplos
 
-Si necesitas más de 256 repeticiones, envía otro \`CronSet\` antes de que se agoten para ampliar el contador.
+El primer ejemplo activa TSH Collect en \`WALLET\` y programa su Hook cada hora con \`RepeatCount: 24\`: 25 ejecuciones. Solo ejecuta algo si \`WALLET\` tiene un Hook instalado como el de arriba. El segundo ejemplo borra el cron con \`tfCronUnset\`.
 
-### Eliminar un CronSet
-
-Para cancelar un cron activo, envía \`CronSet\` con \`Flags: 1\`:
-
-\`\`\`javascript
-const cronDelete = {
-  TransactionType: "CronSet",
-  Account: wallet.address,
-  Flags: 1, // tfCronUnset — elimina el cron activo
-};
-\`\`\`
-
-### Errores comunes
+### Errores
 
 | Error | Causa |
 |---|---|
-| \`temDISABLED\` | La feature CronSet no está activada en la red |
-| \`temMALFORMED\` | Combinación de campos inválida (p.ej. solo uno de \`DelaySeconds\`/\`RepeatCount\`) |
-| \`tecEXPIRED\` | \`StartTime\` en el pasado o más de 365 días en el futuro |`,
-        pt: `A transação \`CronSet\` permite programar a **execução automática e periódica** de um Hook diretamente a partir do protocolo de Xahau, sem depender de nenhum serviço externo. É o mecanismo nativo de cron jobs da rede.
-### O que é CronSet?
-Com \`CronSet\` você pode indicar à Xahau que execute o Hook de sua conta de forma recorrente: cada X segundos, a partir de uma data específica, um número determinado de vezes. Todo fica registrado no ledger e a rede se encarrega da execução.
-Diferentemente do padrão \`Invoke\` periódico (em que um serviço externo envia transações), \`CronSet\` é **completamente on-chain**: no você precisa nenhum script externo que esteja rodando constantemente.
-### Requisitos previos
-Antes de usar \`CronSet\` você deve preparar a conta com seu Hook em dois passos:
-1. **Instalar um Hook com o flag \`hsfCOLLECT\`**: este flag indica que o Hook foi projetado para ser invocado automaticamente pelo sistema de crons da rede.
-2. **Ativar TSH Collect em sua conta** (\`asfTshCollect\`, \`SetFlag: 11\`): Permite que a rede execute seu Hook por meio do mecanismo de Transaction Signature Hook Collection.
-\`\`\`javascript
-// Ativar TSH Collect
-const accountSet = {
-  TransactionType: "AccountSet",
-  Account: wallet.address,
-  SetFlag: 11, // asfTshCollect
-};
+| \`temMALFORMED\` | Falta \`StartTime\` al crear; solo uno de \`DelaySeconds\` y \`RepeatCount\`; \`RepeatCount\` 0 o mayor que 256; \`DelaySeconds\` de más de 365 días; \`tfCronUnset\` con otros campos |
+| \`temINVALID_FLAG\` | Un flag distinto de \`tfCronUnset\` |
+| \`tecEXPIRED\` | \`StartTime\` en el pasado, o a más de 365 días |
+| \`tecINSUFFICIENT_RESERVE\` | El saldo no cubre la reserva de un objeto más |
+| \`temDISABLED\` | La amendment Cron no está activada en la red |`,
+        pt: `\`CronSet\` faz a rede executar o Hook da sua conta segundo um calendário, sem um serviço externo enviando transações. Esta lição explica como a rede faz isso, o que o Hook e a conta precisam e quanto custa cada campo e cada execução.
+
+### Como um cron é executado
+
+\`CronSet\` guarda um objeto **Cron** na sua conta: quando executar, a cada quantos segundos e quantas vezes mais. Quando esse momento chega, a própria rede cria uma **pseudotransação \`Cron\`**. Ninguém a assina e ela não tem fee; o seu campo \`Owner\` é a sua conta. Essa transação aciona o Hook da sua conta. Depois o objeto Cron passa para o próximo momento, até não restarem repetições, e desaparece.
+
+Uma conta tem no máximo um Cron. Um \`CronSet\` novo substitui o atual.
+
+### O que o Hook e a conta precisam
+
+A sua conta não envia a transação \`Cron\`, então o seu Hook é executado como **transactional stakeholder fraco** (TSH fraco): ele é informado da transação e não pode rejeitá-la. Uma execução fraca é uma **collect call**, paga pela conta do Hook. Ela só acontece quando os dois lados permitem:
+
+1. **O Hook permite collect calls**: instalado com a flag \`hsfCOLLECT\` (\`4\`). Com \`hsfOVERRIDE\` (\`1\`), \`Flags: 5\`. O seu \`HookOn\` também precisa incluir o tipo de transação \`Cron\`, \`92\`.
+2. **A conta permite collect calls**: \`AccountSet\` com \`SetFlag: 11\` (\`asfTshCollect\`).
+
+Se faltar um dos dois, \`CronSet\` continua devolvendo \`tesSUCCESS\` e o cron continua se esgotando, mas o Hook nunca é executado. Nada avisa: verifique se os dois estão configurados.
+
+Um Hook que conta as suas execuções de Cron, e os campos para instalá-lo como na [lição 9.2](?m=9&l=1):
+
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON: só a transação Cron conta
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
+
+    // O contador fica no estado do Hook, na chave "CRON"
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
 \`\`\`
-### Campos de CronSet
-| Campo | Tipo | Requerido | Descrição |
-|---|---|---|---|
-| \`TransactionType\` | String | Sim | \`"CronSet"\` |
-| \`Account\` | String | Sim | A conta cujo Hook é executadará periodicamente |
-| \`StartTime\` | Number | Não | Ripple Epoch do primeiro disparo. Usa \`0\` para execução inmediata. Omitir ao eliminar |
-| \`RepeatCount\` | Number | Não | Número de vezes que é executadará o Hook (máximo 256 por transação). Omitir ao eliminar |
-| \`DelaySeconds\` | Number | Não | Segundos entre cada execução. Omitir ao eliminar |
-**Regras importantes**:
-- \`DelaySeconds\` e \`RepeatCount\` devem estar presentes os dos, ou ausentes os dos
-- Para eliminar um cron ativo: omite todos os campos de programacioun e adiciona \`Flags: 1\` (\`tfCronUnset\`)
-- No você pode combinar \`tfCronUnset\` com campos de programacioun
-### Tempo em Ripple Epoch
-Xahau usa a **Ripple Epoch** (segundos desde o 1 de enero de 2000 UTC), no o Unix timestamp:
+
 \`\`\`javascript
-// Converter data atual a Ripple Epoch
+Hook: {
+  CreateCode: wasmHex,
+  // Só Cron (bit 92) o aciona. O bit 22 (SetHook) funciona ao contrário: 0 = não aciona
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
+
+Resultado na testnet, com \`StartTime: 0\`, \`DelaySeconds: 10\` e \`RepeatCount: 2\`, lendo o estado do Hook 50 segundos depois:
+
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50 s depois  estado do Hook CRON = 3
+\`\`\`
+
+- **\`RepeatCount: 2\` deu 3 execuções**: a primeira em \`StartTime\` e depois 2 repetições.
+- **\`StartTime: 0\`** virou a hora de fechamento do ledger anterior: "agora".
+- **O mesmo teste sem \`asfTshCollect\`, ou com \`Flags: 1\`**, devolve o mesmo \`tesSUCCESS\` e não deixa estado: o Hook nunca foi executado.
+
+### Os campos
+
+| Campo | Obrigatório | Significado |
+|---|---|---|
+| \`StartTime\` | Sim, para criar | Primeira execução, em segundos desde o Ripple Epoch. \`0\` = agora. No máximo 365 dias no futuro |
+| \`DelaySeconds\` | Com \`RepeatCount\` | Segundos entre execuções, até 31.536.000 (365 dias) |
+| \`RepeatCount\` | Com \`DelaySeconds\` | Execuções depois da primeira, de 1 a 256 |
+| \`Flags\` | Para excluir | \`1\` (\`tfCronUnset\`), sem nenhum dos campos acima |
+
+\`DelaySeconds\` e \`RepeatCount\` vão juntos ou não vão. Só com \`StartTime\`, o Hook é executado uma vez. Com os dois, é executado \`1 + RepeatCount\` vezes. Para mais de 257 execuções, envie um \`CronSet\` novo antes que o atual termine: ele o substitui.
+
+Excluir sempre funciona, mesmo quando não há nenhum Cron.
+
+### O tempo em Ripple Epoch
+
+\`StartTime\` conta segundos desde 1 de janeiro de 2000 UTC, não desde 1970 como um timestamp Unix:
+
+\`\`\`javascript
+// A hora atual em Ripple Epoch
 const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
-// Programar para dentro de 1 hora
+
+// Começar daqui a uma hora
 const startIn1Hour = rippleEpoch + 3600;
 \`\`\`
-Usa \`0\` em \`StartTime\` para que o cron empiece a ejecutarse desde o prouximo ledger válido.
-### Limites e restrições
-| Parámetro | Limite |
-|---|---|
-| \`RepeatCount\` máximo por transação | 256 |
-| \`DelaySeconds\` máximo | 31.536.000 s (365 dias) |
-| \`StartTime\` máximo no futuro | 365 dias |
-| \`StartTime\` no pasado | No permitido (\`tecEXPIRED\`) |
-Se você precisar de mais de 256 repetições, envie outro \`CronSet\` antes que elas acabem para ampliar o contador.
-### Eliminar um CronSet
-Para cancelar um cron ativo, envia \`CronSet\` com \`Flags: 1\`:
-\`\`\`javascript
-const cronDelete = {
-  TransactionType: "CronSet",
-  Account: wallet.address,
-  Flags: 1, // tfCronUnset — remova o cron ativo
-};
-\`\`\`
-### Erros comuns
+
+### Quanto custa um cron
+
+- **O fee do \`CronSet\`** cobre a transação e as execuções que ela agenda: o fee base × (2 + \`RepeatCount\`). Com um fee base de 10 drops e \`RepeatCount: 2\`, 40 drops, como no resultado acima.
+- **A reserva**: o objeto Cron conta em \`OwnerCount\` enquanto existe.
+- **Cada execução** é uma collect call cobrada da conta. Se o saldo não a cobre acima da reserva, essa execução do Hook é pulada.
+
+### Os exemplos
+
+O primeiro exemplo ativa o TSH Collect na \`WALLET\` e agenda o seu Hook a cada hora com \`RepeatCount: 24\`: 25 execuções. Ele só executa algo se a \`WALLET\` tiver um Hook instalado como o de cima. O segundo exemplo exclui o cron com \`tfCronUnset\`.
+
+### Erros
+
 | Erro | Causa |
 |---|---|
-| \`temDISABLED\` | A feature CronSet não está ativada na rede |
-| \`temMALFORMED\` | Combinação de campos inválida (por exemplo apenas um de \`DelaySeconds\`/\`RepeatCount\`) |
-| \`tecEXPIRED\` | \`StartTime\` no passado ou mais de 365 dias no futuro |`,
-        en: `The \`CronSet\` transaction allows scheduling the **automatic and periodic execution** of a Hook directly from the Xahau protocol, without depending on any external service. It is the network's native cron job mechanism.
+| \`temMALFORMED\` | Falta \`StartTime\` ao criar; só um de \`DelaySeconds\` e \`RepeatCount\`; \`RepeatCount\` 0 ou acima de 256; \`DelaySeconds\` acima de 365 dias; \`tfCronUnset\` com outros campos |
+| \`temINVALID_FLAG\` | Uma flag diferente de \`tfCronUnset\` |
+| \`tecEXPIRED\` | \`StartTime\` no passado, ou a mais de 365 dias |
+| \`tecINSUFFICIENT_RESERVE\` | O saldo não cobre a reserva de mais um objeto |
+| \`temDISABLED\` | A amendment Cron não está ativada na rede |`,
+        en: `\`CronSet\` makes the network run your account's Hook on a schedule, with no external service sending transactions. This lesson explains how the network does it, what the Hook and the account need, and what each field and each execution costs.
 
-### What is CronSet?
+### How a cron runs
 
-With \`CronSet\` you can instruct Xahau to execute your account's Hook recurrently: every X seconds, starting from a specific date, a certain number of times. Everything is recorded in the ledger and the network handles the execution.
+\`CronSet\` stores a **Cron** object in your account: when to run, every how many seconds, and how many more times. When that time arrives, the network itself creates a **\`Cron\` pseudo-transaction**. Nobody signs it and it has no fee; its \`Owner\` field is your account. That transaction triggers your account's Hook. Then the Cron object moves to the next time, until no repetitions remain, and it disappears.
 
-Unlike the periodic \`Invoke\` pattern (where an external service sends transactions), \`CronSet\` is **completely on-chain**: you don't need any external script running constantly.
+An account has one Cron at most. A new \`CronSet\` replaces the current one.
 
-### Prerequisites
+### What the Hook and the account need
 
-Before using \`CronSet\` you must prepare the account with your Hook in two steps:
+Your account doesn't send the \`Cron\` transaction, so your Hook runs as a **weak transactional stakeholder** (weak TSH): it is told about the transaction and cannot reject it. A weak execution is a **collect call**, paid by the Hook's account. It only happens when both sides allow it:
 
-1. **Install a Hook with the \`hsfCOLLECT\` flag**: This flag indicates the Hook is designed to be invoked automatically by the network's cron system.
+1. **The Hook allows collect calls**: installed with the \`hsfCOLLECT\` flag (\`4\`). With \`hsfOVERRIDE\` (\`1\`), \`Flags: 5\`. Its \`HookOn\` must also include the \`Cron\` transaction type, \`92\`.
+2. **The account allows collect calls**: \`AccountSet\` with \`SetFlag: 11\` (\`asfTshCollect\`).
 
-2. **Enable TSH Collect on your account** (\`asfTshCollect\`, \`SetFlag: 11\`): Allows the network to execute your Hook via the Transaction Signature Hook Collection mechanism.
+If one of them is missing, \`CronSet\` still returns \`tesSUCCESS\` and the cron still runs out, but the Hook never executes. Nothing reports it: check that both are set.
 
-\`\`\`javascript
-// Enable TSH Collect
-const accountSet = {
-  TransactionType: "AccountSet",
-  Account: wallet.address,
-  SetFlag: 11, // asfTshCollect
-};
+A Hook that counts its Cron executions, and the fields to install it as in [lesson 9.2](?m=9&l=1):
+
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON: only the Cron transaction counts
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
+
+    // The counter lives in the Hook state, under the key "CRON"
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
 \`\`\`
 
-### CronSet fields
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // Only Cron (bit 92) triggers it. Bit 22 (SetHook) works the other way round: 0 = not triggered
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
 
-| Field | Type | Required | Description |
-|---|---|---|---|
-| \`TransactionType\` | String | Yes | \`"CronSet"\` |
-| \`Account\` | String | Yes | The account whose Hook will run periodically |
-| \`StartTime\` | Number | No | Ripple Epoch of the first trigger. Use \`0\` for immediate execution. Omit when deleting |
-| \`RepeatCount\` | Number | No | Number of times the Hook will execute (maximum 256 per transaction). Omit when deleting |
-| \`DelaySeconds\` | Number | No | Seconds between each execution. Omit when deleting |
+Result on testnet, with \`StartTime: 0\`, \`DelaySeconds: 10\` and \`RepeatCount: 2\`, reading the Hook state 50 seconds later:
 
-**Important rules**:
-- \`DelaySeconds\` and \`RepeatCount\` must both be present, or both absent
-- To delete an active cron: omit all scheduling fields and add \`Flags: 1\` (\`tfCronUnset\`)
-- You cannot combine \`tfCronUnset\` with scheduling fields
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50 s later  Hook state CRON = 3
+\`\`\`
+
+- **\`RepeatCount: 2\` gave 3 executions**: the first one at \`StartTime\`, then 2 repetitions.
+- **\`StartTime: 0\`** became the close time of the previous ledger: "now".
+- **The same run without \`asfTshCollect\`, or with \`Flags: 1\`**, returns the same \`tesSUCCESS\` and leaves no state: the Hook never ran.
+
+### The fields
+
+| Field | Required | Meaning |
+|---|---|---|
+| \`StartTime\` | Yes, to create | First execution, in seconds since the Ripple Epoch. \`0\` = now. At most 365 days ahead |
+| \`DelaySeconds\` | With \`RepeatCount\` | Seconds between executions, up to 31,536,000 (365 days) |
+| \`RepeatCount\` | With \`DelaySeconds\` | Executions after the first one, from 1 to 256 |
+| \`Flags\` | To delete | \`1\` (\`tfCronUnset\`), with none of the fields above |
+
+\`DelaySeconds\` and \`RepeatCount\` go together or not at all. With \`StartTime\` alone, the Hook runs once. With both, it runs \`1 + RepeatCount\` times. For more than 257 executions, send a new \`CronSet\` before the current one ends: it replaces it.
+
+Deleting always succeeds, even when there is no Cron.
 
 ### Time in Ripple Epoch
 
-Xahau uses the **Ripple Epoch** (seconds since January 1, 2000 UTC), not the Unix timestamp:
+\`StartTime\` counts seconds from 1 January 2000 UTC, not from 1970 like a Unix timestamp:
 
 \`\`\`javascript
-// Convert current date to Ripple Epoch
+// The current time in Ripple Epoch
 const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
 
-// Schedule for 1 hour from now
+// Start in one hour
 const startIn1Hour = rippleEpoch + 3600;
 \`\`\`
 
-Use \`0\` in \`StartTime\` for the cron to start executing from the next valid ledger.
+### What a cron costs
 
-### Limits and restrictions
+- **The \`CronSet\` fee** covers the transaction and the executions it schedules: the base fee × (2 + \`RepeatCount\`). With a base fee of 10 drops and \`RepeatCount: 2\`, 40 drops, as in the result above.
+- **The reserve**: the Cron object counts in \`OwnerCount\` while it exists.
+- **Each execution** is a collect call, charged to the account. When the balance can't cover it above the reserve, that execution of the Hook is skipped.
 
-| Parameter | Limit |
-|---|---|
-| Maximum \`RepeatCount\` per transaction | 256 |
-| Maximum \`DelaySeconds\` | 31,536,000 s (365 days) |
-| Maximum \`StartTime\` into the future | 365 days |
-| \`StartTime\` in the past | Not allowed (\`tecEXPIRED\`) |
+### The examples
 
-If you need more than 256 repetitions, send another \`CronSet\` before they run out to extend the counter.
+The first example enables TSH Collect on \`WALLET\` and schedules its Hook every hour with \`RepeatCount: 24\`: 25 executions. It only runs something if \`WALLET\` has a Hook installed as above. The second example deletes the cron with \`tfCronUnset\`.
 
-### Deleting a CronSet
-
-To cancel an active cron, send \`CronSet\` with \`Flags: 1\`:
-
-\`\`\`javascript
-const cronDelete = {
-  TransactionType: "CronSet",
-  Account: wallet.address,
-  Flags: 1, // tfCronUnset — deletes the active cron
-};
-\`\`\`
-
-### Common errors
+### Errors
 
 | Error | Cause |
 |---|---|
-| \`temDISABLED\` | The CronSet feature is not enabled on the network |
-| \`temMALFORMED\` | Invalid field combination (e.g. only one of \`DelaySeconds\`/\`RepeatCount\`) |
-| \`tecEXPIRED\` | \`StartTime\` in the past or more than 365 days into the future |`,
-        jp: `\`CronSet\`トランザクションは、外部サービスに依存することなく、Xahauプロトコルから直接、Hookの**自動かつ定期的な実行**をスケジュールできます。これはネットワークのネイティブなcronジョブメカニズムです。
+| \`temMALFORMED\` | No \`StartTime\` when creating; only one of \`DelaySeconds\` and \`RepeatCount\`; \`RepeatCount\` 0 or over 256; \`DelaySeconds\` over 365 days; \`tfCronUnset\` with other fields |
+| \`temINVALID_FLAG\` | A flag other than \`tfCronUnset\` |
+| \`tecEXPIRED\` | \`StartTime\` in the past, or more than 365 days ahead |
+| \`tecINSUFFICIENT_RESERVE\` | The balance doesn't cover the reserve for one more object |
+| \`temDISABLED\` | The Cron amendment isn't enabled on the network |`,
+        jp: `\`CronSet\` を使うと、外部サービスがトランザクションを送らなくても、ネットワークがスケジュールに従ってアカウントの Hook を実行します。このレッスンでは、ネットワークがそれをどう行うか、Hook とアカウントに何が必要か、各フィールドと各実行にどれだけコストがかかるかを説明します。
 
-### CronSetとは？
+### cron の実行の仕組み
 
-\`CronSet\`を使用すると、XahauにアカウントのフックをX秒ごと、特定の日付から、特定の回数のように定期的に実行するよう指示することができます。すべてがレジャーに記録され、ネットワークが実行を担当します。
+\`CronSet\` はアカウントに **Cron** オブジェクトを保存します。いつ実行するか、何秒ごとか、あと何回かを記録します。その時刻になると、ネットワーク自身が **\`Cron\` 疑似トランザクション**を作成します。誰も署名せず、手数料もありません。\`Owner\` フィールドがあなたのアカウントです。このトランザクションがアカウントの Hook を起動します。その後 Cron オブジェクトは次の時刻に移り、繰り返しが残っていなければ消えます。
 
-定期的な\`Invoke\`パターン（外部サービスがトランザクションを送信する場合）とは異なり、\`CronSet\`は**完全にオンチェーン**であり、常時実行のための外部スクリプトは不要です。
+1つのアカウントが持てる Cron は最大1つです。新しい \`CronSet\` は現在のものを置き換えます。
 
-### 前提条件
+### Hook とアカウントに必要なもの
 
-\`CronSet\`を使用する前に、次の2つのステップでHookを持つアカウントを準備する必要があります。
+\`Cron\` トランザクションを送るのはあなたのアカウントではないため、Hook は**弱い transactional stakeholder**（弱い TSH）として実行されます。トランザクションの通知は受けますが、拒否はできません。弱い実行は **collect call** で、Hook のアカウントが支払います。双方が許可している場合にだけ実行されます。
 
-1. **\`hsfCOLLECT\`フラグ付きのHookをインストール**：このフラグはHookがネットワークのcronシステムによって自動的に呼び出されるように設計されていることを示します。
+1. **Hook が collect call を許可する**：\`hsfCOLLECT\` フラグ（\`4\`）付きでインストールします。\`hsfOVERRIDE\`（\`1\`）と合わせて \`Flags: 5\` です。\`HookOn\` には \`Cron\` トランザクションタイプ \`92\` も含める必要があります。
+2. **アカウントが collect call を許可する**：\`SetFlag: 11\`（\`asfTshCollect\`）の \`AccountSet\` を送ります。
 
-2. **アカウントでTSH Collectを有効化**（\`asfTshCollect\`、\`SetFlag: 11\`）：ネットワークがHook Collectメカニズムを介してHookを実行できるようにします。
+どちらかが欠けていても、\`CronSet\` は \`tesSUCCESS\` を返し、cron も回数を使い切りますが、Hook は一度も実行されません。何も通知されないので、両方が設定されていることを確認します。
 
-\`\`\`javascript
-// TSH Collectを有効化
-const accountSet = {
-  TransactionType: "AccountSet",
-  Account: wallet.address,
-  SetFlag: 11, // asfTshCollect
-};
+Cron による実行を数える Hook と、[レッスン 9.2](?m=9&l=1) と同じ方法でインストールするためのフィールドです。
+
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON：Cron トランザクションだけを数える
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
+
+    // カウンターは Hook の状態のキー "CRON" に保存される
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
 \`\`\`
 
-### CronSetのフィールド
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // Cron（ビット 92）だけで起動する。ビット 22（SetHook）は逆で、0 = 起動しない
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
 
-| フィールド | タイプ | 必須 | 説明 |
-|---|---|---|---|
-| \`TransactionType\` | String | Yes | \`"CronSet"\` |
-| \`Account\` | String | Yes | Hookが定期的に実行されるアカウント |
-| \`StartTime\` | Number | No | 最初のトリガーのRipple Epoch。即時実行には\`0\`を使用。削除時は省略 |
-| \`RepeatCount\` | Number | No | Hookが実行される回数（トランザクションあたり最大256回）。削除時は省略 |
-| \`DelaySeconds\` | Number | No | 各実行間の秒数。削除時は省略 |
+テストネットで \`StartTime: 0\`、\`DelaySeconds: 10\`、\`RepeatCount: 2\` とし、50秒後に Hook の状態を読んだ結果です。
 
-**重要なルール**：
-- \`DelaySeconds\`と\`RepeatCount\`は両方存在するか、両方ないかでなければなりません
-- アクティブなcronを削除するには：すべてのスケジューリングフィールドを省略して\`Flags: 1\`（\`tfCronUnset\`）を追加
-- \`tfCronUnset\`とスケジューリングフィールドを組み合わせることはできません
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50 秒後   Hook の状態 CRON = 3
+\`\`\`
 
-### Ripple Epochの時刻
+- **\`RepeatCount: 2\` で3回実行されました**。\`StartTime\` に1回目、その後2回の繰り返しです。
+- **\`StartTime: 0\`** は前の台帳のクローズ時刻、つまり「今」になりました。
+- **\`asfTshCollect\` なし、または \`Flags: 1\` で同じテストをすると**、同じ \`tesSUCCESS\` が返りますが、状態は残りません。Hook は一度も実行されていません。
 
-XahauはUnixタイムスタンプではなく**Ripple Epoch**（2000年1月1日 UTC からの秒数）を使用します：
+### フィールド
+
+| フィールド | 必須 | 意味 |
+|---|---|---|
+| \`StartTime\` | 作成時は必須 | 最初の実行。Ripple Epoch からの秒数。\`0\` = 今。最大 365 日先まで |
+| \`DelaySeconds\` | \`RepeatCount\` とセット | 実行の間隔（秒）。最大 31,536,000（365 日） |
+| \`RepeatCount\` | \`DelaySeconds\` とセット | 1回目の後の実行回数。1〜256 |
+| \`Flags\` | 削除時 | \`1\`（\`tfCronUnset\`）。上のフィールドは指定しない |
+
+\`DelaySeconds\` と \`RepeatCount\` は両方指定するか、両方省略します。\`StartTime\` だけなら Hook は1回実行されます。両方指定すると \`1 + RepeatCount\` 回実行されます。257回を超えて実行するには、現在の cron が終わる前に新しい \`CronSet\` を送って置き換えます。
+
+削除は、Cron がなくても常に成功します。
+
+### Ripple Epoch での時刻
+
+\`StartTime\` は Unix タイムスタンプのような 1970 年からではなく、2000年1月1日 UTC からの秒数です。
 
 \`\`\`javascript
-// 現在の日付をRipple Epochに変換
+// 現在時刻を Ripple Epoch で
 const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
 
-// 1時間後にスケジュール
+// 1時間後に開始する
 const startIn1Hour = rippleEpoch + 3600;
 \`\`\`
 
-\`StartTime\`に\`0\`を使用すると、次の有効なレジャーからcronの実行が開始されます。
+### cron のコスト
 
-### 制限と制約
+- **\`CronSet\` の手数料**は、トランザクションとそれが予約する実行をまとめて支払います。基本手数料 × (2 + \`RepeatCount\`) です。基本手数料が 10 drops で \`RepeatCount: 2\` なら、上の結果のとおり 40 drops です。
+- **リザーブ**：Cron オブジェクトは存在する間 \`OwnerCount\` に数えられます。
+- **各実行**は collect call で、アカウントに課金されます。リザーブを超える残高で賄えない場合、その回の Hook の実行はスキップされます。
 
-| パラメーター | 制限 |
-|---|---|
-| トランザクションあたりの最大\`RepeatCount\` | 256 |
-| 最大\`DelaySeconds\` | 31,536,000秒（365日） |
-| \`StartTime\`の最大未来設定 | 365日 |
-| 過去の\`StartTime\` | 不可（\`tecEXPIRED\`） |
+### 例
 
-256回以上の繰り返しが必要な場合は、カウンターが切れる前に別の\`CronSet\`を送信して延長してください。
+最初の例は \`WALLET\` で TSH Collect を有効にし、\`RepeatCount: 24\` で Hook を1時間ごとに予約します。合計25回です。\`WALLET\` に上のようにインストールされた Hook がある場合にだけ、何かが実行されます。2つ目の例は \`tfCronUnset\` で cron を削除します。
 
-### CronSetの削除
-
-アクティブなcronをキャンセルするには、\`Flags: 1\`を付けて\`CronSet\`を送信します：
-
-\`\`\`javascript
-const cronDelete = {
-  TransactionType: "CronSet",
-  Account: wallet.address,
-  Flags: 1, // tfCronUnset — アクティブなcronを削除
-};
-\`\`\`
-
-### よくあるエラー
+### エラー
 
 | エラー | 原因 |
 |---|---|
-| \`temDISABLED\` | CronSet機能がネットワークで有効になっていない |
-| \`temMALFORMED\` | 無効なフィールドの組み合わせ（例：\`DelaySeconds\`/\`RepeatCount\`のどちらか一方のみ） |
-| \`tecEXPIRED\` | \`StartTime\`が過去または365日以上先 |`,
-        ko: `**CronSet**은 외부 서버 없이도 Hook을 **주기적으로 자동 실행**하도록 예약하는 Xahau의 네이티브 스케줄링 기능입니다.
+| \`temMALFORMED\` | 作成時に \`StartTime\` がない、\`DelaySeconds\` と \`RepeatCount\` の片方だけ、\`RepeatCount\` が 0 または 256 超、\`DelaySeconds\` が 365 日超、\`tfCronUnset\` と他のフィールドの併用 |
+| \`temINVALID_FLAG\` | \`tfCronUnset\` 以外のフラグ |
+| \`tecEXPIRED\` | \`StartTime\` が過去、または 365 日より先 |
+| \`tecINSUFFICIENT_RESERVE\` | オブジェクトを1つ増やすリザーブを残高で賄えない |
+| \`temDISABLED\` | ネットワークで Cron の amendment が有効になっていない |`,
+        ko: `\`CronSet\`을 쓰면 외부 서비스가 트랜잭션을 보내지 않아도 네트워크가 일정에 따라 계정의 Hook을 실행합니다. 이 레슨에서는 네트워크가 이를 어떻게 하는지, Hook과 계정에 무엇이 필요한지, 각 필드와 각 실행에 드는 비용을 설명합니다.
 
-### 장점
+### cron이 실행되는 방식
 
-- 완전히 온체인 방식
-- 외부 봇이나 cron 서버 의존도 감소
-- 시작 시점, 주기, 횟수 같은 조건 설정 가능
+\`CronSet\`은 계정에 **Cron** 객체를 저장합니다. 언제 실행할지, 몇 초마다 실행할지, 앞으로 몇 번 더 실행할지를 기록합니다. 그때가 되면 네트워크가 직접 **\`Cron\` 의사 트랜잭션**을 만듭니다. 아무도 서명하지 않고 수수료도 없으며, \`Owner\` 필드가 내 계정입니다. 이 트랜잭션이 계정의 Hook을 실행합니다. 그다음 Cron 객체는 다음 시각으로 넘어가고, 반복이 남지 않으면 사라집니다.
 
-### 사전 준비
+한 계정은 Cron을 최대 하나만 가집니다. 새 \`CronSet\`은 현재 것을 대체합니다.
 
-- \`hsfCOLLECT\` 플래그를 가진 Hook 설치
-- 계정에 \`asfTshCollect\` 활성화
+### Hook과 계정에 필요한 것
 
-자동 실행 기능은 강력하지만, 오작동 시 반복적으로 실행될 수 있으므로 테스트넷에서 충분히 검증한 뒤 사용하는 것이 좋습니다.`,
-        zh: `**CronSet** 是 Xahau 的原生调度功能，可以在没有外部服务器的情况下，按周期**自动执行** Hook。
+\`Cron\` 트랜잭션을 보내는 것은 내 계정이 아니므로, Hook은 **약한 transactional stakeholder**(약한 TSH)로 실행됩니다. 트랜잭션을 통보받지만 거부할 수는 없습니다. 약한 실행은 **collect call**이며 Hook 계정이 비용을 냅니다. 양쪽이 모두 허용할 때만 실행됩니다.
 
-### 优点
+1. **Hook이 collect call을 허용**: \`hsfCOLLECT\` 플래그(\`4\`)로 설치합니다. \`hsfOVERRIDE\`(\`1\`)와 합쳐 \`Flags: 5\`입니다. \`HookOn\`에도 \`Cron\` 트랜잭션 타입 \`92\`가 포함되어야 합니다.
+2. **계정이 collect call을 허용**: \`SetFlag: 11\`(\`asfTshCollect\`)로 \`AccountSet\`을 보냅니다.
 
-- 完全链上执行
-- 减少对外部机器人或 cron 服务器的依赖
-- 可以设置开始时间、周期和执行次数
+둘 중 하나라도 빠지면 \`CronSet\`은 여전히 \`tesSUCCESS\`를 반환하고 cron도 횟수를 소진하지만, Hook은 한 번도 실행되지 않습니다. 아무것도 알려 주지 않으므로 둘 다 설정되어 있는지 확인하세요.
 
-### 事前准备
+Cron 실행 횟수를 세는 Hook과, [레슨 9.2](?m=9&l=1)와 같은 방법으로 설치하기 위한 필드입니다.
 
-- 安装带有 \`hsfCOLLECT\` 标志的 Hook
-- 在账户上启用 \`asfTshCollect\`
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON: Cron 트랜잭션만 셈
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
 
-自动执行功能很强大，但如果逻辑有误也可能反复运行，所以最好先在测试网充分验证。`,
+    // 카운터는 Hook 상태의 "CRON" 키에 저장됨
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
+\`\`\`
+
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // Cron(비트 92)만 실행시킴. 비트 22(SetHook)는 반대: 0 = 실행 안 함
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
+
+테스트넷에서 \`StartTime: 0\`, \`DelaySeconds: 10\`, \`RepeatCount: 2\`로 설정하고 50초 뒤 Hook 상태를 읽은 결과입니다.
+
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50초 뒤    Hook 상태 CRON = 3
+\`\`\`
+
+- **\`RepeatCount: 2\`로 3번 실행되었습니다**: \`StartTime\`에 첫 번째, 이후 2번 반복입니다.
+- **\`StartTime: 0\`**은 이전 원장의 마감 시각, 즉 "지금"이 되었습니다.
+- **\`asfTshCollect\` 없이, 또는 \`Flags: 1\`로 같은 테스트를 하면** 같은 \`tesSUCCESS\`가 반환되지만 상태가 남지 않습니다. Hook이 한 번도 실행되지 않은 것입니다.
+
+### 필드
+
+| 필드 | 필수 | 의미 |
+|---|---|---|
+| \`StartTime\` | 생성 시 필수 | 첫 실행 시각, Ripple Epoch 기준 초. \`0\` = 지금. 최대 365일 뒤까지 |
+| \`DelaySeconds\` | \`RepeatCount\`와 함께 | 실행 간격(초), 최대 31,536,000(365일) |
+| \`RepeatCount\` | \`DelaySeconds\`와 함께 | 첫 실행 이후의 실행 횟수, 1~256 |
+| \`Flags\` | 삭제 시 | \`1\`(\`tfCronUnset\`), 위 필드는 넣지 않음 |
+
+\`DelaySeconds\`와 \`RepeatCount\`는 둘 다 넣거나 둘 다 뺍니다. \`StartTime\`만 있으면 Hook은 한 번 실행됩니다. 둘 다 있으면 \`1 + RepeatCount\`번 실행됩니다. 257번이 넘게 실행하려면 현재 cron이 끝나기 전에 새 \`CronSet\`을 보내 대체합니다.
+
+삭제는 Cron이 없어도 항상 성공합니다.
+
+### Ripple Epoch 시간
+
+\`StartTime\`은 Unix 타임스탬프처럼 1970년이 아니라 2000년 1월 1일 UTC부터 센 초입니다.
+
+\`\`\`javascript
+// 현재 시각을 Ripple Epoch로
+const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
+
+// 한 시간 뒤에 시작
+const startIn1Hour = rippleEpoch + 3600;
+\`\`\`
+
+### cron의 비용
+
+- **\`CronSet\` 수수료**는 트랜잭션과 그것이 예약하는 실행을 함께 냅니다. 기본 수수료 × (2 + \`RepeatCount\`)입니다. 기본 수수료가 10 drops이고 \`RepeatCount: 2\`이면 위 결과처럼 40 drops입니다.
+- **Reserve**: Cron 객체는 존재하는 동안 \`OwnerCount\`에 포함됩니다.
+- **각 실행**은 collect call로 계정에 청구됩니다. reserve를 넘는 잔액으로 충당할 수 없으면 그 회차의 Hook 실행은 건너뜁니다.
+
+### 예제
+
+첫 번째 예제는 \`WALLET\`에서 TSH Collect를 켜고 \`RepeatCount: 24\`로 Hook을 매시간 예약합니다. 모두 25번입니다. \`WALLET\`에 위와 같이 설치된 Hook이 있을 때만 무언가가 실행됩니다. 두 번째 예제는 \`tfCronUnset\`으로 cron을 삭제합니다.
+
+### 오류
+
+| 오류 | 원인 |
+|---|---|
+| \`temMALFORMED\` | 생성 시 \`StartTime\` 없음, \`DelaySeconds\`와 \`RepeatCount\` 중 하나만 있음, \`RepeatCount\`가 0 또는 256 초과, \`DelaySeconds\`가 365일 초과, \`tfCronUnset\`과 다른 필드를 함께 사용 |
+| \`temINVALID_FLAG\` | \`tfCronUnset\`이 아닌 플래그 |
+| \`tecEXPIRED\` | \`StartTime\`이 과거이거나 365일보다 뒤 |
+| \`tecINSUFFICIENT_RESERVE\` | 객체 하나를 더 두기 위한 reserve를 잔액이 충당하지 못함 |
+| \`temDISABLED\` | 네트워크에서 Cron amendment가 활성화되지 않음 |`,
+        zh: `\`CronSet\` 让网络按计划运行你账户上的 Hook，不需要外部服务发送交易。本课说明网络如何做到这一点、Hook 和账户需要什么，以及每个字段和每次执行的成本。
+
+### cron 如何运行
+
+\`CronSet\` 在你的账户中存储一个 **Cron** 对象：何时运行、每隔多少秒、还要运行多少次。时间一到，网络自己会创建一笔 **\`Cron\` 伪交易**。没有人签名，也没有手续费；它的 \`Owner\` 字段就是你的账户。这笔交易触发你账户上的 Hook。之后 Cron 对象移到下一个时间点，直到没有剩余的重复次数，然后消失。
+
+一个账户最多有一个 Cron。新的 \`CronSet\` 会替换当前的那个。
+
+### Hook 和账户需要什么
+
+\`Cron\` 交易不是由你的账户发送的，所以你的 Hook 以**弱交易利益相关方**（弱 TSH）的身份运行：它会得知这笔交易，但不能拒绝它。弱执行是一次 **collect call**，由 Hook 所在的账户付费。只有双方都允许时才会发生：
+
+1. **Hook 允许 collect call**：安装时带上 \`hsfCOLLECT\` 标志（\`4\`）。加上 \`hsfOVERRIDE\`（\`1\`），即 \`Flags: 5\`。它的 \`HookOn\` 还必须包含 \`Cron\` 交易类型 \`92\`。
+2. **账户允许 collect call**：发送 \`SetFlag: 11\`（\`asfTshCollect\`）的 \`AccountSet\`。
+
+缺少其中任何一个，\`CronSet\` 仍然返回 \`tesSUCCESS\`，cron 也仍会用完次数，但 Hook 一次都不会执行。没有任何提示：请确认两者都已设置。
+
+一个统计 Cron 执行次数的 Hook，以及按[第 9.2 课](?m=9&l=1)的方法安装它所用的字段：
+
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON：只统计 Cron 交易
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
+
+    // 计数器保存在 Hook 状态中，键为 "CRON"
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
+\`\`\`
+
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // 只有 Cron（第 92 位）会触发它。第 22 位（SetHook）正好相反：0 = 不触发
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
+
+在测试网上使用 \`StartTime: 0\`、\`DelaySeconds: 10\` 和 \`RepeatCount: 2\`，50 秒后读取 Hook 状态的结果：
+
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50 秒后    Hook 状态 CRON = 3
+\`\`\`
+
+- **\`RepeatCount: 2\` 产生了 3 次执行**：第一次在 \`StartTime\`，然后重复 2 次。
+- **\`StartTime: 0\`** 变成了上一个账本的关闭时间，即“现在”。
+- **不设置 \`asfTshCollect\`，或使用 \`Flags: 1\` 做同样的测试**，会返回同样的 \`tesSUCCESS\`，但不会留下任何状态：Hook 从未执行。
+
+### 字段
+
+| 字段 | 是否必需 | 含义 |
+|---|---|---|
+| \`StartTime\` | 创建时必需 | 第一次执行，以 Ripple Epoch 起的秒数表示。\`0\` = 现在。最多 365 天之后 |
+| \`DelaySeconds\` | 与 \`RepeatCount\` 一起 | 两次执行之间的秒数，最多 31,536,000（365 天） |
+| \`RepeatCount\` | 与 \`DelaySeconds\` 一起 | 第一次之后的执行次数，1 到 256 |
+| \`Flags\` | 删除时 | \`1\`（\`tfCronUnset\`），不带上面任何字段 |
+
+\`DelaySeconds\` 和 \`RepeatCount\` 要么同时出现，要么都不出现。只有 \`StartTime\` 时，Hook 运行一次。两者都有时，运行 \`1 + RepeatCount\` 次。如需超过 257 次执行，在当前 cron 结束前发送新的 \`CronSet\` 替换它。
+
+删除总是成功，即使没有 Cron。
+
+### Ripple Epoch 时间
+
+\`StartTime\` 从 2000 年 1 月 1 日 UTC 开始计秒，而不是像 Unix 时间戳那样从 1970 年开始：
+
+\`\`\`javascript
+// 以 Ripple Epoch 表示的当前时间
+const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
+
+// 一小时后开始
+const startIn1Hour = rippleEpoch + 3600;
+\`\`\`
+
+### cron 的成本
+
+- **\`CronSet\` 的手续费**同时支付这笔交易和它安排的执行：基础手续费 × (2 + \`RepeatCount\`)。基础手续费为 10 drops、\`RepeatCount: 2\` 时为 40 drops，与上面的结果一致。
+- **储备金**：Cron 对象存在期间计入 \`OwnerCount\`。
+- **每次执行**都是一次 collect call，向账户收费。如果余额在储备金之上不足以支付，这一次的 Hook 执行会被跳过。
+
+### 示例
+
+第一个示例在 \`WALLET\` 上启用 TSH Collect，并用 \`RepeatCount: 24\` 安排它的 Hook 每小时运行一次：共 25 次。只有当 \`WALLET\` 装有像上面那样安装的 Hook 时，才会真正执行内容。第二个示例用 \`tfCronUnset\` 删除 cron。
+
+### 错误
+
+| 错误 | 原因 |
+|---|---|
+| \`temMALFORMED\` | 创建时缺少 \`StartTime\`；只有 \`DelaySeconds\` 和 \`RepeatCount\` 中的一个；\`RepeatCount\` 为 0 或超过 256；\`DelaySeconds\` 超过 365 天；\`tfCronUnset\` 与其他字段同时使用 |
+| \`temINVALID_FLAG\` | 使用了 \`tfCronUnset\` 以外的标志 |
+| \`tecEXPIRED\` | \`StartTime\` 在过去，或超过 365 天之后 |
+| \`tecINSUFFICIENT_RESERVE\` | 余额不足以支付多一个对象的储备金 |
+| \`temDISABLED\` | 网络上未启用 Cron amendment |`,
       },
       codeBlocks: [
         {
@@ -6734,15 +7036,12 @@ async function setupCron() {
   // El Hook debe estar instalado con hsfCOLLECT antes de este paso
   console.log("=== Paso 2: Crear CronSet ===");
 
-  // Ripple Epoch: segundos desde 01/01/2000 00:00:00 UTC
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-
   const cronSet = {
     TransactionType: "CronSet",
     Account: wallet.address,
     StartTime: 0,       // 0 = comenzar desde el próximo ledger válido
     DelaySeconds: 3600, // Ejecutar cada 1 hora (3600 segundos)
-    RepeatCount: 24,    // Ejecutar 24 veces en total (= 24 horas)
+    RepeatCount: 24,    // 24 ejecuciones más después de la primera: 25 en total
   };
 
   const prepCron = await client.autofill(cronSet);
@@ -6755,7 +7054,7 @@ async function setupCron() {
 
   if (txResult === "tesSUCCESS") {
     console.log("¡CronSet creado correctamente!");
-    console.log("El Hook se ejecutará automáticamente cada 1 hora durante 24 horas.");
+    console.log("El Hook se ejecutará ahora y después cada hora: 25 ejecuciones.");
     console.log("Asegúrate de que el Hook está instalado con el flag hsfCOLLECT.");
   }
 
@@ -6788,16 +7087,15 @@ async function setupCron() {
     return;
   }
   // === PASSO 2: Criar ou CronSet ===
-  // O Hook deve estar instalado com hsfCOLLECT antes de este passo
+  // O Hook deve estar instalado com hsfCOLLECT antes deste passo
   console.log("=== Passo 2: Criar CronSet ===");
-  // Ripple Epoch: segundos a partir de 01/01/2000 00:00:00 UTC
-  const RIPPLE_EPOCH_OFFSET = 946684800;
+
   const cronSet = {
     TransactionType: "CronSet",
     Account: wallet.address,
-    StartTime: 0,       // 0 = comenzar desde o prouximo ledger válido
+    StartTime: 0,       // 0 = começar a partir do próximo ledger válido
     DelaySeconds: 3600, // Executar a cada 1 hora (3600 segundos)
-    RepeatCount: 24,    // Executar 24 vezes no total (= 24 horas)
+    RepeatCount: 24,    // 24 execuções a mais depois da primeira: 25 no total
   };
   const prepCron = await client.autofill(cronSet);
   const signedCron = wallet.sign(prepCron);
@@ -6807,8 +7105,8 @@ async function setupCron() {
   console.log("Hash:", signedCron.hash);
   if (txResult === "tesSUCCESS") {
     console.log("CronSet criado corretamente!");
-    console.log("O Hook se executará automaticamente cada 1 hora durante 24 horas.");
-    console.log("Certifique-se de que o Hook está instalado com ou flag hsfCOLLECT.");
+    console.log("O Hook será executado agora e depois a cada hora: 25 execuções.");
+    console.log("Certifique-se de que o Hook está instalado com a flag hsfCOLLECT.");
   }
   await client.disconnect();
 }
@@ -6850,15 +7148,12 @@ async function setupCron() {
   // The Hook must be installed with hsfCOLLECT before this step
   console.log("=== Step 2: Create CronSet ===");
 
-  // Ripple Epoch: seconds since 01/01/2000 00:00:00 UTC
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-
   const cronSet = {
     TransactionType: "CronSet",
     Account: wallet.address,
     StartTime: 0,       // 0 = start from the next valid ledger
     DelaySeconds: 3600, // Execute every 1 hour (3600 seconds)
-    RepeatCount: 24,    // Execute 24 times in total (= 24 hours)
+    RepeatCount: 24,    // 24 more runs after the first: 25 executions
   };
 
   const prepCron = await client.autofill(cronSet);
@@ -6871,7 +7166,7 @@ async function setupCron() {
 
   if (txResult === "tesSUCCESS") {
     console.log("CronSet created successfully!");
-    console.log("The Hook will run automatically every 1 hour for 24 hours.");
+    console.log("The Hook will run now and then every hour: 25 executions.");
     console.log("Make sure the Hook is installed with the hsfCOLLECT flag.");
   }
 
@@ -6916,15 +7211,12 @@ async function setupCron() {
   // このステップの前にhsfCOLLECTフラグ付きでHookをインストールしておく必要があります
   console.log("=== ステップ2: CronSetを作成 ===");
 
-  // Ripple Epoch: 2000年01月01日00:00:00 UTCからの秒数
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-
   const cronSet = {
     TransactionType: "CronSet",
     Account: wallet.address,
     StartTime: 0,       // 0 = 次の有効なレジャーから開始
     DelaySeconds: 3600, // 1時間ごとに実行（3600秒）
-    RepeatCount: 24,    // 合計24回実行（= 24時間）
+    RepeatCount: 24,    // 最初の実行の後にさらに24回：合計25回
   };
 
   const prepCron = await client.autofill(cronSet);
@@ -6937,7 +7229,7 @@ async function setupCron() {
 
   if (txResult === "tesSUCCESS") {
     console.log("CronSetが正常に作成されました！");
-    console.log("Hookは24時間、1時間ごとに自動的に実行されます。");
+    console.log("Hook は今すぐ実行され、その後1時間ごとに実行されます（合計25回）。");
     console.log("HookがhsfCOLLECTフラグ付きでインストールされていることを確認してください。");
   }
 
@@ -6982,15 +7274,12 @@ async function setupCron() {
   // 在此之前，Hook 必须已用 hsfCOLLECT 安装好
   console.log("=== 第 2 步：创建 CronSet ===");
 
-  // Ripple Epoch：自 2000/01/01 00:00:00 UTC 起的秒数
-  const RIPPLE_EPOCH_OFFSET = 946684800;
-
   const cronSet = {
     TransactionType: "CronSet",
     Account: wallet.address,
     StartTime: 0,       // 0 = 从下一个有效账本开始
     DelaySeconds: 3600, // 每 1 小时执行一次
-    RepeatCount: 24,    // 总共执行 24 次（= 24 小时）
+    RepeatCount: 24,    // 第一次之后再执行 24 次：共 25 次
   };
 
   const prepCron = await client.autofill(cronSet);
@@ -7003,7 +7292,7 @@ async function setupCron() {
 
   if (txResult === "tesSUCCESS") {
     console.log("CronSet 创建成功！");
-    console.log("该 Hook 将在 24 小时内每小时自动执行一次。");
+    console.log("Hook 将立即执行，之后每小时执行一次：共 25 次。");
     console.log("请确认 Hook 已使用 hsfCOLLECT 标志安装。");
   }
 
@@ -7054,7 +7343,7 @@ async function deleteCron() {
   if (txResult === "tesSUCCESS") {
     console.log("CronSet eliminado. El Hook ya no se ejecutará automáticamente.");
   } else {
-    console.log("No existe un CronSet activo para esta cuenta.");
+    console.log("El CronSet no se aplicó.");
   }
 
   await client.disconnect();
@@ -7083,9 +7372,9 @@ async function deleteCron() {
   console.log("Resultado:", txResult);
   console.log("Hash:", signed.hash);
   if (txResult === "tesSUCCESS") {
-    console.log("CronSet eliminado. O Hook já não se executará automaticamente.");
+    console.log("CronSet eliminado. O Hook não será mais executado automaticamente.");
   } else {
-    console.log("Não existe um CronSet ativo para esta conta.");
+    console.log("O CronSet não foi aplicado.");
   }
   await client.disconnect();
 }
@@ -7121,7 +7410,7 @@ async function deleteCron() {
   if (txResult === "tesSUCCESS") {
     console.log("CronSet deleted. The Hook will no longer run automatically.");
   } else {
-    console.log("No active CronSet found for this account.");
+    console.log("The CronSet was not applied.");
   }
 
   await client.disconnect();
@@ -7159,7 +7448,7 @@ async function deleteCron() {
   if (txResult === "tesSUCCESS") {
     console.log("CronSetが削除されました。Hookは自動的に実行されなくなります。");
   } else {
-    console.log("このアカウントにアクティブなCronSetが見つかりません。");
+    console.log("CronSet は適用されませんでした。");
   }
 
   await client.disconnect();
@@ -7197,7 +7486,7 @@ async function deleteCron() {
   if (txResult === "tesSUCCESS") {
     console.log("CronSet 已删除。该 Hook 将不再自动执行。");
   } else {
-    console.log("此账户没有找到活动中的 CronSet。");
+    console.log("CronSet 未被应用。");
   }
 
   await client.disconnect();
@@ -7209,24 +7498,99 @@ deleteCron();`,
       ],
       slides: [
         {
-          title: { es: "¿Qué es CronSet?", pt: "O que é CronSet?", en: "What is CronSet?", jp: "CronSetとは？", zh: "什么是 CronSet？" },
+          title: { es: "¿Qué es CronSet?", pt: `O que é o CronSet?`, en: "What is CronSet?", jp: `CronSet とは？`, zh: "什么是 CronSet？" },
           content: {
-            es: "Ejecución periódica de Hooks on-chain\n\n• Sin servicios externos\n• StartTime: cuándo empieza\n• DelaySeconds: cada cuánto\n• RepeatCount: cuántas veces (máx 256)\n\nRequiere Hook con hsfCOLLECT + TSH Collect activo",
-            pt: "Execução periódica de Hooks on-chain\n\n• Sem serviços externos\n• StartTime: quando começa\n• DelaySeconds: a cada quanto tempo\n• RepeatCount: quantas vezes (máx 256)\n\nRequer Hook com hsfCOLLECT + TSH Collect ativo",
-            en: "Periodic on-chain Hook execution\n\n• No external services\n• StartTime: when it starts\n• DelaySeconds: how often\n• RepeatCount: how many times (max 256)\n\nRequires Hook with hsfCOLLECT + TSH Collect enabled",
-            jp: "オンチェーンでのHookの定期実行\n\n• 外部サービス不要\n• StartTime：いつ開始するか\n• DelaySeconds：どのくらいの間隔で\n• RepeatCount：何回（最大256）\n\nhsfCOLLECT付きのHook + TSH Collect有効化が必要",
-            zh: "链上周期性执行 Hook\n\n• 不需要外部服务\n• StartTime：何时开始\n• DelaySeconds：间隔多久\n• RepeatCount：执行多少次（最多 256）\n\n需要带 hsfCOLLECT 的 Hook，并启用 TSH Collect",
+            es: `La red ejecuta tu Hook según un calendario
+
+• CronSet guarda un objeto Cron en tu cuenta
+• En cada momento, la red crea una
+  pseudotransacción Cron que activa el Hook
+• StartTime: primera ejecución (0 = ahora)
+• DelaySeconds + RepeatCount: las repeticiones
+• Ejecuciones = 1 + RepeatCount (máx. 256)`,
+            pt: `A rede executa o seu Hook segundo um calendário
+
+• CronSet guarda um objeto Cron na sua conta
+• Em cada momento, a rede cria uma
+  pseudotransação Cron que aciona o Hook
+• StartTime: primeira execução (0 = agora)
+• DelaySeconds + RepeatCount: as repetições
+• Execuções = 1 + RepeatCount (máx. 256)`,
+            en: `The network runs your Hook on a schedule
+
+• CronSet stores a Cron object in your account
+• At each time, the network creates a Cron
+  pseudo-transaction that triggers the Hook
+• StartTime: first run (0 = now)
+• DelaySeconds + RepeatCount: the repetitions
+• Executions = 1 + RepeatCount (max 256)`,
+            jp: `ネットワークがスケジュールどおりに Hook を実行
+
+• CronSet はアカウントに Cron オブジェクトを保存
+• その時刻ごとに、ネットワークが Cron
+  疑似トランザクションを作り Hook を起動
+• StartTime：最初の実行（0 = 今）
+• DelaySeconds + RepeatCount：繰り返し
+• 実行回数 = 1 + RepeatCount（最大 256）`,
+            zh: `网络按计划运行你的 Hook
+
+• CronSet 在账户中存储一个 Cron 对象
+• 每到时间，网络创建一笔 Cron
+  伪交易来触发 Hook
+• StartTime：第一次运行（0 = 现在）
+• DelaySeconds + RepeatCount：重复
+• 执行次数 = 1 + RepeatCount（最多 256）`,
           },
           visual: "⏱️",
         },
         {
-          title: { es: "Configurar CronSet", pt: "Configurar CronSet", en: "Setting up CronSet", jp: "CronSetの設定", zh: "配置 CronSet" },
+          title: { es: `Configurar um cron`, pt: `Configurar um cron`, en: `Setting up a cron`, jp: `cron の設定`, zh: `设置 cron` },
           content: {
-            es: "Pasos:\n1. Instalar Hook con flag hsfCOLLECT\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Enviar CronSet con:\n   • StartTime: 0 (inmediato) o Ripple Epoch\n   • DelaySeconds: intervalo en segundos\n   • RepeatCount: nº de ejecuciones\n\nEliminar: CronSet con Flags: 1 (tfCronUnset)",
-            pt: "Passos:\n1. Instalar Hook com flag hsfCOLLECT\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Enviar CronSet com:\n   • StartTime: 0 (imediato) ou Ripple Epoch\n   • DelaySeconds: intervalo em segundos\n   • RepeatCount: nº de execuções\n\nEliminar: CronSet com Flags: 1 (tfCronUnset)",
-            en: "Steps:\n1. Install Hook with hsfCOLLECT flag\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Send CronSet with:\n   • StartTime: 0 (immediate) or Ripple Epoch\n   • DelaySeconds: interval in seconds\n   • RepeatCount: number of executions\n\nDelete: CronSet with Flags: 1 (tfCronUnset)",
-            jp: "手順：\n1. hsfCOLLECTフラグ付きでHookをインストール\n2. AccountSet SetFlag: 11（asfTshCollect）\n3. CronSetを送信：\n   • StartTime: 0（即時）またはRipple Epoch\n   • DelaySeconds: 秒単位の間隔\n   • RepeatCount: 実行回数\n\n削除：Flags: 1（tfCronUnset）付きのCronSet",
-            zh: "步骤：\n1. 安装带 hsfCOLLECT 标志的 Hook\n2. 用 AccountSet 设置 SetFlag: 11（asfTshCollect）\n3. 发送 CronSet，并设置：\n   • StartTime: 0（立即）或 Ripple Epoch\n   • DelaySeconds: 间隔秒数\n   • RepeatCount: 执行次数\n\n删除：发送带 Flags: 1（tfCronUnset）的 CronSet",
+            es: `1. Hook con Flags: 5 (hsfOVERRIDE + hsfCOLLECT)
+   y HookOn que incluya Cron (tipo 92)
+2. AccountSet SetFlag: 11 (asfTshCollect)
+3. CronSet con StartTime
+   (+ DelaySeconds y RepeatCount)
+
+Sin 1 o 2 → tesSUCCESS, el Hook nunca se ejecuta
+Borrar: CronSet con Flags: 1 (tfCronUnset)
+Fee: base × (2 + RepeatCount)`,
+            pt: `1. Hook com Flags: 5 (hsfOVERRIDE + hsfCOLLECT)
+   e HookOn incluindo Cron (tipo 92)
+2. AccountSet SetFlag: 11 (asfTshCollect)
+3. CronSet com StartTime
+   (+ DelaySeconds e RepeatCount)
+
+Sem 1 ou 2 → tesSUCCESS, o Hook nunca é executado
+Excluir: CronSet com Flags: 1 (tfCronUnset)
+Fee: base × (2 + RepeatCount)`,
+            en: `1. Hook with Flags: 5 (hsfOVERRIDE + hsfCOLLECT)
+   and HookOn including Cron (type 92)
+2. AccountSet SetFlag: 11 (asfTshCollect)
+3. CronSet with StartTime
+   (+ DelaySeconds and RepeatCount)
+
+Missing 1 or 2 → tesSUCCESS, Hook never runs
+Delete: CronSet with Flags: 1 (tfCronUnset)
+Fee: base × (2 + RepeatCount)`,
+            jp: `1. Flags: 5（hsfOVERRIDE + hsfCOLLECT）で、
+   HookOn に Cron（タイプ 92）を含む Hook
+2. AccountSet SetFlag: 11（asfTshCollect）
+3. StartTime を指定した CronSet
+   （+ DelaySeconds と RepeatCount）
+
+1 か 2 が欠けると → tesSUCCESS でも Hook は実行されない
+削除：Flags: 1（tfCronUnset）の CronSet
+手数料：基本 × (2 + RepeatCount)`,
+            zh: `1. Flags: 5（hsfOVERRIDE + hsfCOLLECT）
+   且 HookOn 包含 Cron（类型 92）的 Hook
+2. AccountSet SetFlag: 11（asfTshCollect）
+3. 带 StartTime 的 CronSet
+   （+ DelaySeconds 和 RepeatCount）
+
+缺少 1 或 2 → tesSUCCESS，但 Hook 从不运行
+删除：Flags: 1（tfCronUnset）的 CronSet
+手续费：基础 × (2 + RepeatCount)`,
           },
           visual: "🔧",
         },
@@ -7416,8 +7780,23 @@ const arabicModuleTranslations = {
       theory: "CronSet يحدد جدولة on-chain لتشغيل Hook بشكل دوري. لكي يعمل، يحتاج الحساب إلى Hook مثبت مع hsfCOLLECT وأن يكون TSH Collect مفعلا.\n\nStartTime يحدد البداية، DelaySeconds يحدد الفاصل، وRepeatCount يحدد عدد مرات التكرار. ويمكن حذف الجدولة باستخدام tfCronUnset.",
       codeTitles: ["تفعيل TSH Collect وجدولة CronSet", "حذف CronSet نشط"],
       slides: [
-        ["ما هو CronSet؟", "تنفيذ دوري للـ Hooks على السجل\n\n• بدون خادم خارجي\n• StartTime يحدد البداية\n• DelaySeconds يحدد الفاصل\n• RepeatCount يحدد عدد التكرارات\n\nيتطلب Hook مع hsfCOLLECT وTSH Collect مفعلا"],
-        ["إعداد CronSet", "الخطوات:\n1. تثبيت Hook مع hsfCOLLECT\n2. AccountSet مع SetFlag: 11\n3. إرسال CronSet بالقيم المطلوبة\n\nللحذف: CronSet مع Flags: 1"],
+        ["ما هو CronSet؟", `تشغّل الشبكة الـ Hook وفق جدول زمني
+
+• يخزّن CronSet كائن Cron في حسابك
+• في كل موعد، تنشئ الشبكة معاملة Cron
+  زائفة تُطلق الـ Hook
+• StartTime: أول تنفيذ (0 = الآن)
+• DelaySeconds + RepeatCount: التكرارات
+• عدد مرات التنفيذ = 1 + RepeatCount (حتى 256)`],
+        [`إعداد cron`, `1. Hook مع Flags: 5 (hsfOVERRIDE + hsfCOLLECT)
+   وHookOn يتضمن Cron (النوع 92)
+2. AccountSet مع SetFlag: 11 (asfTshCollect)
+3. CronSet مع StartTime
+   (+ DelaySeconds وRepeatCount)
+
+غياب 1 أو 2 ← tesSUCCESS لكن الـ Hook لا يعمل أبدًا
+الحذف: CronSet مع Flags: 1 (tfCronUnset)
+الرسوم: الأساسية × (2 + RepeatCount)`],
         ["Invoke vs CronSet", "Invoke يحتاج محفزا خارجيا\n\nCronSet يعمل بالكامل on-chain\n\nInvoke أكثر مرونة للفواصل الحرة، بينما CronSet يمنح استقلالية كاملة حتى عدد تكرارات محدود"],
       ],
     },
@@ -7482,7 +7861,22 @@ const frenchModuleTranslations = {
     m10l5: { title: "Invoke : activer des Hooks à la demande", theory: "Invoke déclenche un Hook sur un compte de destination sans envoyer un paiement classique. Un Blob optionnel peut transporter des données pour le Hook.", codeTitles: ["Invoquer un Hook sur un autre compte"], slides: [["Invoke", "Activer un Hook directement\n\n• Ne transfère pas de fonds\n• C'est simplement un déclencheur pour le Hook\n• Sans Destination → tes propres Hooks\n• Avec Destination → Hooks d'un autre compte\n\nLe Hook doit avoir Invoke activé dans HookOn"], ["Usages de Invoke", "• Un Hook émet un Invoke pour activer\n  un autre Hook\n• Déclencheur manuel : activer la logique\n  d'un Hook quand tu en as besoin\n• Passer des données au Hook via Memos\n  ou HookParameters dans l'Invoke\n\nPour une planification native, utilise CronSet.\nInvoke reste utile pour des cas personnalisés\nou pour activer les Hooks d'autres comptes"]] },
     m10l6: { title: "SetRemarks : métadonnées sur objets de ledger", theory: "SetRemarks ajoute, modifie ou supprime des remarques associées à un compte ou à un objet de ledger. Omettre RemarkValue supprime la remarque.", codeTitles: ["Ajouter et mettre à jour des Remarks sur le compte (AccountRoot)", "Supprimer une Remark (omettre RemarkValue)"], slides: [["SetRemarks", "Métadonnées clé-valeur sur les objets du ledger\n\n• Attache des Remarks à : AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (en hex)\n• Seul le propriétaire/émetteur peut modifier\n• Maximum 32 Remarks par objet\n\nCe n'est pas un message : c'est une métadonnée de l'objet"], ["Créer, modifier et supprimer", "Créer / mettre à jour :\n  → RemarkName + RemarkValue\n\nSupprimer :\n  → RemarkName seul, sans RemarkValue\n\nImmuable (tfImmutable = Flags: 1) :\n  → Ne peut plus jamais être modifié ni supprimé\n\nFee supplémentaire : 1 drop par octet de nom + valeur"], ["ObjectID : quel objet annoter ?", "Chaque objet du ledger a un ID unique :\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  des AffectedNodes lors de la création de l'objet\n\nSetRemarks a besoin de cet ID pour savoir\nà quel objet attacher la métadonnée"]] },
     m10l7: { title: "Remit : transaction multifonction", theory: "Remit combine plusieurs actions, par exemple un paiement et des opérations liées aux URITokens. Elle réduit le nombre de transactions nécessaires dans des flux composés.", codeTitles: ["Remit : paiement + mint URIToken dans une seule transaction"], slides: [["Remit - transaction multifonction", "Une seule transaction pour tout faire :\n\n• Activer de nouveaux comptes\n• Envoyer jusqu'à 32 paiements (XAH + IOUs)\n• Transférer jusqu'à 32 URITokens\n• Créer (mint) un URIToken à la destination\n\nTout est atomique : tout se produit ensemble, ou rien ne se produit"], ["Remit paie les réserves", "Certains flux permettent au remettant de couvrir des réserves nécessaires au destinataire."]] },
-    m10l8: { title: "CronSet : exécution automatique de Hooks", theory: "CronSet planifie l'exécution périodique d'un Hook on-chain. Il nécessite un Hook compatible hsfCOLLECT et TSH Collect activé.", codeTitles: ["Activer TSH Collect et planifier un CronSet", "Supprimer un CronSet actif"], slides: [["Qu'est-ce que CronSet ?", "Exécution périodique de Hooks on-chain\n\n• Aucun service externe\n• StartTime : quand ça commence\n• DelaySeconds : à quel intervalle\n• RepeatCount : combien de fois (max 256)\n\nNécessite un Hook avec hsfCOLLECT + TSH Collect activé"], ["Configurer CronSet", "Étapes :\n1. Installer un Hook avec le flag hsfCOLLECT\n2. AccountSet SetFlag: 11 (asfTshCollect)\n3. Envoyer CronSet avec :\n   • StartTime : 0 (immédiat) ou Ripple Epoch\n   • DelaySeconds : intervalle en secondes\n   • RepeatCount : nombre d'exécutions\n\nSupprimer : CronSet avec Flags: 1 (tfCronUnset)"], ["Invoke vs CronSet", "Invoke dépend d'un déclencheur externe\nCronSet fonctionne on-chain avec un nombre de répétitions défini."]] },
+    m10l8: { title: "CronSet : exécution automatique de Hooks", theory: "CronSet planifie l'exécution périodique d'un Hook on-chain. Il nécessite un Hook compatible hsfCOLLECT et TSH Collect activé.", codeTitles: ["Activer TSH Collect et planifier un CronSet", "Supprimer un CronSet actif"], slides: [["Qu'est-ce que CronSet ?", `Le réseau exécute ton Hook selon un calendrier
+
+• CronSet enregistre un objet Cron dans ton compte
+• À chaque échéance, le réseau crée une
+  pseudo-transaction Cron qui déclenche le Hook
+• StartTime : première exécution (0 = maintenant)
+• DelaySeconds + RepeatCount : les répétitions
+• Exécutions = 1 + RepeatCount (max 256)`], [`Configurer un cron`, `1. Hook avec Flags: 5 (hsfOVERRIDE + hsfCOLLECT)
+   et un HookOn incluant Cron (type 92)
+2. AccountSet SetFlag: 11 (asfTshCollect)
+3. CronSet avec StartTime
+   (+ DelaySeconds et RepeatCount)
+
+Sans 1 ou 2 → tesSUCCESS, le Hook ne s'exécute jamais
+Supprimer : CronSet avec Flags: 1 (tfCronUnset)
+Frais : base × (2 + RepeatCount)`], ["Invoke vs CronSet", "Invoke dépend d'un déclencheur externe\nCronSet fonctionne on-chain avec un nombre de répétitions défini."]] },
     m10l9: { title: "Price Oracle : flux de prix on-chain", theory: "Price Oracle publie des prix sur le ledger avec OracleSet. Chaque OracleDocumentID contient une série de prix. OracleDelete supprime un document, et get_aggregate_price permet de lire un prix agrégé depuis plusieurs Oracles.", codeTitles: ["Créer ou mettre à jour un flux de prix Oracle", "Consulter des prix agrégés depuis plusieurs Oracles", "Supprimer un flux de prix Oracle"], slides: [["Price Oracle", "Flux de prix on-chain\n\n• Détenu par un seul compte\n• Identifié par OracleDocumentID\n• Stocke 1 à 10 paires de prix\n• Provider et AssetClass sont des chaînes hex\n• Utilisé par les apps, les Hooks et la logique DeFi"], ["OracleSet vs OracleDelete", "OracleSet\n• Crée ou met à jour l'objet Oracle\n• Publie PriceDataSeries\n• Les mises à jour doivent utiliser un LastUpdateTime plus récent\n\nOracleDelete\n• Supprime l'objet Oracle\n• Seul le propriétaire peut le supprimer\n• Libère la réserve de propriétaire"], ["Lire les prix", "get_aggregate_price agrège plusieurs sources pour éviter de dépendre d'un seul Oracle."]] },
     m10l10: { title: "IOURewardClaim : récompenses personnalisées de tokens", theory: "IOURewardClaim utilise ClaimReward avec Issuer et ClaimCurrency pour réclamer une récompense d'un token personnalisé. Dans l'exemple Learning Xahau, le token RWD existe déjà. Issuer pointe vers le compte Hook du programme de récompenses rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm, et ClaimCurrency.issuer pointe vers l'issuer RWD rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf. Le détenteur doit avoir une TrustLine vers RWD avant de réclamer.", codeTitles: ["Créer la TrustLine requise pour les récompenses IOU", "Réclamer une récompense IOU avec ClaimReward + ClaimCurrency", "Inspecter la TrustLine IOU du détenteur"], slides: [["IOURewardClaim", "Pas un TransactionType séparé\n\n• Utilise ClaimReward\n• Ajoute ClaimCurrency\n• Issuer pointe vers le compte du Hook de récompenses\n• ClaimCurrency.issuer pointe vers l'émetteur de l'IOU\n\nRécompenses de token personnalisées avec suivi natif"], ["Où vivent les compteurs", "Récompenses XAH :\n• Compteurs sur AccountRoot\n• Versées par le Hook de récompenses genesis\n\nRécompenses IOU :\n• Compteurs sur la trustline RippleState\n• Versées par le Hook de l'émetteur\n• Suit le solde dans le temps par détenteur"], ["Configuration requise", "Hook reward programme : rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\nRWD issuer : rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\nTrustLine RWD obligatoire."]] },
   },
@@ -7815,36 +8209,220 @@ Il n'existe pas de transaction dediee pour annuler un Ticket. On peut utiliser u
 إذا لم تعد بحاجة إلى Ticket، يمكنك إلغاءه لتحرير الاحتياطي. لا توجد معاملة محددة لإلغاء Tickets. بدلا من ذلك، يمكنك استخدام معاملة \`AccountSet\` فارغة (بدون تغييرات) تستهلك Ticket.`,
   },
   m10l8: {
-    fr: `\`CronSet\` permet de planifier l'**execution automatique et periodique** d'un Hook directement depuis Xahau, sans service externe. C'est le cron natif du reseau.
+    fr: `\`CronSet\` fait exécuter par le réseau le Hook de ton compte selon un calendrier, sans service externe qui envoie des transactions. Cette leçon explique comment le réseau s'y prend, ce dont ont besoin le Hook et le compte, et ce que coûtent chaque champ et chaque exécution.
 
-Avec \`CronSet\`, le Hook d'un compte peut etre execute toutes les X secondes, a partir d'une date precise et pour un nombre defini de repetitions. Tout est enregistre dans le ledger. Contrairement a un \`Invoke\` periodique envoye par un serveur, CronSet est completement on-chain.
+### Comment un cron s'exécute
 
-### Prerequis
+\`CronSet\` enregistre un objet **Cron** dans ton compte : quand exécuter, toutes les combien de secondes et combien de fois encore. À ce moment-là, le réseau crée lui-même une **pseudo-transaction \`Cron\`**. Personne ne la signe et elle n'a pas de frais ; son champ \`Owner\` est ton compte. Cette transaction déclenche le Hook de ton compte. L'objet Cron passe ensuite au moment suivant, jusqu'à ce qu'il ne reste plus de répétitions, puis il disparaît.
 
-Il faut installer un Hook avec le flag \`hsfCOLLECT\`, puis activer TSH Collect avec \`AccountSet\` et \`SetFlag: 11\` (\`asfTshCollect\`). Cela autorise le reseau a executer le Hook via Transaction Signature Hook Collection.
+Un compte a au plus un Cron. Un nouveau \`CronSet\` remplace l'actuel.
 
-### Champs et regles
+### Ce dont ont besoin le Hook et le compte
 
-\`StartTime\` indique le premier declenchement, \`RepeatCount\` le nombre d'executions et \`DelaySeconds\` l'intervalle. \`DelaySeconds\` et \`RepeatCount\` doivent etre presents ensemble ou absents ensemble. Pour supprimer un cron actif, il faut omettre les champs de planification et utiliser \`Flags: 1\` (\`tfCronUnset\`). On ne peut pas combiner suppression et planification.
+Ton compte n'envoie pas la transaction \`Cron\` : ton Hook s'exécute donc comme **transactional stakeholder faible** (TSH faible). Il est informé de la transaction et ne peut pas la rejeter. Une exécution faible est un **collect call**, payé par le compte du Hook. Elle n'a lieu que si les deux côtés l'autorisent :
 
-### Temps, limites et erreurs
+1. **Le Hook autorise les collect calls** : installé avec le flag \`hsfCOLLECT\` (\`4\`). Avec \`hsfOVERRIDE\` (\`1\`), \`Flags: 5\`. Son \`HookOn\` doit aussi inclure le type de transaction \`Cron\`, \`92\`.
+2. **Le compte autorise les collect calls** : \`AccountSet\` avec \`SetFlag: 11\` (\`asfTshCollect\`).
 
-Xahau utilise Ripple Epoch, secondes depuis le 1 janvier 2000 UTC. \`StartTime: 0\` demarre au prochain ledger valide. \`RepeatCount\` est limite a 256 par transaction, \`DelaySeconds\` a 365 jours, et \`StartTime\` ne peut pas etre dans le passe ni a plus de 365 jours. Erreurs typiques : \`temDISABLED\`, \`temMALFORMED\`, \`tecEXPIRED\`.`,
-    ar: `\`CronSet\` يسمح بجدولة **تشغيل تلقائي ودوري** لـ Hook مباشرة من Xahau دون خدمة خارجية. إنه cron الأصلي للشبكة.
+S'il en manque un, \`CronSet\` renvoie quand même \`tesSUCCESS\` et le cron s'épuise quand même, mais le Hook ne s'exécute jamais. Rien ne le signale : vérifie que les deux sont en place.
 
-باستخدام \`CronSet\` يمكن تشغيل Hook حساب كل X ثانية، بدءا من وقت محدد، ولعدد مرات معين. كل شيء مسجل في ledger. بخلاف \`Invoke\` دوري يرسله خادم خارجي، CronSet يعمل بالكامل on-chain.
+Un Hook qui compte ses exécutions de Cron, et les champs pour l'installer comme dans la [leçon 9.2](?m=9&l=1) :
 
-### المتطلبات
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON : seule la transaction Cron compte
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
 
-يجب تثبيت Hook مع flag \`hsfCOLLECT\`، ثم تفعيل TSH Collect عبر \`AccountSet\` و\`SetFlag: 11\` (\`asfTshCollect\`). هذا يسمح للشبكة بتشغيل Hook عبر Transaction Signature Hook Collection.
+    // Le compteur vit dans l'état du Hook, sous la clé "CRON"
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
+\`\`\`
 
-### الحقول والقواعد
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // Seul Cron (bit 92) le déclenche. Le bit 22 (SetHook) fonctionne à l'inverse : 0 = pas déclenché
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
 
-\`StartTime\` يحدد أول تشغيل، و\`RepeatCount\` عدد مرات التنفيذ، و\`DelaySeconds\` الفاصل. يجب أن يظهر \`DelaySeconds\` و\`RepeatCount\` معا أو يغيبا معا. لحذف cron نشط، احذف حقول الجدولة واستخدم \`Flags: 1\` (\`tfCronUnset\`). لا يمكن الجمع بين الحذف والجدولة.
+Résultat sur le testnet, avec \`StartTime: 0\`, \`DelaySeconds: 10\` et \`RepeatCount: 2\`, en lisant l'état du Hook 50 secondes plus tard :
 
-### الوقت والحدود والأخطاء
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+50 s plus tard  état du Hook CRON = 3
+\`\`\`
 
-يستخدم Xahau Ripple Epoch، أي الثواني منذ 1 يناير 2000 UTC. \`StartTime: 0\` يبدأ عند أقرب ledger صالح. \`RepeatCount\` محدود بـ 256، و\`DelaySeconds\` بـ 365 يوما، ولا يسمح بوقت في الماضي أو أبعد من 365 يوما. الأخطاء: \`temDISABLED\`, \`temMALFORMED\`, \`tecEXPIRED\`.`,
+- **\`RepeatCount: 2\` a donné 3 exécutions** : la première à \`StartTime\`, puis 2 répétitions.
+- **\`StartTime: 0\`** est devenu l'heure de clôture du ledger précédent : « maintenant ».
+- **Le même essai sans \`asfTshCollect\`, ou avec \`Flags: 1\`**, renvoie le même \`tesSUCCESS\` et ne laisse aucun état : le Hook ne s'est jamais exécuté.
+
+### Les champs
+
+| Champ | Obligatoire | Signification |
+|---|---|---|
+| \`StartTime\` | Oui, pour créer | Première exécution, en secondes depuis le Ripple Epoch. \`0\` = maintenant. Au plus 365 jours dans le futur |
+| \`DelaySeconds\` | Avec \`RepeatCount\` | Secondes entre les exécutions, jusqu'à 31 536 000 (365 jours) |
+| \`RepeatCount\` | Avec \`DelaySeconds\` | Exécutions après la première, de 1 à 256 |
+| \`Flags\` | Pour supprimer | \`1\` (\`tfCronUnset\`), sans aucun des champs ci-dessus |
+
+\`DelaySeconds\` et \`RepeatCount\` vont ensemble ou pas du tout. Avec \`StartTime\` seul, le Hook s'exécute une fois. Avec les deux, il s'exécute \`1 + RepeatCount\` fois. Pour plus de 257 exécutions, envoie un nouveau \`CronSet\` avant la fin de l'actuel : il le remplace.
+
+La suppression réussit toujours, même s'il n'y a aucun Cron.
+
+### Le temps en Ripple Epoch
+
+\`StartTime\` compte les secondes depuis le 1er janvier 2000 UTC, pas depuis 1970 comme un timestamp Unix :
+
+\`\`\`javascript
+// L'heure actuelle en Ripple Epoch
+const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
+
+// Commencer dans une heure
+const startIn1Hour = rippleEpoch + 3600;
+\`\`\`
+
+### Ce que coûte un cron
+
+- **Les frais du \`CronSet\`** couvrent la transaction et les exécutions qu'elle programme : les frais de base × (2 + \`RepeatCount\`). Avec des frais de base de 10 drops et \`RepeatCount: 2\`, 40 drops, comme dans le résultat ci-dessus.
+- **La réserve** : l'objet Cron compte dans \`OwnerCount\` tant qu'il existe.
+- **Chaque exécution** est un collect call facturé au compte. Si le solde ne la couvre pas au-dessus de la réserve, cette exécution du Hook est sautée.
+
+### Les exemples
+
+Le premier exemple active TSH Collect sur \`WALLET\` et programme son Hook toutes les heures avec \`RepeatCount: 24\` : 25 exécutions. Il n'exécute quelque chose que si \`WALLET\` a un Hook installé comme ci-dessus. Le second exemple supprime le cron avec \`tfCronUnset\`.
+
+### Erreurs
+
+| Erreur | Cause |
+|---|---|
+| \`temMALFORMED\` | Pas de \`StartTime\` à la création ; un seul de \`DelaySeconds\` et \`RepeatCount\` ; \`RepeatCount\` à 0 ou au-delà de 256 ; \`DelaySeconds\` au-delà de 365 jours ; \`tfCronUnset\` avec d'autres champs |
+| \`temINVALID_FLAG\` | Un flag autre que \`tfCronUnset\` |
+| \`tecEXPIRED\` | \`StartTime\` dans le passé, ou à plus de 365 jours |
+| \`tecINSUFFICIENT_RESERVE\` | Le solde ne couvre pas la réserve d'un objet de plus |
+| \`temDISABLED\` | L'amendment Cron n'est pas activé sur le réseau |`,
+    ar: `يجعل \`CronSet\` الشبكة تشغّل الـ Hook الخاص بحسابك وفق جدول زمني، من دون خدمة خارجية ترسل المعاملات. يشرح هذا الدرس كيف تفعل الشبكة ذلك، وما يحتاجه الـ Hook والحساب، وكم تكلّف كل خانة وكل تنفيذ.
+
+### كيف يعمل الـ cron
+
+يخزّن \`CronSet\` كائن **Cron** في حسابك: متى يُنفَّذ، وكل كم ثانية، وكم مرة أخرى. عندما يحين الوقت، تنشئ الشبكة نفسها **معاملة زائفة من نوع \`Cron\`**. لا يوقّعها أحد وليس لها رسوم؛ وحقل \`Owner\` فيها هو حسابك. تُطلق هذه المعاملة الـ Hook الخاص بحسابك. ثم ينتقل كائن Cron إلى الموعد التالي، إلى أن تنفد التكرارات فيختفي.
+
+للحساب Cron واحد على الأكثر. أي \`CronSet\` جديد يحل محل الحالي.
+
+### ما يحتاجه الـ Hook والحساب
+
+حسابك لا يرسل معاملة \`Cron\`، لذا يعمل الـ Hook بصفته **صاحب مصلحة ضعيفًا في المعاملة** (weak TSH): يُبلَّغ بالمعاملة ولا يستطيع رفضها. التنفيذ الضعيف هو **collect call** يدفع تكلفته حساب الـ Hook. ولا يحدث إلا عندما يسمح به الطرفان:
+
+1. **الـ Hook يسمح بالـ collect calls**: مثبّت بالـ flag \`hsfCOLLECT\` (\`4\`). ومع \`hsfOVERRIDE\` (\`1\`) تصبح \`Flags: 5\`. ويجب أن يتضمن \`HookOn\` نوع المعاملة \`Cron\`، أي \`92\`.
+2. **الحساب يسمح بالـ collect calls**: \`AccountSet\` مع \`SetFlag: 11\` (\`asfTshCollect\`).
+
+إذا غاب أحدهما، يظل \`CronSet\` يعيد \`tesSUCCESS\` ويستنفد الـ cron مراته، لكن الـ Hook لا يُنفَّذ أبدًا. لا شيء ينبّهك: تحقق من ضبط الاثنين.
+
+Hook يعدّ مرات تنفيذه بواسطة Cron، والحقول اللازمة لتثبيته كما في [الدرس 9.2](?m=9&l=1):
+
+\`\`\`c
+int64_t hook(uint32_t reserved)
+{
+    _g(1, 1);
+    if (otxn_type() != 92)   // 92 = ttCRON: لا تُحسب إلا معاملة Cron
+        accept(SBUF("cron_counter: not a Cron"), __LINE__);
+
+    // يُحفظ العدّاد في حالة الـ Hook تحت المفتاح "CRON"
+    uint8_t key[32] = { 'C', 'R', 'O', 'N' };
+    uint64_t count = 0;
+    state(SVAR(count), SBUF(key));
+    count++;
+    if (state_set(SVAR(count), SBUF(key)) < 0)
+        rollback(SBUF("cron_counter: state_set failed"), __LINE__);
+    accept(SBUF("cron_counter: counted"), __LINE__);
+    return 0;
+}
+\`\`\`
+
+\`\`\`javascript
+Hook: {
+  CreateCode: wasmHex,
+  // لا يُطلقه إلا Cron (البت 92). البت 22 (SetHook) يعمل بالعكس: 0 = لا يُطلق
+  HookOn: "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFFFFFFFFFFFFFBFFFFF",
+  HookNamespace: namespace,
+  HookApiVersion: 0,
+  Flags: 5, // hsfOVERRIDE (1) + hsfCOLLECT (4)
+}
+\`\`\`
+
+النتيجة على testnet، مع \`StartTime: 0\` و\`DelaySeconds: 10\` و\`RepeatCount: 2\`، بقراءة حالة الـ Hook بعد 50 ثانية:
+
+\`\`\`
+SetHook      tesSUCCESS   Flags: 5, HookOn with bit 92
+AccountSet   tesSUCCESS   SetFlag: 11 (asfTshCollect)
+CronSet      tesSUCCESS   Fee: 40 drops
+Cron         StartTime: 843801161, DelaySeconds: 10, RepeatCount: 2
+بعد 50 ثانية  حالة الـ Hook: CRON = 3
+\`\`\`
+
+- **أعطى \`RepeatCount: 2\` ثلاث مرات تنفيذ**: الأولى عند \`StartTime\`، ثم تكراران.
+- **أصبح \`StartTime: 0\`** وقت إغلاق الـ ledger السابق: "الآن".
+- **الاختبار نفسه من دون \`asfTshCollect\`، أو مع \`Flags: 1\`**، يعيد \`tesSUCCESS\` نفسه ولا يترك أي حالة: لم يُنفَّذ الـ Hook قط.
+
+### الحقول
+
+| الحقل | إلزامي | المعنى |
+|---|---|---|
+| \`StartTime\` | نعم، عند الإنشاء | أول تنفيذ، بالثواني منذ Ripple Epoch. \`0\` = الآن. بحد أقصى 365 يومًا في المستقبل |
+| \`DelaySeconds\` | مع \`RepeatCount\` | الثواني بين مرات التنفيذ، حتى 31,536,000 (365 يومًا) |
+| \`RepeatCount\` | مع \`DelaySeconds\` | مرات التنفيذ بعد الأولى، من 1 إلى 256 |
+| \`Flags\` | للحذف | \`1\` (\`tfCronUnset\`)، من دون أي من الحقول السابقة |
+
+يأتي \`DelaySeconds\` و\`RepeatCount\` معًا أو لا يأتيان. مع \`StartTime\` وحده، يُنفَّذ الـ Hook مرة واحدة. ومع الاثنين، يُنفَّذ \`1 + RepeatCount\` مرة. لأكثر من 257 مرة، أرسل \`CronSet\` جديدًا قبل انتهاء الحالي: سيحل محله.
+
+الحذف ينجح دائمًا، حتى إن لم يوجد أي Cron.
+
+### الوقت بصيغة Ripple Epoch
+
+يعدّ \`StartTime\` الثواني منذ 1 يناير 2000 UTC، لا منذ 1970 كطابع Unix الزمني:
+
+\`\`\`javascript
+// الوقت الحالي بصيغة Ripple Epoch
+const rippleEpoch = Math.floor(Date.now() / 1000) - 946684800;
+
+// البدء بعد ساعة
+const startIn1Hour = rippleEpoch + 3600;
+\`\`\`
+
+### تكلفة الـ cron
+
+- **رسوم \`CronSet\`** تغطي المعاملة ومرات التنفيذ التي تجدولها: الرسوم الأساسية × (2 + \`RepeatCount\`). مع رسوم أساسية قدرها 10 drops و\`RepeatCount: 2\` تكون 40 drops، كما في النتيجة أعلاه.
+- **الاحتياطي**: يُحتسب كائن Cron في \`OwnerCount\` ما دام موجودًا.
+- **كل تنفيذ** هو collect call يُحمَّل على الحساب. إذا لم يكفِ الرصيد فوق الاحتياطي لتغطيته، يُتخطى ذلك التنفيذ للـ Hook.
+
+### الأمثلة
+
+يفعّل المثال الأول TSH Collect على \`WALLET\` ويجدول الـ Hook الخاص به كل ساعة مع \`RepeatCount: 24\`: أي 25 مرة. ولا يُنفّذ شيئًا إلا إذا كان لدى \`WALLET\` Hook مثبّت كما سبق. ويحذف المثال الثاني الـ cron بـ \`tfCronUnset\`.
+
+### الأخطاء
+
+| الخطأ | السبب |
+|---|---|
+| \`temMALFORMED\` | غياب \`StartTime\` عند الإنشاء؛ وجود واحد فقط من \`DelaySeconds\` و\`RepeatCount\`؛ \`RepeatCount\` صفر أو أكثر من 256؛ \`DelaySeconds\` أكثر من 365 يومًا؛ \`tfCronUnset\` مع حقول أخرى |
+| \`temINVALID_FLAG\` | flag غير \`tfCronUnset\` |
+| \`tecEXPIRED\` | \`StartTime\` في الماضي، أو بعد أكثر من 365 يومًا |
+| \`tecINSUFFICIENT_RESERVE\` | الرصيد لا يغطي احتياطي كائن إضافي |
+| \`temDISABLED\` | تعديل Cron غير مفعّل على الشبكة |`,
   },
   m10l9: {
     fr: `Un **Price Oracle** est un objet de ledger qui permet a un compte de publier des prix d'actifs directement sur Xahau. Applications et Hooks peuvent lire ces prix depuis le ledger au lieu de dependre d'une valeur codee en dur ou d'un serveur prive.
@@ -8027,8 +8605,8 @@ L'ID d'un URIToken vient de son émetteur et de son URI. Une deuxième exécutio
 يُشتق معرّف الـ URIToken من المُصدر والـ URI. تشغيل المثال مرة ثانية بالـ URI نفسه يعيد \`tecDUPLICATE\`، ولا تُرسل الدفعة أيضًا: يفشل الـ Remit بالكامل. لتشغيله مرة أخرى، غيّر الـ URI.`,
   },
   m10l8: {
-    fr: `\n\n### Difference avec Invoke periodique\n\nAvec Invoke periodique, un script, serveur ou bot doit envoyer des transactions a intervalle regulier. Si ce service tombe, le Hook ne s'execute plus. Avec CronSet, la planification est enregistree dans le ledger et l'execution est geree par le reseau lui-meme.\n\n### Extension du compteur\n\n\`RepeatCount\` a une limite de 256 par transaction. Si ton cas d'usage demande une execution longue, il faut envoyer un nouveau \`CronSet\` avant la fin du compteur pour prolonger le programme. Cela donne un controle explicite et evite des executions infinies accidentelles.\n\n### Bonnes pratiques\n\nTeste avec de petits intervalles sur testnet, trace le Hook, verifie que \`hsfCOLLECT\` et \`asfTshCollect\` sont actifs, puis supprime les crons inutiles avec \`tfCronUnset\` pour eviter un comportement inattendu.`,
-    ar: `\n\n### الفرق عن Invoke الدوري\n\nفي Invoke الدوري يجب أن يرسل سكربت أو خادم أو bot معاملات على فترات منتظمة. إذا توقف هذا النظام الخارجي فلن يعمل Hook. أما CronSet فيسجل الجدولة في ledger وتدير الشبكة التنفيذ بنفسها.\n\n### تمديد العداد\n\n\`RepeatCount\` محدود بـ 256 لكل معاملة. إذا احتجت تشغيل طويل الأمد، أرسل \`CronSet\` جديدا قبل انتهاء العداد لتمديد البرنامج. هذا يعطي تحكما صريحا ويمنع تشغيلات لا نهائية بالخطأ.\n\n### أفضل الممارسات\n\nاختبر بفواصل قصيرة على testnet، واستعمل trace داخل Hook، وتأكد أن \`hsfCOLLECT\` و\`asfTshCollect\` مفعّلان، ثم احذف crons غير الضرورية بـ \`tfCronUnset\` لتجنب سلوك غير متوقع.`,
+    fr: ``,
+    ar: ``,
   },
   m10l10: {
     fr: `\n\n### Trois comptes typiques\n\nUn systeme de recompenses IOU utilise souvent trois roles : le token issuer qui cree la devise, le reward issuer ou reserve qui detient les fonds et installe le Hook, et le holder qui possede l'IOU et envoie \`ClaimReward\`. Ces roles peuvent parfois etre combines, mais les separer rend le modele plus clair.\n\n### Separation tracking / payout\n\nLe ledger suit l'exposition du holder dans le temps via les compteurs de TrustLine. Le Hook ne fait pas ce suivi lui-meme : il lit la valeur accumulee et applique la logique metier, comme cooldowns, plafonds, conversion vers un autre token ou refus si les conditions ne sont pas remplies.\n\n### Erreurs de configuration frequentes\n\nSi \`Issuer\` pointe vers le mauvais compte, aucun Hook ne sera declenche. Si \`ClaimCurrency.issuer\` ne correspond pas au token, la TrustLine attendue ne sera pas trouvee. Si le holder n'a pas cree de TrustLine RWD, la reclamation echouera avec une erreur de ligne manquante.

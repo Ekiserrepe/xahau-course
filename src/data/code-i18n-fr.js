@@ -1069,4 +1069,7 @@ export const FR = {
   "The connected device only needs the address, never the seed": "L'appareil connecté n'a besoin que de l'adresse, jamais du seed",
   "The same amount in XAH, as an XFL: drops × 10^-6": "Le même montant en XAH, en XFL : drops × 10^-6",
   "Rounded to drops: 0.2 × 3 is 0.6000000000000001 in floating point": "Arrondi au drop : en virgule flottante, 0.2 × 3 donne 0.6000000000000001",
+  "24 more runs after the first: 25 executions": "24 exécutions de plus après la première : 25 au total",
+  "The Hook will run now and then every hour: 25 executions.": "Le Hook s'exécutera maintenant, puis toutes les heures : 25 exécutions.",
+  "The CronSet was not applied.": "Le CronSet n'a pas été appliqué.",
 }

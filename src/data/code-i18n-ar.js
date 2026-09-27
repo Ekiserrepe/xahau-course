@@ -1060,4 +1060,7 @@ export const AR = {
   "The connected device only needs the address, never the seed": "الجهاز المتصل يحتاج إلى العنوان فقط، ولا يحتاج أبدًا إلى الـ seed",
   "The same amount in XAH, as an XFL: drops × 10^-6": "المبلغ نفسه بالـ XAH، بصيغة XFL: drops × 10^-6",
   "Rounded to drops: 0.2 × 3 is 0.6000000000000001 in floating point": "مقرّب إلى الـ drops: في الفاصلة العائمة 0.2 × 3 تساوي 0.6000000000000001",
+  "24 more runs after the first: 25 executions": "24 تنفيذًا إضافيًا بعد الأول: 25 إجمالًا",
+  "The Hook will run now and then every hour: 25 executions.": "سيُنفَّذ الـ Hook الآن ثم كل ساعة: 25 مرة.",
+  "The CronSet was not applied.": "لم يُطبَّق الـ CronSet.",
 }
