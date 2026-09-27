@@ -1058,4 +1058,5 @@ export const AR = {
   "An account with a Hook: the first argument, or a testnet account with an Accept Hook": "حساب لديه Hook: الوسيط الأول، أو حساب على testnet لديه Hook من نوع Accept",
   "The CASH account from .env receives the funds": "حساب CASH من .env يستقبل الأموال",
   "The connected device only needs the address, never the seed": "الجهاز المتصل يحتاج إلى العنوان فقط، ولا يحتاج أبدًا إلى الـ seed",
+  "The same amount in XAH, as an XFL: drops × 10^-6": "المبلغ نفسه بالـ XAH، بصيغة XFL: drops × 10^-6",
 }

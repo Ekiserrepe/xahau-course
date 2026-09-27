@@ -5515,725 +5515,600 @@ Recursos:
         zh: "Hook 的追踪与调试",
       },
       theory: {
-        es: `Cuando un Hook falla o se comporta de forma inesperada, necesitas una forma de **observar su ejecución interna**. El sistema de Hooks proporciona tres funciones de traza que emiten mensajes visibles en el **Debug Stream** de Hooks Builder y en los logs del nodo \`xahaud\`.
+        es: `Un Hook se ejecuta dentro de cada nodo que procesa la transacción, en un sandbox de WebAssembly, sin consola y sin un depurador que conectar. Para saber qué hizo un Hook tienes dos fuentes:
 
-### trace() Mensaje de texto o buffer en hexadecimal
+- **Los metadatos de la transacción.** Cada ejecución deja un registro \`HookExecution\`: cómo terminó el Hook, con qué mensaje y con qué código. Está en el ledger, y cualquier nodo lo devuelve.
+- **Los mensajes de traza.** \`trace()\`, \`trace_num()\` y \`trace_float()\` escriben líneas en el debug stream del nodo mientras el Hook se ejecuta. Muestran valores intermedios, y no se guardan en el ledger.
 
-La función más general. Emite un mensaje de cadena o el contenido de un buffer en formato hex.
+Empieza por los metadatos: responden a la mayoría de las preguntas. Añade trazas cuando necesites ver dentro del Hook.
 
-\`\`\`c
-// Emitir un mensaje de texto plano
-trace(SBUF("hook iniciado correctamente"), 0);  // 0 = mostrar como string
+### Qué registran los metadatos
 
-// Emitir el contenido de un buffer en hexadecimal
-uint8_t account_buf[20];
-otxn_field(SBUF(account_buf), sfAccount);
-trace(SBUF(account_buf), 1);                    // 1 = mostrar como hex
+El Hook de ejemplo de esta lección acepta pagos en XAH y rechaza todo lo demás. Resultado en testnet, pagándole 12 XAH (instalado como en la [lección 9.2](?m=9&l=1)):
+
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       51
+HookInstructionCount: 94
 \`\`\`
 
-El tercer argumento controla el formato de salida:
-- \`0\` → imprime el buffer como texto (útil para mensajes)
-- \`1\` → imprime el buffer como hexadecimal (útil para datos binarios: cuentas, hashes, buffers de transacciones)
+- **\`HookResult\`**: cómo terminó el Hook. \`3\` es \`accept()\`; \`2\` es \`rollback()\`, y entonces la transacción falla con \`tecHOOK_REJECTED\`.
+- **\`HookReturnString\`**: el mensaje que se pasó a \`accept()\` o \`rollback()\`. Los metadatos lo guardan en hex. Decodificado, termina en un byte cero, porque \`SBUF()\` cuenta el terminador de la cadena.
+- **\`HookReturnCode\`**: el número que se pasó como segundo argumento, en hex. \`0x51\` es 81: la línea del \`accept()\` final del archivo, porque el Hook pasa \`__LINE__\`. Con \`__LINE__\` en cada \`accept()\` y \`rollback()\`, el código te dice por dónde salió el Hook.
+- **\`HookInstructionCount\`**: cuántas instrucciones de WebAssembly se ejecutaron (\`0x94\` = 148).
 
-### trace_num() Mensaje + número entero
+Un rechazo queda registrado igual. El Hook \`min_payment\` de la [lección 9.1](?m=9&l=0), al pagarle 5 XAH, da \`tecHOOK_REJECTED\`, \`HookResult: 2\` y su mensaje de rechazo.
 
-Emite una etiqueta descriptiva junto a un valor numérico entero. Ideal para inspeccionar cantidades en drops, contadores, valores de retorno de funciones y códigos de error.
+Para leer estos campos desde un script, consulta la transacción y decodifica la cadena:
+
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
+\`\`\`
+
+### Las funciones de traza
+
+Los metadatos te dicen cómo terminó el Hook, no qué vio por el camino. Para eso, el Hook escribe líneas de traza. Trazar no cambia el resultado ni el ledger. Las tres funciones, tal como las declara \`extern.h\`:
+
+\`\`\`c
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
+\`\`\`
+
+Cada una recibe una etiqueta como puntero y longitud. \`SBUF(x)\` se expande a los dos, y por eso las llamadas parecen cortas.
+
+**\`trace()\`** escribe la etiqueta y un buffer de datos. Con \`as_hex\` a \`1\`, los datos aparecen en hex: así se leen valores binarios como un AccountID, que luego puedes comparar con lo que muestra un explorador. Para un mensaje sin más, no pases datos:
+
+\`\`\`c
+trace(SBUF("debug_demo:hook() iniciado"), 0, 0, 0);
+
+uint8_t hook_acc[20];
+hook_account(SBUF(hook_acc));
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+\`\`\`
+
+**\`trace_num()\`** escribe la etiqueta y un entero de 64 bits: importes en drops, contadores y los valores que devuelven las funciones de la Hook API. Esas funciones devuelven un número negativo si hay error, así que trazar el resultado de \`state_set()\` o \`emit()\` muestra un fallo que de otro modo pasaría en silencio:
 
 \`\`\`c
 int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-trace_num(SBUF("drops recibidos: "), drops);
-
-// Ver el valor de retorno de una función para detectar errores
-int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-trace_num(SBUF("state_set resultado: "), result);
-// Negativo = error; positivo o cero = éxito
+trace_num(SBUF("debug_demo:drops recibidos: "), drops);
 \`\`\`
 
-### trace_float() Mensaje + número en coma flotante (XFL)
-
-Los Hooks usan el formato **XFL** (eXtended Float) para representar cantidades no enteras. \`trace_float()\` formatea el XFL de forma legible en el Debug Stream.
+**\`trace_float()\`** escribe un número en XFL, el formato de coma flotante que usan los Hooks para importes que no son enteros. \`float_set(exponente, mantisa)\` construye uno: \`float_set(-6, drops)\` es el importe en XAH.
 
 \`\`\`c
-// Obtener el amount como XFL desde un slot
-int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-int64_t xfl_amount = slot_float(slot_no);
-trace_float(SBUF("importe en XFL: "), xfl_amount);
+trace_float(SBUF("debug_demo:XAH recibidos: "), float_set(-6, drops));
 \`\`\`
 
-### macro.h: Macros de debug disponibles en Hooks Builder
+### Dónde aparecen las trazas
 
-Hooks Builder incluye el archivo \`macro.h\` con cuatro macros de conveniencia que envuelven las funciones \`trace*\` y solo se activan cuando la constante \`DEBUG\` está definida. Esto permite dejar las trazas en el código y eliminarlas de un solo golpe en producción simplemente sin definiendo \`DEBUG\`.
+Las trazas van al debug stream del nodo, no a la transacción. En testnet, abre el **Debug Stream** de Hooks Builder, selecciona la cuenta del Hook y después envía la transacción: las líneas aparecen mientras el nodo la procesa. En un nodo propio, aparecen en su log.
 
-\`\`\`c
-// Muestra el nombre de la variable y su valor como número entero (int64)
-#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+Un Hook que termina en \`rollback()\` también escribe sus trazas, así que el debug stream es donde ves los valores que llevaron a un rechazo.
 
-// Muestra el nombre de la variable y el contenido del buffer en hexadecimal
-#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+### Las macros de depuración
 
-// Muestra el nombre de la variable y su valor como float XFL (eXtended Float)
-#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+\`hookapi.h\` incluye \`macro.h\`, que define cuatro macros sobre las funciones de traza. Cada una usa el nombre de la variable como etiqueta, así que \`TRACEVAR(drops)\` escribe \`drops\` y su valor sin que escribas la etiqueta:
 
-// Muestra el nombre de la variable y el contenido del buffer como texto ASCII
-#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
-\`\`\`
-
-**Cómo funcionan internamente:**
-
-Todas usan el operador \`#v\` (stringification de C) para convertir el nombre de la variable en una cadena literal que actúa de etiqueta. Así, \`TRACEVAR(drops)\` imprimirá \`"drops = 5000000"\` sin que tengas que escribir la etiqueta a mano.
-
-| Macro | Función interna | Cuándo usarla |
+| Macro | Función que llama | Para |
 |---|---|---|
 | \`TRACEVAR(v)\` | \`trace_num()\` | Enteros: drops, contadores, códigos de retorno |
-| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | Buffers binarios: account IDs, hashes, claves |
-| \`TRACEXFL(v)\` | \`trace_float()\` | Valores XFL (importes en coma flotante) |
-| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | Buffers de texto: parámetros, memos ASCII |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | Buffers binarios: AccountIDs, hashes, claves |
+| \`TRACEXFL(v)\` | \`trace_float()\` | Importes XFL |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | Buffers de texto: parámetros, memos |
 
-**Activar y desactivar el modo debug:**
+Las macros solo actúan cuando \`DEBUG\` vale \`1\`. \`macro.h\` fija \`DEBUG\` a partir de \`NDEBUG\`: sin \`NDEBUG\`, vale \`1\`. Para compilar sin ellas, define \`NDEBUG\` antes de incluir la cabecera:
 
 \`\`\`c
-// Al inicio del archivo, antes de incluir macro.h
-#define DEBUG 1       // Trazas activas — modo desarrollo
-// #define DEBUG 0    // Trazas desactivadas — modo producción
-
+#define NDEBUG        // DEBUG = 0: las macros TRACE no hacen nada
 #include "hookapi.h"
-// macro.h está disponible en Hooks Builder automáticamente
 \`\`\`
 
-Cuando \`DEBUG\` es \`0\` o no está definido, el compilador elimina completamente las macros del WASM generado: no hay coste de fees ni de tamaño.
+Con \`DEBUG\` a \`0\`, \`if (DEBUG)\` siempre es falso y el compilador quita esas llamadas del WASM. Las llamadas directas a \`trace()\`, \`trace_num()\` y \`trace_float()\` no se ven afectadas: quítalas tú.
 
-**Ejemplo de uso:**
+### Las trazas y Mainnet
 
-\`\`\`c
-uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
-int64_t drops        = 5000000;
-int64_t xfl_val      = float_set(0, drops);
+Cada llamada de traza es código que se ejecuta: hace el WASM más grande y la ejecución más larga. Mantén las trazas mientras pruebas en testnet. Antes de instalar el Hook en Mainnet, define \`NDEBUG\` y quita las llamadas de traza directas. Conserva los códigos \`__LINE__\`: no añaden nada a la ejecución y mantienen útiles los metadatos.`,
+        pt: `Um Hook é executado dentro de cada nó que processa a transação, num sandbox de WebAssembly, sem console e sem um depurador para conectar. Para saber o que um Hook fez, você tem duas fontes:
 
-TRACEVAR(drops);       // → "drops = 5000000"
-TRACEHEX(param_name);  // → "param_name = 4143"
-TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
-TRACESTR(param_name);  // → "param_name = AC"
+- **Os metadados da transação.** Cada execução deixa um registro \`HookExecution\`: como o Hook terminou, com que mensagem e com que código. Ele fica no ledger, e qualquer nó o devolve.
+- **As mensagens de trace.** \`trace()\`, \`trace_num()\` e \`trace_float()\` escrevem linhas no debug stream do nó enquanto o Hook é executado. Mostram valores intermediários e não ficam gravadas no ledger.
+
+Comece pelos metadados: eles respondem à maioria das perguntas. Adicione traces quando precisar ver dentro do Hook.
+
+### O que os metadados registram
+
+O Hook de exemplo desta lição aceita pagamentos em XAH e rejeita todo o resto. Resultado na testnet, pagando 12 XAH a ele (instalado como na [lição 9.2](?m=9&l=1)):
+
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       45
+HookInstructionCount: 94
 \`\`\`
 
-### ¿Dónde aparecen las trazas?
+- **\`HookResult\`**: como o Hook terminou. \`3\` é \`accept()\`; \`2\` é \`rollback()\`, e então a transação falha com \`tecHOOK_REJECTED\`.
+- **\`HookReturnString\`**: a mensagem passada a \`accept()\` ou \`rollback()\`. Os metadados a guardam em hex. Decodificada, termina num byte zero, porque \`SBUF()\` conta o terminador da string.
+- **\`HookReturnCode\`**: o número passado como segundo argumento, em hex. \`0x45\` é 69: a linha do \`accept()\` final do arquivo, porque o Hook passa \`__LINE__\`. Com \`__LINE__\` em cada \`accept()\` e \`rollback()\`, o código diz por onde o Hook saiu.
+- **\`HookInstructionCount\`**: quantas instruções de WebAssembly foram executadas (\`0x94\` = 148).
 
-Las trazas son visibles en **Hooks Builder → Debug Stream**: Selecciona la cuenta en el desplegable y verás todas las trazas en tiempo real para cada transacción procesada.
+Uma rejeição fica registrada da mesma forma. O Hook \`min_payment\` da [lição 9.1](?m=9&l=0), ao receber 5 XAH, dá \`tecHOOK_REJECTED\`, \`HookResult: 2\` e sua mensagem de rejeição.
 
-### Trucos para mejorar el debugging
+Para ler estes campos num script, consulte a transação e decodifique a string:
 
-**1. Usa \`__LINE__\` como código de error en accept/rollback**
-
-El segundo argumento de \`accept()\` y \`rollback()\` es un código numérico. Usar \`__LINE__\` automáticamente incluye el número de línea del código fuente, lo que te permite saber exactamente dónde terminó la ejecución sin leer los logs línea a línea.
-
-\`\`\`c
-accept(SBUF("min_payment: OK"), __LINE__);    // Sabrás que pasó por aquí
-rollback(SBUF("min_payment: FAIL"), __LINE__); // Y que falló aquí
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
 \`\`\`
 
-**2. Prefijos descriptivos en los mensajes**
+### As funções de trace
 
-Usa un prefijo con el nombre del Hook en cada mensaje. Con varios Hooks en la misma cuenta, es fácil confundir qué Hook emitió cada traza.
+Os metadados dizem como o Hook terminou, não o que ele viu pelo caminho. Para isso, o Hook escreve linhas de trace. O trace não muda o resultado nem o ledger. As três funções, como \`extern.h\` as declara:
 
 \`\`\`c
-trace(SBUF("mi_hook:inicio hook()"), 0);
-trace(SBUF("mi_hook:tipo tx procesado"), 0);
-trace(SBUF("mi_hook:aceptando"), 0);
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
 \`\`\`
 
-**3. Traza el valor de retorno de cada función crítica**
+Cada uma recebe um rótulo como ponteiro e comprimento. \`SBUF(x)\` se expande para os dois, e por isso as chamadas parecem curtas.
 
-Todas las funciones de la API de Hooks devuelven un valor negativo en caso de error. Comprueba siempre el retorno de operaciones importantes para no perder errores silenciosos.
-
-\`\`\`c
-int64_t r = state_set(SBUF(val), SBUF(key));
-trace_num(SBUF("state_set: "), r);  // Si r < 0, algo falló
-
-int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
-trace_num(SBUF("emit resultado: "), r2);
-\`\`\`
-
-**4. Traza buffers binarios como hex**
-
-Las cuentas, los hashes y los buffers de transacciones son datos binarios de 20-32 bytes. Mostrarlos como hex te permite compararlos con las direcciones y hashes que ves en los exploradores de bloques.
+**\`trace()\`** escreve o rótulo e um buffer de dados. Com \`as_hex\` igual a \`1\`, os dados aparecem em hex: é assim que se leem valores binários como um AccountID, que depois você pode comparar com o que um explorador mostra. Para uma mensagem simples, não passe dados:
 
 \`\`\`c
+trace(SBUF("debug_demo:hook() iniciado"), 0, 0, 0);
+
 uint8_t hook_acc[20];
 hook_account(SBUF(hook_acc));
-trace(SBUF(hook_acc), 1);  // Verás el account ID en hex (40 caracteres)
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
 \`\`\`
 
-**5. Marca las ramas de ejecución**
+**\`trace_num()\`** escreve o rótulo e um inteiro de 64 bits: valores em drops, contadores e os valores de retorno das funções da Hook API. Essas funções devolvem um número negativo em caso de erro, então fazer trace do resultado de \`state_set()\` ou \`emit()\` mostra uma falha que de outro modo passaria em silêncio:
 
-Añade una traza al inicio de cada rama \`if/else\` para seguir el flujo de ejecución. Cuando el Hook termina inesperadamente, verás hasta qué traza llegó antes de que parara.
-
-\`\`\`c
-if (tt == 0) {
-    trace(SBUF("rama: es un pago"), 0);
-    // ...
-} else {
-    trace(SBUF("rama: no es un pago, saliendo"), 0);
-    accept(SBUF("ok"), __LINE__);
-}
-\`\`\`
-
-**6. Traza en cbak() para depurar emisiones**
-
-Cuando una transacción emitida falla silenciosamente, es difícil saberlo sin instrumentar \`cbak()\`.
-
-\`\`\`c
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-    uint8_t txtype[4];
-    int64_t t = otxn_type();
-    trace_num(SBUF("cbak: tipo de tx emitida: "), t);
-    // Leer el resultado de la tx emitida
-    int64_t result = otxn_field(...);
-    trace_num(SBUF("cbak: resultado emission: "), result);
-    return 0;
-}
-\`\`\`
-
-**7. Elimina las trazas antes de ir a producción**
-
-Las trazas tienen un coste en fees de ejecución y aumentan el tamaño del WASM. Una vez que el Hook funciona correctamente en testnet, elimina o comenta las llamadas a \`trace*\` antes de desplegarlo en Mainnet.`,
-        pt: `Quando um Hook falha ou se comporta de forma inesperada, você precisa uma forma de **observar sua execução interna**. O sistema de Hooks fornece três funções de trace que emiten mensagens visíveis no **Debug Stream** de Hooks Builder e nos logs do nó \`xahaud\`.
-### trace() Mensagem de texto o buffer em hexadecimal
-A função mais geral. Emite uma mensagem de texto ou o conteúdo de um buffer em formato hex.
-\`\`\`c
-// Emitir um mensagem de texto plano
-trace(SBUF("hook iniciado corretamente"), 0);  // 0 = mostrar como string
-// Emitir o conteúdo de um buffer em hexadecimal
-uint8_t account_buf[20];
-otxn_field(SBUF(account_buf), sfAccount);
-trace(SBUF(account_buf), 1);                    // 1 = mostrar como hex
-\`\`\`
-O tercer argumento controlea o formato de saída:
-- \`0\` → imprime o buffer como texto (útil para mensagens)
-- \`1\` → imprime o buffer como hexadecimal (útil para dados binários: contas, hashes, buffers de transações)
-### trace_num() Mensagem + número inteiro
-Emite uma etiqueta descritiva junto a um valor numérico inteiro. Ideal para inspecionar quantidades em drops, contadores, valores de retorno de funções e códigos de erro.
 \`\`\`c
 int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-trace_num(SBUF("drops recebidos: "), drops);
-// Ver o valor de retorno de uma função para detectar erros
-int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-trace_num(SBUF("state_set resultado: "), result);
-// Negativo = erro; positivo ou zero = sucesso
+trace_num(SBUF("debug_demo:drops recebidos: "), drops);
 \`\`\`
-### trace_float() Mensagem + número em ponto flutuante (XFL)
-Os Hooks usam o formato **XFL** (eXtended Float) para representar quantidades não inteiras. \`trace_float()\` formata o XFL de forma legível no Debug Stream.
+
+**\`trace_float()\`** escreve um número em XFL, o formato de ponto flutuante que os Hooks usam para valores que não são inteiros. \`float_set(expoente, mantissa)\` constrói um: \`float_set(-6, drops)\` é o valor em XAH.
+
 \`\`\`c
-// Obter o Amount como XFL a partir de um slot
-int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-int64_t xfl_amount = slot_float(slot_no);
-trace_float(SBUF("montante em XFL: "), xfl_amount);
+trace_float(SBUF("debug_demo:XAH recebidos: "), float_set(-6, drops));
 \`\`\`
-### macro.h: Macros de debug disponíveis em Hooks Builder
-Hooks Builder inclui o arquivo \`macro.h\` com quatro macros de conveniência que envolvem as funções \`trace*\` e só são ativadas quando a constante \`DEBUG\` está definida. Isso permite deixar as traces no código e eliminá-las de uma só vez em produção simplesmente não definindo \`DEBUG\`.
-\`\`\`c
-// Mostra o nome da variável e seu valor como número inteiro (int64)
-#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
-// Mostra o nome da variável e o conteúdo do buffer em hexadecimal
-#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
-// Mostra o nome da variável e seu valor como float XFL (eXtended Float)
-#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
-// Mostra o nome da variável e o conteúdo do buffer como texto ASCII
-#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
-\`\`\`
-**Como funcionam internamente:**
-Todas usam o operador \`#v\` (stringification de C) para converter o nome da variável em uma string literal que atua de etiqueta. Assim, \`TRACEVAR(drops)\` imprimirá \`"drops = 5000000"\` sem que você precise escrever a etiqueta à mão.
-| Macro | Função interna | Quando usar |
+
+### Onde os traces aparecem
+
+Os traces vão para o debug stream do nó, não para a transação. Na testnet, abra o **Debug Stream** do Hooks Builder, selecione a conta do Hook e depois envie a transação: as linhas aparecem enquanto o nó a processa. Num nó próprio, elas aparecem no log dele.
+
+Um Hook que termina em \`rollback()\` também escreve seus traces, então o debug stream é onde você vê os valores que levaram a uma rejeição.
+
+### As macros de depuração
+
+\`hookapi.h\` inclui \`macro.h\`, que define quatro macros sobre as funções de trace. Cada uma usa o nome da variável como rótulo, então \`TRACEVAR(drops)\` escreve \`drops\` e seu valor sem que você escreva o rótulo:
+
+| Macro | Função que chama | Para |
 |---|---|---|
 | \`TRACEVAR(v)\` | \`trace_num()\` | Inteiros: drops, contadores, códigos de retorno |
-| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | Buffers binários: account IDs, hashes, chaves |
-| \`TRACEXFL(v)\` | \`trace_float()\` | Valores XFL (montantes em ponto flutuante) |
-| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | Buffers de texto: parâmetros, memos ASCII |
-**Ativar e desativar o modo debug:**
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | Buffers binários: AccountIDs, hashes, chaves |
+| \`TRACEXFL(v)\` | \`trace_float()\` | Valores XFL |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | Buffers de texto: parâmetros, memos |
+
+As macros só agem quando \`DEBUG\` vale \`1\`. \`macro.h\` define \`DEBUG\` a partir de \`NDEBUG\`: sem \`NDEBUG\`, vale \`1\`. Para compilar sem elas, defina \`NDEBUG\` antes de incluir o cabeçalho:
+
 \`\`\`c
-// No início do arquivo, antes de incluir macro.h
-#define DEBUG 1       // Traces ativas — modo desenvolvimento
-// #define DEBUG 0    // Traces desativadas — modo produção
+#define NDEBUG        // DEBUG = 0: as macros TRACE não fazem nada
 #include "hookapi.h"
-// macro.h está disponível em Hooks Builder automaticamente
 \`\`\`
-Quando \`DEBUG\` é \`0\` ou não está definido, o compilador remove completamente as macros do WASM gerado: não há custo de fees nem de tamanho.
-**Exemplo de uso:**
-\`\`\`c
-uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
-int64_t drops        = 5000000;
-int64_t xfl_val      = float_set(0, drops);
-TRACEVAR(drops);       // → "drops = 5000000"
-TRACEHEX(param_name);  // → "param_name = 4143"
-TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
-TRACESTR(param_name);  // → "param_name = AC"
+
+Com \`DEBUG\` em \`0\`, \`if (DEBUG)\` é sempre falso e o compilador remove essas chamadas do WASM. As chamadas diretas a \`trace()\`, \`trace_num()\` e \`trace_float()\` não são afetadas: remova-as você mesmo.
+
+### Os traces e a Mainnet
+
+Cada chamada de trace é código que é executado: deixa o WASM maior e a execução mais longa. Mantenha os traces enquanto testa na testnet. Antes de instalar o Hook na Mainnet, defina \`NDEBUG\` e remova as chamadas de trace diretas. Mantenha os códigos \`__LINE__\`: não acrescentam nada à execução e mantêm os metadados úteis.`,
+        en: `A Hook runs inside every node that processes the transaction, in a WebAssembly sandbox, with no console and no debugger to attach. To know what a Hook did, you have two sources:
+
+- **The transaction metadata.** Every execution leaves a \`HookExecution\` record: how the Hook ended, with which message and which code. It is on the ledger, and any node returns it.
+- **Trace messages.** \`trace()\`, \`trace_num()\` and \`trace_float()\` write lines to the node's debug stream while the Hook runs. They show intermediate values, and they are not stored on the ledger.
+
+Start with the metadata: it answers most questions. Add traces when you need to see inside the Hook.
+
+### What the metadata records
+
+The example Hook of this lesson accepts payments in XAH and rejects everything else. Result on testnet, paying it 12 XAH (installed as in [lesson 9.2](?m=9&l=1)):
+
 \`\`\`
-### Onde aparecem as traces?
-As traces são visíveis em **Hooks Builder → Debug Stream**: Selecione a conta no menu suspenso e você verá todas as traces em tempo real para cada transação processada.
-### Dicas para melhorar o debugging
-**1. Usa \`__LINE__\` como código de erro em accept/rollback**
-O segundo argumento de \`accept()\` e \`rollback()\` é um código numérico. Usar \`__LINE__\` automaticamente inclui o número de linha do código-fonte, o que permite saber exatamente onde a execução terminou sem ler os logs linha por linha.
-\`\`\`c
-accept(SBUF("min_payment: OK"), __LINE__);    // Você saberá que passou por aqui
-rollback(SBUF("min_payment: FAIL"), __LINE__); // E que falhou aqui
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       43
+HookInstructionCount: 94
 \`\`\`
-**2. Prefixos descritivos nas mensagens**
-Usa um prefixo com o nome do Hook em cada mensagem. Com vários Hooks na mesma conta, é fácil confundir qual Hook emitiu cada trace.
-\`\`\`c
-trace(SBUF("meu_hook:inicio hook()"), 0);
-trace(SBUF("meu_hook:tipo tx processado"), 0);
-trace(SBUF("meu_hook:aceitando"), 0);
+
+- **\`HookResult\`**: how the Hook ended. \`3\` is \`accept()\`; \`2\` is \`rollback()\`, and then the transaction fails with \`tecHOOK_REJECTED\`.
+- **\`HookReturnString\`**: the message passed to \`accept()\` or \`rollback()\`. The metadata stores it in hex. Decoded, it ends in a zero byte, because \`SBUF()\` counts the string's terminator.
+- **\`HookReturnCode\`**: the number passed as the second argument, in hex. \`0x43\` is 67: the line of the final \`accept()\` in the file, because the Hook passes \`__LINE__\`. With \`__LINE__\` in every \`accept()\` and \`rollback()\`, the code tells you where the Hook exited.
+- **\`HookInstructionCount\`**: how many WebAssembly instructions ran (\`0x94\` = 148).
+
+A rejection is recorded the same way. The \`min_payment\` Hook of [lesson 9.1](?m=9&l=0), paid 5 XAH, gives \`tecHOOK_REJECTED\`, \`HookResult: 2\` and its rejection message.
+
+To read these fields from a script, query the transaction and decode the string:
+
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
 \`\`\`
-**3. Trace o valor de retorno de cada função crítica**
-Todas as funções da API de Hooks retornam um valor negativo em caso de erro. Verifique sempre o retorno de operações importantes para não perder erros silenciosos.
+
+### The trace functions
+
+The metadata tells you how the Hook ended, not what it saw on the way. For that, the Hook writes trace lines. Tracing doesn't change the result or the ledger. The three functions, as \`extern.h\` declares them:
+
 \`\`\`c
-int64_t r = state_set(SBUF(val), SBUF(key));
-trace_num(SBUF("state_set: "), r);  // Se r < 0, algo falhou
-int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
-trace_num(SBUF("emit resultado: "), r2);
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
 \`\`\`
-**4. Rastreie buffers binários como hex**
-As contas, os hashes e os buffers de transações são dados binários de 20-32 bytes. Mostrá-los como hex permite que você compará-los com os endereços e hashes que você vê nos exploradores de blocos.
+
+Each one takes a label as a pointer and a length. \`SBUF(x)\` expands to both, which is why the calls look short.
+
+**\`trace()\`** writes the label and a data buffer. With \`as_hex\` set to \`1\`, the data appears in hex: that is how to read binary values such as an AccountID, which you can then compare with what an explorer shows. For a plain message, pass no data:
+
 \`\`\`c
+trace(SBUF("debug_demo:hook() initiated"), 0, 0, 0);
+
 uint8_t hook_acc[20];
 hook_account(SBUF(hook_acc));
-trace(SBUF(hook_acc), 1);  // Você verá o account ID em hex (40 caracteres)
-\`\`\`
-**5. Marca as ramas de execução**
-Adicione um trace no início de cada ramo \`if/else\` para acompanhar o fluxo de execução. Quando o Hook termina de forma inesperada, você verá até qual trace ele chegou antes de parar.
-\`\`\`c
-if (tt == 0) {
-    trace(SBUF("ramo: e um pagamento"), 0);
-    // ...
-} else {
-    trace(SBUF("ramo: nao e um pagamento, saindo"), 0);
-    accept(SBUF("ok"), __LINE__);
-}
-\`\`\`
-**6. Rastreie em cbak() para depurar emissões**
-Quando uma transação emitida falha silenciosamente, é difícil saber isso sem instrumentar \`cbak()\`.
-\`\`\`c
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-    uint8_t txtype[4];
-    int64_t t = otxn_type();
-    trace_num(SBUF("cbak: tipo de tx emitida: "), t);
-    // Ler o resultado da tx emitida
-    int64_t result = otxn_field(...);
-    trace_num(SBUF("cbak: resultado emission: "), result);
-    return 0;
-}
-\`\`\`
-**7. Remova as traces antes de ir a produção**
-Os traces têm custo em fees de execução e aumentam o tamanho do WASM. Quando o Hook funcionar corretamente na testnet, remova ou comente as chamadas a \`trace*\` antes de fazer o deploy na Mainnet.`,
-        en: `When a Hook fails or behaves unexpectedly, you need a way to **observe its internal execution**. The Hooks system provides three trace functions that emit messages visible in the **Debug Stream** of Hooks Builder and in the \`xahaud\` node logs.
-
-### trace() Text message or buffer in hexadecimal
-
-The most general function. Emits a string message or the contents of a buffer in hex format.
-
-\`\`\`c
-// Emit a plain text message
-trace(SBUF("hook started correctly"), 0);  // 0 = show as string
-
-// Emit the content of a buffer in hexadecimal
-uint8_t account_buf[20];
-otxn_field(SBUF(account_buf), sfAccount);
-trace(SBUF(account_buf), 1);                    // 1 = show as hex
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
 \`\`\`
 
-The third argument controles the output format:
-- \`0\` → prints the buffer as text (useful for messages)
-- \`1\` → prints the buffer as hexadecimal (useful for binary data: accounts, hashes, transaction buffers)
-
-### trace_num() Message + integer number
-
-Emits a descriptive label along with an integer numeric value. Ideal for inspecting amounts in drops, counters, function return values and error codes.
+**\`trace_num()\`** writes the label and a 64-bit integer: amounts in drops, counters, and the return values of Hook API functions. Those functions return a negative number on error, so tracing the result of \`state_set()\` or \`emit()\` shows a failure that would otherwise pass silently:
 
 \`\`\`c
 int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-trace_num(SBUF("drops received: "), drops);
-
-// See the return value of a function to detect errors
-int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-trace_num(SBUF("state_set result: "), result);
-// Negative = error; positive or zero = success
+trace_num(SBUF("debug_demo:drops received: "), drops);
 \`\`\`
 
-### trace_float() Message + floating point number (XFL)
-
-Hooks use the **XFL** (eXtended Float) format to represent non-integer amounts. \`trace_float()\` formats the XFL in a readable way in the Debug Stream.
+**\`trace_float()\`** writes a number in XFL, the float format Hooks use for amounts that aren't integers. \`float_set(exponent, mantissa)\` builds one: \`float_set(-6, drops)\` is the amount in XAH.
 
 \`\`\`c
-// Get the amount as XFL from a slot
-int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-int64_t xfl_amount = slot_float(slot_no);
-trace_float(SBUF("amount in XFL: "), xfl_amount);
+trace_float(SBUF("debug_demo:XAH received: "), float_set(-6, drops));
 \`\`\`
 
-### macro.h: Debug macros available in Hooks Builder
+### Where the traces appear
 
-Hooks Builder includes the \`macro.h\` file with four convenience macros that wrap the \`trace*\` functions and only activate when the \`DEBUG\` constant is defined. This allows leaving traces in the code and removing them all at once in production simply by not defining \`DEBUG\`.
+Traces go to the node's debug stream, not to the transaction. On testnet, open the **Debug Stream** in Hooks Builder, select the Hook's account, and then send the transaction: the lines appear as the node processes it. On a node you run yourself, they appear in its log.
 
-\`\`\`c
-// Shows the variável name and its value as an integer (int64)
-#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+A Hook that ends in \`rollback()\` also writes its traces, so the debug stream is where you see the values that led to a rejection.
 
-// Shows the variável name and buffer content in hexadecimal
-#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+### The debug macros
 
-// Shows the variável name and its value as XFL float (eXtended Float)
-#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+\`hookapi.h\` includes \`macro.h\`, which defines four macros around the trace functions. Each one uses the variable's name as the label, so \`TRACEVAR(drops)\` writes \`drops\` and its value without you typing the label:
 
-// Shows the variável name and buffer content as ASCII text
-#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
-\`\`\`
-
-**How they work internally:**
-
-All use the \`#v\` operator (C stringification) to convert the variável name into a literal string that acts as a label. So, \`TRACEVAR(drops)\` will print \`"drops = 5000000"\` without you having to write the label manually.
-
-| Macro | Internal function | When to use it |
+| Macro | Function it calls | For |
 |---|---|---|
 | \`TRACEVAR(v)\` | \`trace_num()\` | Integers: drops, counters, return codes |
-| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | Binary buffers: account IDs, hashes, keys |
-| \`TRACEXFL(v)\` | \`trace_float()\` | XFL values (floating point amounts) |
-| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | Text buffers: parameters, ASCII memos |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | Binary buffers: AccountIDs, hashes, keys |
+| \`TRACEXFL(v)\` | \`trace_float()\` | XFL amounts |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | Text buffers: parameters, memos |
 
-**Activating and deactivating debug mode:**
+The macros only act when \`DEBUG\` is \`1\`. \`macro.h\` sets \`DEBUG\` from \`NDEBUG\`: without \`NDEBUG\`, it is \`1\`. To compile without them, define \`NDEBUG\` before including the header:
 
 \`\`\`c
-// At the beginning of the file, before including macro.h
-#define DEBUG 1       // Traces active — development mode
-// #define DEBUG 0    // Traces disabled — production mode
-
+#define NDEBUG        // DEBUG = 0: the TRACE macros do nothing
 #include "hookapi.h"
-// macro.h is available in Hooks Builder automatically
 \`\`\`
 
-When \`DEBUG\` is \`0\` or not defined, the compiler completely removes the macros from the generated WASM: no fee cost or size increase.
+With \`DEBUG\` at \`0\`, \`if (DEBUG)\` is always false and the compiler drops those calls from the WASM. Direct calls to \`trace()\`, \`trace_num()\` and \`trace_float()\` are not affected: remove them yourself.
 
-**Usage example:**
+### Traces and Mainnet
 
-\`\`\`c
-uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
-int64_t drops        = 5000000;
-int64_t xfl_val      = float_set(0, drops);
+Each trace call is code that runs: it makes the WASM bigger and the execution longer. Keep the traces while you test on testnet. Before installing the Hook on Mainnet, define \`NDEBUG\` and remove the direct trace calls. Keep the \`__LINE__\` codes: they add nothing to the execution and keep the metadata useful.`,
+        jp: `Hook はトランザクションを処理するすべてのノードの中で、WebAssembly のサンドボックスとして実行されます。コンソールも、接続できるデバッガーもありません。Hook が何をしたかを知る手段は2つあります。
 
-TRACEVAR(drops);       // → "drops = 5000000"
-TRACEHEX(param_name);  // → "param_name = 4143"
-TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
-TRACESTR(param_name);  // → "param_name = AC"
+- **トランザクションのメタデータ。** 実行のたびに \`HookExecution\` レコードが残ります。Hook がどう終了したか、どのメッセージとどのコードで終了したかが記録されます。これは台帳に保存され、どのノードからも取得できます。
+- **トレースメッセージ。** \`trace()\`、\`trace_num()\`、\`trace_float()\` は、Hook の実行中にノードの debug stream へ行を書き出します。途中の値を確認できますが、台帳には保存されません。
+
+まずメタデータから確認します。ほとんどの疑問はこれで解決します。Hook の内部を見る必要があるときにトレースを追加します。
+
+### メタデータに記録される内容
+
+このレッスンの Hook の例は、XAH での支払いを受け入れ、それ以外をすべて拒否します。テストネットで 12 XAH を支払った結果です（[レッスン 9.2](?m=9&l=1) と同じ方法でインストール）。
+
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       44
+HookInstructionCount: 94
 \`\`\`
 
-### Where do traces appear?
+- **\`HookResult\`**：Hook の終了方法です。\`3\` は \`accept()\`、\`2\` は \`rollback()\` で、この場合トランザクションは \`tecHOOK_REJECTED\` で失敗します。
+- **\`HookReturnString\`**：\`accept()\` または \`rollback()\` に渡したメッセージです。メタデータには hex で保存されます。デコードすると末尾にゼロバイトが付きます。\`SBUF()\` が文字列の終端文字も数えるためです。
+- **\`HookReturnCode\`**：2番目の引数として渡した数値を hex で表したものです。\`0x44\` は 68 で、ファイル内の最後の \`accept()\` の行番号です。Hook が \`__LINE__\` を渡しているためです。すべての \`accept()\` と \`rollback()\` に \`__LINE__\` を渡しておけば、Hook がどこで終了したかがこのコードでわかります。
+- **\`HookInstructionCount\`**：実行された WebAssembly 命令の数です（\`0x94\` = 148）。
 
-Traces are visible in **Hooks Builder → Debug Stream**: Select the account from the dropdown and you'll see all traces in real time for each processed transaction.
+拒否も同じように記録されます。[レッスン 9.1](?m=9&l=0) の \`min_payment\` Hook に 5 XAH を支払うと、\`tecHOOK_REJECTED\`、\`HookResult: 2\` と拒否メッセージが記録されます。
 
-### Tips for better debugging
+スクリプトからこれらのフィールドを読むには、トランザクションを照会して文字列をデコードします。
 
-**1. Use \`__LINE__\` as error code in accept/rollback**
-
-The second argument of \`accept()\` and \`rollback()\` is a numeric code. Using \`__LINE__\` automatically includes the source code line number, allowing you to know exactly where execution ended without reading logs line by line.
-
-\`\`\`c
-accept(SBUF("min_payment: OK"), __LINE__);    // You'll know it passed through here
-rollback(SBUF("min_payment: FAIL"), __LINE__); // And that it failed here
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
 \`\`\`
 
-**2. Descriptive prefixes in messages**
+### トレース関数
 
-Use a prefix with the Hook name in each message. With multiple Hooks on the same account, it's easy to confuse which Hook emitted each trace.
+メタデータからわかるのは Hook がどう終了したかであり、途中で何を見たかではありません。それを知るために、Hook はトレース行を書き出します。トレースは結果にも台帳にも影響しません。\`extern.h\` での3つの関数の宣言は次のとおりです。
 
 \`\`\`c
-trace(SBUF("my_hook:hook() start"), 0);
-trace(SBUF("my_hook:tx type processed"), 0);
-trace(SBUF("my_hook:accepting"), 0);
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
 \`\`\`
 
-**3. Trace the return value of each critical function**
+どの関数もラベルをポインタと長さで受け取ります。\`SBUF(x)\` はその2つに展開されるため、呼び出しが短く見えます。
 
-All Hooks API functions return a negative value on error. Always check the return of important operations to avoid silent errors.
-
-\`\`\`c
-int64_t r = state_set(SBUF(val), SBUF(key));
-trace_num(SBUF("state_set: "), r);  // If r < 0, something failed
-
-int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
-trace_num(SBUF("emit result: "), r2);
-\`\`\`
-
-**4. Trace binary buffers as hex**
-
-Accounts, hashes and transaction buffers are binary data of 20-32 bytes. Showing them as hex lets you compare them with the addresses and hashes you see in block explorers.
+**\`trace()\`** はラベルとデータバッファを書き出します。\`as_hex\` を \`1\` にするとデータが hex で表示されます。AccountID のようなバイナリ値はこの方法で読み、エクスプローラーの表示と比較できます。メッセージだけを書く場合は、データを渡しません。
 
 \`\`\`c
+trace(SBUF("debug_demo:hook() 開始"), 0, 0, 0);
+
 uint8_t hook_acc[20];
 hook_account(SBUF(hook_acc));
-trace(SBUF(hook_acc), 1);  // You'll see the account ID in hex (40 characters)
+trace(SBUF("debug_demo:hook_account（20バイト）: "), SBUF(hook_acc), 1);
 \`\`\`
 
-**5. Mark execution branches**
-
-Add a trace at the start of each \`if/else\` branch to follow the execution flow. When the Hook ends unexpectedly, you'll see which trace it reached before stopping.
-
-\`\`\`c
-if (tt == 0) {
-    trace(SBUF("branch: is a payment"), 0);
-    // ...
-} else {
-    trace(SBUF("branch: not a payment, exiting"), 0);
-    accept(SBUF("ok"), __LINE__);
-}
-\`\`\`
-
-**6. Trace in cbak() to debug emissions**
-
-When an emitted transaction fails silently, it's difficult to know without instrumenting \`cbak()\`.
-
-\`\`\`c
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-    uint8_t txtype[4];
-    int64_t t = otxn_type();
-    trace_num(SBUF("cbak: emitted tx type: "), t);
-    // Read the result of the emitted tx
-    int64_t result = otxn_field(...);
-    trace_num(SBUF("cbak: emission result: "), result);
-    return 0;
-}
-\`\`\`
-
-**7. Remove traces before going to production**
-
-Traces have an execution fee cost and increase WASM size. Once the Hook works correctly on testnet, remove or comment out the \`trace*\` calls before deploying it to Mainnet.`,
-        jp: `Hookが失敗したり予期しない動作をする場合、**その内部実行を観察する**方法が必要です。Hooksシステムは、Hooks BuilderのDebug Streamと\`xahaud\`ノードログに表示されるメッセージをEmitする3つのトレース関数を提供します。
-
-### trace() テキストメッセージまたはhexのバッファ
-
-最も一般的な関数。文字列メッセージまたはバッファの内容をhex形式でEmitします。
-
-\`\`\`c
-// テキストメッセージをEmit
-trace(SBUF("hook started correctly"), 0);  // 0 = 文字列として表示
-
-// バッファの内容を16進数でEmit
-uint8_t account_buf[20];
-otxn_field(SBUF(account_buf), sfAccount);
-trace(SBUF(account_buf), 1);                    // 1 = hexとして表示
-\`\`\`
-
-3番目の引数は出力形式を制御します：
-- \`0\` → バッファをテキストとして出力（メッセージに便利）
-- \`1\` → バッファを16進数として出力（バイナリデータに便利：アカウント、ハッシュ、トランザクションバッファ）
-
-### trace_num() メッセージ + 整数値
-
-説明的なラベルとともに整数数値をEmitします。drops単位の金額、カウンター、関数の戻り値、エラーコードの検査に最適です。
+**\`trace_num()\`** はラベルと 64 ビット整数を書き出します。drops 単位の金額、カウンター、Hook API 関数の戻り値などに使います。これらの関数はエラー時に負の数を返すため、\`state_set()\` や \`emit()\` の結果をトレースすれば、見過ごされがちな失敗がわかります。
 
 \`\`\`c
 int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-trace_num(SBUF("drops received: "), drops);
-
-// エラーを検出するために関数の戻り値を確認する
-int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-trace_num(SBUF("state_set result: "), result);
-// 負の値 = エラー; 正またはゼロ = 成功
+trace_num(SBUF("debug_demo:受信したdrops: "), drops);
 \`\`\`
 
-### trace_float() メッセージ + 浮動小数点数（XFL）
-
-Hooksは**XFL**（eXtended Float）フォーマットを使って非整数の金額を表現します。\`trace_float()\`はXFLをDebug Streamで読みやすい形式にフォーマットします。
+**\`trace_float()\`** は XFL 形式の数値を書き出します。XFL は、Hooks が整数でない金額に使う浮動小数点形式です。\`float_set(exponent, mantissa)\` で作成でき、\`float_set(-6, drops)\` は XAH 単位の金額になります。
 
 \`\`\`c
-// スロットからXFLとしてamountを取得する
-int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-int64_t xfl_amount = slot_float(slot_no);
-trace_float(SBUF("amount in XFL: "), xfl_amount);
+trace_float(SBUF("debug_demo:受信したXAH: "), float_set(-6, drops));
 \`\`\`
 
-### macro.h：Hooks Builderで利用可能なデバッグマクロ
+### トレースが表示される場所
 
-Hooks Builderには、\`trace*\`関数をラップし、\`DEBUG\`定数が定義されているときのみ有効になる4つの便利なマクロを持つ\`macro.h\`ファイルが含まれています。これにより、コードにトレースを残し、\`DEBUG\`を定義しないだけで本番環境で一度に削除できます。
+トレースはトランザクションではなく、ノードの debug stream に送られます。テストネットでは、Hooks Builder の **Debug Stream** を開いて Hook のアカウントを選択し、その後でトランザクションを送信します。ノードが処理するのに合わせて行が表示されます。自分で運用するノードでは、そのログに表示されます。
 
-\`\`\`c
-// 変数名とその値を整数（int64）として表示する
-#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+\`rollback()\` で終了する Hook もトレースを書き出します。拒否に至った値は debug stream で確認できます。
 
-// 変数名とバッファの内容を16進数で表示する
-#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+### デバッグマクロ
 
-// 変数名とその値をXFLフロート（eXtended Float）として表示する
-#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+\`hookapi.h\` は \`macro.h\` を読み込み、\`macro.h\` はトレース関数をラップする4つのマクロを定義しています。どのマクロも変数名をラベルとして使うため、\`TRACEVAR(drops)\` と書くだけで、ラベルを入力しなくても \`drops\` とその値が書き出されます。
 
-// 変数名とバッファの内容をASCIIテキストとして表示する
-#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
-\`\`\`
-
-**内部の仕組み：**
-
-すべて\`#v\`演算子（Cの文字列化）を使って変数名をラベルとして機能するリテラル文字列に変換します。したがって、\`TRACEVAR(drops)\`はラベルを手動で書かなくても\`"drops = 5000000"\`を出力します。
-
-| マクロ | 内部関数 | いつ使うか |
+| マクロ | 呼び出す関数 | 用途 |
 |---|---|---|
-| \`TRACEVAR(v)\` | \`trace_num()\` | 整数：drops、カウンター、戻りコード |
-| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | バイナリバッファ：アカウントID、ハッシュ、キー |
-| \`TRACEXFL(v)\` | \`trace_float()\` | XFL値（浮動小数点の金額） |
-| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | テキストバッファ：パラメーター、ASCIIメモ |
+| \`TRACEVAR(v)\` | \`trace_num()\` | 整数：drops、カウンター、戻り値のコード |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | バイナリバッファ：AccountID、ハッシュ、鍵 |
+| \`TRACEXFL(v)\` | \`trace_float()\` | XFL の金額 |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | テキストバッファ：パラメータ、メモ |
 
-**デバッグモードの有効化と無効化：**
+マクロが動作するのは \`DEBUG\` が \`1\` のときだけです。\`macro.h\` は \`NDEBUG\` に応じて \`DEBUG\` を設定し、\`NDEBUG\` がなければ \`1\` になります。マクロなしでコンパイルするには、ヘッダーを読み込む前に \`NDEBUG\` を定義します。
 
 \`\`\`c
-// ファイルの先頭、macro.hのinclude前に
-#define DEBUG 1       // トレース有効 — 開発モード
-// #define DEBUG 0    // トレース無効 — 本番モード
-
+#define NDEBUG        // DEBUG = 0：TRACE マクロは何もしない
 #include "hookapi.h"
-// macro.hはHooks Builderで自動的に利用可能
 \`\`\`
 
-\`DEBUG\`が\`0\`または未定義の場合、コンパイラは生成されたWASMからマクロを完全に削除します。手数料コストやサイズの増加もありません。
+\`DEBUG\` が \`0\` なら \`if (DEBUG)\` は常に偽になり、コンパイラはその呼び出しを WASM から取り除きます。\`trace()\`、\`trace_num()\`、\`trace_float()\` を直接呼び出している箇所には影響しないため、自分で削除します。
 
-**使用例：**
+### トレースとメインネット
 
-\`\`\`c
-uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
-int64_t drops        = 5000000;
-int64_t xfl_val      = float_set(0, drops);
+トレースの呼び出しはそれぞれ実行されるコードであり、WASM を大きくし、実行を長くします。テストネットで試している間はトレースを残しておきます。メインネットに Hook をインストールする前に \`NDEBUG\` を定義し、トレース関数の直接呼び出しを削除します。\`__LINE__\` のコードは残します。実行の負担を増やさず、メタデータを役立つ状態に保ちます。`,
+        ko: `Hook은 트랜잭션을 처리하는 모든 노드 안에서 WebAssembly 샌드박스로 실행됩니다. 콘솔도 없고 연결할 디버거도 없습니다. Hook이 무엇을 했는지 알 수 있는 방법은 두 가지입니다.
 
-TRACEVAR(drops);       // → "drops = 5000000"
-TRACEHEX(param_name);  // → "param_name = 4143"
-TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
-TRACESTR(param_name);  // → "param_name = AC"
+- **트랜잭션 메타데이터.** 실행될 때마다 \`HookExecution\` 레코드가 남습니다. Hook이 어떻게 끝났는지, 어떤 메시지와 어떤 코드로 끝났는지가 기록됩니다. 이 레코드는 원장에 저장되며 어느 노드에서나 조회할 수 있습니다.
+- **트레이스 메시지.** \`trace()\`, \`trace_num()\`, \`trace_float()\`는 Hook이 실행되는 동안 노드의 debug stream에 줄을 기록합니다. 중간 값을 보여 주지만 원장에는 저장되지 않습니다.
+
+먼저 메타데이터를 확인하세요. 대부분의 질문은 여기서 답을 얻을 수 있습니다. Hook 내부를 봐야 할 때 트레이스를 추가합니다.
+
+### 메타데이터에 기록되는 내용
+
+이 레슨의 예제 Hook은 XAH 결제는 수락하고 나머지는 모두 거부합니다. 테스트넷에서 12 XAH를 결제한 결과입니다([레슨 9.2](?m=9&l=1)와 같은 방법으로 설치).
+
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       31
+HookInstructionCount: 94
 \`\`\`
 
-### トレースはどこに表示されるか？
+- **\`HookResult\`**: Hook이 끝난 방식입니다. \`3\`은 \`accept()\`, \`2\`는 \`rollback()\`이며, 이 경우 트랜잭션은 \`tecHOOK_REJECTED\`로 실패합니다.
+- **\`HookReturnString\`**: \`accept()\`나 \`rollback()\`에 전달한 메시지입니다. 메타데이터에는 hex로 저장됩니다. 디코딩하면 끝에 0 바이트가 붙는데, \`SBUF()\`가 문자열 종료 문자까지 세기 때문입니다.
+- **\`HookReturnCode\`**: 두 번째 인수로 전달한 숫자를 hex로 나타낸 값입니다. \`0x31\`은 49로, 파일에서 마지막 \`accept()\`가 있는 줄 번호입니다. Hook이 \`__LINE__\`을 전달하기 때문입니다. 모든 \`accept()\`와 \`rollback()\`에 \`__LINE__\`을 전달하면 이 코드로 Hook이 어디서 종료했는지 알 수 있습니다.
+- **\`HookInstructionCount\`**: 실행된 WebAssembly 명령어 수입니다(\`0x94\` = 148).
 
-トレースは**Hooks Builder → Debug Stream**に表示されます：ドロップダウンからアカウントを選択すると、処理された各トランザクションのすべてのトレースをリアルタイムで確認できます。
+거부도 같은 방식으로 기록됩니다. [레슨 9.1](?m=9&l=0)의 \`min_payment\` Hook에 5 XAH를 결제하면 \`tecHOOK_REJECTED\`, \`HookResult: 2\`와 거부 메시지가 기록됩니다.
 
-### デバッグをより良くするためのヒント
+스크립트에서 이 필드를 읽으려면 트랜잭션을 조회하고 문자열을 디코딩합니다.
 
-**1. accept/rollbackで\`__LINE__\`をエラーコードとして使用する**
-
-\`accept()\`と\`rollback()\`の2番目の引数は数値コードです。\`__LINE__\`を使用すると、ソースコードの行番号が自動的に含まれ、ログを行ごとに読まなくても実行がどこで終了したかを正確に知ることができます。
-
-\`\`\`c
-accept(SBUF("min_payment: OK"), __LINE__);    // ここを通ったことがわかる
-rollback(SBUF("min_payment: FAIL"), __LINE__); // ここで失敗したことがわかる
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
 \`\`\`
 
-**2. メッセージに説明的なプレフィックスを使用する**
+### 트레이스 함수
 
-各メッセージにHook名のプレフィックスを使用します。同じアカウントに複数のHooksがある場合、どのHookが各トレースをEmitしたかを混同しやすいです。
+메타데이터는 Hook이 어떻게 끝났는지를 알려 줄 뿐, 도중에 무엇을 보았는지는 알려 주지 않습니다. 그래서 Hook이 트레이스 줄을 기록합니다. 트레이스는 결과나 원장을 바꾸지 않습니다. \`extern.h\`에 선언된 세 함수는 다음과 같습니다.
 
 \`\`\`c
-trace(SBUF("my_hook:hook() start"), 0);
-trace(SBUF("my_hook:tx type processed"), 0);
-trace(SBUF("my_hook:accepting"), 0);
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
 \`\`\`
 
-**3. 各重要な関数の戻り値をトレースする**
+각 함수는 레이블을 포인터와 길이로 받습니다. \`SBUF(x)\`가 이 둘로 펼쳐지기 때문에 호출이 짧아 보입니다.
 
-すべてのHooks API関数はエラー時に負の値を返します。サイレントエラーを見逃さないよう、重要な操作の戻り値を常に確認します。
-
-\`\`\`c
-int64_t r = state_set(SBUF(val), SBUF(key));
-trace_num(SBUF("state_set: "), r);  // rが< 0なら何かが失敗した
-
-int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
-trace_num(SBUF("emit result: "), r2);
-\`\`\`
-
-**4. バイナリバッファをhexとしてトレースする**
-
-アカウント、ハッシュ、トランザクションバッファは20〜32バイトのバイナリデータです。hexとして表示することで、ブロックエクスプローラーで見るアドレスやハッシュと比較できます。
+**\`trace()\`**는 레이블과 데이터 버퍼를 기록합니다. \`as_hex\`를 \`1\`로 하면 데이터가 hex로 표시됩니다. AccountID 같은 바이너리 값은 이렇게 읽고, 익스플로러에 표시되는 값과 비교할 수 있습니다. 메시지만 기록하려면 데이터를 전달하지 않습니다.
 
 \`\`\`c
+trace(SBUF("debug_demo:hook() 시작"), 0, 0, 0);
+
 uint8_t hook_acc[20];
 hook_account(SBUF(hook_acc));
-trace(SBUF(hook_acc), 1);  // アカウントIDをhexで確認できる（40文字）
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
 \`\`\`
 
-**5. 実行ブランチをマークする**
-
-各\`if/else\`ブランチの先頭にトレースを追加して実行フローを追います。Hookが予期せず終了したとき、停止する前にどのトレースまで到達したかがわかります。
+**\`trace_num()\`**은 레이블과 64비트 정수를 기록합니다. drops 단위 금액, 카운터, Hook API 함수의 반환값에 사용합니다. 이 함수들은 오류가 나면 음수를 반환하므로, \`state_set()\`이나 \`emit()\`의 결과를 트레이스하면 그냥 지나칠 수 있는 실패가 드러납니다.
 
 \`\`\`c
-if (tt == 0) {
-    trace(SBUF("branch: is a payment"), 0);
-    // ...
-} else {
-    trace(SBUF("branch: not a payment, exiting"), 0);
-    accept(SBUF("ok"), __LINE__);
-}
+int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+trace_num(SBUF("debug_demo:수신한 drops: "), drops);
 \`\`\`
 
-**6. Emitのデバッグのためにcbakをトレースする**
-
-Emitされたトランザクションがサイレントに失敗する場合、\`cbak()\`をトレースなしに知ることは難しいです。
+**\`trace_float()\`**는 XFL 형식의 숫자를 기록합니다. XFL은 Hooks가 정수가 아닌 금액에 쓰는 부동소수점 형식입니다. \`float_set(exponent, mantissa)\`로 만들 수 있으며, \`float_set(-6, drops)\`는 XAH 단위 금액입니다.
 
 \`\`\`c
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-    uint8_t txtype[4];
-    int64_t t = otxn_type();
-    trace_num(SBUF("cbak: emitted tx type: "), t);
-    // Emitされたtxの結果を読み取る
-    int64_t result = otxn_field(...);
-    trace_num(SBUF("cbak: emitted tx result: "), result);
-    return 0;
-}
+trace_float(SBUF("debug_demo:수신한 XAH: "), float_set(-6, drops));
 \`\`\`
 
-**7. 本番環境に移行する前にトレースを削除する**
+### 트레이스가 표시되는 곳
 
-トレースには実行手数料コストがあり、WASMのサイズを増加させます。HookがTestnetで正しく機能したら、Mainnetにデプロイする前に\`trace*\`の呼び出しを削除またはコメントアウトします。`,
-        ko: `Hook이 실패하거나 예상과 다르게 동작할 때는 **내부 실행을 관찰할 방법**이 필요합니다. 이를 위해 Hooks는 여러 추적 함수를 제공합니다.
+트레이스는 트랜잭션이 아니라 노드의 debug stream으로 갑니다. 테스트넷에서는 Hooks Builder의 **Debug Stream**을 열고 Hook 계정을 선택한 다음 트랜잭션을 보냅니다. 노드가 트랜잭션을 처리하면서 줄이 표시됩니다. 직접 운영하는 노드에서는 그 노드의 로그에 표시됩니다.
 
-### 주요 함수
+\`rollback()\`으로 끝나는 Hook도 트레이스를 기록하므로, 거부로 이어진 값은 debug stream에서 확인할 수 있습니다.
 
-- \`trace()\`: 문자열이나 버퍼 출력
-- \`trace_num()\`: 라벨과 정수 출력
-- \`trace_float()\`: XFL 부동소수 표현 출력
+### 디버그 매크로
 
-### 어디서 보나?
+\`hookapi.h\`는 \`macro.h\`를 포함하며, \`macro.h\`는 트레이스 함수를 감싸는 매크로 네 개를 정의합니다. 각 매크로는 변수 이름을 레이블로 사용하므로, \`TRACEVAR(drops)\`만 써도 레이블을 입력하지 않고 \`drops\`와 그 값이 기록됩니다.
 
-- Hooks Builder의 **Debug Stream**
-- 로컬 \`xahaud\` 노드 로그
-- WebSocket과 트랜잭션 메타데이터
+| 매크로 | 호출하는 함수 | 용도 |
+|---|---|---|
+| \`TRACEVAR(v)\` | \`trace_num()\` | 정수: drops, 카운터, 반환 코드 |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | 바이너리 버퍼: AccountID, 해시, 키 |
+| \`TRACEXFL(v)\` | \`trace_float()\` | XFL 금액 |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | 텍스트 버퍼: 파라미터, 메모 |
 
-### 실전 팁
+매크로는 \`DEBUG\`가 \`1\`일 때만 동작합니다. \`macro.h\`는 \`NDEBUG\`에 따라 \`DEBUG\`를 정하며, \`NDEBUG\`가 없으면 \`1\`이 됩니다. 매크로 없이 컴파일하려면 헤더를 포함하기 전에 \`NDEBUG\`를 정의합니다.
 
-- \`accept()\`, \`rollback()\` 에 \`__LINE__\` 사용
-- 모든 메시지에 Hook 이름 prefix 추가
-- 중요한 함수 반환값은 \`trace_num()\` 으로 확인
-- 바이너리 버퍼는 hex 형식으로 출력
-- \`emit()\` 을 쓴다면 \`cbak()\` 도 함께 추적
+\`\`\`c
+#define NDEBUG        // DEBUG = 0: TRACE 매크로가 아무것도 하지 않음
+#include "hookapi.h"
+\`\`\`
 
-디버깅 출력은 학습과 테스트에는 매우 유용하지만, 메인넷 배포 전에는 정리하는 것이 좋습니다.`,
-        zh: `当 Hook 失败或行为异常时，你需要一种方法来**观察其内部执行过程**。为此，Hooks 提供了多种追踪函数。
+\`DEBUG\`가 \`0\`이면 \`if (DEBUG)\`는 항상 거짓이 되고, 컴파일러가 그 호출을 WASM에서 제거합니다. \`trace()\`, \`trace_num()\`, \`trace_float()\`를 직접 호출한 부분은 영향을 받지 않으므로 직접 제거해야 합니다.
 
-### 核心追踪函数
+### 트레이스와 메인넷
 
-- \`trace()\`：输出普通文本或十六进制缓冲区
-- \`trace_num()\`：输出标签和整数值
-- \`trace_float()\`：输出标签和 XFL 浮点值
+트레이스 호출은 모두 실행되는 코드이므로 WASM을 키우고 실행 시간을 늘립니다. 테스트넷에서 시험하는 동안에는 트레이스를 유지합니다. 메인넷에 Hook을 설치하기 전에 \`NDEBUG\`를 정의하고 트레이스 함수의 직접 호출을 제거합니다. \`__LINE__\` 코드는 남겨 둡니다. 실행 부담을 늘리지 않고 메타데이터를 유용하게 유지합니다.`,
+        zh: `Hook 在处理交易的每个节点内部运行，运行在 WebAssembly 沙箱中，没有控制台，也没有可以连接的调试器。要了解 Hook 做了什么，有两个来源：
 
-### 在哪里查看
+- **交易元数据。** 每次执行都会留下一条 \`HookExecution\` 记录：Hook 如何结束、使用了什么消息和什么代码。它保存在账本上，任何节点都能返回它。
+- **跟踪消息。** \`trace()\`、\`trace_num()\` 和 \`trace_float()\` 会在 Hook 运行时向节点的 debug stream 写入行。它们显示中间值，但不会保存在账本上。
 
-- Hooks Builder 的 **Debug Stream**
-- 本地 \`xahaud\` 节点日志
-- WebSocket 与交易元数据
+先看元数据：它能回答大多数问题。需要查看 Hook 内部时，再添加跟踪。
 
-### 调试建议
+### 元数据记录了什么
 
-- 在 \`accept()\` / \`rollback()\` 中使用 \`__LINE__\`
-- 所有消息统一加上 Hook 名称前缀
-- 关键函数返回值都用 \`trace_num()\` 打印
-- 二进制缓冲区用 hex 模式输出
-- 在每个 if/else 分支入口增加 trace
-- 调试 \`emit()\` 时也要给 \`cbak()\` 增加追踪
+本课的示例 Hook 接受 XAH 付款，拒绝其他所有交易。在测试网上向它支付 12 XAH 的结果（按[第 9.2 课](?m=9&l=1)的方法安装）：
 
-调试输出在学习和测试时非常有用，但在部署到主网前最好清理掉。`,
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       32
+HookInstructionCount: 94
+\`\`\`
+
+- **\`HookResult\`**：Hook 的结束方式。\`3\` 表示 \`accept()\`；\`2\` 表示 \`rollback()\`，此时交易以 \`tecHOOK_REJECTED\` 失败。
+- **\`HookReturnString\`**：传给 \`accept()\` 或 \`rollback()\` 的消息。元数据以 hex 保存它。解码后末尾有一个零字节，因为 \`SBUF()\` 把字符串的结束符也计算在内。
+- **\`HookReturnCode\`**：作为第二个参数传入的数字，以 hex 表示。\`0x32\` 是 50：文件中最后一个 \`accept()\` 所在的行号，因为 Hook 传入的是 \`__LINE__\`。在每个 \`accept()\` 和 \`rollback()\` 中都传入 \`__LINE__\`，这个代码就能告诉你 Hook 从哪里退出。
+- **\`HookInstructionCount\`**：执行的 WebAssembly 指令数（\`0x94\` = 148）。
+
+拒绝也会以同样的方式记录。向[第 9.1 课](?m=9&l=0)的 \`min_payment\` Hook 支付 5 XAH，会得到 \`tecHOOK_REJECTED\`、\`HookResult: 2\` 和它的拒绝消息。
+
+要在脚本中读取这些字段，查询交易并解码字符串：
+
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
+\`\`\`
+
+### 跟踪函数
+
+元数据告诉你 Hook 如何结束，但不告诉你它在执行过程中看到了什么。为此，Hook 会写入跟踪行。跟踪不会改变结果，也不会改变账本。\`extern.h\` 中这三个函数的声明如下：
+
+\`\`\`c
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
+\`\`\`
+
+每个函数都以指针和长度的形式接收一个标签。\`SBUF(x)\` 会展开成这两个参数，所以调用看起来很短。
+
+**\`trace()\`** 写入标签和一个数据缓冲区。把 \`as_hex\` 设为 \`1\`，数据会以 hex 显示：AccountID 这样的二进制值就是这样读取的，之后可以和浏览器中显示的值进行比较。如果只写一条消息，就不传数据：
+
+\`\`\`c
+trace(SBUF("debug_demo:hook() 已启动"), 0, 0, 0);
+
+uint8_t hook_acc[20];
+hook_account(SBUF(hook_acc));
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+\`\`\`
+
+**\`trace_num()\`** 写入标签和一个 64 位整数：以 drops 为单位的金额、计数器，以及 Hook API 函数的返回值。这些函数出错时返回负数，所以跟踪 \`state_set()\` 或 \`emit()\` 的结果，能发现原本会悄悄发生的失败：
+
+\`\`\`c
+int64_t drops = AMOUNT_TO_DROPS(amount_buf);
+trace_num(SBUF("debug_demo:收到的 drops: "), drops);
+\`\`\`
+
+**\`trace_float()\`** 写入一个 XFL 格式的数字。XFL 是 Hooks 用于非整数金额的浮点格式。\`float_set(exponent, mantissa)\` 可以构造一个：\`float_set(-6, drops)\` 就是以 XAH 为单位的金额。
+
+\`\`\`c
+trace_float(SBUF("debug_demo:收到的 XAH: "), float_set(-6, drops));
+\`\`\`
+
+### 跟踪显示在哪里
+
+跟踪写入节点的 debug stream，而不是写入交易。在测试网上，打开 Hooks Builder 的 **Debug Stream**，选择 Hook 所在的账户，然后发送交易：节点处理交易时，这些行就会出现。在你自己运行的节点上，它们会出现在节点日志中。
+
+以 \`rollback()\` 结束的 Hook 同样会写入跟踪，所以导致拒绝的那些值可以在 debug stream 中看到。
+
+### 调试宏
+
+\`hookapi.h\` 包含了 \`macro.h\`，\`macro.h\` 在跟踪函数之上定义了四个宏。每个宏都把变量名用作标签，所以 \`TRACEVAR(drops)\` 会写出 \`drops\` 及其值，而无需你输入标签：
+
+| 宏 | 调用的函数 | 用途 |
+|---|---|---|
+| \`TRACEVAR(v)\` | \`trace_num()\` | 整数：drops、计数器、返回码 |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | 二进制缓冲区：AccountID、哈希、密钥 |
+| \`TRACEXFL(v)\` | \`trace_float()\` | XFL 金额 |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | 文本缓冲区：参数、备注 |
+
+只有当 \`DEBUG\` 为 \`1\` 时，这些宏才会起作用。\`macro.h\` 根据 \`NDEBUG\` 设置 \`DEBUG\`：没有 \`NDEBUG\` 时为 \`1\`。要在编译时去掉它们，在包含头文件之前定义 \`NDEBUG\`：
+
+\`\`\`c
+#define NDEBUG        // DEBUG = 0：TRACE 宏不做任何事
+#include "hookapi.h"
+\`\`\`
+
+当 \`DEBUG\` 为 \`0\` 时，\`if (DEBUG)\` 永远为假，编译器会把这些调用从 WASM 中移除。直接调用的 \`trace()\`、\`trace_num()\` 和 \`trace_float()\` 不受影响：需要你自己删除。
+
+### 跟踪与主网
+
+每个跟踪调用都是会执行的代码：它会让 WASM 变大、执行变长。在测试网上测试时保留跟踪。把 Hook 安装到主网之前，定义 \`NDEBUG\` 并删除直接的跟踪调用。保留 \`__LINE__\` 代码：它们不会增加执行负担，还能让元数据保持有用。`,
       },
       codeBlocks: [
         {
@@ -6321,6 +6196,9 @@ int64_t hook(uint32_t reserved)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:drops recibidos: "), drops);
 
+    // El mismo importe en XAH, como XFL: drops × 10^-6
+    trace_float(SBUF("debug_demo:XAH recibidos: "), float_set(-6, drops));
+
     // ── 6. Aceptar y terminar ───────────────────────────────────────────────
     // __LINE__ te deja rastrear exactamente desde qué línea saliste
     trace(SBUF("debug_demo:pago aceptado, saliendo"), 0, 0, 0);
@@ -6392,6 +6270,9 @@ int64_t hook(uint32_t reserved)
     // amount_buf contém o Amount nativo codificado; AMOUNT_TO_DROPS o converte para int64 (drops)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:drops recebidos: "), drops);
+
+    // O mesmo valor em XAH, como XFL: drops × 10^-6
+    trace_float(SBUF("debug_demo:XAH recebidos: "), float_set(-6, drops));
     // ── 6. Aceitar e terminar ───────────────────────────────────────────────
     // __LINE__ permite rastrear exatamente a partir de qual linha saiu
     trace(SBUF("debug_demo: pagamento aceito, saindo"), 0, 0, 0);
@@ -6459,6 +6340,9 @@ int64_t hook(uint32_t reserved)
     // amount_buf contains the Amount coded; AMOUNT_TO_DROPS translates to int64 (drops)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:drops received: "), drops);
+
+    // The same amount in XAH, as an XFL: drops × 10^-6
+    trace_float(SBUF("debug_demo:XAH received: "), float_set(-6, drops));
 
     // ── 6. Accept and finish ───────────────────────────────────────────────
     // __LINE__ allows you to track exactly from which line you exited
@@ -6529,6 +6413,9 @@ int64_t hook(uint32_t reserved)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:受信したdrops: "), drops);
 
+    // 同じ金額を XAH 単位の XFL で：drops × 10^-6
+    trace_float(SBUF("debug_demo:受信したXAH: "), float_set(-6, drops));
+
     // ── 6. 承認して終了する ───────────────────────────────────────────────
     // __LINE__を使うとどの行から終了したかを正確にトレースできる
     trace(SBUF("debug_demo:支払いを承認、終了"), 0, 0, 0);
@@ -6581,6 +6468,9 @@ int64_t hook(uint32_t reserved)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:수신한 drops: "), drops);
 
+    // 같은 금액을 XAH 단위 XFL로: drops × 10^-6
+    trace_float(SBUF("debug_demo:수신한 XAH: "), float_set(-6, drops));
+
     trace(SBUF("debug_demo:결제 수락, 종료"), 0, 0, 0);
     accept(SBUF("debug_demo:ok"), __LINE__);
     return 0;
@@ -6630,6 +6520,9 @@ int64_t hook(uint32_t reserved)
     int64_t drops = AMOUNT_TO_DROPS(amount_buf);
     trace_num(SBUF("debug_demo:收到的 drops: "), drops);
 
+    // 同一金额以 XAH 为单位的 XFL：drops × 10^-6
+    trace_float(SBUF("debug_demo:收到的 XAH: "), float_set(-6, drops));
+
     trace(SBUF("debug_demo:付款已接受，退出"), 0, 0, 0);
     accept(SBUF("debug_demo:ok"), __LINE__);
     return 0;
@@ -6639,45 +6532,170 @@ int64_t hook(uint32_t reserved)
       ],
       slides: [
         {
-          title: { es: "Las tres funciones trace*", pt: "As três funções trace*", en: "The three trace* functions", jp: "3つのtrace*関数", ko: "세 가지 trace* 함수", zh: "三种 trace* 函数" },
+          title: { es: `Metadatos y trazas`, pt: `Metadados e traces`, en: `Metadata and traces`, jp: `メタデータとトレース`, ko: `메타데이터와 트레이스`, zh: `元数据与跟踪` },
           content: {
-            es: "Instrumentar el Hook para ver su ejecución:\n\ntrace(SBUF(\"mensaje\"), 0);\n→ Texto plano en el Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Contenido del buffer como hex\n\ntrace_num(SBUF(\"label: \"), valor);\n→ Etiqueta + número entero (drops, retornos...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Etiqueta + XFL (coma flotante de Xahau)",
-            pt: "Instrumentar o Hook para ver sua execução:\n\ntrace(SBUF(\"mensagem\"), 0);\n→ Texto plano no Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Conteúdo do buffer como hex\n\ntrace_num(SBUF(\"label: \"), valor);\n→ Etiqueta + número inteiro (drops, retornos...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Etiqueta + XFL (ponto flutuante da Xahau)",
-            en: "Instrument the Hook to see its execution:\n\ntrace(SBUF(\"message\"), 0);\n→ Plain text in Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Buffer content as hex\n\ntrace_num(SBUF(\"label: \"), value);\n→ Label + integer (drops, returns...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Label + XFL (Xahau floating point)",
-            jp: "Hookの実行を確認するために計装する：\n\ntrace(SBUF(\"メッセージ\"), 0);\n→ Debug Streamにプレーンテキスト\n\ntrace(SBUF(buffer), 1);\n→ バッファの内容をhexとして\n\ntrace_num(SBUF(\"ラベル: \"), 値);\n→ ラベル + 整数（drops、戻り値...）\n\ntrace_float(SBUF(\"ラベル: \"), xfl);\n→ ラベル + XFL（Xahauの浮動小数点）",
-            ko: "Hook 실행을 보기 위한 계측 함수:\n\ntrace(SBUF(\"message\"), 0);\n→ Debug Stream에 일반 텍스트 출력\n\ntrace(SBUF(buffer), 1);\n→ 버퍼를 hex로 출력\n\ntrace_num(SBUF(\"label: \"), value);\n→ 라벨 + 정수값(drops, 반환값 등)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ 라벨 + XFL 부동소수 표현",
-            zh: "用于观察 Hook 执行的追踪函数：\n\ntrace(SBUF(\"message\"), 0);\n→ 在 Debug Stream 输出普通文本\n\ntrace(SBUF(buffer), 1);\n→ 以 hex 输出缓冲区\n\ntrace_num(SBUF(\"label: \"), value);\n→ 输出标签 + 整数值（drops、返回值等）\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ 输出标签 + XFL 浮点表示",
+            es: `Metadatos (en el ledger, siempre):
+• HookResult: 3 = accept, 2 = rollback
+• HookReturnString: el mensaje de salida
+• HookReturnCode: el código de salida, en hex
+
+Trazas (debug stream, mientras pruebas):
+• Los valores que vio el Hook por el camino
+• No se guardan en el ledger`,
+            pt: `Metadados (no ledger, sempre):
+• HookResult: 3 = accept, 2 = rollback
+• HookReturnString: a mensagem de saída
+• HookReturnCode: o código de saída, em hex
+
+Traces (debug stream, durante os testes):
+• Os valores que o Hook viu pelo caminho
+• Não ficam gravados no ledger`,
+            en: `Metadata (on the ledger, always):
+• HookResult: 3 = accept, 2 = rollback
+• HookReturnString: the exit message
+• HookReturnCode: the exit code, in hex
+
+Traces (debug stream, while testing):
+• The values the Hook saw on the way
+• Not stored on the ledger`,
+            jp: `メタデータ（台帳に常に記録）：
+• HookResult：3 = accept、2 = rollback
+• HookReturnString：終了メッセージ
+• HookReturnCode：終了コード（hex）
+
+トレース（テスト中の debug stream）：
+• Hook が途中で見た値
+• 台帳には保存されない`,
+            ko: `메타데이터(원장에 항상 기록):
+• HookResult: 3 = accept, 2 = rollback
+• HookReturnString: 종료 메시지
+• HookReturnCode: 종료 코드(hex)
+
+트레이스(테스트 중 debug stream):
+• Hook이 도중에 본 값
+• 원장에 저장되지 않음`,
+            zh: `元数据（始终记录在账本上）：
+• HookResult：3 = accept，2 = rollback
+• HookReturnString：退出消息
+• HookReturnCode：退出代码（hex）
+
+跟踪（测试时的 debug stream）：
+• Hook 执行过程中看到的值
+• 不保存在账本上`,
           },
           visual: "🔍",
         },
         {
-          title: { es: "Donde ver las trazas", pt: "Onde ver os traces", en: "Where to see traces", jp: "トレースを確認する場所", ko: "trace를 확인하는 곳", zh: "在哪里查看 trace" },
+          title: { es: `Las tres funciones trace*`, pt: `As três funções trace*`, en: `The three trace* functions`, jp: `3つのtrace*関数`, ko: `세 가지 trace* 함수`, zh: `三种 trace* 函数` },
           content: {
-            es: "Tres formas de leer la salida:\n\n1. Hooks Builder → Debug Stream\n   Selecciona la cuenta en el desplegable\n\n2. Logs del nodo xahaud\n   En modo debug (desarrollo local)\n\n3. WebSocket desde Node.js\n   Suscríbete a la cuenta y lee debug_info\n   + HookExecutions en la metadata de la tx",
-            pt: "Três formas de ler a saída:\n\n1. Hooks Builder → Debug Stream\n   Selecione a conta no menu suspenso\n\n2. Logs do nó xahaud\n   Em modo debug (desenvolvimento local)\n\n3. WebSocket a partir de Node.js\n   Assine a conta e leia debug_info\n   + HookExecutions na metadata da tx",
-            en: "Three ways to read the output:\n\n1. Hooks Builder → Debug Stream\n   Select the account from the dropdown\n\n2. xahaud node logs\n   In debug mode (local development)\n\n3. WebSocket from Node.js\n   Subscribe to the account and read debug_info\n   + HookExecutions in tx metadata",
-            jp: "出力を読む3つの方法：\n\n1. Hooks Builder → Debug Stream\n   ドロップダウンからアカウントを選択\n\n2. xahaudノードログ\n   デバッグモード（ローカル開発）\n\n3. Node.jsからのWebSocket\n   アカウントをサブスクライブしてdebug_infoを読む\n   + txメタデータのHookExecutions",
-            ko: "출력을 확인하는 세 가지 방법:\n\n1. Hooks Builder → Debug Stream\n   드롭다운에서 계정 선택\n\n2. xahaud 노드 로그\n   로컬 개발의 디버그 모드\n\n3. Node.js WebSocket\n   계정을 구독하고 debug_info 및\n   tx 메타데이터의 HookExecutions 확인",
-            zh: "有三种方式查看输出：\n\n1. Hooks Builder → Debug Stream\n   在下拉菜单中选择账户\n\n2. xahaud 节点日志\n   适用于本地开发调试模式\n\n3. Node.js WebSocket\n   订阅账户并检查 debug_info 与\n   交易元数据中的 HookExecutions",
+            es: `trace(SBUF("etiqueta"), 0, 0, 0);
+→ Un mensaje
+
+trace(SBUF("etiqueta"), SBUF(buf), 1);
+→ Etiqueta + buffer en hex
+
+trace_num(SBUF("etiqueta"), n);
+→ Etiqueta + entero (drops, valores de retorno)
+
+trace_float(SBUF("etiqueta"), xfl);
+→ Etiqueta + importe XFL`,
+            pt: `trace(SBUF("rótulo"), 0, 0, 0);
+→ Uma mensagem
+
+trace(SBUF("rótulo"), SBUF(buf), 1);
+→ Rótulo + buffer em hex
+
+trace_num(SBUF("rótulo"), n);
+→ Rótulo + inteiro (drops, valores de retorno)
+
+trace_float(SBUF("rótulo"), xfl);
+→ Rótulo + valor XFL`,
+            en: `trace(SBUF("label"), 0, 0, 0);
+→ A message
+
+trace(SBUF("label"), SBUF(buf), 1);
+→ Label + buffer in hex
+
+trace_num(SBUF("label"), n);
+→ Label + integer (drops, return values)
+
+trace_float(SBUF("label"), xfl);
+→ Label + XFL amount`,
+            jp: `trace(SBUF("ラベル"), 0, 0, 0);
+→ メッセージ
+
+trace(SBUF("ラベル"), SBUF(buf), 1);
+→ ラベル + hex のバッファ
+
+trace_num(SBUF("ラベル"), n);
+→ ラベル + 整数（drops、戻り値）
+
+trace_float(SBUF("ラベル"), xfl);
+→ ラベル + XFL の金額`,
+            ko: `trace(SBUF("레이블"), 0, 0, 0);
+→ 메시지
+
+trace(SBUF("레이블"), SBUF(buf), 1);
+→ 레이블 + hex 버퍼
+
+trace_num(SBUF("레이블"), n);
+→ 레이블 + 정수(drops, 반환값)
+
+trace_float(SBUF("레이블"), xfl);
+→ 레이블 + XFL 금액`,
+            zh: `trace(SBUF("标签"), 0, 0, 0);
+→ 一条消息
+
+trace(SBUF("标签"), SBUF(buf), 1);
+→ 标签 + hex 缓冲区
+
+trace_num(SBUF("标签"), n);
+→ 标签 + 整数（drops、返回值）
+
+trace_float(SBUF("标签"), xfl);
+→ 标签 + XFL 金额`,
           },
           visual: "📡",
         },
         {
-          title: { es: "Trucos clave de debugging", pt: "Dicas-chave de debugging", en: "Key debugging tips", jp: "デバッグの重要なヒント", ko: "중요한 디버깅 팁", zh: "关键调试技巧" },
+          title: { es: `Hábitos de depuración`, pt: `Hábitos de depuração`, en: `Debugging habits`, jp: `デバッグの習慣`, ko: `디버깅 습관`, zh: `调试习惯` },
           content: {
-            es: "• __LINE__ en accept/rollback → linea exacta de salida\n• Prefijo 'mi_hook:' en cada mensaje\n• trace_num del retorno de CADA funcion critica\n  (negativo = error silencioso)\n• trace con hex=1 para buffers binarios\n• Una traza al inicio de cada rama if/else\n• Instrumenta cbak() para debug de emit()\n• Elimina trazas antes de ir a Mainnet",
-            pt: `• __LINE__ em accept/rollback → linha exacta de saída
-• Prefixo 'meu_hook:' em cada mensagem
-• trace_num do retorno de CADA função crítica
-  (negativo = erro silencioso)
-• trace com hex=1 para buffers binários
-• Uma trace ao início de cada ramo if/else
-• Instrumenta cbak() para debug de emit()
-• Remova traces antes de ir a Mainnet`,
-            en: "• __LINE__ in accept/rollback → exact exit line\n• Prefix 'my_hook:' in each message\n• trace_num the return of EVERY critical function\n  (negative = silent error)\n• trace with hex=1 for binary buffers\n• One trace at the start of each if/else branch\n• Instrument cbak() to debug emit()\n• Remove traces before going to Mainnet",
-            jp: "• __LINE__をaccept/rollbackで使う → 正確な終了行\n• 各メッセージに'my_hook:'プレフィックスを付ける\n• すべての重要な関数の戻り値をtrace_numする\n  （負の値 = サイレントエラー）\n• バイナリバッファにはhex=1でtrace\n• 各if/elseブランチの先頭にトレースを置く\n• emit()デバッグのためにcbak()を計装する\n• Mainnetに移行する前にトレースを削除する",
-            ko: "• accept/rollback에 __LINE__ 사용 → 종료 지점 확인\n• 모든 메시지에 'my_hook:' prefix 추가\n• 중요한 함수 반환값은 항상 trace_num\n  (음수 = 숨은 오류)\n• 바이너리 버퍼는 hex=1로 출력\n• 각 if/else 시작점에 trace 추가\n• emit() 디버깅을 위해 cbak()도 계측\n• 메인넷 전에는 trace 정리",
-            zh: "• 在 accept/rollback 中使用 __LINE__ → 快速确认退出位置\n• 所有消息都加上 'my_hook:' 前缀\n• 关键函数返回值都用 trace_num 输出\n  （负数通常表示隐藏错误）\n• 二进制缓冲区使用 hex=1 输出\n• 在每个 if/else 起点加 trace\n• 调试 emit() 时也要追踪 cbak()\n• 主网上线前清理 trace",
+            es: `• __LINE__ en accept/rollback → la línea de salida en HookReturnCode
+• trace_num del retorno de cada llamada a la Hook API
+  (negativo = error)
+• Lee las trazas en Hooks Builder → Debug Stream
+• Macros TRACE: se apagan con #define NDEBUG
+• Antes de Mainnet: NDEBUG, y quita las llamadas de traza directas`,
+            pt: `• __LINE__ em accept/rollback → a linha de saída em HookReturnCode
+• trace_num do retorno de cada chamada à Hook API
+  (negativo = erro)
+• Leia os traces no Hooks Builder → Debug Stream
+• Macros TRACE: desligadas com #define NDEBUG
+• Antes da Mainnet: NDEBUG, e remova as chamadas de trace diretas`,
+            en: `• __LINE__ in accept/rollback → the exit line in HookReturnCode
+• trace_num the return of each Hook API call
+  (negative = error)
+• Read traces in Hooks Builder → Debug Stream
+• TRACE macros: off with #define NDEBUG
+• Before Mainnet: NDEBUG, and remove direct trace calls`,
+            jp: `• accept/rollback に __LINE__ → HookReturnCode に終了行
+• Hook API の呼び出しごとに戻り値を trace_num
+  （負の値 = エラー）
+• トレースは Hooks Builder → Debug Stream で読む
+• TRACE マクロ：#define NDEBUG で無効化
+• メインネットの前に：NDEBUG を定義し、trace の直接呼び出しを削除`,
+            ko: `• accept/rollback에 __LINE__ → HookReturnCode에 종료 줄
+• Hook API 호출마다 반환값을 trace_num
+  (음수 = 오류)
+• 트레이스는 Hooks Builder → Debug Stream에서 확인
+• TRACE 매크로: #define NDEBUG로 끔
+• 메인넷 전: NDEBUG 정의, trace 직접 호출 제거`,
+            zh: `• accept/rollback 中使用 __LINE__ → HookReturnCode 中的退出行
+• 对每个 Hook API 调用的返回值使用 trace_num
+  （负数 = 错误）
+• 在 Hooks Builder → Debug Stream 中读取跟踪
+• TRACE 宏：用 #define NDEBUG 关闭
+• 上主网前：定义 NDEBUG，并删除直接的 trace 调用`,
           },
           visual: "🐛",
         },
@@ -8387,200 +8405,140 @@ Hook result: 3 | otxn_param_demo: no ACTION parameter
     },
     m8l6: {
       title: "تتبع Hooks وتصحيح الأخطاء",
-      theory: `عندما يفشل Hook أو يتصرف بشكل غير متوقع، تحتاج إلى طريقة **لمراقبة تنفيذه الداخلي**. يوفر نظام Hooks ثلاث دوال trace تُصدر رسائل مرئية في **Debug Stream** الخاص بـ Hooks Builder وفي سجلات عقدة \`xahaud\`.
+      theory: `يعمل الـ Hook داخل كل عقدة تعالج المعاملة، في بيئة WebAssembly معزولة، بلا console ولا مصحح أخطاء يمكن ربطه. لمعرفة ما فعله الـ Hook لديك مصدران:
 
-### trace() رسالة نصية أو buffer بصيغة hexadecimal
+- **البيانات الوصفية للمعاملة.** كل تنفيذ يترك سجل \`HookExecution\`: كيف انتهى الـ Hook، وبأي رسالة وأي رمز. هذا السجل محفوظ في الـ ledger، وتعيده أي عقدة.
+- **رسائل التتبع.** تكتب \`trace()\` و\`trace_num()\` و\`trace_float()\` أسطرًا في الـ debug stream الخاص بالعقدة أثناء تنفيذ الـ Hook. تُظهر القيم الوسيطة، ولا تُحفظ في الـ ledger.
 
-الدالة الأكثر عمومية. تُصدر رسالة نصية أو محتوى buffer بصيغة hex.
+ابدأ بالبيانات الوصفية: فهي تجيب عن معظم الأسئلة. أضف التتبع عندما تحتاج إلى رؤية ما يحدث داخل الـ Hook.
 
-\`\`\`c
-// إصدار رسالة نصية بسيطة
-trace(SBUF("hook started correctly"), 0);  // 0 = عرض كنص
+### ما تسجله البيانات الوصفية
 
-// إصدار محتوى buffer بصيغة hexadecimal
-uint8_t account_buf[20];
-otxn_field(SBUF(account_buf), sfAccount);
-trace(SBUF(account_buf), 1);                    // 1 = عرض كـ hex
+يقبل الـ Hook المثال في هذا الدرس المدفوعات بالـ XAH ويرفض كل ما عداها. النتيجة على testnet عند دفع 12 XAH له (مثبت كما في [الدرس 9.2](?m=9&l=1)):
+
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       43
+HookInstructionCount: 94
 \`\`\`
 
-يتحكم الوسيط الثالث في صيغة الإخراج:
-- \`0\` → يطبع buffer كنص (مفيد للرسائل)
-- \`1\` → يطبع buffer بصيغة hexadecimal (مفيد للبيانات الثنائية: الحسابات، الـ hashes، buffers المعاملات)
+- **\`HookResult\`**: كيف انتهى الـ Hook. \`3\` تعني \`accept()\`؛ و\`2\` تعني \`rollback()\`، وعندها تفشل المعاملة بـ \`tecHOOK_REJECTED\`.
+- **\`HookReturnString\`**: الرسالة الممررة إلى \`accept()\` أو \`rollback()\`. تحفظها البيانات الوصفية بصيغة hex. بعد فك ترميزها تنتهي ببايت صفري، لأن \`SBUF()\` يحسب محرف نهاية السلسلة.
+- **\`HookReturnCode\`**: الرقم الممرر كوسيط ثانٍ، بصيغة hex. \`0x43\` تساوي 67: رقم سطر آخر \`accept()\` في الملف، لأن الـ Hook يمرر \`__LINE__\`. عندما تمرر \`__LINE__\` في كل \`accept()\` و\`rollback()\`، يخبرك الرمز من أين خرج الـ Hook.
+- **\`HookInstructionCount\`**: عدد تعليمات WebAssembly التي نُفذت (\`0x94\` = 148).
 
-### trace_num() رسالة + رقم صحيح
+يُسجَّل الرفض بالطريقة نفسها. الـ Hook \`min_payment\` من [الدرس 9.1](?m=9&l=0)، عند دفع 5 XAH له، يعطي \`tecHOOK_REJECTED\` و\`HookResult: 2\` ورسالة الرفض الخاصة به.
 
-تُصدر تسمية وصفية مع قيمة رقمية صحيحة. مثالية لفحص المبالغ بالدروبس، العدادات، قيم إرجاع الدوال ورموز الأخطاء.
+لقراءة هذه الحقول من سكربت، استعلم عن المعاملة وفك ترميز السلسلة:
+
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
+\`\`\`
+
+### دوال التتبع
+
+تخبرك البيانات الوصفية كيف انتهى الـ Hook، لا ما رآه في الطريق. لذلك يكتب الـ Hook أسطر تتبع. التتبع لا يغيّر النتيجة ولا الـ ledger. هذه هي الدوال الثلاث كما يعرّفها \`extern.h\`:
+
+\`\`\`c
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
+\`\`\`
+
+تستقبل كل دالة تسمية على شكل مؤشر وطول. يتوسع \`SBUF(x)\` إلى الاثنين، ولهذا تبدو الاستدعاءات قصيرة.
+
+**\`trace()\`** تكتب التسمية ومخزن بيانات. عندما تكون \`as_hex\` مساوية لـ \`1\` تظهر البيانات بصيغة hex: هكذا تُقرأ القيم الثنائية مثل AccountID، ويمكنك بعدها مقارنتها بما يعرضه مستكشف الكتل. لرسالة بسيطة، لا تمرر أي بيانات:
+
+\`\`\`c
+trace(SBUF("debug_demo:hook() initiated"), 0, 0, 0);
+
+uint8_t hook_acc[20];
+hook_account(SBUF(hook_acc));
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+\`\`\`
+
+**\`trace_num()\`** تكتب التسمية وعددًا صحيحًا من 64 بت: المبالغ بالـ drops، والعدادات، والقيم التي تعيدها دوال Hook API. تعيد هذه الدوال رقمًا سالبًا عند الخطأ، لذا فإن تتبع نتيجة \`state_set()\` أو \`emit()\` يكشف فشلًا كان سيمر بصمت:
 
 \`\`\`c
 int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-trace_num(SBUF("drops received: "), drops);
-
-// مشاهدة قيمة إرجاع دالة لكشف الأخطاء
-int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-trace_num(SBUF("state_set result: "), result);
-// سالب = خطأ؛ موجب أو صفر = نجاح
+trace_num(SBUF("debug_demo:drops received: "), drops);
 \`\`\`
 
-### trace_float() رسالة + رقم عشري (XFL)
-
-تستخدم Hooks صيغة **XFL** (eXtended Float) لتمثيل المبالغ غير الصحيحة. \`trace_float()\` تُنسِّق XFL بشكل قابل للقراءة في Debug Stream.
+**\`trace_float()\`** تكتب رقمًا بصيغة XFL، وهي صيغة الفاصلة العائمة التي تستخدمها الـ Hooks للمبالغ غير الصحيحة. تنشئ \`float_set(exponent, mantissa)\` رقمًا منها: \`float_set(-6, drops)\` هو المبلغ بالـ XAH.
 
 \`\`\`c
-// الحصول على المبلغ كـ XFL من slot
-int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-int64_t xfl_amount = slot_float(slot_no);
-trace_float(SBUF("amount in XFL: "), xfl_amount);
+trace_float(SBUF("debug_demo:XAH received: "), float_set(-6, drops));
 \`\`\`
 
-### macro.h: ماكروهات تصحيح متاحة في Hooks Builder
+### أين تظهر أسطر التتبع
 
-يتضمن Hooks Builder ملف \`macro.h\` بأربعة ماكروهات مساعدة تغلّف دوال \`trace*\` وتُفعَّل فقط عند تعريف الثابت \`DEBUG\`. هذا يسمح بترك traces في الكود وإزالتها كلها دفعة واحدة في الإنتاج بمجرد عدم تعريف \`DEBUG\`.
+تذهب أسطر التتبع إلى الـ debug stream الخاص بالعقدة، لا إلى المعاملة. على testnet، افتح **Debug Stream** في Hooks Builder، واختر حساب الـ Hook، ثم أرسل المعاملة: تظهر الأسطر بينما تعالجها العقدة. على عقدة تشغّلها بنفسك، تظهر في سجلها.
 
-\`\`\`c
-// يعرض اسم المتغير وقيمته كعدد صحيح (int64)
-#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+الـ Hook الذي ينتهي بـ \`rollback()\` يكتب أسطر تتبعه أيضًا، لذا فالـ debug stream هو المكان الذي ترى فيه القيم التي أدت إلى الرفض.
 
-// يعرض اسم المتغير ومحتوى buffer بصيغة hexadecimal
-#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+### ماكروهات التصحيح
 
-// يعرض اسم المتغير وقيمته كـ XFL float (eXtended Float)
-#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+يتضمن \`hookapi.h\` الملف \`macro.h\`، الذي يعرّف أربع ماكروهات حول دوال التتبع. يستخدم كل منها اسم المتغير كتسمية، لذا يكتب \`TRACEVAR(drops)\` الاسم \`drops\` وقيمته دون أن تكتب التسمية بنفسك:
 
-// يعرض اسم المتغير ومحتوى buffer كنص ASCII
-#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
-\`\`\`
-
-**كيف تعمل داخليا:**
-
-تستخدم جميعها عامل \`#v\` (تحويل C إلى نص) لتحويل اسم المتغير إلى نص حرفي يعمل كتسمية. لذلك، \`TRACEVAR(drops)\` ستطبع \`"drops = 5000000"\` دون الحاجة لكتابة التسمية يدويا.
-
-| الماكرو | الدالة الداخلية | متى تستخدمها |
+| الماكرو | الدالة التي يستدعيها | الاستخدام |
 |---|---|---|
-| \`TRACEVAR(v)\` | \`trace_num()\` | أعداد صحيحة: drops، عدادات، رموز إرجاع |
-| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | buffers ثنائية: معرفات الحسابات، hashes، مفاتيح |
-| \`TRACEXFL(v)\` | \`trace_float()\` | قيم XFL (مبالغ عشرية) |
-| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | buffers نصية: parameters، memos ASCII |
+| \`TRACEVAR(v)\` | \`trace_num()\` | الأعداد الصحيحة: drops، العدادات، رموز الإرجاع |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | المخازن الثنائية: AccountID، الهاشات، المفاتيح |
+| \`TRACEXFL(v)\` | \`trace_float()\` | مبالغ XFL |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | المخازن النصية: المعاملات، الـ memos |
 
-**تفعيل وتعطيل وضع debug:**
+لا تعمل الماكروهات إلا عندما تكون قيمة \`DEBUG\` هي \`1\`. يضبط \`macro.h\` قيمة \`DEBUG\` بناءً على \`NDEBUG\`: من دون \`NDEBUG\` تكون \`1\`. للترجمة من دونها، عرّف \`NDEBUG\` قبل تضمين الملف الرأسي:
 
 \`\`\`c
-// في بداية الملف، قبل تضمين macro.h
-#define DEBUG 1       // traces مفعّلة — وضع التطوير
-// #define DEBUG 0    // traces معطّلة — وضع الإنتاج
-
+#define NDEBUG        // DEBUG = 0: ماكروهات TRACE لا تفعل شيئًا
 #include "hookapi.h"
-// macro.h متاح تلقائيا في Hooks Builder
 \`\`\`
 
-عندما تكون \`DEBUG\` تساوي \`0\` أو غير معرَّفة، يزيل المترجم الماكروهات بالكامل من WASM الناتج: لا تكلفة fee إضافية ولا زيادة في الحجم.
+عندما تكون \`DEBUG\` مساوية لـ \`0\`، يكون \`if (DEBUG)\` خاطئًا دائمًا ويحذف المترجم تلك الاستدعاءات من الـ WASM. لا يتأثر الاستدعاء المباشر لـ \`trace()\` و\`trace_num()\` و\`trace_float()\`: احذفه بنفسك.
 
-**مثال استخدام:**
+### التتبع والـ Mainnet
 
-\`\`\`c
-uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
-int64_t drops        = 5000000;
-int64_t xfl_val      = float_set(0, drops);
-
-TRACEVAR(drops);       // → "drops = 5000000"
-TRACEHEX(param_name);  // → "param_name = 4143"
-TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
-TRACESTR(param_name);  // → "param_name = AC"
-\`\`\`
-
-### أين تظهر traces؟
-
-تظهر traces في **Hooks Builder ← Debug Stream**: اختر الحساب من القائمة المنسدلة وسترى كل traces في الوقت الفعلي لكل معاملة تُعالَج.
-
-### نصائح لتصحيح أفضل
-
-**1. استخدم \`__LINE__\` كرمز خطأ في accept/rollback**
-
-الوسيط الثاني في \`accept()\` و\`rollback()\` هو رمز رقمي. استخدام \`__LINE__\` يُضمِّن تلقائيا رقم سطر الكود المصدري، مما يتيح لك معرفة بالضبط أين انتهى التنفيذ دون قراءة السجلات سطرا بسطر.
-
-\`\`\`c
-accept(SBUF("min_payment: OK"), __LINE__);    // ستعرف أنه مر من هنا
-rollback(SBUF("min_payment: FAIL"), __LINE__); // وأنه فشل هنا
-\`\`\`
-
-**2. بادئات وصفية في الرسائل**
-
-استخدم بادئة باسم Hook في كل رسالة. مع وجود عدة Hooks على نفس الحساب، يسهل الخلط بين أي Hook أصدر كل trace.
-
-\`\`\`c
-trace(SBUF("my_hook:hook() start"), 0);
-trace(SBUF("my_hook:tx type processed"), 0);
-trace(SBUF("my_hook:accepting"), 0);
-\`\`\`
-
-**3. تتبّع قيمة الإرجاع لكل دالة حرجة**
-
-جميع دوال Hooks API تُرجع قيمة سالبة عند الخطأ. تحقق دائما من إرجاع العمليات المهمة لتجنب الأخطاء الصامتة.
-
-\`\`\`c
-int64_t r = state_set(SBUF(val), SBUF(key));
-trace_num(SBUF("state_set: "), r);  // إذا كانت r < 0، فشل شيء ما
-
-int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
-trace_num(SBUF("emit result: "), r2);
-\`\`\`
-
-**4. تتبّع buffers الثنائية بصيغة hex**
-
-الحسابات، الـ hashes وbuffers المعاملات هي بيانات ثنائية من 20-32 بايت. عرضها كـ hex يتيح لك مقارنتها بالعناوين والـ hashes التي تراها في block explorers.
-
-\`\`\`c
-uint8_t hook_acc[20];
-hook_account(SBUF(hook_acc));
-trace(SBUF(hook_acc), 1);  // سترى account ID بصيغة hex (40 حرفا)
-\`\`\`
-
-**5. حدد فروع التنفيذ**
-
-أضف trace في بداية كل فرع \`if/else\` لمتابعة مسار التنفيذ. عندما ينتهي Hook بشكل غير متوقع، سترى أي trace وصل إليه قبل التوقف.
-
-\`\`\`c
-if (tt == 0) {
-    trace(SBUF("branch: is a payment"), 0);
-    // ...
-} else {
-    trace(SBUF("branch: not a payment, exiting"), 0);
-    accept(SBUF("ok"), __LINE__);
-}
-\`\`\`
-
-**6. تتبّع داخل cbak() لتصحيح الإصدارات**
-
-عندما تفشل معاملة صادرة بصمت، يصعب معرفة السبب دون تفعيل traces داخل \`cbak()\`.
-
-\`\`\`c
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-    uint8_t txtype[4];
-    int64_t t = otxn_type();
-    trace_num(SBUF("cbak: emitted tx type: "), t);
-    // قراءة نتيجة tx الصادرة
-    int64_t result = otxn_field(...);
-    trace_num(SBUF("cbak: emission result: "), result);
-    return 0;
-}
-\`\`\`
-
-**7. أزل traces قبل الانتقال إلى الإنتاج**
-
-تكلفة traces تشمل fee للتنفيذ وتزيد حجم WASM. بمجرد أن يعمل Hook بشكل صحيح على testnet، أزل أو علّق استدعاءات \`trace*\` قبل نشره على Mainnet.`,
+كل استدعاء تتبع هو شيفرة تُنفَّذ: يكبّر الـ WASM ويطيل التنفيذ. احتفظ بأسطر التتبع أثناء الاختبار على testnet. قبل تثبيت الـ Hook على Mainnet، عرّف \`NDEBUG\` واحذف الاستدعاءات المباشرة لدوال التتبع. احتفظ برموز \`__LINE__\`: لا تضيف شيئًا إلى التنفيذ وتُبقي البيانات الوصفية مفيدة.`,
       codeTitles: ["Hook مزود بكل دوال trace"],
       slides: [
         {
-          title: "دوال trace الثلاث",
-          content: "تجهيز Hook لمراقبة تنفيذه:\n\ntrace(SBUF(\"رسالة\"), 0);\n→ نص عادي في Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ محتوى buffer كـ hex\n\ntrace_num(SBUF(\"label: \"), القيمة);\n→ تسمية + عدد صحيح (drops، قيم إرجاع...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ تسمية + XFL (الفاصلة العائمة في Xahau)",
+          title: `البيانات الوصفية والتتبع`,
+          content: `البيانات الوصفية (في الـ ledger دائمًا):
+• HookResult: 3 = accept، 2 = rollback
+• HookReturnString: رسالة الخروج
+• HookReturnCode: رمز الخروج بصيغة hex
+
+التتبع (الـ debug stream أثناء الاختبار):
+• القيم التي رآها الـ Hook في الطريق
+• لا يُحفظ في الـ ledger`,
         },
         {
-          title: "أين ترى traces؟",
-          content: "ثلاث طرق لقراءة المخرجات:\n\n1. Hooks Builder ← Debug Stream\n   اختر الحساب من القائمة المنسدلة\n\n2. سجلات عقدة xahaud\n   في وضع debug (التطوير المحلي)\n\n3. WebSocket من Node.js\n   اشترك في الحساب واقرأ debug_info\n   + HookExecutions في metadata المعاملة",
+          title: `دوال trace الثلاث`,
+          content: `trace(SBUF("label"), 0, 0, 0);
+← رسالة
+
+trace(SBUF("label"), SBUF(buf), 1);
+← تسمية + مخزن بصيغة hex
+
+trace_num(SBUF("label"), n);
+← تسمية + عدد صحيح (drops، قيم الإرجاع)
+
+trace_float(SBUF("label"), xfl);
+← تسمية + مبلغ XFL`,
         },
         {
-          title: "نصائح تصحيح مهمة",
-          content: "• __LINE__ في accept/rollback ← سطر الخروج بالضبط\n• بادئة 'my_hook:' في كل رسالة\n• trace_num لقيمة إرجاع كل دالة حرجة\n  (سالب = خطأ صامت)\n• trace بـ hex=1 لـ buffers ثنائية\n• trace واحد في بداية كل فرع if/else\n• جهّز cbak() لتصحيح emit()\n• أزل traces قبل الانتقال إلى Mainnet",
+          title: `عادات التصحيح`,
+          content: `• __LINE__ في accept/rollback ← سطر الخروج في HookReturnCode
+• استخدم trace_num لقيمة إرجاع كل استدعاء لـ Hook API
+  (سالب = خطأ)
+• اقرأ التتبع في Hooks Builder ← Debug Stream
+• ماكروهات TRACE: تُعطَّل بـ #define NDEBUG
+• قبل Mainnet: NDEBUG، واحذف الاستدعاءات المباشرة للتتبع`,
         },
       ],
     },
@@ -9289,189 +9247,129 @@ Hook result: 3 | otxn_param_demo: no ACTION parameter
     },
     m8l6: {
       title: "Tracing et débogage des Hooks",
-      theory: `Quand un Hook échoue ou se comporte de façon inattendue, tu as besoin d'un moyen d'**observer son exécution interne**. Le système Hooks fournit trois fonctions de trace qui émettent des messages visibles dans le **Debug Stream** de Hooks Builder et dans les logs du nœud \`xahaud\`.
+      theory: `Un Hook s'exécute dans chaque nœud qui traite la transaction, dans un sandbox WebAssembly, sans console et sans débogueur à connecter. Pour savoir ce qu'a fait un Hook, tu as deux sources :
 
-### trace() Message texte ou buffer en hexadécimal
+- **Les métadonnées de la transaction.** Chaque exécution laisse un enregistrement \`HookExecution\` : comment le Hook s'est terminé, avec quel message et quel code. Il est dans le ledger, et n'importe quel nœud le renvoie.
+- **Les messages de trace.** \`trace()\`, \`trace_num()\` et \`trace_float()\` écrivent des lignes dans le debug stream du nœud pendant l'exécution du Hook. Elles montrent des valeurs intermédiaires et ne sont pas enregistrées dans le ledger.
 
-La fonction la plus générale. Émet un message texte ou le contenu d'un buffer au format hex.
+Commence par les métadonnées : elles répondent à la plupart des questions. Ajoute des traces quand tu as besoin de voir à l'intérieur du Hook.
 
-\`\`\`c
-// Émettre un message texte simple
-trace(SBUF("hook started correctly"), 0);  // 0 = afficher comme texte
+### Ce qu'enregistrent les métadonnées
 
-// Émettre le contenu d'un buffer en hexadécimal
-uint8_t account_buf[20];
-otxn_field(SBUF(account_buf), sfAccount);
-trace(SBUF(account_buf), 1);                    // 1 = afficher comme hex
+Le Hook d'exemple de cette leçon accepte les paiements en XAH et rejette tout le reste. Résultat sur le testnet, en lui payant 12 XAH (installé comme dans la [leçon 9.2](?m=9&l=1)) :
+
+\`\`\`
+TransactionResult:    tesSUCCESS
+HookResult:           3
+HookReturnString:     debug_demo:ok
+HookReturnCode:       43
+HookInstructionCount: 94
 \`\`\`
 
-Le troisième argument contrôle le format de sortie :
-- \`0\` → affiche le buffer comme texte (utile pour les messages)
-- \`1\` → affiche le buffer en hexadécimal (utile pour les données binaires : comptes, hashes, buffers de transaction)
+- **\`HookResult\`** : comment le Hook s'est terminé. \`3\` correspond à \`accept()\` ; \`2\` à \`rollback()\`, et la transaction échoue alors avec \`tecHOOK_REJECTED\`.
+- **\`HookReturnString\`** : le message passé à \`accept()\` ou \`rollback()\`. Les métadonnées le stockent en hex. Une fois décodé, il se termine par un octet nul, car \`SBUF()\` compte le terminateur de la chaîne.
+- **\`HookReturnCode\`** : le nombre passé en second argument, en hex. \`0x43\` vaut 67 : la ligne du dernier \`accept()\` du fichier, car le Hook passe \`__LINE__\`. Avec \`__LINE__\` dans chaque \`accept()\` et \`rollback()\`, le code t'indique par où le Hook est sorti.
+- **\`HookInstructionCount\`** : le nombre d'instructions WebAssembly exécutées (\`0x94\` = 148).
 
-### trace_num() Message + nombre entier
+Un rejet est enregistré de la même façon. Le Hook \`min_payment\` de la [leçon 9.1](?m=9&l=0), payé 5 XAH, donne \`tecHOOK_REJECTED\`, \`HookResult: 2\` et son message de rejet.
 
-Émet un libellé descriptif accompagné d'une valeur numérique entière. Idéal pour inspecter des montants en drops, des compteurs, des valeurs de retour de fonctions et des codes d'erreur.
+Pour lire ces champs depuis un script, interroge la transaction et décode la chaîne :
+
+\`\`\`js
+const { result } = await client.request({ command: "tx", transaction: hash });
+const run = result.meta.HookExecutions[0].HookExecution;
+console.log(run.HookResult, Buffer.from(run.HookReturnString, "hex").toString());
+\`\`\`
+
+### Les fonctions de trace
+
+Les métadonnées disent comment le Hook s'est terminé, pas ce qu'il a vu en chemin. Pour cela, le Hook écrit des lignes de trace. Tracer ne change ni le résultat ni le ledger. Les trois fonctions, telles que \`extern.h\` les déclare :
+
+\`\`\`c
+int64_t trace(uint32_t mread_ptr, uint32_t mread_len,
+              uint32_t dread_ptr, uint32_t dread_len, uint32_t as_hex);
+int64_t trace_num(uint32_t read_ptr, uint32_t read_len, int64_t number);
+int64_t trace_float(uint32_t read_ptr, uint32_t read_len, int64_t float1);
+\`\`\`
+
+Chacune reçoit un libellé sous forme de pointeur et de longueur. \`SBUF(x)\` produit les deux, c'est pourquoi les appels paraissent courts.
+
+**\`trace()\`** écrit le libellé et un buffer de données. Avec \`as_hex\` à \`1\`, les données apparaissent en hex : c'est ainsi qu'on lit des valeurs binaires comme un AccountID, que tu peux ensuite comparer avec ce qu'affiche un explorateur. Pour un simple message, ne passe aucune donnée :
+
+\`\`\`c
+trace(SBUF("debug_demo:hook() initiated"), 0, 0, 0);
+
+uint8_t hook_acc[20];
+hook_account(SBUF(hook_acc));
+trace(SBUF("debug_demo:hook_account (20 bytes): "), SBUF(hook_acc), 1);
+\`\`\`
+
+**\`trace_num()\`** écrit le libellé et un entier de 64 bits : montants en drops, compteurs et valeurs de retour des fonctions de la Hook API. Ces fonctions renvoient un nombre négatif en cas d'erreur : tracer le résultat de \`state_set()\` ou d'\`emit()\` montre donc un échec qui passerait sinon inaperçu :
 
 \`\`\`c
 int64_t drops = AMOUNT_TO_DROPS(amount_buf);
-trace_num(SBUF("drops received: "), drops);
-
-// Voir la valeur de retour d'une fonction pour détecter les erreurs
-int64_t result = state_set(SBUF(counter_buf), SBUF(state_key));
-trace_num(SBUF("state_set result: "), result);
-// Négatif = erreur ; positif ou zéro = succès
+trace_num(SBUF("debug_demo:drops received: "), drops);
 \`\`\`
 
-### trace_float() Message + nombre à virgule flottante (XFL)
-
-Les Hooks utilisent le format **XFL** (eXtended Float) pour représenter les montants non entiers. \`trace_float()\` formate le XFL de façon lisible dans le Debug Stream.
+**\`trace_float()\`** écrit un nombre en XFL, le format à virgule flottante qu'utilisent les Hooks pour les montants non entiers. \`float_set(exposant, mantisse)\` en construit un : \`float_set(-6, drops)\` est le montant en XAH.
 
 \`\`\`c
-// Obtenir le montant en XFL depuis un slot
-int64_t slot_no = slot_set(SBUF(amount_buf), 0);
-int64_t xfl_amount = slot_float(slot_no);
-trace_float(SBUF("amount in XFL: "), xfl_amount);
+trace_float(SBUF("debug_demo:XAH received: "), float_set(-6, drops));
 \`\`\`
 
-### macro.h : macros de débogage disponibles dans Hooks Builder
+### Où apparaissent les traces
 
-Hooks Builder inclut le fichier \`macro.h\` avec quatre macros pratiques qui enveloppent les fonctions \`trace*\` et ne s'activent que lorsque la constante \`DEBUG\` est définie. Cela permet de laisser des traces dans le code et de toutes les retirer d'un coup en production simplement en ne définissant pas \`DEBUG\`.
+Les traces vont dans le debug stream du nœud, pas dans la transaction. Sur le testnet, ouvre le **Debug Stream** de Hooks Builder, sélectionne le compte du Hook, puis envoie la transaction : les lignes apparaissent pendant que le nœud la traite. Sur ton propre nœud, elles apparaissent dans son journal.
 
-\`\`\`c
-// Affiche le nom de la variable et sa valeur comme entier (int64)
-#define TRACEVAR(v)  if (DEBUG) trace_num((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+Un Hook qui se termine par \`rollback()\` écrit aussi ses traces : le debug stream est donc l'endroit où voir les valeurs qui ont mené à un rejet.
 
-// Affiche le nom de la variable et le contenu du buffer en hexadécimal
-#define TRACEHEX(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), (uint32_t)(sizeof(v)), 1);
+### Les macros de débogage
 
-// Affiche le nom de la variable et sa valeur comme flottant XFL (eXtended Float)
-#define TRACEXFL(v)  if (DEBUG) trace_float((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (int64_t)v);
+\`hookapi.h\` inclut \`macro.h\`, qui définit quatre macros autour des fonctions de trace. Chacune utilise le nom de la variable comme libellé : \`TRACEVAR(drops)\` écrit \`drops\` et sa valeur sans que tu tapes le libellé :
 
-// Affiche le nom de la variable et le contenu du buffer comme texte ASCII
-#define TRACESTR(v)  if (DEBUG) trace((uint32_t)(#v), (uint32_t)(sizeof(#v) - 1), (uint32_t)(v), sizeof(v), 0);
-\`\`\`
-
-**Comment ça fonctionne en interne :**
-
-Toutes utilisent l'opérateur \`#v\` (stringification C) pour convertir le nom de la variable en chaîne littérale servant de libellé. Ainsi, \`TRACEVAR(drops)\` affichera \`"drops = 5000000"\` sans que tu aies à écrire le libellé manuellement.
-
-| Macro | Fonction interne | Quand l'utiliser |
+| Macro | Fonction appelée | Pour |
 |---|---|---|
 | \`TRACEVAR(v)\` | \`trace_num()\` | Entiers : drops, compteurs, codes de retour |
-| \`TRACEHEX(v)\` | \`trace(... as_hex=1)\` | Buffers binaires : IDs de compte, hashes, clés |
-| \`TRACEXFL(v)\` | \`trace_float()\` | Valeurs XFL (montants à virgule flottante) |
-| \`TRACESTR(v)\` | \`trace(... as_hex=0)\` | Buffers texte : paramètres, memos ASCII |
+| \`TRACEHEX(v)\` | \`trace(…, 1)\` | Buffers binaires : AccountIDs, hashes, clés |
+| \`TRACEXFL(v)\` | \`trace_float()\` | Montants XFL |
+| \`TRACESTR(v)\` | \`trace(…, 0)\` | Buffers de texte : paramètres, memos |
 
-**Activer et désactiver le mode debug :**
+Les macros n'agissent que si \`DEBUG\` vaut \`1\`. \`macro.h\` fixe \`DEBUG\` à partir de \`NDEBUG\` : sans \`NDEBUG\`, il vaut \`1\`. Pour compiler sans elles, définis \`NDEBUG\` avant d'inclure l'en-tête :
 
 \`\`\`c
-// Au début du fichier, avant d'inclure macro.h
-#define DEBUG 1       // Traces actives — mode développement
-// #define DEBUG 0    // Traces désactivées — mode production
-
+#define NDEBUG        // DEBUG = 0 : les macros TRACE ne font rien
 #include "hookapi.h"
-// macro.h est disponible automatiquement dans Hooks Builder
 \`\`\`
 
-Quand \`DEBUG\` vaut \`0\` ou n'est pas défini, le compilateur retire complètement les macros du WASM généré : aucun coût de fee ni augmentation de taille.
+Avec \`DEBUG\` à \`0\`, \`if (DEBUG)\` est toujours faux et le compilateur retire ces appels du WASM. Les appels directs à \`trace()\`, \`trace_num()\` et \`trace_float()\` ne sont pas concernés : retire-les toi-même.
 
-**Exemple d'utilisation :**
+### Les traces et le Mainnet
 
-\`\`\`c
-uint8_t param_name[] = { 0x41U, 0x43U };   // "AC"
-int64_t drops        = 5000000;
-int64_t xfl_val      = float_set(0, drops);
-
-TRACEVAR(drops);       // → "drops = 5000000"
-TRACEHEX(param_name);  // → "param_name = 4143"
-TRACEXFL(xfl_val);     // → "xfl_val = 5000000.0"
-TRACESTR(param_name);  // → "param_name = AC"
-\`\`\`
-
-### Où apparaissent les traces ?
-
-Les traces sont visibles dans **Hooks Builder → Debug Stream** : sélectionne le compte dans le menu déroulant et tu verras toutes les traces en temps réel pour chaque transaction traitée.
-
-### Conseils pour un meilleur débogage
-
-**1. Utilise \`__LINE__\` comme code d'erreur dans accept/rollback**
-
-Le second argument de \`accept()\` et \`rollback()\` est un code numérique. Utiliser \`__LINE__\` inclut automatiquement le numéro de ligne du code source, ce qui te permet de savoir exactement où l'exécution s'est terminée sans lire les logs ligne par ligne.
-
-\`\`\`c
-accept(SBUF("min_payment: OK"), __LINE__);    // Tu sauras que ça a passé par ici
-rollback(SBUF("min_payment: FAIL"), __LINE__); // Et que ça a échoué ici
-\`\`\`
-
-**2. Préfixes descriptifs dans les messages**
-
-Utilise un préfixe avec le nom du Hook dans chaque message. Avec plusieurs Hooks sur le même compte, il est facile de confondre quel Hook a émis chaque trace.
-
-\`\`\`c
-trace(SBUF("my_hook:hook() start"), 0);
-trace(SBUF("my_hook:tx type processed"), 0);
-trace(SBUF("my_hook:accepting"), 0);
-\`\`\`
-
-**3. Trace la valeur de retour de chaque fonction critique**
-
-Toutes les fonctions de l'API Hooks renvoient une valeur négative en cas d'erreur. Vérifie toujours le retour des opérations importantes pour éviter les erreurs silencieuses.
-
-\`\`\`c
-int64_t r = state_set(SBUF(val), SBUF(key));
-trace_num(SBUF("state_set: "), r);  // Si r < 0, quelque chose a échoué
-
-int64_t r2 = emit(SBUF(emithash), SBUF(tx_buf));
-trace_num(SBUF("emit result: "), r2);
-\`\`\`
-
-**4. Trace les buffers binaires en hex**
-
-Les comptes, hashes et buffers de transaction sont des données binaires de 20-32 octets. Les afficher en hex te permet de les comparer aux adresses et hashes que tu vois dans les explorateurs de blocs.
-
-\`\`\`c
-uint8_t hook_acc[20];
-hook_account(SBUF(hook_acc));
-trace(SBUF(hook_acc), 1);  // Tu verras l'ID du compte en hex (40 caractères)
-\`\`\`
-
-**5. Marque les branches d'exécution**
-
-Ajoute une trace au début de chaque branche \`if/else\` pour suivre le flux d'exécution. Quand le Hook se termine de façon inattendue, tu verras quelle trace il a atteinte avant de s'arrêter.
-
-\`\`\`c
-if (tt == 0) {
-    trace(SBUF("branch: is a payment"), 0);
-    // ...
-} else {
-    trace(SBUF("branch: not a payment, exiting"), 0);
-    accept(SBUF("ok"), __LINE__);
-}
-\`\`\`
-
-**6. Trace dans cbak() pour déboguer les émissions**
-
-Quand une transaction émise échoue silencieusement, il est difficile de le savoir sans instrumenter \`cbak()\`.
-
-\`\`\`c
-int64_t cbak(uint32_t reserved) {
-    _g(1, 1);
-    uint8_t txtype[4];
-    int64_t t = otxn_type();
-    trace_num(SBUF("cbak: emitted tx type: "), t);
-    // Lire le résultat de la tx émise
-    int64_t result = otxn_field(...);
-    trace_num(SBUF("cbak: emission result: "), result);
-    return 0;
-}
-\`\`\`
-
-**7. Retire les traces avant de passer en production**
-
-Les traces ont un coût de fee d'exécution et augmentent la taille du WASM. Une fois que le Hook fonctionne correctement sur testnet, retire ou commente les appels \`trace*\` avant de le déployer sur Mainnet.`,
+Chaque appel de trace est du code exécuté : il agrandit le WASM et allonge l'exécution. Garde les traces pendant tes tests sur le testnet. Avant d'installer le Hook sur le Mainnet, définis \`NDEBUG\` et retire les appels de trace directs. Garde les codes \`__LINE__\` : ils n'ajoutent rien à l'exécution et gardent les métadonnées utiles.`,
       codeTitles: ["Hook instrumenté avec toutes les fonctions trace"],
-      slides: [["Les trois fonctions trace*", "Instrumenter le Hook pour voir son exécution :\n\ntrace(SBUF(\"message\"), 0);\n→ Texte brut dans le Debug Stream\n\ntrace(SBUF(buffer), 1);\n→ Contenu du buffer en hex\n\ntrace_num(SBUF(\"label: \"), valeur);\n→ Libellé + entier (drops, retours...)\n\ntrace_float(SBUF(\"label: \"), xfl);\n→ Libellé + XFL (virgule flottante de Xahau)"], ["Où voir les traces", "Trois façons de lire la sortie :\n\n1. Hooks Builder → Debug Stream\n   Sélectionne le compte dans le menu déroulant\n\n2. Logs du nœud xahaud\n   En mode debug (développement local)\n\n3. WebSocket depuis Node.js\n   Abonne-toi au compte et lis debug_info\n   + HookExecutions dans les métadonnées de la tx"], ["Conseils de débogage", "• __LINE__ dans accept/rollback → ligne de sortie exacte\n• Préfixe 'my_hook:' dans chaque message\n• trace_num le retour de CHAQUE fonction critique\n  (négatif = erreur silencieuse)\n• trace avec hex=1 pour les buffers binaires\n• Une trace au début de chaque branche if/else\n• Instrumente cbak() pour déboguer emit()\n• Retire les traces avant de passer en Mainnet"]],
+      slides: [[`Métadonnées et traces`, `Métadonnées (dans le ledger, toujours) :
+• HookResult : 3 = accept, 2 = rollback
+• HookReturnString : le message de sortie
+• HookReturnCode : le code de sortie, en hex
+
+Traces (debug stream, pendant les tests) :
+• Les valeurs que le Hook a vues en chemin
+• Non enregistrées dans le ledger`], [`Les trois fonctions trace*`, `trace(SBUF("libellé"), 0, 0, 0);
+→ Un message
+
+trace(SBUF("libellé"), SBUF(buf), 1);
+→ Libellé + buffer en hex
+
+trace_num(SBUF("libellé"), n);
+→ Libellé + entier (drops, valeurs de retour)
+
+trace_float(SBUF("libellé"), xfl);
+→ Libellé + montant XFL`], [`Habitudes de débogage`, `• __LINE__ dans accept/rollback → la ligne de sortie dans HookReturnCode
+• trace_num du retour de chaque appel à la Hook API
+  (négatif = erreur)
+• Lis les traces dans Hooks Builder → Debug Stream
+• Macros TRACE : désactivées avec #define NDEBUG
+• Avant le Mainnet : NDEBUG, et retire les appels de trace directs`]],
     },
     m8l7: {
       title: "Hooks Builder : développement en ligne",

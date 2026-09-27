@@ -2902,501 +2902,1014 @@ Indispensáveis para trabalhar com blockchain`,
         zh: "运行和调试脚本",
       },
       theory: {
-        es: `Ya sabes cómo se estructura un proyecto Node.js. Ahora vamos a aprender a **ejecutar scripts** y, lo más importante, a **entender y solucionar los errores** que inevitablemente aparecerán.
+        es: `Tarde o temprano un script falla: falta un paquete, hay una errata, un nodo no responde. Esta lección explica qué hace Node.js con tu archivo, cómo leer el error que imprime y qué significan los errores de este curso.
 
-### Ejecutar scripts con Node.js
+### Ejecutar un script
 
-Para ejecutar cualquier archivo JavaScript, usa el comando:
+\`node archivo.js\` ejecuta un archivo en dos fases. Primero Node lee el archivo entero y comprueba que es JavaScript válido. Después lo ejecuta de arriba abajo. Un error en la primera fase detiene el script antes de que se ejecute nada, así que no aparece ninguna de tus líneas de \`console.log\`. Un error en la segunda fase lo detiene en ese punto, y las líneas impresas antes siguen en pantalla.
 
-\`\`\`
-node nombre-del-archivo.js
-\`\`\`
-
-Por ejemplo:
-\`\`\`
-node hola-xahau.js
-node 01-conexion.js
-node mi-script.js
-\`\`\`
-
-**Importante**: Debes estar en el directorio donde está el archivo, o usar la ruta completa. Si el archivo no se encuentra, verás un error.
-
-### Leer mensajes de error (stack traces)
-
-Cuando algo falla, Node.js muestra un **stack trace** — un mensaje con información sobre el error. Aprende a leerlo:
+Ejecuta los scripts desde la carpeta del proyecto, la que tiene \`package.json\` y \`node_modules/\`:
 
 \`\`\`
-/Users/tu-nombre/xahau-curso/mi-script.js:5
-  const response = await client.request({
-                   ^^^^^
-SyntaxError: await is only valid in async functions
-    at Object.compileFunction (node:vm:360:18)
-    at wrapSafe (node:internal/modules/cjs/loader:1124:15)
-    at /Users/tu-nombre/xahau-curso/mi-script.js:5:20
+cd xahau-course
+node debug-errors.js
 \`\`\`
 
-Cómo leerlo:
-1. **Primera línea**: El archivo y la línea donde ocurrió el error (\`mi-script.js:5\`)
-2. **Tipo de error**: \`SyntaxError\`, \`TypeError\`, \`ReferenceError\`, etc.
-3. **Mensaje**: Explicación del problema (\`await is only valid in async functions\`)
-4. **Stack trace**: Ruta de ejecución que llevó al error (de más reciente a más antiguo)
+De esa carpeta dependen dos cosas. Node busca \`debug-errors.js\` a partir de la carpeta en la que estás. Y \`require("xahau")\` busca la librería en \`node_modules/\`, empezando por la carpeta del script y subiendo.
 
-### Usar console.log para depurar
+### Leer un error
 
-\`console.log()\` es tu mejor herramienta de depuración. Úsala para ver el valor de variables en cualquier punto del código:
+Cuando un script falla, Node imprime el error y se detiene. Por ejemplo:
 
 \`\`\`
-console.log("Paso 1: Conectando...");
-console.log("Valor de response:", response);
-console.log("Tipo de dato:", typeof variable);
-console.log("Objeto completo:", JSON.stringify(objeto, null, 2));
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
 \`\`\`
 
-**Tip**: Usa \`JSON.stringify(objeto, null, 2)\` para imprimir objetos grandes de forma legible (con indentación de 2 espacios).
+Léelo en este orden:
 
-### Errores comunes y cómo solucionarlos
+1. **La línea del error**: \`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`. El tipo dice qué clase de problema es; el mensaje dice qué pasó. Aquí \`info\` es \`undefined\`, así que no tiene \`validated_ledger\`.
+2. **La ubicación**, arriba: el archivo y la línea (\`ledger.js:2\`), la línea de código y un \`^\` bajo el punto donde ocurrió el error.
+3. **La pila**: las líneas \`at\`, de la más reciente a la más antigua. Las líneas con tus archivos muestran el camino que llevó al error. Las líneas \`node:internal\` son código del propio Node: sáltalas.
 
-**Error: Cannot find module 'xahau'**
+Los tipos que más verás:
+
+| Tipo | Cuándo | Causa habitual |
+|---|---|---|
+| \`SyntaxError\` | Antes de ejecutar | El código no es JavaScript válido: falta un paréntesis, \`await\` fuera de una función \`async\` |
+| \`ReferenceError\` | Al ejecutar | Un nombre que no existe: una errata, falta un \`require\` |
+| \`TypeError\` | Al ejecutar | Un valor de otra clase, casi siempre \`undefined\` donde el código espera un objeto |
+| \`XahaudError\` | Al ejecutar | El nodo de Xahau respondió a la petición con un error |
+
+### Los errores de este curso
+
+**Cannot find module 'xahau'**
+
 \`\`\`
 Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
 \`\`\`
-Causa: No has instalado la librería o no estás en el directorio correcto.
-Solución: Ejecuta \`npm install xahau\` en la carpeta de tu proyecto.
 
-**Error: await is only valid in async functions**
+Node no encontró la librería en ningún \`node_modules/\` desde la carpeta del script hacia arriba. O no está instalada, o el script está fuera del proyecto. Ejecuta \`npm install xahau\` en la carpeta del proyecto, y ejecuta el script desde ahí.
+
+**await is only valid in async functions**
+
 \`\`\`
-SyntaxError: await is only valid in async functions
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
 \`\`\`
-Causa: Estás usando \`await\` fuera de una función marcada con \`async\`.
-Solución: Envuelve tu código en una función \`async\`:
+
+Los scripts del curso son archivos CommonJS: cargan las librerías con \`require\`. En un archivo CommonJS, \`await\` solo funciona dentro de una función marcada como \`async\`. Escrito en el nivel superior de un archivo que usa \`require\`, Node da otro mensaje por la misma causa:
+
 \`\`\`
-async function main() { ... }
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+Pon el código en una función \`async\` y llámala, como hacen todos los scripts del curso:
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
 main();
 \`\`\`
 
-**Error: Unexpected token**
-\`\`\`
-SyntaxError: Unexpected token ')'
-\`\`\`
-Causa: Error de sintaxis — falta una coma, un paréntesis, una llave, etc.
-Solución: Revisa la línea indicada y las líneas anteriores. Busca paréntesis o llaves sin cerrar.
+**missing ) after argument list** y otros errores de sintaxis
 
-**Error: connect ETIMEDOUT / ECONNREFUSED**
 \`\`\`
-Error: connect ETIMEDOUT wss://xahau-test.net
-\`\`\`
-Causa: No se puede conectar al nodo de Xahau (red caída, firewall, sin internet).
-Solución: Verifica tu conexión a internet. Si persiste, prueba otro nodo o espera unos minutos.
+console.log("Client:", typeof Client;
+                              ^^^^^^
 
-**Error: Account not found**
+SyntaxError: missing ) after argument list
 \`\`\`
-Error: Account not found.
-\`\`\`
-Causa: La cuenta que estás consultando no existe en el ledger o no ha sido activada.
-Solución: Verifica que la dirección sea correcta. En testnet, usa el faucet para activar cuentas.
 
-### Tips para depurar conexiones blockchain
+El \`^\` marca dónde notó Node el problema. El fallo está ahí o justo antes: aquí, el \`)\` que cierra \`console.log(\`. Busca paréntesis, llaves y comillas que se abren y no se cierran.
 
-1. **Prueba la conexión primero**: Antes de hacer operaciones complejas, verifica que puedes conectarte al nodo
-2. **Usa try/catch siempre**: Cualquier operación de red puede fallar
-3. **Revisa la URL del nodo**: \`wss://xahau-test.net\` para testnet, \`wss://xahau.network\` para mainnet
-4. **Desconecta siempre al terminar**: Usa \`await client.disconnect()\` para liberar recursos
-5. **Añade timeouts**: Si una operación tarda demasiado, puede que el nodo esté saturado`,
-        pt: `Você já sabe como um projeto Node.js é estruturado. Agora vamos aprender a **executar scripts** e, mais importante, a **entender e resolver os erros** que inevitavelmente aparecerão.
-### Executar scripts com Node.js
-Para executar qualquer arquivo JavaScript, use o comando:
+**Cannot read properties of undefined**
+
+El \`TypeError\` del ejemplo de arriba. Suele aparecer después de una consulta, cuando la respuesta no tiene el campo que lee el código. Imprime la respuesta entera para ver qué contiene:
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
 \`\`\`
-node nome-do-arquivo.js
+
+**Account not found**
+
 \`\`\`
-Por exemplo:
+XahaudError: Account not found.
 \`\`\`
-node hola-xahau.js
-node 01-conexion.js
-node mi-script.js
+
+Este error viene del nodo, no de tu código: la cuenta no existe en el ledger. Una cuenta existe cuando ha recibido sus primeros XAH. Revisa la dirección, y revisa la red: una cuenta de testnet no existe en Mainnet. En testnet, el faucet crea y financia cuentas ([Módulo 3](?m=3&l=1)).
+
+**ENOTFOUND, ETIMEDOUT, ECONNREFUSED**
+
 \`\`\`
-**Importante**: Você deve estar no diretório onde está o arquivo, ou usar o caminho completo. Se o arquivo não for encontrado, você verá um erro.
-### Ler mensagens de erro (stack traces)
-Quando algo falha, Node.js mostra um **stack trace** — uma mensagem com informações sobre o erro. Aprenda a lê-lo:
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
 \`\`\`
-/Users/seu-nome/xahau-curso/mi-script.js:5
-  const response = await client.request({
-                   ^^^^^
-SyntaxError: await is only valid in async functions
-    at Object.compileFunction (node:vm:360:18)
-    at wrapSafe (node:internal/modules/cjs/loader:1124:15)
-    at /Users/seu-nome/xahau-curso/mi-script.js:5:20
+
+La conexión falló antes de cualquier petición. \`ENOTFOUND\` significa que el nombre del host no existe: revisa la URL. \`ETIMEDOUT\` y \`ECONNREFUSED\` significan que el host existe pero no respondió: revisa tu conexión y el firewall, o prueba otro nodo. Las URLs del curso son \`wss://xahau-test.net\` para testnet y \`wss://xahau.network\` para Mainnet.
+
+### Ver qué hace un script
+
+\`console.log\` muestra un valor en un punto del script. Imprime una línea antes y después de cada paso: cuando un script se detiene, la última línea impresa te dice a qué paso llegó. Dos formas ayudan con objetos y tipos:
+
+- \`JSON.stringify(objeto, null, 2)\` imprime un objeto entero, con sangría de 2 espacios.
+- \`typeof valor\` imprime el tipo: un \`"undefined"\` donde esperabas un objeto es el origen de la mayoría de los \`TypeError\`.
+
+Una petición a la red puede fallar por motivos ajenos a tu código. \`try/catch\` captura el error, para que el script diga qué falló y termine de forma limpia. Termina con \`client.disconnect()\` en todos los casos: una conexión abierta mantiene Node en marcha, y el script no acaba.
+
+### Los ejemplos
+
+\`debug-errors.js\` ejecuta cada paso dentro de su propio \`try/catch\` y lo numera, así que un fallo muestra en qué paso fue. Salida en testnet:
+
 \`\`\`
-Como ler:
-1. **Primeira linha**: o arquivo e a linha onde o erro ocorreu (\`mi-script.js:5\`)
-2. **Tipo de erro**: \`SyntaxError\`, \`TypeError\`, \`ReferenceError\` etc.
-3. **Mensagem**: explicação do problema (\`await is only valid in async functions\`)
-4. **Stack trace**: caminho de execução que levou ao erro (do mais recente ao mais antigo)
-### Usar console.log para depurar
-\`console.log()\` é sua melhor ferramenta de depuração. Use-o para ver o valor das variáveis em qualquer ponto do código:
+=== Depuración de Errores en Xahau ===
+1. Librería xahau importada correctamente
+   Tipo de Client: function
+2. Cliente creado para: wss://xahau-test.net
+3. Intentando conectar...
+   Conectado correctamente
+4. Consultando server_info...
+5. Respuesta recibida:
+   Tipo: object
+   Claves: [ 'info', 'native_currency_code' ]
+   Red: 21338
+   Ledger: 12663294
+6. Desconectado correctamente
+=== Fin de la depuración ===
 \`\`\`
-console.log("Passo 1: Conectando...");
-console.log("Valor de response:", response);
-console.log("Tipo de dado:", typeof variable);
-console.log("Objeto completo:", JSON.stringify(objeto, null, 2));
+
+\`Red: 21338\` es el ID de red de la testnet de Xahau.
+
+\`connectivity-test.js\` se conecta a testnet, a Mainnet y a una URL que no existe. La tercera conexión debe fallar: muestra el error que obtienes con una URL equivocada. Salida:
+
 \`\`\`
-**Dica**: use \`JSON.stringify(objeto, null, 2)\` para imprimir objetos grandes de forma legível (com indentação de 2 espaços).
-### Erros comuns e como resolvê-los
-**Error: Cannot find module 'xahau'**
+=== Test de Conectividad de Xahau ===
+Probando: Xahau Testnet (wss://xahau-test.net)
+Conectado - Ledger: 12663296
+
+Probando: Xahau Mainnet (wss://xahau.network)
+Conectado - Ledger: 26093967
+
+Probando: URL incorrecta (wss://nodo-que-no-existe.example.com)
+Error: getaddrinfo ENOTFOUND nodo-que-no-existe.example.com
+=== Resumen ===
+Si testnet y mainnet conectan: tu entorno está listo.
+Si alguno falla: comprueba tu conexión a internet.
+La URL incorrecta DEBE fallar (es un test de error).
+\`\`\``,
+        pt: `Mais cedo ou mais tarde um script falha: falta um pacote, há um erro de digitação, um nó não responde. Esta lição explica o que o Node.js faz com o seu arquivo, como ler o erro que ele imprime e o que significam os erros deste curso.
+
+### Executar um script
+
+\`node arquivo.js\` executa um arquivo em duas fases. Primeiro o Node lê o arquivo inteiro e verifica se é JavaScript válido. Depois o executa de cima para baixo. Um erro na primeira fase interrompe o script antes que qualquer coisa seja executada, então nenhuma das suas linhas de \`console.log\` aparece. Um erro na segunda fase o interrompe naquele ponto, e as linhas impressas antes continuam na tela.
+
+Execute os scripts a partir da pasta do projeto, a que tem \`package.json\` e \`node_modules/\`:
+
+\`\`\`
+cd xahau-course
+node debug-errors.js
+\`\`\`
+
+Duas coisas dependem dessa pasta. O Node procura \`debug-errors.js\` a partir da pasta em que você está. E \`require("xahau")\` procura a biblioteca em \`node_modules/\`, começando pela pasta do script e subindo.
+
+### Ler um erro
+
+Quando um script falha, o Node imprime o erro e para. Por exemplo:
+
+\`\`\`
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+\`\`\`
+
+Leia nesta ordem:
+
+1. **A linha do erro**: \`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`. O tipo diz que tipo de problema é; a mensagem diz o que aconteceu. Aqui \`info\` é \`undefined\`, então não tem \`validated_ledger\`.
+2. **A localização**, no topo: o arquivo e a linha (\`ledger.js:2\`), a linha de código e um \`^\` sob o ponto onde o erro aconteceu.
+3. **A pilha**: as linhas \`at\`, da mais recente à mais antiga. As linhas com os seus arquivos mostram o caminho que levou ao erro. As linhas \`node:internal\` são código do próprio Node: pule-as.
+
+Os tipos que você verá com mais frequência:
+
+| Tipo | Quando | Causa habitual |
+|---|---|---|
+| \`SyntaxError\` | Antes de executar | O código não é JavaScript válido: falta um parêntese, \`await\` fora de uma função \`async\` |
+| \`ReferenceError\` | Ao executar | Um nome que não existe: um erro de digitação, falta um \`require\` |
+| \`TypeError\` | Ao executar | Um valor de outro tipo, quase sempre \`undefined\` onde o código espera um objeto |
+| \`XahaudError\` | Ao executar | O nó da Xahau respondeu à requisição com um erro |
+
+### Os erros deste curso
+
+**Cannot find module 'xahau'**
+
 \`\`\`
 Error: Cannot find module 'xahau'
-\`\`\`
-Causa: você não instalou a biblioteca ou não está no diretório correto.
-Solução: execute \`npm install xahau\` na pasta do seu projeto.
-**Error: await is only valid in async functions**
-\`\`\`
-SyntaxError: await is only valid in async functions
-\`\`\`
-Causa: você está usando \`await\` fora de uma função marcada com \`async\`.
-Solução: coloque seu código dentro de uma função \`async\`:
-\`\`\`
-async function main() { ... }
-main();
-\`\`\`
-**Error: Unexpected token**
-\`\`\`
-SyntaxError: Unexpected token ')'
-\`\`\`
-Causa: erro de sintaxe — falta uma vírgula, um parêntese, uma chave etc.
-Solução: revise a linha indicada e as linhas anteriores. Procure parênteses ou chaves sem fechar.
-**Error: connect ETIMEDOUT / ECONNREFUSED**
-\`\`\`
-Error: connect ETIMEDOUT wss://xahau-test.net
-\`\`\`
-Causa: não é possível se conectar ao nó da Xahau (rede fora do ar, firewall, sem internet).
-Solução: verifique sua conexão com a internet. Se persistir, tente outro nó ou espere alguns minutos.
-**Error: Account not found**
-\`\`\`
-Error: Account not found.
-\`\`\`
-Causa: a conta que você está consultando não existe no ledger ou ainda não foi ativada.
-Solução: verifique se o endereço está correto. Na testnet, use o faucet para ativar contas.
-### Tips para depurar conexiones blockchain
-1. **Teste a conexão primeiro**: antes de fazer operações complexas, verifique se você consegue se conectar ao nó
-2. **Use try/catch sempre**: qualquer operação de rede pode falhar
-3. **Revisa a URL do nó**: \`wss://xahau-test.net\` para testnet, \`wss://xahau.network\` para mainnet
-4. **Desconecta sempre ao terminar**: Usa \`await client.disconnect()\` para liberar recursos
-5. **Adicione timeouts**: Se uma operação tarda demasiado, pode que o nó esté saturado`,
-        en: `You already know how a Node.js project is structured. Now we are going to learn how to **run scripts** and, most importantly, how to **understand and fix the errors** that will inevitably appear.
-
-### Running scripts with Node.js
-
-To run any JavaScript file, use the command:
-
-\`\`\`
-node filename.js
+Require stack:
+- /Users/you/Desktop/script.js
 \`\`\`
 
-For example:
-\`\`\`
-node hola-xahau.js
-node 01-connection.js
-node my-script.js
-\`\`\`
+O Node não encontrou a biblioteca em nenhum \`node_modules/\` da pasta do script para cima. Ou ela não está instalada, ou o script está fora do projeto. Execute \`npm install xahau\` na pasta do projeto e execute o script a partir dela.
 
-**Important**: You must be in the directory where the file is located, or use the full path. If the file is not found, you will see an error.
-
-### Reading error messages (stack traces)
-
-When something fails, Node.js displays a **stack trace** — a message with information about the error. Learn to read it:
+**await is only valid in async functions**
 
 \`\`\`
-/Users/your-name/xahau-curso/mi-script.js:5
-  const response = await client.request({
-                   ^^^^^
-SyntaxError: await is only valid in async functions
-    at Object.compileFunction (node:vm:360:18)
-    at wrapSafe (node:internal/modules/cjs/loader:1124:15)
-    at /Users/your-name/xahau-curso/mi-script.js:5:20
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
 \`\`\`
 
-How to read it:
-1. **First line**: The file and line where the error occurred (\`mi-script.js:5\`)
-2. **Error type**: \`SyntaxError\`, \`TypeError\`, \`ReferenceError\`, etc.
-3. **Message**: Explanation of the problem (\`await is only valid in async functions\`)
-4. **Stack trace**: Execution path that led to the error (from most recent to oldest)
-
-### Using console.log for debugging
-
-\`console.log()\` is your best debugging tool. Use it to see the value of variables at any point in the code:
+Os scripts do curso são arquivos CommonJS: carregam as bibliotecas com \`require\`. Num arquivo CommonJS, \`await\` só funciona dentro de uma função marcada como \`async\`. Escrito no nível superior de um arquivo que usa \`require\`, o Node dá outra mensagem pela mesma causa:
 
 \`\`\`
-console.log("Step 1: Connecting...");
-console.log("Value of response:", response);
-console.log("Data type:", typeof variable);
-console.log("Full object:", JSON.stringify(object, null, 2));
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
 \`\`\`
 
-**Tip**: Use \`JSON.stringify(object, null, 2)\` to print large objects in a readable format (with 2-space indentation).
+Coloque o código numa função \`async\` e chame-a, como fazem todos os scripts do curso:
 
-### Common errors and how to fix them
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
 
-**Error: Cannot find module 'xahau'**
-\`\`\`
-Error: Cannot find module 'xahau'
-\`\`\`
-Cause: You haven't installed the library or you're not in the correct directory.
-Solution: Run \`npm install xahau\` in your project folder.
-
-**Error: await is only valid in async functions**
-\`\`\`
-SyntaxError: await is only valid in async functions
-\`\`\`
-Cause: You are using \`await\` outside of a function marked with \`async\`.
-Solution: Wrap your code in an \`async\` function:
-\`\`\`
-async function main() { ... }
 main();
 \`\`\`
 
-**Error: Unexpected token**
-\`\`\`
-SyntaxError: Unexpected token ')'
-\`\`\`
-Cause: Syntax error — a comma, parenthesis, brace, etc. is missing.
-Solution: Check the indicated line and the lines before it. Look for unclosed parentheses or braces.
-
-**Error: connect ETIMEDOUT / ECONNREFUSED**
-\`\`\`
-Error: connect ETIMEDOUT wss://xahau-test.net
-\`\`\`
-Cause: Cannot connect to the Xahau node (network down, firewall, no internet).
-Solution: Check your internet connection. If it persists, try another node or wait a few minutes.
-
-**Error: Account not found**
-\`\`\`
-Error: Account not found.
-\`\`\`
-Cause: The account you are querying does not exist in the ledger or has not been activated.
-Solution: Verify that the address is correct. On testnet, use the faucet to activate accounts.
-
-### Tips for debugging blockchain connections
-
-1. **Test the connection first**: Before performing complex operations, verify that you can connect to the node
-2. **Always use try/catch**: Any network operation can fail
-3. **Check the node URL**: \`wss://xahau-test.net\` for testnet, \`wss://xahau.network\` for mainnet
-4. **Always disconnect when done**: Use \`await client.disconnect()\` to free resources
-5. **Add timeouts**: If an operation takes too long, the node might be overloaded`,
-        jp: `Node.jsプロジェクトの構造について理解できました。次は**スクリプトの実行方法**と、最も重要なこと — 必ず発生する**エラーの理解と解決方法**を学びます。
-
-### Node.jsでスクリプトを実行する
-
-任意のJavaScriptファイルを実行するには、以下のコマンドを使用します:
+**missing ) after argument list** e outros erros de sintaxe
 
 \`\`\`
-node ファイル名.js
+console.log("Client:", typeof Client;
+                              ^^^^^^
+
+SyntaxError: missing ) after argument list
 \`\`\`
 
-例えば:
-\`\`\`
-node hola-xahau.js
-node 01-connection.js
-node my-script.js
-\`\`\`
+O \`^\` marca onde o Node percebeu o problema. O erro está ali ou logo antes: aqui, o \`)\` que fecha \`console.log(\`. Procure parênteses, chaves e aspas que são abertos e não fechados.
 
-**重要**: ファイルがあるディレクトリにいる必要があります（フルパスを使用することも可能）。ファイルが見つからない場合はエラーが表示されます。
+**Cannot read properties of undefined**
 
-### エラーメッセージの読み方（スタックトレース）
+O \`TypeError\` do exemplo acima. Costuma aparecer depois de uma consulta, quando a resposta não tem o campo que o código lê. Imprima a resposta inteira para ver o que ela contém:
 
-何かが失敗すると、Node.jsは**スタックトレース** — エラーに関する情報を含むメッセージを表示します。読み方を学びましょう:
-
-\`\`\`
-/Users/your-name/xahau-curso/mi-script.js:5
-  const response = await client.request({
-                   ^^^^^
-SyntaxError: await is only valid in async functions
-    at Object.compileFunction (node:vm:360:18)
-    at wrapSafe (node:internal/modules/cjs/loader:1124:15)
-    at /Users/your-name/xahau-curso/mi-script.js:5:20
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
 \`\`\`
 
-読み方:
-1. **1行目**: エラーが発生したファイルと行番号（\`mi-script.js:5\`）
-2. **エラーの種類**: \`SyntaxError\`、\`TypeError\`、\`ReferenceError\`など
-3. **メッセージ**: 問題の説明（\`await is only valid in async functions\`）
-4. **スタックトレース**: エラーに至った実行パス（最新から古い順）
-
-### デバッグにconsole.logを使う
-
-\`console.log()\`はあなたの最良のデバッグツールです。コードの任意の時点で変数の値を確認するために使用します:
+**Account not found**
 
 \`\`\`
-console.log("ステップ1: 接続中...");
-console.log("responseの値:", response);
-console.log("データ型:", typeof variable);
-console.log("オブジェクト全体:", JSON.stringify(object, null, 2));
+XahaudError: Account not found.
 \`\`\`
 
-**ヒント**: \`JSON.stringify(object, null, 2)\`を使って大きなオブジェクトを読みやすい形式（2スペースのインデント）で表示します。
+Este erro vem do nó, não do seu código: a conta não existe no ledger. Uma conta existe quando recebe os seus primeiros XAH. Verifique o endereço e verifique a rede: uma conta da testnet não existe na Mainnet. Na testnet, o faucet cria e financia contas ([Módulo 3](?m=3&l=1)).
 
-### よくあるエラーとその解決方法
+**ENOTFOUND, ETIMEDOUT, ECONNREFUSED**
 
-**Error: Cannot find module 'xahau'**
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+A conexão falhou antes de qualquer requisição. \`ENOTFOUND\` significa que o nome do host não existe: verifique a URL. \`ETIMEDOUT\` e \`ECONNREFUSED\` significam que o host existe, mas não respondeu: verifique a sua conexão e o firewall, ou tente outro nó. As URLs do curso são \`wss://xahau-test.net\` para a testnet e \`wss://xahau.network\` para a Mainnet.
+
+### Ver o que um script faz
+
+\`console.log\` mostra um valor num ponto do script. Imprima uma linha antes e depois de cada passo: quando um script para, a última linha impressa diz a que passo ele chegou. Duas formas ajudam com objetos e tipos:
+
+- \`JSON.stringify(objeto, null, 2)\` imprime um objeto inteiro, com recuo de 2 espaços.
+- \`typeof valor\` imprime o tipo: um \`"undefined"\` onde você esperava um objeto é a origem da maioria dos \`TypeError\`.
+
+Uma requisição à rede pode falhar por motivos alheios ao seu código. \`try/catch\` captura o erro, para que o script diga o que falhou e termine de forma limpa. Termine com \`client.disconnect()\` em todos os casos: uma conexão aberta mantém o Node em execução, e o script não termina.
+
+### Os exemplos
+
+\`debug-errors.js\` executa cada passo dentro do seu próprio \`try/catch\` e o numera, então uma falha mostra em que passo foi. Saída na testnet:
+
+\`\`\`
+=== Depuração de Erros na Xahau ===
+1. Biblioteca xahau importada corretamente
+   Tipo de Client: function
+2. Cliente criado para: wss://xahau-test.net
+3. Tentando conectar...
+   Conectado corretamente
+4. Consultando server_info...
+5. Resposta recebida:
+   Tipo: object
+   Chaves: [ 'info', 'native_currency_code' ]
+   Rede: 21338
+   Ledger: 12663295
+6. Desconectado corretamente
+=== Fim da depuração ===
+\`\`\`
+
+\`Rede: 21338\` é o ID de rede da testnet da Xahau.
+
+\`connectivity-test.js\` se conecta à testnet, à Mainnet e a uma URL que não existe. A terceira conexão deve falhar: mostra o erro que você recebe com uma URL errada. Saída:
+
+\`\`\`
+=== Teste de Conectividade da Xahau ===
+Testando: Xahau Testnet (wss://xahau-test.net)
+Conectado - Ledger: 12663297
+
+Testando: Xahau Mainnet (wss://xahau.network)
+Conectado - Ledger: 26093967
+
+Testando: URL incorreta (wss://no-que-nao-existe.example.com)
+Erro: getaddrinfo ENOTFOUND no-que-nao-existe.example.com
+=== Resumo ===
+Se testnet e mainnet conectarem: seu ambiente está pronto.
+Se alguma falhar: verifique sua conexão com a internet.
+A URL incorreta DEVE falhar (é um teste de erro).
+\`\`\``,
+        en: `A script fails sooner or later: a missing package, a typo, a node that doesn't answer. This lesson explains what Node.js does with your file, how to read the error it prints, and what the errors of this course mean.
+
+### Running a script
+
+\`node file.js\` runs a file in two stages. First Node reads the whole file and checks that it is valid JavaScript. Then it runs it from top to bottom. An error in the first stage stops the script before anything runs, so none of your \`console.log\` lines appear. An error in the second stage stops it at that point, and the lines printed before it are still on screen.
+
+Run the scripts from the project folder, the one with \`package.json\` and \`node_modules/\`:
+
+\`\`\`
+cd xahau-course
+node debug-errors.js
+\`\`\`
+
+Two things depend on that folder. Node looks for \`debug-errors.js\` relative to the folder you are in. And \`require("xahau")\` looks for the library in \`node_modules/\`, starting from the script's folder and going up.
+
+### Reading an error
+
+When a script fails, Node prints the error and stops. For example:
+
+\`\`\`
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+\`\`\`
+
+Read it in this order:
+
+1. **The error line**: \`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`. The type says what kind of problem it is; the message says what happened. Here \`info\` is \`undefined\`, so it has no \`validated_ledger\`.
+2. **The location**, at the top: the file and line (\`ledger.js:2\`), the line of code, and a \`^\` under the place where the error happened.
+3. **The stack**: the \`at\` lines, most recent first. The lines with your files show the path that led to the error. The \`node:internal\` lines are Node's own code: skip them.
+
+The types you will see most:
+
+| Type | When | Usual cause |
+|---|---|---|
+| \`SyntaxError\` | Before running | The code isn't valid JavaScript: a missing bracket, \`await\` outside an \`async\` function |
+| \`ReferenceError\` | While running | A name that doesn't exist: a typo, a missing \`require\` |
+| \`TypeError\` | While running | A value of the wrong kind, usually \`undefined\` where the code expects an object |
+| \`XahaudError\` | While running | The Xahau node answered the request with an error |
+
+### The errors of this course
+
+**Cannot find module 'xahau'**
+
 \`\`\`
 Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
 \`\`\`
-原因: ライブラリをインストールしていないか、正しいディレクトリにいない。
-解決策: プロジェクトフォルダで\`npm install xahau\`を実行してください。
 
-**Error: await is only valid in async functions**
+Node didn't find the library in any \`node_modules/\` from the script's folder upwards. Either it isn't installed, or the script is outside the project. Run \`npm install xahau\` in the project folder, and run the script from there.
+
+**await is only valid in async functions**
+
 \`\`\`
-SyntaxError: await is only valid in async functions
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
 \`\`\`
-原因: \`async\`でマークされた関数の外で\`await\`を使用している。
-解決策: コードを\`async\`関数で囲む:
+
+The course scripts are CommonJS files: they load libraries with \`require\`. In a CommonJS file, \`await\` only works inside a function marked \`async\`. Written at the top level of a file that uses \`require\`, Node gives a different message for the same cause:
+
 \`\`\`
-async function main() { ... }
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+Put the code in an \`async\` function and call it, as every script of the course does:
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
 main();
 \`\`\`
 
-**Error: Unexpected token**
-\`\`\`
-SyntaxError: Unexpected token ')'
-\`\`\`
-原因: 構文エラー — カンマ、括弧、波括弧などが不足している。
-解決策: 示された行とその前の行を確認してください。閉じられていない括弧や波括弧を探してください。
+**missing ) after argument list** and other syntax errors
 
-**Error: connect ETIMEDOUT / ECONNREFUSED**
 \`\`\`
-Error: connect ETIMEDOUT wss://xahau-test.net
-\`\`\`
-原因: Xahauノードに接続できない（ネットワークダウン、ファイアウォール、インターネットなし）。
-解決策: インターネット接続を確認してください。続く場合は別のノードを試すか数分待ってください。
+console.log("Client:", typeof Client;
+                              ^^^^^^
 
-**Error: Account not found**
+SyntaxError: missing ) after argument list
 \`\`\`
-Error: Account not found.
+
+The \`^\` marks where Node noticed the problem. The mistake is there or just before it: here the \`)\` that closes \`console.log(\`. Look for brackets, braces and quotes that are opened and not closed.
+
+**Cannot read properties of undefined**
+
+The \`TypeError\` of the example above. It usually appears after a query, when the response doesn't have the field the code reads. Print the whole response to see what it contains:
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
 \`\`\`
-原因: 照会しているアカウントがレジャーに存在しないか、アクティブ化されていない。
-解決策: アドレスが正しいか確認してください。テストネットではfaucetを使用してアカウントをアクティブ化してください。
 
-### ブロックチェーン接続デバッグのヒント
+**Account not found**
 
-1. **まず接続をテストする**: 複雑な操作を行う前に、ノードに接続できることを確認する
-2. **常にtry/catchを使用する**: どんなネットワーク操作も失敗する可能性がある
-3. **ノードのURLを確認する**: テストネットは\`wss://xahau-test.net\`、メインネットは\`wss://xahau.network\`
-4. **終了時は常に切断する**: リソースを解放するために\`await client.disconnect()\`を使用する
-5. **タイムアウトを追加する**: 操作に時間がかかりすぎる場合は、ノードが過負荷になっている可能性がある`,
-        ko: `이제 Node.js 프로젝트 구조를 알았으니, 다음은 **스크립트를 실행하는 방법**과 **오류를 이해하고 고치는 방법**입니다.
+\`\`\`
+XahaudError: Account not found.
+\`\`\`
+
+This error comes from the node, not from your code: the account doesn't exist in the ledger. An account exists once it has received its first XAH. Check the address, and check the network: a testnet account doesn't exist on Mainnet. On testnet, the faucet creates and funds accounts ([Module 3](?m=3&l=1)).
+
+**ENOTFOUND, ETIMEDOUT, ECONNREFUSED**
+
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+The connection failed before any request. \`ENOTFOUND\` means the host name doesn't exist: check the URL. \`ETIMEDOUT\` and \`ECONNREFUSED\` mean the host exists but didn't answer: check your connection and firewall, or try another node. The URLs of the course are \`wss://xahau-test.net\` for testnet and \`wss://xahau.network\` for Mainnet.
+
+### Seeing what a script does
+
+\`console.log\` shows a value at a point of the script. Print a line before and after each step: when a script stops, the last line printed tells you which step it reached. Two forms help with objects and types:
+
+- \`JSON.stringify(object, null, 2)\` prints a whole object, indented by 2 spaces.
+- \`typeof value\` prints the type: \`"undefined"\` in place of an object is the start of most \`TypeError\`s.
+
+A request to the network can fail for reasons outside your code. \`try/catch\` catches the error, so the script can say what failed and end cleanly. End with \`client.disconnect()\` in every case: an open connection keeps Node running, and the script doesn't finish.
+
+### The examples
+
+\`debug-errors.js\` runs each step inside its own \`try/catch\` and numbers it, so a failure shows which step it was. Output on testnet:
+
+\`\`\`
+=== Error Debugging in Xahau ===
+1. xahau library imported correctly
+   Type of Client: function
+2. Client created for: wss://xahau-test.net
+3. Attempting to connect...
+   Connected successfully
+4. Querying server_info...
+5. Response received:
+   Type: object
+   Keys: [ 'info', 'native_currency_code' ]
+   Network: 21338
+   Ledger: 12663294
+6. Disconnected correctly
+=== End of debugging ===
+\`\`\`
+
+\`Network: 21338\` is the network ID of the Xahau testnet.
+
+\`connectivity-test.js\` connects to testnet, to Mainnet and to a URL that doesn't exist. The third connection must fail: it shows the error you get from a wrong URL. Output:
+
+\`\`\`
+=== Xahau Connectivity Test ===
+Testing: Xahau Testnet (wss://xahau-test.net)
+Connected - Ledger: 12663295
+
+Testing: Xahau Mainnet (wss://xahau.network)
+Connected - Ledger: 26093966
+
+Testing: Incorrect URL (wss://nodo-doesnt-exist.example.com)
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+=== Summary ===
+If testnet and mainnet connect: your environment is ready.
+If any fails: check your internet connection.
+The incorrect URL MUST fail (it's an error test).
+\`\`\``,
+        jp: `スクリプトはいずれ失敗します。パッケージが足りない、タイプミスがある、ノードが応答しない、といった理由です。このレッスンでは、Node.js がファイルをどう扱うか、表示されたエラーの読み方、そしてこのコースで出会うエラーの意味を説明します。
+
+### スクリプトの実行
+
+\`node file.js\` はファイルを2段階で実行します。まず Node はファイル全体を読み込み、有効な JavaScript かどうかを確認します。次に上から順に実行します。1段階目でエラーが起きると、何も実行されないうちにスクリプトが止まるため、\`console.log\` の行は1つも表示されません。2段階目でエラーが起きると、その時点で止まり、それまでに表示された行は画面に残ります。
+
+スクリプトはプロジェクトのフォルダー、つまり \`package.json\` と \`node_modules/\` があるフォルダーから実行します。
+
+\`\`\`
+cd xahau-course
+node debug-errors.js
+\`\`\`
+
+このフォルダーに依存することが2つあります。Node は \`debug-errors.js\` を今いるフォルダーを基準に探します。また \`require("xahau")\` は、スクリプトのフォルダーから上に向かって \`node_modules/\` の中のライブラリを探します。
+
+### エラーの読み方
+
+スクリプトが失敗すると、Node はエラーを表示して停止します。例えば次のとおりです。
+
+\`\`\`
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+\`\`\`
+
+次の順に読みます。
+
+1. **エラー行**：\`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`。型は問題の種類を、メッセージは何が起きたかを示します。ここでは \`info\` が \`undefined\` なので、\`validated_ledger\` がありません。
+2. **場所**（先頭）：ファイルと行（\`ledger.js:2\`）、そのコード行、エラーが起きた位置を示す \`^\`。
+3. **スタック**：\`at\` で始まる行で、新しいものから順に並びます。自分のファイルを含む行が、エラーに至った経路を示します。\`node:internal\` の行は Node 自身のコードなので読み飛ばします。
+
+よく見る型は次のとおりです。
+
+| 型 | いつ | よくある原因 |
+|---|---|---|
+| \`SyntaxError\` | 実行前 | 有効な JavaScript ではない：括弧の不足、\`async\` 関数の外の \`await\` |
+| \`ReferenceError\` | 実行中 | 存在しない名前：タイプミス、\`require\` の不足 |
+| \`TypeError\` | 実行中 | 想定と違う種類の値。多くはオブジェクトを期待する場所の \`undefined\` |
+| \`XahaudError\` | 実行中 | Xahau のノードがリクエストにエラーで応答した |
+
+### このコースで出会うエラー
+
+**Cannot find module 'xahau'**
+
+\`\`\`
+Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
+\`\`\`
+
+スクリプトのフォルダーから上のどの \`node_modules/\` にもライブラリが見つかりませんでした。インストールされていないか、スクリプトがプロジェクトの外にあります。プロジェクトのフォルダーで \`npm install xahau\` を実行し、そこからスクリプトを実行します。
+
+**await is only valid in async functions**
+
+\`\`\`
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
+\`\`\`
+
+このコースのスクリプトは CommonJS ファイルで、\`require\` でライブラリを読み込みます。CommonJS ファイルでは、\`await\` は \`async\` を付けた関数の中でしか使えません。\`require\` を使うファイルの最上位に書くと、同じ原因で別のメッセージが表示されます。
+
+\`\`\`
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+コースのすべてのスクリプトと同じように、コードを \`async\` 関数に入れて呼び出します。
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
+main();
+\`\`\`
+
+**missing ) after argument list** などの構文エラー
+
+\`\`\`
+console.log("Client:", typeof Client;
+                              ^^^^^^
+
+SyntaxError: missing ) after argument list
+\`\`\`
+
+\`^\` は Node が問題に気づいた位置を示します。誤りはその位置か、その直前にあります。ここでは \`console.log(\` を閉じる \`)\` です。開いたまま閉じていない括弧、波括弧、引用符を探します。
+
+**Cannot read properties of undefined**
+
+上の例の \`TypeError\` です。照会の後、コードが読むフィールドがレスポンスにないときによく起きます。レスポンス全体を表示して中身を確認します。
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
+\`\`\`
+
+**Account not found**
+
+\`\`\`
+XahaudError: Account not found.
+\`\`\`
+
+このエラーはコードではなくノードから返されたもので、アカウントが台帳に存在しないことを示します。アカウントは最初の XAH を受け取った時点で存在するようになります。アドレスとネットワークを確認します。テストネットのアカウントはメインネットには存在しません。テストネットでは、フォーセットがアカウントを作成して資金を送ります（[モジュール3](?m=3&l=1)）。
+
+**ENOTFOUND、ETIMEDOUT、ECONNREFUSED**
+
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+リクエストの前に接続が失敗しています。\`ENOTFOUND\` はホスト名が存在しないという意味なので、URL を確認します。\`ETIMEDOUT\` と \`ECONNREFUSED\` はホストは存在するが応答がなかったという意味なので、接続とファイアウォールを確認するか、別のノードを試します。このコースの URL は、テストネットが \`wss://xahau-test.net\`、メインネットが \`wss://xahau.network\` です。
+
+### スクリプトの動きを確認する
+
+\`console.log\` はスクリプトのある地点での値を表示します。各ステップの前後に1行ずつ表示しておくと、スクリプトが止まったとき、最後に表示された行からどのステップまで進んだかがわかります。オブジェクトと型には次の2つが役立ちます。
+
+- \`JSON.stringify(object, null, 2)\` はオブジェクト全体を2スペースのインデントで表示します。
+- \`typeof value\` は型を表示します。オブジェクトのはずの場所が \`"undefined"\` なら、それがほとんどの \`TypeError\` の原因です。
+
+ネットワークへのリクエストは、コードとは関係のない理由で失敗することがあります。\`try/catch\` でエラーを捕まえれば、スクリプトは何が失敗したかを伝えてきれいに終了できます。どの場合も最後に \`client.disconnect()\` を呼びます。接続が開いたままだと Node が動き続け、スクリプトが終わりません。
+
+### 例
+
+\`debug-errors.js\` は各ステップをそれぞれの \`try/catch\` の中で実行し、番号を付けます。失敗したときに、どのステップだったかがわかります。テストネットでの出力です。
+
+\`\`\`
+=== Xahauのエラーデバッグ ===
+1. xahauライブラリが正常にインポートされました
+   Clientの型: function
+2. クライアントを作成しました: wss://xahau-test.net
+3. 接続を試みています...
+   正常に接続しました
+4. server_infoを照会中...
+5. レスポンスを受信:
+   型: object
+   キー: [ 'info', 'native_currency_code' ]
+   ネットワーク: 21338
+   レジャー: 12663295
+6. 正常に切断しました
+=== デバッグ終了 ===
+\`\`\`
+
+\`ネットワーク: 21338\` は Xahau テストネットのネットワーク ID です。
+
+\`connectivity-test.js\` はテストネット、メインネット、存在しない URL に接続します。3つ目の接続は失敗しなければなりません。間違った URL で出るエラーを示すためです。出力です。
+
+\`\`\`
+=== Xahau接続テスト ===
+テスト中: Xahau Testnet (wss://xahau-test.net)
+接続済み - レジャー: 12663296
+
+テスト中: Xahau Mainnet (wss://xahau.network)
+接続済み - レジャー: 26093967
+
+テスト中: 無効なURL (wss://nodo-doesnt-exist.example.com)
+エラー: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+=== まとめ ===
+テストネットとメインネットが接続できれば: 環境の準備ができています。
+いずれかが失敗した場合: インターネット接続を確認してください。
+無効なURLは失敗しなければなりません（これはエラーテストです）。
+\`\`\``,
+        ko: `스크립트는 언젠가 실패합니다. 패키지가 없거나, 오타가 있거나, 노드가 응답하지 않기 때문입니다. 이 레슨에서는 Node.js가 파일을 어떻게 처리하는지, 출력된 오류를 어떻게 읽는지, 이 강좌에서 만나는 오류가 무슨 뜻인지 설명합니다.
 
 ### 스크립트 실행
 
-JavaScript 파일은 다음처럼 실행합니다:
+\`node file.js\`는 파일을 두 단계로 실행합니다. 먼저 Node가 파일 전체를 읽고 올바른 JavaScript인지 확인합니다. 그다음 위에서 아래로 실행합니다. 첫 단계에서 오류가 나면 아무것도 실행되기 전에 스크립트가 멈추므로 \`console.log\` 줄이 하나도 표시되지 않습니다. 두 번째 단계에서 오류가 나면 그 지점에서 멈추고, 그전에 출력된 줄은 화면에 남습니다.
+
+스크립트는 프로젝트 폴더, 즉 \`package.json\`과 \`node_modules/\`가 있는 폴더에서 실행합니다.
 
 \`\`\`
-node filename.js
+cd xahau-course
+node debug-errors.js
 \`\`\`
 
-예:
+이 폴더에 달린 것이 두 가지 있습니다. Node는 현재 폴더를 기준으로 \`debug-errors.js\`를 찾습니다. 그리고 \`require("xahau")\`는 스크립트 폴더에서 시작해 위로 올라가며 \`node_modules/\`에서 라이브러리를 찾습니다.
+
+### 오류 읽기
+
+스크립트가 실패하면 Node는 오류를 출력하고 멈춥니다. 예를 들면 다음과 같습니다.
 
 \`\`\`
-node hola-xahau.js
-node 01-connection.js
-node my-script.js
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
 \`\`\`
 
-### 오류 메시지 읽기
+다음 순서로 읽습니다.
 
-Node.js가 실패하면 **stack trace**를 출력합니다. 여기서 확인할 핵심은:
+1. **오류 줄**: \`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`. 타입은 문제의 종류를, 메시지는 무슨 일이 일어났는지를 알려 줍니다. 여기서는 \`info\`가 \`undefined\`라서 \`validated_ledger\`가 없습니다.
+2. **위치**(맨 위): 파일과 줄(\`ledger.js:2\`), 해당 코드 줄, 오류가 난 위치 아래의 \`^\`.
+3. **스택**: \`at\`으로 시작하는 줄로, 가장 최근 것부터 나열됩니다. 내 파일이 있는 줄이 오류에 이른 경로를 보여 줍니다. \`node:internal\` 줄은 Node 자체의 코드이므로 건너뜁니다.
 
-1. 오류가 난 **파일과 줄 번호**
-2. **오류 종류** (\`SyntaxError\`, \`TypeError\`, \`ReferenceError\` 등)
-3. 실제 **오류 메시지**
-4. 실행 경로인 **stack trace**
+자주 보게 될 타입은 다음과 같습니다.
 
-### console.log로 디버깅하기
+| 타입 | 시점 | 흔한 원인 |
+|---|---|---|
+| \`SyntaxError\` | 실행 전 | 올바른 JavaScript가 아님: 괄호 누락, \`async\` 함수 밖의 \`await\` |
+| \`ReferenceError\` | 실행 중 | 존재하지 않는 이름: 오타, \`require\` 누락 |
+| \`TypeError\` | 실행 중 | 다른 종류의 값. 대개 객체를 기대하는 곳의 \`undefined\` |
+| \`XahaudError\` | 실행 중 | Xahau 노드가 요청에 오류로 응답함 |
 
-\`console.log()\`는 가장 기본적이면서도 강력한 디버깅 도구입니다. 변수 값, 응답 객체, 타입을 단계별로 확인하세요.
-
-### 자주 보는 오류
-
-- **Cannot find module 'xahau'** → \`npm install xahau\`
-- **await is only valid in async functions** → \`async function\` 안으로 옮기기
-- **Unexpected token** → 괄호, 쉼표, 중괄호 확인
-- **connect ETIMEDOUT / ECONNREFUSED** → 인터넷 또는 노드 상태 확인
-- **Account not found** → 주소 확인, 테스트넷이라면 faucet으로 활성화
-
-### 디버깅 팁
-
-1. 먼저 노드 연결부터 테스트
-2. 항상 \`try/catch\` 사용
-3. 노드 URL을 다시 확인
-4. 작업 후 \`await client.disconnect()\` 호출
-5. 너무 오래 걸리면 타임아웃이나 노드 과부하를 의심
-
-오류를 무서워하기보다, 메시지를 차분히 읽고 원인을 좁혀가는 습관이 중요합니다.`,
-        zh: `你已经了解了 Node.js 项目的结构，现在来学习如何**运行脚本**，以及最重要的——如何**理解和解决错误**。
-
-### 使用 Node.js 运行脚本
-
-要运行任何 JavaScript 文件，使用以下命令：
-
-\`\`\`
-node 文件名.js
-\`\`\`
-
-例如：
-\`\`\`
-node hola-xahau.js
-node 01-connection.js
-node my-script.js
-\`\`\`
-
-**重要**：你必须在文件所在目录中运行命令，或使用完整路径。
-
-### 读懂错误信息（堆栈跟踪）
-
-发生错误时，Node.js 会显示**堆栈跟踪**——包含错误信息的消息。学会读懂它：
-
-1. **第一行**：发生错误的文件和行号（\`my-script.js:5\`）
-2. **错误类型**：\`SyntaxError\`、\`TypeError\`、\`ReferenceError\` 等
-3. **消息**：问题的说明
-4. **堆栈跟踪**：导致错误的执行路径
-
-### 使用 console.log 调试
-
-\`console.log()\` 是你最好的调试工具。用它在代码任意位置查看变量的值：
-
-\`\`\`
-console.log("第一步：连接中...");
-console.log("response 的值：", response);
-console.log("数据类型：", typeof variable);
-console.log("完整对象：", JSON.stringify(object, null, 2));
-\`\`\`
-
-### 常见错误及解决方法
+### 이 강좌에서 만나는 오류
 
 **Cannot find module 'xahau'**
-原因：未安装该库或不在正确目录。
-解决：在项目文件夹中运行 \`npm install xahau\`。
+
+\`\`\`
+Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
+\`\`\`
+
+스크립트 폴더에서 위쪽의 어떤 \`node_modules/\`에서도 라이브러리를 찾지 못했습니다. 설치되지 않았거나 스크립트가 프로젝트 밖에 있습니다. 프로젝트 폴더에서 \`npm install xahau\`를 실행하고, 그 폴더에서 스크립트를 실행합니다.
 
 **await is only valid in async functions**
-原因：在未标记 \`async\` 的函数外使用了 \`await\`。
-解决：将代码包裹在 \`async\` 函数中。
 
-**Unexpected token**
-原因：语法错误——缺少逗号、括号或花括号。
-解决：检查提示的行及其前几行。
+\`\`\`
+  await client.connect();
+  ^^^^^
 
-**connect ETIMEDOUT / ECONNREFUSED**
-原因：无法连接到 Xahau 节点（网络断开、防火墙或无网络）。
-解决：检查网络连接；如持续失败，尝试其他节点或稍后再试。
+SyntaxError: await is only valid in async functions and the top level bodies of modules
+\`\`\`
+
+이 강좌의 스크립트는 CommonJS 파일로, \`require\`로 라이브러리를 불러옵니다. CommonJS 파일에서 \`await\`는 \`async\`가 붙은 함수 안에서만 동작합니다. \`require\`를 쓰는 파일의 최상위에 쓰면 같은 원인으로 다른 메시지가 나옵니다.
+
+\`\`\`
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+강좌의 모든 스크립트처럼 코드를 \`async\` 함수에 넣고 호출합니다.
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
+main();
+\`\`\`
+
+**missing ) after argument list** 등 문법 오류
+
+\`\`\`
+console.log("Client:", typeof Client;
+                              ^^^^^^
+
+SyntaxError: missing ) after argument list
+\`\`\`
+
+\`^\`는 Node가 문제를 알아챈 위치입니다. 실수는 그 위치나 바로 앞에 있습니다. 여기서는 \`console.log(\`를 닫는 \`)\`입니다. 열고 닫지 않은 괄호, 중괄호, 따옴표를 찾습니다.
+
+**Cannot read properties of undefined**
+
+위 예시의 \`TypeError\`입니다. 조회 후, 코드가 읽는 필드가 응답에 없을 때 자주 나타납니다. 응답 전체를 출력해 무엇이 들어 있는지 확인합니다.
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
+\`\`\`
 
 **Account not found**
-原因：查询的账户在账本中不存在或未被激活。
-解决：确认地址是否正确。在测试网上，使用水龙头激活账户。
 
-### 区块链连接调试技巧
+\`\`\`
+XahaudError: Account not found.
+\`\`\`
 
-1. **先测试连接**：在执行复杂操作前，先确认能连接到节点
-2. **始终使用 try/catch**：任何网络操作都可能失败
-3. **检查节点 URL**：测试网 \`wss://xahau-test.net\`，主网 \`wss://xahau.network\`
-4. **完成后断开连接**：使用 \`await client.disconnect()\` 释放资源
-5. **注意超时**：操作耗时过长可能表示节点负载过高`,
+이 오류는 코드가 아니라 노드에서 온 것으로, 계정이 원장에 존재하지 않는다는 뜻입니다. 계정은 첫 XAH를 받으면 존재하게 됩니다. 주소와 네트워크를 확인합니다. 테스트넷 계정은 메인넷에 존재하지 않습니다. 테스트넷에서는 faucet이 계정을 만들고 자금을 보냅니다([모듈 3](?m=3&l=1)).
+
+**ENOTFOUND, ETIMEDOUT, ECONNREFUSED**
+
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+요청 전에 연결이 실패했습니다. \`ENOTFOUND\`는 호스트 이름이 존재하지 않는다는 뜻이므로 URL을 확인합니다. \`ETIMEDOUT\`과 \`ECONNREFUSED\`는 호스트는 있지만 응답하지 않았다는 뜻이므로 연결과 방화벽을 확인하거나 다른 노드를 시도합니다. 이 강좌의 URL은 테스트넷이 \`wss://xahau-test.net\`, 메인넷이 \`wss://xahau.network\`입니다.
+
+### 스크립트가 하는 일 보기
+
+\`console.log\`는 스크립트의 한 지점에서 값을 보여 줍니다. 각 단계의 앞뒤에 한 줄씩 출력해 두면, 스크립트가 멈췄을 때 마지막으로 출력된 줄로 어느 단계까지 갔는지 알 수 있습니다. 객체와 타입에는 두 가지가 도움이 됩니다.
+
+- \`JSON.stringify(object, null, 2)\`는 객체 전체를 2칸 들여쓰기로 출력합니다.
+- \`typeof value\`는 타입을 출력합니다. 객체가 있어야 할 곳의 \`"undefined"\`가 대부분의 \`TypeError\`의 시작입니다.
+
+네트워크 요청은 코드와 상관없는 이유로 실패할 수 있습니다. \`try/catch\`로 오류를 잡으면 스크립트가 무엇이 실패했는지 알리고 깔끔하게 끝날 수 있습니다. 어떤 경우든 마지막에 \`client.disconnect()\`를 호출합니다. 연결이 열려 있으면 Node가 계속 실행되어 스크립트가 끝나지 않습니다.
+
+### 예제
+
+\`debug-errors.js\`는 각 단계를 각자의 \`try/catch\` 안에서 실행하고 번호를 붙이므로, 실패하면 어느 단계였는지 보입니다. 테스트넷 출력입니다.
+
+\`\`\`
+=== Xahau 오류 디버깅 ===
+1. xahau 라이브러리 import 완료
+   Client 타입: function
+2. 다음 노드용 클라이언트 생성: wss://xahau-test.net
+3. 연결 시도 중...
+   정상적으로 연결되었습니다
+4. server_info 조회 중...
+5. 응답 수신:
+   타입: object
+   키: [ 'info', 'native_currency_code' ]
+   네트워크: 21338
+   레저: 12663295
+6. 정상적으로 연결 종료
+=== 디버깅 종료 ===
+\`\`\`
+
+\`네트워크: 21338\`은 Xahau 테스트넷의 네트워크 ID입니다.
+
+\`connectivity-test.js\`는 테스트넷, 메인넷, 존재하지 않는 URL에 연결합니다. 세 번째 연결은 실패해야 합니다. 잘못된 URL로 받는 오류를 보여 주기 위해서입니다. 출력입니다.
+
+\`\`\`
+=== Xahau 연결 테스트 ===
+테스트 중: Xahau Testnet (wss://xahau-test.net)
+연결됨 - 레저: 12663297
+
+테스트 중: Xahau Mainnet (wss://xahau.network)
+연결됨 - 레저: 26093967
+
+테스트 중: 잘못된 URL (wss://nodo-doesnt-exist.example.com)
+오류: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+=== 요약 ===
+testnet과 mainnet이 연결되면 환경 준비 완료.
+실패하면 인터넷 연결을 확인하세요.
+잘못된 URL은 반드시 실패해야 합니다.
+\`\`\``,
+        zh: `脚本迟早会失败：缺少一个包、有一处拼写错误、某个节点没有响应。本课说明 Node.js 如何处理你的文件、如何阅读它打印的错误，以及本课程中各种错误的含义。
+
+### 运行脚本
+
+\`node file.js\` 分两个阶段运行文件。首先，Node 读取整个文件，检查它是否是有效的 JavaScript。然后从上到下执行。如果错误发生在第一阶段，脚本在执行任何代码之前就会停止，所以你的 \`console.log\` 行一行都不会出现。如果错误发生在第二阶段，脚本会在那一点停止，之前打印的行仍然留在屏幕上。
+
+在项目文件夹中运行脚本，也就是包含 \`package.json\` 和 \`node_modules/\` 的文件夹：
+
+\`\`\`
+cd xahau-course
+node debug-errors.js
+\`\`\`
+
+有两件事取决于这个文件夹。Node 会以你所在的文件夹为基准查找 \`debug-errors.js\`。而 \`require("xahau")\` 会从脚本所在的文件夹开始向上，在 \`node_modules/\` 中查找库。
+
+### 阅读错误
+
+脚本失败时，Node 会打印错误并停止。例如：
+
+\`\`\`
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
+\`\`\`
+
+按以下顺序阅读：
+
+1. **错误行**：\`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`。类型说明问题的种类，消息说明发生了什么。这里 \`info\` 是 \`undefined\`，所以它没有 \`validated_ledger\`。
+2. **位置**（顶部）：文件和行号（\`ledger.js:2\`）、那一行代码，以及出错位置下方的 \`^\`。
+3. **调用栈**：以 \`at\` 开头的行，从最近到最早排列。包含你自己文件的行显示了导致错误的路径。\`node:internal\` 的行是 Node 自身的代码：跳过它们。
+
+最常见的类型：
+
+| 类型 | 何时 | 常见原因 |
+|---|---|---|
+| \`SyntaxError\` | 执行前 | 代码不是有效的 JavaScript：缺少括号、在 \`async\` 函数之外使用 \`await\` |
+| \`ReferenceError\` | 执行中 | 名称不存在：拼写错误、缺少 \`require\` |
+| \`TypeError\` | 执行中 | 值的种类不对，通常是代码期待对象的地方出现了 \`undefined\` |
+| \`XahaudError\` | 执行中 | Xahau 节点以错误响应了请求 |
+
+### 本课程中的错误
+
+**Cannot find module 'xahau'**
+
+\`\`\`
+Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
+\`\`\`
+
+Node 从脚本所在的文件夹向上，在所有 \`node_modules/\` 中都没有找到这个库。要么没有安装，要么脚本在项目之外。在项目文件夹中运行 \`npm install xahau\`，并在那里运行脚本。
+
+**await is only valid in async functions**
+
+\`\`\`
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
+\`\`\`
+
+本课程的脚本是 CommonJS 文件：它们用 \`require\` 加载库。在 CommonJS 文件中，\`await\` 只能在标记为 \`async\` 的函数内使用。如果写在使用 \`require\` 的文件的顶层，Node 会因同样的原因给出另一条消息：
+
+\`\`\`
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+像本课程的所有脚本一样，把代码放进一个 \`async\` 函数并调用它：
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
+main();
+\`\`\`
+
+**missing ) after argument list** 及其他语法错误
+
+\`\`\`
+console.log("Client:", typeof Client;
+                              ^^^^^^
+
+SyntaxError: missing ) after argument list
+\`\`\`
+
+\`^\` 标出 Node 发现问题的位置。错误就在那里或紧挨在它之前：这里是闭合 \`console.log(\` 的 \`)\`。查找打开后没有关闭的括号、花括号和引号。
+
+**Cannot read properties of undefined**
+
+就是上面示例中的 \`TypeError\`。它通常出现在查询之后，当响应中没有代码读取的字段时。打印整个响应，看看里面有什么：
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
+\`\`\`
+
+**Account not found**
+
+\`\`\`
+XahaudError: Account not found.
+\`\`\`
+
+这个错误来自节点，而不是你的代码：账本中不存在这个账户。账户在收到第一笔 XAH 后才存在。检查地址，也检查网络：测试网账户在主网上不存在。在测试网上，水龙头会创建账户并注资（[模块 3](?m=3&l=1)）。
+
+**ENOTFOUND、ETIMEDOUT、ECONNREFUSED**
+
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+连接在发出任何请求之前就失败了。\`ENOTFOUND\` 表示主机名不存在：检查 URL。\`ETIMEDOUT\` 和 \`ECONNREFUSED\` 表示主机存在但没有响应：检查你的网络连接和防火墙，或换一个节点。本课程的 URL 是测试网 \`wss://xahau-test.net\` 和主网 \`wss://xahau.network\`。
+
+### 查看脚本在做什么
+
+\`console.log\` 显示脚本某一点的值。在每个步骤前后各打印一行：脚本停止时，最后打印的那一行告诉你它执行到了哪一步。有两种写法对对象和类型很有帮助：
+
+- \`JSON.stringify(object, null, 2)\` 以 2 个空格缩进打印整个对象。
+- \`typeof value\` 打印类型：本该是对象的地方出现 \`"undefined"\`，是大多数 \`TypeError\` 的起因。
+
+网络请求可能因为与代码无关的原因失败。\`try/catch\` 捕获错误，让脚本说明哪里失败并干净地结束。无论哪种情况，最后都调用 \`client.disconnect()\`：打开的连接会让 Node 继续运行，脚本就不会结束。
+
+### 示例
+
+\`debug-errors.js\` 在各自的 \`try/catch\` 中运行每个步骤并编号，所以失败时能看出是哪一步。测试网上的输出：
+
+\`\`\`
+=== Xahau 错误调试 ===
+1. xahau 库导入成功
+   Client 类型： function
+2. 已为以下节点创建客户端： wss://xahau-test.net
+3. 尝试连接...
+   连接成功
+4. 查询 server_info...
+5. 收到响应：
+   类型： object
+   键： [ 'info', 'native_currency_code' ]
+   网络： 21338
+   账本： 12663295
+6. 已正常断开连接
+=== 调试结束 ===
+\`\`\`
+
+输出中的 21338 是 Xahau 测试网的网络 ID。
+
+\`connectivity-test.js\` 连接测试网、主网和一个不存在的 URL。第三个连接必须失败：它展示了错误 URL 会得到的错误。输出：
+
+\`\`\`
+=== Xahau 连接测试 ===
+测试中： Xahau Testnet (wss://xahau-test.net)
+已连接 - 账本： 12663297
+
+测试中： Xahau Mainnet (wss://xahau.network)
+已连接 - 账本： 26093968
+
+测试中： 错误 URL (wss://nodo-doesnt-exist.example.com)
+错误： getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+=== 总结 ===
+如果测试网和主网都能连接：你的环境已就绪。
+如果有失败：检查你的网络连接。
+错误 URL 必须失败（这是错误测试）。
+\`\`\``,
       },
       codeBlocks: [
         {
@@ -3410,8 +3923,8 @@ console.log("完整对象：", JSON.stringify(object, null, 2));
           },
           language: "javascript",
           code: {
-            es: `// Archivo: depurar-errores.js
-// Ejecutar con: node depurar-errores.js
+            es: `// Archivo: debug-errors.js
+// Ejecutar con: node debug-errors.js
 // Este script muestra cómo manejar errores paso a paso.
 
 const { Client } = require("xahau");
@@ -3472,8 +3985,8 @@ async function main() {
 }
 
 main();`,
-            pt: `// Arquivo: depurar-erros.js
-// Executar com: node depurar-erros.js
+            pt: `// Arquivo: debug-errors.js
+// Executar com: node debug-errors.js
 // Este script mostra como tratar erros passo a passo.
 const { Client } = require("xahau");
 async function main() {
@@ -3784,8 +4297,8 @@ main();`,
           },
           language: "javascript",
           code: {
-            es: `// Archivo: test-conectividad.js
-// Ejecutar con: node test-conectividad.js
+            es: `// Archivo: connectivity-test.js
+// Ejecutar con: node connectivity-test.js
 // Prueba la conexión y muestra errores comunes.
 
 const { Client } = require("xahau");
@@ -3832,8 +4345,8 @@ async function main() {
 }
 
 main();`,
-            pt: `// Arquivo: test-conectividade.js
-// Executar com: node test-conectividade.js
+            pt: `// Arquivo: connectivity-test.js
+// Executar com: node connectivity-test.js
 // Testa a conexão e mostra erros comuns.
 const { Client } = require("xahau");
 // Função auxiliar para testar uma conexão
@@ -4077,36 +4590,140 @@ main();`,
           visual: "▶️",
         },
         {
-          title: { es: "Leer errores (stack trace)", pt: "Ler erros (stack trace)", en: "Reading Errors (Stack Trace)", jp: "エラーの読み方（スタックトレース）", ko: "오류 읽기 (스택 트레이스)", zh: "读懂错误（堆栈跟踪）" },
+          title: { es: `Leer un error`, pt: `Ler um erro`, en: `Reading an error`, jp: `エラーの読み方`, ko: `오류 읽기`, zh: `阅读错误` },
           content: {
-            es: "1. Archivo y línea del error → mi-script.js:5\n2. Tipo de error → SyntaxError, TypeError...\n3. Mensaje → Qué salió mal\n4. Stack trace → Ruta de ejecución\n\nSiempre empieza leyendo el TIPO y el MENSAJE",
-            pt: "1. Arquivo e linha do erro → mi-script.js:5\n2. Tipo de erro → SyntaxError, TypeError...\n3. Mensagem → O que deu errado\n4. Stack trace → Caminho de execução\n\nSempre comece lendo o TIPO e a MENSAGEM",
-            en: "1. File and line of the error → mi-script.js:5\n2. Error type → SyntaxError, TypeError...\n3. Message → What went wrong\n4. Stack trace → Execution path\n\nAlways start by reading the TYPE and MESSAGE",
-            jp: "1. エラーのファイルと行番号 → mi-script.js:5\n2. エラーの種類 → SyntaxError、TypeError...\n3. メッセージ → 何が問題だったか\n4. スタックトレース → 実行パス\n\nまず種類とメッセージを読むことから始める",
-            ko: "1. 오류가 난 파일과 줄 → mi-script.js:5\n2. 오류 종류 → SyntaxError, TypeError...\n3. 메시지 → 무엇이 잘못됐는지\n4. 스택 트레이스 → 실행 경로\n\n항상 먼저 오류 종류와 메시지를 읽으세요",
-            zh: "1. 错误的文件和行号 → mi-script.js:5\n2. 错误类型 → SyntaxError、TypeError...\n3. 消息 → 出了什么问题\n4. 堆栈跟踪 → 执行路径\n\n始终先读错误类型和消息",
+            es: `1. La línea del error → tipo + mensaje
+   TypeError: Cannot read properties of undefined
+
+2. La ubicación → archivo:línea y ^
+
+3. La pila → las líneas "at"
+   Importan las tuyas; salta node:internal
+
+SyntaxError → antes de ejecutar
+TypeError, ReferenceError → al ejecutar`,
+            pt: `1. A linha do erro → tipo + mensagem
+   TypeError: Cannot read properties of undefined
+
+2. A localização → arquivo:linha e ^
+
+3. A pilha → as linhas "at"
+   Importam as suas; pule node:internal
+
+SyntaxError → antes de executar
+TypeError, ReferenceError → ao executar`,
+            en: `1. The error line → type + message
+   TypeError: Cannot read properties of undefined
+
+2. The location → file:line and ^
+
+3. The stack → the "at" lines
+   Yours matter; skip node:internal
+
+SyntaxError → before running
+TypeError, ReferenceError → while running`,
+            jp: `1. エラー行 → 型 + メッセージ
+   TypeError: Cannot read properties of undefined
+
+2. 場所 → ファイル:行 と ^
+
+3. スタック → 「at」の行
+   自分のファイルの行を見る。node:internal は飛ばす
+
+SyntaxError → 実行前
+TypeError、ReferenceError → 実行中`,
+            ko: `1. 오류 줄 → 타입 + 메시지
+   TypeError: Cannot read properties of undefined
+
+2. 위치 → 파일:줄과 ^
+
+3. 스택 → "at" 줄
+   내 파일 줄을 봄. node:internal은 건너뜀
+
+SyntaxError → 실행 전
+TypeError, ReferenceError → 실행 중`,
+            zh: `1. 错误行 → 类型 + 消息
+   TypeError: Cannot read properties of undefined
+
+2. 位置 → 文件:行号 和 ^
+
+3. 调用栈 → “at” 行
+   看你自己的文件；跳过 node:internal
+
+SyntaxError → 执行前
+TypeError、ReferenceError → 执行中`,
           },
           visual: "🔍",
         },
         {
-          title: { es: "Errores más comunes", pt: "Erros mais comuns", en: "Most Common Errors", jp: "よくあるエラー", ko: "자주 발생하는 오류", zh: "最常见错误" },
+          title: { es: `Los errores de este curso`, pt: `Os erros deste curso`, en: `The errors of this course`, jp: `このコースで出会うエラー`, ko: `이 강좌에서 만나는 오류`, zh: `本课程中的错误` },
           content: {
-            es: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → Envolver en async function\n\nconnect ETIMEDOUT\n  → Verificar internet / nodo\n\nUnexpected token\n  → Revisar sintaxis (comas, llaves)",
-            pt: `Cannot find module 'xahau'
-  → npm install xahau
+            es: `Cannot find module 'xahau'
+  → npm install xahau, ejecuta desde el proyecto
 
 await is only valid in async functions
-  → Envolver em async function
+  → pon el código en una función async
 
-connect ETIMEDOUT
-  → Verificar internet / nó
+Account not found
+  → dirección o red; en testnet, financiarla
 
-Unexpected token
-  → Revisar a sintaxe (vírgulas, chaves)`,
-            en: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → Wrap in async function\n\nconnect ETIMEDOUT\n  → Check internet / node\n\nUnexpected token\n  → Check syntax (commas, braces)",
-            jp: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → async関数でラップする\n\nconnect ETIMEDOUT\n  → インターネット/ノードを確認\n\nUnexpected token\n  → 構文を確認（カンマ、波括弧）",
-            ko: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → async function으로 감싸기\n\nconnect ETIMEDOUT\n  → 인터넷 / 노드 확인\n\nUnexpected token\n  → 문법 확인 (쉼표, 중괄호)",
-            zh: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → 包裹在 async function 中\n\nconnect ETIMEDOUT\n  → 检查网络 / 节点\n\nUnexpected token\n  → 检查语法（逗号、花括号）",
+ENOTFOUND / ETIMEDOUT
+  → revisa la URL / la conexión`,
+            pt: `Cannot find module 'xahau'
+  → npm install xahau, execute a partir do projeto
+
+await is only valid in async functions
+  → coloque o código numa função async
+
+Account not found
+  → endereço ou rede; na testnet, financie-a
+
+ENOTFOUND / ETIMEDOUT
+  → verifique a URL / a conexão`,
+            en: `Cannot find module 'xahau'
+  → npm install xahau, run from the project
+
+await is only valid in async functions
+  → put the code in an async function
+
+Account not found
+  → address or network; fund it on testnet
+
+ENOTFOUND / ETIMEDOUT
+  → check the URL / the connection`,
+            jp: `Cannot find module 'xahau'
+  → npm install xahau、プロジェクトから実行
+
+await is only valid in async functions
+  → コードを async 関数に入れる
+
+Account not found
+  → アドレスかネットワーク。テストネットなら資金を送る
+
+ENOTFOUND / ETIMEDOUT
+  → URL / 接続を確認`,
+            ko: `Cannot find module 'xahau'
+  → npm install xahau, 프로젝트에서 실행
+
+await is only valid in async functions
+  → 코드를 async 함수에 넣기
+
+Account not found
+  → 주소 또는 네트워크. 테스트넷에서는 자금 보내기
+
+ENOTFOUND / ETIMEDOUT
+  → URL / 연결 확인`,
+            zh: `Cannot find module 'xahau'
+  → npm install xahau，在项目中运行
+
+await is only valid in async functions
+  → 把代码放进 async 函数
+
+Account not found
+  → 检查地址或网络；在测试网上为它注资
+
+ENOTFOUND / ETIMEDOUT
+  → 检查 URL / 网络连接`,
           },
           visual: "⚠️",
         },
@@ -5498,106 +6115,174 @@ try {
     },
     m0l5: {
       title: "تشغيل السكربتات وتصحيح الأخطاء",
-      theory: `أنت تعرف الآن كيف يُنظَّم مشروع Node.js. لنتعلم الآن كيف **نشغّل السكربتات**، والأهم من ذلك، كيف **نفهم الأخطاء ونصلحها** التي ستظهر لا محالة.
+      theory: `يفشل السكربت عاجلًا أو آجلًا: حزمة ناقصة، أو خطأ مطبعي، أو عقدة لا تستجيب. يشرح هذا الدرس ما يفعله Node.js بملفك، وكيف تقرأ الخطأ الذي يطبعه، وما معنى أخطاء هذه الدورة.
 
-### تشغيل السكربتات باستخدام Node.js
+### تشغيل سكربت
 
-لتشغيل أي ملف JavaScript، استخدم الأمر:
+يشغّل \`node file.js\` الملف على مرحلتين. أولًا يقرأ Node الملف كله ويتحقق من أنه JavaScript صالح. ثم ينفذه من الأعلى إلى الأسفل. الخطأ في المرحلة الأولى يوقف السكربت قبل تنفيذ أي شيء، فلا يظهر أي سطر من أسطر \`console.log\`. أما الخطأ في المرحلة الثانية فيوقفه عند تلك النقطة، وتبقى الأسطر المطبوعة قبله على الشاشة.
 
-\`\`\`
-node filename.js
-\`\`\`
-
-مثال:
-\`\`\`
-node hola-xahau.js
-node 01-connection.js
-node my-script.js
-\`\`\`
-
-**مهم**: يجب أن تكون في المجلد الذي يوجد فيه الملف، أو تستخدم المسار الكامل. إذا لم يُعثر على الملف، سترى خطأ.
-
-### قراءة رسائل الخطأ (stack traces)
-
-عندما يفشل شيء ما، يعرض Node.js **stack trace** — رسالة تحتوي على معلومات حول الخطأ. تعلّم كيفية قراءتها:
+شغّل السكربتات من مجلد المشروع، وهو المجلد الذي يحتوي على \`package.json\` و\`node_modules/\`:
 
 \`\`\`
-/Users/your-name/xahau-curso/mi-script.js:5
-  const response = await client.request({
-                   ^^^^^
-SyntaxError: await is only valid in async functions
-    at Object.compileFunction (node:vm:360:18)
-    at wrapSafe (node:internal/modules/cjs/loader:1124:15)
-    at /Users/your-name/xahau-curso/mi-script.js:5:20
+cd xahau-course
+node debug-errors.js
 \`\`\`
 
-كيفية قراءتها:
-1. **السطر الأول**: الملف والسطر الذي حدث فيه الخطأ (\`mi-script.js:5\`)
-2. **نوع الخطأ**: \`SyntaxError\`، \`TypeError\`، \`ReferenceError\`، إلخ
-3. **الرسالة**: شرح للمشكلة (\`await is only valid in async functions\`)
-4. **Stack trace**: مسار التنفيذ الذي أدى إلى الخطأ (من الأحدث إلى الأقدم)
+يعتمد أمران على هذا المجلد. يبحث Node عن \`debug-errors.js\` انطلاقًا من المجلد الذي أنت فيه. ويبحث \`require("xahau")\` عن المكتبة في \`node_modules/\`، بدءًا من مجلد السكربت وصعودًا.
 
-### استخدام console.log للتصحيح
+### قراءة الخطأ
 
-\`console.log()\` هي أفضل أداة تصحيح لديك. استخدمها لرؤية قيمة المتغيرات في أي نقطة من الكود:
+عندما يفشل سكربت، يطبع Node الخطأ ويتوقف. مثلًا:
 
 \`\`\`
-console.log("Step 1: Connecting...");
-console.log("Value of response:", response);
-console.log("Data type:", typeof variable);
-console.log("Full object:", JSON.stringify(object, null, 2));
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
 \`\`\`
 
-**نصيحة**: استخدم \`JSON.stringify(object, null, 2)\` لطباعة الكائنات الكبيرة بشكل مقروء (بمسافة بادئة من مسافتين).
+اقرأه بهذا الترتيب:
 
-### الأخطاء الشائعة وكيفية إصلاحها
+1. **سطر الخطأ**: \`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`. يخبرك النوع بطبيعة المشكلة، وتخبرك الرسالة بما حدث. هنا \`info\` قيمته \`undefined\`، لذا لا يحتوي على \`validated_ledger\`.
+2. **الموقع** في الأعلى: الملف والسطر (\`ledger.js:2\`)، وسطر الشيفرة، وعلامة \`^\` تحت موضع الخطأ.
+3. **المكدس**: أسطر \`at\`، من الأحدث إلى الأقدم. الأسطر التي تحتوي على ملفاتك تُظهر المسار الذي أدى إلى الخطأ. أسطر \`node:internal\` هي شيفرة Node نفسه: تجاوزها.
 
-**Error: Cannot find module 'xahau'**
+الأنواع التي ستراها أكثر من غيرها:
+
+| النوع | متى | السبب المعتاد |
+|---|---|---|
+| \`SyntaxError\` | قبل التنفيذ | الشيفرة ليست JavaScript صالحًا: قوس ناقص، أو \`await\` خارج دالة \`async\` |
+| \`ReferenceError\` | أثناء التنفيذ | اسم غير موجود: خطأ مطبعي، أو \`require\` ناقص |
+| \`TypeError\` | أثناء التنفيذ | قيمة من نوع مختلف، غالبًا \`undefined\` حيث تتوقع الشيفرة كائنًا |
+| \`XahaudError\` | أثناء التنفيذ | عقدة Xahau ردّت على الطلب بخطأ |
+
+### أخطاء هذه الدورة
+
+**Cannot find module 'xahau'**
+
 \`\`\`
 Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
 \`\`\`
-السبب: لم تُثبِّت المكتبة أو لست في المجلد الصحيح.
-الحل: نفّذ \`npm install xahau\` في مجلد مشروعك.
 
-**Error: await is only valid in async functions**
+لم يجد Node المكتبة في أي \`node_modules/\` من مجلد السكربت صعودًا. إما أنها غير مثبتة، وإما أن السكربت خارج المشروع. شغّل \`npm install xahau\` في مجلد المشروع، وشغّل السكربت من هناك.
+
+**await is only valid in async functions**
+
 \`\`\`
-SyntaxError: await is only valid in async functions
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
 \`\`\`
-السبب: تستخدم \`await\` خارج دالة مميّزة بـ \`async\`.
-الحل: ضع كودك داخل دالة \`async\`:
+
+سكربتات الدورة ملفات CommonJS: تحمّل المكتبات بـ \`require\`. في ملف CommonJS، لا يعمل \`await\` إلا داخل دالة معلّمة بـ \`async\`. وإذا كُتب في المستوى الأعلى من ملف يستخدم \`require\`، يعطي Node رسالة أخرى للسبب نفسه:
+
 \`\`\`
-async function main() { ... }
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+ضع الشيفرة في دالة \`async\` واستدعها، كما تفعل كل سكربتات الدورة:
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
 main();
 \`\`\`
 
-**Error: Unexpected token**
-\`\`\`
-SyntaxError: Unexpected token ')'
-\`\`\`
-السبب: خطأ في الصياغة — فاصلة أو قوس أو قوس معقوف مفقود.
-الحل: راجع السطر المشار إليه والأسطر السابقة له. ابحث عن أقواس أو أقواس معقوفة غير مغلقة.
+**missing ) after argument list** وأخطاء الصياغة الأخرى
 
-**Error: connect ETIMEDOUT / ECONNREFUSED**
 \`\`\`
-Error: connect ETIMEDOUT wss://xahau-test.net
-\`\`\`
-السبب: تعذّر الاتصال بعقدة Xahau (الشبكة متوقفة، جدار ناري، لا يوجد اتصال بالإنترنت).
-الحل: تحقق من اتصالك بالإنترنت. إذا استمرت المشكلة، جرّب عقدة أخرى أو انتظر بضع دقائق.
+console.log("Client:", typeof Client;
+                              ^^^^^^
 
-**Error: Account not found**
+SyntaxError: missing ) after argument list
 \`\`\`
-Error: Account not found.
+
+تشير \`^\` إلى الموضع الذي لاحظ فيه Node المشكلة. الخطأ هناك أو قبله مباشرة: هنا القوس \`)\` الذي يغلق \`console.log(\`. ابحث عن الأقواس والأقواس المعقوفة وعلامات الاقتباس التي فُتحت ولم تُغلق.
+
+**Cannot read properties of undefined**
+
+هو \`TypeError\` المثال السابق. يظهر عادة بعد استعلام، عندما لا يحتوي الرد على الحقل الذي تقرؤه الشيفرة. اطبع الرد كاملًا لترى ما فيه:
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
 \`\`\`
-السبب: الحساب الذي تستعلم عنه غير موجود في الـ ledger أو لم يُفعَّل بعد.
-الحل: تحقق من صحة العنوان. في testnet، استخدم الـ faucet لتفعيل الحسابات.
 
-### نصائح لتصحيح اتصالات البلوكتشين
+**Account not found**
 
-1. **اختبر الاتصال أولا**: قبل تنفيذ عمليات معقدة، تحقق من أنك تستطيع الاتصال بالعقدة
-2. **استخدم try/catch دائما**: أي عملية شبكة يمكن أن تفشل
-3. **راجع عنوان URL الخاص بالعقدة**: \`wss://xahau-test.net\` لـ testnet، \`wss://xahau.network\` لـ mainnet
-4. **افصل الاتصال دائما عند الانتهاء**: استخدم \`await client.disconnect()\` لتحرير الموارد
-5. **أضف مهلات زمنية (timeouts)**: إذا استغرقت عملية وقتا طويلا، فقد تكون العقدة محمَّلة بشكل زائد`,
+\`\`\`
+XahaudError: Account not found.
+\`\`\`
+
+هذا الخطأ صادر عن العقدة لا عن شيفرتك: الحساب غير موجود في الـ ledger. يوجد الحساب بعد أن يستلم أول XAH له. تحقق من العنوان ومن الشبكة: حساب testnet غير موجود على Mainnet. على testnet، ينشئ الـ faucet الحسابات ويموّلها ([الوحدة 3](?m=3&l=1)).
+
+**ENOTFOUND وETIMEDOUT وECONNREFUSED**
+
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+فشل الاتصال قبل أي طلب. \`ENOTFOUND\` يعني أن اسم المضيف غير موجود: تحقق من الـ URL. أما \`ETIMEDOUT\` و\`ECONNREFUSED\` فيعنيان أن المضيف موجود لكنه لم يستجب: تحقق من اتصالك والجدار الناري، أو جرّب عقدة أخرى. عناوين الدورة هي \`wss://xahau-test.net\` لـ testnet و\`wss://xahau.network\` لـ Mainnet.
+
+### رؤية ما يفعله السكربت
+
+يعرض \`console.log\` قيمة عند نقطة من السكربت. اطبع سطرًا قبل كل خطوة وبعدها: عندما يتوقف السكربت، يخبرك آخر سطر مطبوع بالخطوة التي وصل إليها. هناك صيغتان تساعدان مع الكائنات والأنواع:
+
+- \`JSON.stringify(object, null, 2)\` يطبع كائنًا كاملًا بمسافة بادئة من مسافتين.
+- \`typeof value\` يطبع النوع: ظهور \`"undefined"\` مكان كائن هو بداية معظم أخطاء \`TypeError\`.
+
+قد يفشل طلب إلى الشبكة لأسباب خارجة عن شيفرتك. يلتقط \`try/catch\` الخطأ، فيستطيع السكربت أن يخبرك بما فشل وأن ينتهي بشكل نظيف. انتهِ بـ \`client.disconnect()\` في كل الحالات: الاتصال المفتوح يُبقي Node قيد التشغيل، فلا ينتهي السكربت.
+
+### الأمثلة
+
+ينفذ \`debug-errors.js\` كل خطوة داخل \`try/catch\` خاص بها ويرقّمها، لذا يُظهر الفشل الخطوة التي حدث فيها. المخرجات على testnet:
+
+\`\`\`
+=== تصحيح الأخطاء في Xahau ===
+1. تم استيراد مكتبة xahau بشكل صحيح
+   نوع Client: function
+2. تم إنشاء العميل لـ: wss://xahau-test.net
+3. محاولة الاتصال...
+   تم الاتصال بنجاح
+4. جارٍ الاستعلام عن server_info...
+5. تم استلام الاستجابة:
+   النوع: object
+   المفاتيح: [ 'info', 'native_currency_code' ]
+   الشبكة: 21338
+   Ledger: 12663294
+6. تم قطع الاتصال بشكل صحيح
+=== نهاية التصحيح ===
+\`\`\`
+
+الرقم 21338 في سطر الشبكة هو معرّف شبكة Xahau التجريبية (testnet).
+
+يتصل \`connectivity-test.js\` بـ testnet وبـ Mainnet وبـ URL غير موجود. يجب أن يفشل الاتصال الثالث: فهو يُظهر الخطأ الذي تحصل عليه مع URL خاطئ. المخرجات:
+
+\`\`\`
+=== اختبار الاتصال بـ Xahau ===
+اختبار: Xahau Testnet (wss://xahau-test.net)
+متصل - Ledger: 12663295
+
+اختبار: Xahau Mainnet (wss://xahau.network)
+متصل - Ledger: 26093966
+
+اختبار: Incorrect URL (wss://nodo-doesnt-exist.example.com)
+خطأ: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+=== الملخص ===
+إذا نجح الاتصال بـ testnet و mainnet: بيئتك جاهزة.
+إذا فشل أحدهما: تحقق من اتصالك بالإنترنت.
+عنوان URL الخاطئ يجب أن يفشل (إنه اختبار خطأ).
+\`\`\``,
       codeTitles: [
         "سكربت مع معالجة الأخطاء والتصحيح",
         "اختبار الاتصال والأخطاء الشائعة",
@@ -5608,12 +6293,31 @@ Error: Account not found.
           content: "الأمر الأساسي:\nnode filename.js\n\nيجب أن تكون داخل مجلد المشروع\nحيث توجد package.json و node_modules/\n\nمثال:\ncd xahau-curso\nnode hola-xahau.js",
         },
         {
-          title: "قراءة الأخطاء (Stack Trace)",
-          content: "1. الملف والسطر → mi-script.js:5\n2. نوع الخطأ → SyntaxError, TypeError...\n3. الرسالة → ما الذي حدث\n4. Stack trace → مسار التنفيذ\n\nابدأ دائما بقراءة النوع والرسالة",
+          title: `قراءة الخطأ`,
+          content: `1. سطر الخطأ ← النوع + الرسالة
+   TypeError: Cannot read properties of undefined
+
+2. الموقع ← file:line و^
+
+3. المكدس ← أسطر "at"
+   المهم أسطر ملفاتك؛ تجاوز node:internal
+
+SyntaxError ← قبل التنفيذ
+TypeError وReferenceError ← أثناء التنفيذ`,
         },
         {
-          title: "أكثر الأخطاء شيوعا",
-          content: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → ضع الكود داخل async function\n\nconnect ETIMEDOUT\n  → تحقق من الإنترنت / العقدة\n\nUnexpected token\n  → راجع الصياغة والأقواس والفواصل",
+          title: `أخطاء هذه الدورة`,
+          content: `Cannot find module 'xahau'
+  ← npm install xahau، وشغّل من المشروع
+
+await is only valid in async functions
+  ← ضع الشيفرة في دالة async
+
+Account not found
+  ← العنوان أو الشبكة؛ موّله على testnet
+
+ENOTFOUND / ETIMEDOUT
+  ← تحقق من الـ URL / الاتصال`,
         },
       ],
     },
@@ -6110,106 +6814,174 @@ try {
     },
     m0l5: {
       title: "Exécuter et déboguer des scripts",
-      theory: `Tu sais déjà comment un projet Node.js est structuré. Nous allons maintenant apprendre à **exécuter des scripts** et, surtout, à **comprendre et corriger les erreurs** qui apparaîtront inévitablement.
+      theory: `Tôt ou tard, un script échoue : un paquet manque, une faute de frappe, un nœud ne répond pas. Cette leçon explique ce que Node.js fait de ton fichier, comment lire l'erreur qu'il affiche et ce que signifient les erreurs de ce cours.
 
-### Exécuter des scripts avec Node.js
+### Exécuter un script
 
-Pour exécuter n'importe quel fichier JavaScript, utilise la commande :
+\`node fichier.js\` exécute un fichier en deux temps. D'abord, Node lit tout le fichier et vérifie qu'il s'agit de JavaScript valide. Ensuite, il l'exécute de haut en bas. Une erreur dans le premier temps arrête le script avant toute exécution : aucune de tes lignes \`console.log\` n'apparaît. Une erreur dans le second temps l'arrête à cet endroit, et les lignes affichées avant restent à l'écran.
 
-\`\`\`
-node nom-du-fichier.js
-\`\`\`
-
-Par exemple :
-\`\`\`
-node hola-xahau.js
-node 01-connection.js
-node my-script.js
-\`\`\`
-
-**Important** : tu dois être dans le répertoire où se trouve le fichier, ou utiliser le chemin complet. Si le fichier n'est pas trouvé, tu verras une erreur.
-
-### Lire les messages d'erreur (stack traces)
-
-Quand quelque chose échoue, Node.js affiche un **stack trace** — un message contenant des informations sur l'erreur. Apprends à le lire :
+Exécute les scripts depuis le dossier du projet, celui qui contient \`package.json\` et \`node_modules/\` :
 
 \`\`\`
-/Users/your-name/xahau-curso/mi-script.js:5
-  const response = await client.request({
-                   ^^^^^
-SyntaxError: await is only valid in async functions
-    at Object.compileFunction (node:vm:360:18)
-    at wrapSafe (node:internal/modules/cjs/loader:1124:15)
-    at /Users/your-name/xahau-curso/mi-script.js:5:20
+cd xahau-course
+node debug-errors.js
 \`\`\`
 
-Comment le lire :
-1. **Première ligne** : le fichier et la ligne où l'erreur s'est produite (\`mi-script.js:5\`)
-2. **Type d'erreur** : \`SyntaxError\`, \`TypeError\`, \`ReferenceError\`, etc.
-3. **Message** : explication du problème (\`await is only valid in async functions\`)
-4. **Stack trace** : chemin d'exécution qui a mené à l'erreur (du plus récent au plus ancien)
+Deux choses dépendent de ce dossier. Node cherche \`debug-errors.js\` à partir du dossier où tu te trouves. Et \`require("xahau")\` cherche la bibliothèque dans \`node_modules/\`, en partant du dossier du script et en remontant.
 
-### Utiliser console.log pour déboguer
+### Lire une erreur
 
-\`console.log()\` est ton meilleur outil de débogage. Utilise-le pour voir la valeur des variables à n'importe quel point du code :
+Quand un script échoue, Node affiche l'erreur et s'arrête. Par exemple :
 
 \`\`\`
-console.log("Step 1: Connecting...");
-console.log("Value of response:", response);
-console.log("Data type:", typeof variable);
-console.log("Full object:", JSON.stringify(object, null, 2));
+/Users/you/xahau-course/ledger.js:2
+console.log(info.validated_ledger.seq);
+                 ^
+
+TypeError: Cannot read properties of undefined (reading 'validated_ledger')
+    at Object.<anonymous> (/Users/you/xahau-course/ledger.js:2:18)
+    at Module._compile (node:internal/modules/cjs/loader:1812:14)
+    at Object..js (node:internal/modules/cjs/loader:1943:10)
 \`\`\`
 
-**Astuce** : utilise \`JSON.stringify(object, null, 2)\` pour afficher les gros objets de façon lisible (avec une indentation de 2 espaces).
+Lis-la dans cet ordre :
 
-### Erreurs courantes et comment les corriger
+1. **La ligne d'erreur** : \`TypeError: Cannot read properties of undefined (reading 'validated_ledger')\`. Le type indique la nature du problème ; le message dit ce qui s'est passé. Ici, \`info\` vaut \`undefined\` et n'a donc pas de \`validated_ledger\`.
+2. **L'emplacement**, en haut : le fichier et la ligne (\`ledger.js:2\`), la ligne de code et un \`^\` sous l'endroit où l'erreur s'est produite.
+3. **La pile** : les lignes \`at\`, de la plus récente à la plus ancienne. Les lignes avec tes fichiers montrent le chemin qui a mené à l'erreur. Les lignes \`node:internal\` sont le code de Node lui-même : ignore-les.
 
-**Error: Cannot find module 'xahau'**
+Les types que tu verras le plus :
+
+| Type | Quand | Cause habituelle |
+|---|---|---|
+| \`SyntaxError\` | Avant l'exécution | Le code n'est pas du JavaScript valide : une parenthèse manquante, \`await\` hors d'une fonction \`async\` |
+| \`ReferenceError\` | Pendant l'exécution | Un nom qui n'existe pas : une faute de frappe, un \`require\` manquant |
+| \`TypeError\` | Pendant l'exécution | Une valeur d'un autre genre, le plus souvent \`undefined\` là où le code attend un objet |
+| \`XahaudError\` | Pendant l'exécution | Le nœud Xahau a répondu à la requête par une erreur |
+
+### Les erreurs de ce cours
+
+**Cannot find module 'xahau'**
+
 \`\`\`
 Error: Cannot find module 'xahau'
+Require stack:
+- /Users/you/Desktop/script.js
 \`\`\`
-Cause : tu n'as pas installé la librairie ou tu n'es pas dans le bon répertoire.
-Solution : exécute \`npm install xahau\` dans le dossier de ton projet.
 
-**Error: await is only valid in async functions**
+Node n'a trouvé la bibliothèque dans aucun \`node_modules/\`, du dossier du script jusqu'à la racine. Soit elle n'est pas installée, soit le script est hors du projet. Lance \`npm install xahau\` dans le dossier du projet, et exécute le script depuis ce dossier.
+
+**await is only valid in async functions**
+
 \`\`\`
-SyntaxError: await is only valid in async functions
+  await client.connect();
+  ^^^^^
+
+SyntaxError: await is only valid in async functions and the top level bodies of modules
 \`\`\`
-Cause : tu utilises \`await\` en dehors d'une fonction marquée \`async\`.
-Solution : place ton code dans une fonction \`async\` :
+
+Les scripts du cours sont des fichiers CommonJS : ils chargent les bibliothèques avec \`require\`. Dans un fichier CommonJS, \`await\` ne fonctionne que dans une fonction marquée \`async\`. Écrit au niveau supérieur d'un fichier qui utilise \`require\`, Node donne un autre message pour la même cause :
+
 \`\`\`
-async function main() { ... }
+ReferenceError: Cannot determine intended module format because both 'require' and top-level await are present.
+\`\`\`
+
+Place le code dans une fonction \`async\` et appelle-la, comme le font tous les scripts du cours :
+
+\`\`\`js
+async function main() {
+  const client = new Client("wss://xahau-test.net");
+  await client.connect();
+  // ...
+}
+
 main();
 \`\`\`
 
-**Error: Unexpected token**
-\`\`\`
-SyntaxError: Unexpected token ')'
-\`\`\`
-Cause : erreur de syntaxe — une virgule, une parenthèse, une accolade, etc. manque.
-Solution : vérifie la ligne indiquée et les lignes précédentes. Cherche des parenthèses ou accolades non fermées.
+**missing ) after argument list** et autres erreurs de syntaxe
 
-**Error: connect ETIMEDOUT / ECONNREFUSED**
 \`\`\`
-Error: connect ETIMEDOUT wss://xahau-test.net
-\`\`\`
-Cause : impossible de se connecter au noeud Xahau (réseau en panne, pare-feu, pas d'internet).
-Solution : vérifie ta connexion internet. Si le problème persiste, essaie un autre noeud ou attends quelques minutes.
+console.log("Client:", typeof Client;
+                              ^^^^^^
 
-**Error: Account not found**
+SyntaxError: missing ) after argument list
 \`\`\`
-Error: Account not found.
+
+Le \`^\` marque l'endroit où Node a remarqué le problème. L'erreur est là ou juste avant : ici, la \`)\` qui ferme \`console.log(\`. Cherche les parenthèses, accolades et guillemets ouverts et jamais fermés.
+
+**Cannot read properties of undefined**
+
+Le \`TypeError\` de l'exemple ci-dessus. Il apparaît souvent après une requête, quand la réponse n'a pas le champ que lit le code. Affiche la réponse entière pour voir ce qu'elle contient :
+
+\`\`\`js
+console.log("Response:", JSON.stringify(response.result, null, 2));
 \`\`\`
-Cause : le compte que tu interroges n'existe pas dans le ledger ou n'a pas été activé.
-Solution : vérifie que l'adresse est correcte. Sur testnet, utilise le faucet pour activer des comptes.
 
-### Astuces pour déboguer les connexions blockchain
+**Account not found**
 
-1. **Teste d'abord la connexion** : avant de faire des opérations complexes, vérifie que tu peux te connecter au noeud
-2. **Utilise toujours try/catch** : toute opération réseau peut échouer
-3. **Vérifie l'URL du noeud** : \`wss://xahau-test.net\` pour testnet, \`wss://xahau.network\` pour mainnet
-4. **Déconnecte-toi toujours à la fin** : utilise \`await client.disconnect()\` pour libérer les ressources
-5. **Ajoute des timeouts** : si une opération prend trop de temps, le noeud est peut-être saturé`,
+\`\`\`
+XahaudError: Account not found.
+\`\`\`
+
+Cette erreur vient du nœud, pas de ton code : le compte n'existe pas dans le ledger. Un compte existe dès qu'il a reçu ses premiers XAH. Vérifie l'adresse, et vérifie le réseau : un compte du testnet n'existe pas sur le Mainnet. Sur le testnet, le faucet crée et approvisionne les comptes ([Module 3](?m=3&l=1)).
+
+**ENOTFOUND, ETIMEDOUT, ECONNREFUSED**
+
+\`\`\`
+Error: getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+\`\`\`
+
+La connexion a échoué avant toute requête. \`ENOTFOUND\` signifie que le nom d'hôte n'existe pas : vérifie l'URL. \`ETIMEDOUT\` et \`ECONNREFUSED\` signifient que l'hôte existe mais n'a pas répondu : vérifie ta connexion et ton pare-feu, ou essaie un autre nœud. Les URL du cours sont \`wss://xahau-test.net\` pour le testnet et \`wss://xahau.network\` pour le Mainnet.
+
+### Voir ce que fait un script
+
+\`console.log\` affiche une valeur à un endroit du script. Affiche une ligne avant et après chaque étape : quand un script s'arrête, la dernière ligne affichée indique l'étape atteinte. Deux formes aident avec les objets et les types :
+
+- \`JSON.stringify(objet, null, 2)\` affiche un objet entier, indenté de 2 espaces.
+- \`typeof valeur\` affiche le type : un \`"undefined"\` à la place d'un objet est à l'origine de la plupart des \`TypeError\`.
+
+Une requête au réseau peut échouer pour des raisons extérieures à ton code. \`try/catch\` intercepte l'erreur, pour que le script dise ce qui a échoué et se termine proprement. Termine par \`client.disconnect()\` dans tous les cas : une connexion ouverte garde Node en marche, et le script ne se termine pas.
+
+### Les exemples
+
+\`debug-errors.js\` exécute chaque étape dans son propre \`try/catch\` et la numérote : un échec montre ainsi à quelle étape il s'est produit. Sortie sur le testnet :
+
+\`\`\`
+=== Débogage des erreurs dans Xahau ===
+1. Bibliothèque xahau importée correctement
+   Type de Client : function
+2. Client créé pour : wss://xahau-test.net
+3. Tentative de connexion...
+   Connecté avec succès
+4. Requête server_info...
+5. Réponse reçue :
+   Type : object
+   Clés : [ 'info', 'native_currency_code' ]
+   Réseau : 21338
+   Ledger : 12663294
+6. Déconnecté correctement
+=== Fin du débogage ===
+\`\`\`
+
+\`Réseau : 21338\` est l'ID réseau du testnet de Xahau.
+
+\`connectivity-test.js\` se connecte au testnet, au Mainnet et à une URL qui n'existe pas. La troisième connexion doit échouer : elle montre l'erreur obtenue avec une mauvaise URL. Sortie :
+
+\`\`\`
+=== Test de connectivité Xahau ===
+Test : Xahau Testnet (wss://xahau-test.net)
+Connecté - Ledger : 12663296
+
+Test : Xahau Mainnet (wss://xahau.network)
+Connecté - Ledger : 26093967
+
+Test : Incorrect URL (wss://nodo-doesnt-exist.example.com)
+Erreur : getaddrinfo ENOTFOUND nodo-doesnt-exist.example.com
+=== Résumé ===
+Si testnet et mainnet se connectent : ton environnement est prêt.
+Si l'un échoue : vérifie ta connexion internet.
+L'URL incorrecte DOIT échouer (c'est un test d'erreur).
+\`\`\``,
       codeTitles: [
         "Script avec gestion d'erreurs et débogage",
         "Test de connectivité et erreurs courantes",
@@ -6220,12 +6992,31 @@ Solution : vérifie que l'adresse est correcte. Sur testnet, utilise le faucet p
           content: "Commande de base :\nnode fichier.js\n\nPlace-toi dans le dossier du projet\nlà où se trouvent package.json et node_modules/\n\nExemple :\ncd xahau-course\nnode hello-xahau.js",
         },
         {
-          title: "Lire les erreurs (Stack Trace)",
-          content: "1. Fichier et ligne → script.js:5\n2. Type → SyntaxError, TypeError...\n3. Message → ce qui s'est passé\n4. Stack trace → chemin d'exécution\n\nCommence toujours par le type et le message.",
+          title: `Lire une erreur`,
+          content: `1. La ligne d'erreur → type + message
+   TypeError: Cannot read properties of undefined
+
+2. L'emplacement → fichier:ligne et ^
+
+3. La pile → les lignes « at »
+   Les tiennes comptent ; ignore node:internal
+
+SyntaxError → avant l'exécution
+TypeError, ReferenceError → pendant l'exécution`,
         },
         {
-          title: "Erreurs les plus courantes",
-          content: "Cannot find module 'xahau'\n  → npm install xahau\n\nawait is only valid in async functions\n  → mets le code dans une async function\n\nconnect ETIMEDOUT\n  → vérifie Internet / le noeud\n\nUnexpected token\n  → vérifie syntaxe, accolades et virgules",
+          title: `Les erreurs de ce cours`,
+          content: `Cannot find module 'xahau'
+  → npm install xahau, exécute depuis le projet
+
+await is only valid in async functions
+  → place le code dans une fonction async
+
+Account not found
+  → adresse ou réseau ; sur le testnet, l'approvisionner
+
+ENOTFOUND / ETIMEDOUT
+  → vérifie l'URL / la connexion`,
         },
       ],
     },
