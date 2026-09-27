@@ -1336,7 +1336,7 @@ const fs = require("fs");
 async function deployHook() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Seu conta de testnet
+  // Sua conta de testnet
   const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
   // Ler ou WASM compilado do Hook
   const wasmBytes = fs.readFileSync("base.wasm"); // Use o nome do arquivo .wasm que você quer implantar, https://bqsoczh.dlvr.cloud/base.wasm
@@ -1613,7 +1613,7 @@ const fs = require("fs");
 async function removeHook() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Seu conta de testnet
+  // Sua conta de testnet
   const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
   // Construir a transação SetHook
   const setHook = {
@@ -1853,7 +1853,7 @@ const fs = require("fs");
 async function deployHook() {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Seu conta de testnet
+  // Sua conta de testnet
   const account = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
   // Construir a transação SetHook
   const setHook = {
@@ -2136,7 +2136,7 @@ async function checkHooks(address) {
   }
   await client.disconnect();
 }
-// Umo endereçou de exemplo com um Hook em Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
+// Um endereço de exemplo com um Hook em Testnet: rHdPUUeSDTcjacxR572aEe7zR9re4mvXJN
 // A conta a consultar: o primeiro argumento, ou a WALLET do .env
 checkHooks(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             en: `require("dotenv").config();

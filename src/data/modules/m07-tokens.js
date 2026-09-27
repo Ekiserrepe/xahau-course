@@ -2113,7 +2113,7 @@ async function getTokenSaldos(address) {
     ledger_index: "validated",
   });
   console.log("=== Tokens da conta ===");
-  console.log("Endereçou:", address);
+  console.log("Endereço:", address);
   if (response.result.lines.length === 0) {
     console.log("Não tem TrustLines (tokens).");
   }
@@ -3351,7 +3351,7 @@ async function cancelOffer() {
   console.log("Resultado:", result.result.meta.TransactionResult);
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("Oferta cancelada com sucesso!");
-    console.log("Endereçou do trader:", trader.address);
+    console.log("Endereço do trader:", trader.address);
   }
   await client.disconnect();
 }

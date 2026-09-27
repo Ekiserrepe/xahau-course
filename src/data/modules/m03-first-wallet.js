@@ -465,7 +465,7 @@ A testnet é uma cópia da rede Xahau projetada para desenvolvimento:
 - É o lugar perfecto para aprender e experimentar
 ### Faucet
 O faucet é um serviço que envia tokens de teste para a sua wallet. Você pode usá-lo diretamente pelo código com a biblioteca \`xahau\`. Também pode obter uma wallet com XAH de teste pela interface web do faucet: [xahau-test.net](https://xahau-test.net). Depois, pode usar a seed no seu código ou importá-la na Xaman.
-### Verificar seu conta
+### Verificar sua conta
 Depois que sua conta estiver ativada, você pode verificar se ela existe consultando o comando \`account_info\`. Ele mostrará:
 - **Saldo**: Quantidade de XAH em sua conta (em drops: 1 XAH = 1,000,000 drops)
 - **Sequence**: Número de sequência para a próxima transação
@@ -1036,7 +1036,7 @@ Se a conta não existe: erro actNotFound
       id: "m3l2b",
       title: {
         es: "Comprobar tu cuenta en exploradores de bloques",
-        pt: "Verificar seu conta em exploradores de blocos",
+        pt: "Verificar sua conta em exploradores de blocos",
         en: "Check your account on block explorers",
         jp: "ブロックエクスプローラーでアカウントを確認する",
         ko: "블록 익스플로러에서 계정 확인",
@@ -1120,7 +1120,7 @@ Para consultar contas da **testnet** (que é a que usamos no curso), usa estos e
 - [test.xahauexplorer.com](https://test.xahauexplorer.com)
 - [xahau-testnet.xrplwin.com](https://xahau-testnet.xrplwin.com)
 - [explorer.xahau-test.net](https://explorer.xahau-test.net)
-### Como consultar seu conta
+### Como consultar sua conta
 1. Abra qualquer um dos exploradores de testnet
 2. Na barra de busca, cole seu **endereço** (começa com \`r\`)
 3. Pressione Enter ou clique em buscar
@@ -2081,7 +2081,7 @@ sua chave privada. Jamais.`,
       id: "m3l4",
       title: {
         es: "Configuración de tu cuenta con AccountSet",
-        pt: "Configuração de seu conta com AccountSet",
+        pt: "Configuração de sua conta com AccountSet",
         en: "Configuring your account with AccountSet",
         jp: "AccountSetを使ったアカウント設定",
         ko: "AccountSet으로 계정 설정하기",
@@ -2392,7 +2392,7 @@ The example enables RequireDestTag on a new faucet account, not on \`WALLET\`. T
         {
           title: {
             es: "Activar el flag RequireDestTag en tu cuenta",
-            pt: "Ativar ou flag RequireDestTag em seu conta",
+            pt: "Ativar ou flag RequireDestTag em sua conta",
             en: "Enable the RequireDestTag flag on your account",
             jp: "アカウントにRequireDestTagフラグを設定する",
             ko: "계정에 RequireDestTag 플래그 활성화",
@@ -3140,7 +3140,7 @@ Flags principais:
       id: "m3l5",
       title: {
         es: "Cómo importar tu cuenta en Xaman",
-        pt: "Como importar seu conta em Xaman",
+        pt: "Como importar sua conta em Xaman",
         en: "How to import your account into Xaman",
         jp: "Xamanへのアカウントのインポート方法",
         ko: "계정을 Xaman으로 가져오는 방법",
@@ -3254,7 +3254,7 @@ Download: [xaman.app](https://xaman.app)
 4. Abra a Xaman e siga a configuração inicial:
    - Configure um **código PIN** ou **biometria** (digital/Face ID)
    - Aceita os términos de uso
-### Importar seu conta de testnet
+### Importar sua conta de testnet
 Com a Xaman instalada, você pode importar a conta que gerou pelo código usando sua **family seed** (a sequência que começa com \`s\`):
 1. Abra Xaman
 2. Toque no botão **"Adicionar conta"** (ou no ícone \`+\` no alto)

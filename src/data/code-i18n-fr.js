@@ -1068,4 +1068,5 @@ export const FR = {
   "The CASH account from .env receives the funds": "Le compte CASH du .env reçoit les fonds",
   "The connected device only needs the address, never the seed": "L'appareil connecté n'a besoin que de l'adresse, jamais du seed",
   "The same amount in XAH, as an XFL: drops × 10^-6": "Le même montant en XAH, en XFL : drops × 10^-6",
+  "Rounded to drops: 0.2 × 3 is 0.6000000000000001 in floating point": "Arrondi au drop : en virgule flottante, 0.2 × 3 donne 0.6000000000000001",
 }

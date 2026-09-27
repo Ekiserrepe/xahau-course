@@ -2571,7 +2571,7 @@ async function assinaturaDetalhada() {
   await client.connect();
   const wallet = Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'});
   console.log("=== INFORMAÇÃO DE A WALLET ===");
-  console.log("Endereçou:", wallet.address);
+  console.log("Endereço:", wallet.address);
   console.log("Chave pública:", wallet.publicKey);
   console.log("Algoritmo:", wallet.publicKey.startsWith("ED") ? "ed25519" : "secp256k1");
   // Construir e preparar
@@ -4324,26 +4324,32 @@ submitAndWait():
         zh: "账本层级的交易",
       },
       theory: {
-        es: `Para entender realmente cómo funcionan las transacciones, necesitas ver lo que ocurre **dentro del ledger** cuando una transacción se procesa. Esto te ayudará a depurar problemas complejos y a entender la metadata.
+        es: `Una transacción no escribe un saldo nuevo en algún sitio: cambia **objetos** del estado del ledger. Sus metadatos listan cada objeto que cambió, así que los metadatos son el registro exacto de lo que hizo una transacción. Esta lección muestra cómo leerlos, qué es la reserva y cómo llegan todos los nodos al mismo resultado.
 
-### ¿Cómo modifica una transacción el ledger?
+### El estado del ledger está hecho de objetos
 
-Cuando una transacción se procesa con éxito, modifica el **estado del ledger**, los objetos almacenados en la base de datos del ledger. Estos cambios se registran en la **metadata** de la transacción.
+El ledger guarda objetos, también llamados entradas del ledger. Cada uno tiene un tipo, \`LedgerEntryType\`, y un ID único, \`LedgerIndex\`. Algunos tipos que verás en este curso:
 
-### AffectedNodes: La huella de la transacción
+| Tipo | Qué es |
+|---|---|
+| \`AccountRoot\` | Una cuenta: su saldo, su \`Sequence\` y cuántos objetos posee (\`OwnerCount\`) |
+| \`RippleState\` | Una trust line entre dos cuentas, con su saldo del token |
+| \`Offer\` | Una oferta en el DEX |
+| \`URIToken\` | Un NFT |
+| \`Ticket\` | Un número de Sequence reservado |
 
-El campo \`meta.AffectedNodes\` es un array que describe **exactamente qué cambió** en el ledger. Cada nodo afectado puede ser de tres tipos:
+Una transacción crea, modifica o borra objetos. \`meta.AffectedNodes\` lista cada uno como uno de tres tipos de nodo.
 
-### CreatedNode: Objeto nuevo
+### CreatedNode, ModifiedNode, DeletedNode
 
-Se creó un nuevo objeto en el ledger:
+Un **CreatedNode** es un objeto nuevo. \`NewFields\` contiene sus campos: una primera trust line, una oferta nueva, un URIToken acuñado.
 
-\`\`\`
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // Tipo de objeto
-    "LedgerIndex": "ABC123...",         // ID único del objeto
-    "NewFields": {                      // Los campos del nuevo objeto
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -4352,40 +4358,35 @@ Se creó un nuevo objeto en el ledger:
 }
 \`\`\`
 
-Ejemplos: nueva trust line, nueva oferta en el DEX, nuevo URIToken.
+Un **ModifiedNode** es un objeto que ya existía y cambió. \`PreviousFields\` contiene solo los campos que cambiaron, con sus valores anteriores. \`FinalFields\` contiene el objeto entero después del cambio, incluidos los campos que no cambiaron.
 
-### ModifiedNode: Objeto modificado
-
-Se modificó un objeto existente:
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // Estado ANTES
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // Estado DESPUÉS
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-\`PreviousFields\` solo muestra los campos que **cambiaron** (no todos los campos del objeto). \`FinalFields\` muestra el estado completo después del cambio.
+Un **DeletedNode** es un objeto que ya no existe: una oferta ejecutada o cancelada, una trust line que volvió a cero y se borró, un URIToken quemado. \`FinalFields\` contiene su último estado.
 
-### DeletedNode: Objeto eliminado
-
-Se eliminó un objeto del ledger:
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // Estado al momento de eliminación
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -4393,144 +4394,103 @@ Se eliminó un objeto del ledger:
 }
 \`\`\`
 
-Ejemplos: oferta completada/cancelada, trust line eliminada (balance 0), URIToken quemado.
+### Seguir un pago
 
-### Balance changes: Seguir el dinero
+El primer ejemplo envía 5 XAH y clasifica los nodos de sus metadatos. Salida en testnet:
 
-En una transacción de pago, puedes rastrear exactamente cómo se movió el dinero observando los \`ModifiedNode\` de tipo \`AccountRoot\`:
+\`\`\`
+=== ANÁLISIS DE METADATA ===
+Resultado: tesSUCCESS
+Nodos afectados: 2
+--- OBJETOS MODIFICADOS ---
+  ~ AccountRoot
+   Balance: 5590.459088 → 5595.459088 XAH
+   Cambio: +5.000000 XAH
+   Sequence: 805924369
+  ~ AccountRoot
+   Balance: 690.702512 → 685.702502 XAH
+   Cambio: -5.000010 XAH
+   Sequence: 843750948
+--- RESUMEN ---
+Fee pagado: 0.00001 XAH
+El fee se quemó (no fue a ninguna cuenta).
+\`\`\`
 
-- La cuenta de origen: \`Balance\` disminuye (envió XAH)
-- La cuenta de destino: \`Balance\` aumenta (recibió XAH)
-- La diferencia entre los balances es el \`Amount\` + \`Fee\`
+- **Cambiaron dos objetos \`AccountRoot\`**, y no se creó ni se borró nada: un pago en XAH entre cuentas existentes solo toca las dos cuentas.
+- **El primero es el destino.** Su saldo creció exactamente 5 XAH, el \`Amount\`.
+- **El segundo es tu cuenta.** Perdió 5.000010 XAH: el \`Amount\` más el \`Fee\` de 10 drops. Su \`Sequence\` es uno más que antes, porque cada transacción consume uno.
+- **El destino también muestra un \`Sequence\`**, aunque no cambió: el script lo lee de \`FinalFields\`, que contiene el objeto entero.
+- **El fee no está en ningún saldo.** En Xahau, los fees se queman: salen de la oferta total.
 
-Para tokens (IOUs), los cambios se ven en los \`ModifiedNode\` de tipo \`RippleState\`.
+Un pago de un token cambia objetos \`RippleState\` de la misma forma: el saldo de la trust line, en lugar del \`Balance\` de un \`AccountRoot\`.
 
-### Reserves: El sistema de reservas
+### La reserva
 
-La red Xahau usa un sistema de **reservas** que afecta tu balance disponible:
+Cada objeto lo guardan todos los nodos de la red. Para que ese almacenamiento tenga un coste, una cuenta debe retener parte de sus XAH mientras posee objetos. Esa parte es la **reserva**, y no se puede enviar:
 
-- **Reserva base**: 1 XAH — mínimo para que una cuenta exista
-- **Reserva por objeto**: 0.2 XAH por cada objeto que tu cuenta posee
+- **Reserva base**: para que exista la propia cuenta.
+- **Reserva por objeto**: por cada objeto que posee la cuenta, contado en \`OwnerCount\`.
 
-Cada objeto en el ledger (trust line, oferta, URIToken, Hook) aumenta tu reserva. El XAH reservado no se puede gastar hasta que elimines el objeto.
+Borrar un objeto libera su parte de la reserva. La red fija los dos valores; \`server_info\` devuelve los actuales. El segundo ejemplo los lee junto con los objetos de la cuenta. Salida para una cuenta con 3 Tickets y 2 trust lines:
 
-### Orden de procesamiento en un ledger
+\`\`\`
+=== RESERVAS DE LA RED ===
+Reserva base (por cuenta): 1 XAH
+Reserva por objeto: 0.2 XAH
+=== TU CUENTA ===
+Dirección: rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+Balance total: 660.702452 XAH
+Objetos en el ledger: 5
+Reserva total: 2 XAH
+  → 1 XAH (base)
+  + 5 x 0.2 = 1 XAH (objetos)
+Disponible para gastar: 658.702452 XAH
+=== OBJETOS POR TIPO ===
+  Ticket: 3 (reserva: 0.6 XAH)
+  RippleState: 2 (reserva: 0.4 XAH)
+\`\`\`
 
-Dentro de un ledger, las transacciones se procesan en un **orden determinista**:
+El script redondea a 6 decimales, la precisión de un drop: en coma flotante, 0.2 × 3 da 0.6000000000000001.
 
-1. Las transacciones se ordenan por **hash canónico** (no por Sequence ni por hora de envío)
-2. Se procesan secuencialmente en ese orden
-3. Cada transacción ve el estado del ledger después de la transacción anterior
-4. Si dos transacciones compiten por los mismos recursos, la primera (por hash) gana
+### El orden de las transacciones en un ledger
 
-Esto garantiza que **todos los validadores calculen exactamente el mismo resultado**, independientemente del orden en que recibieron las transacciones.
+Los validadores se ponen de acuerdo en el **conjunto** de transacciones de un ledger, no en un orden. Después, cada nodo aplica ese conjunto en un **orden canónico** que cualquier nodo calcula igual:
+
+1. Las transacciones se agrupan por cuenta.
+2. Las cuentas se ordenan con un valor derivado del hash del conjunto entero, así que nadie puede elegir ir primero.
+3. Las transacciones de cada cuenta se aplican en orden de \`Sequence\`.
+
+Cada transacción ve el estado que dejó la anterior. El mismo conjunto, aplicado en el mismo orden sobre el mismo estado, da el mismo resultado en todos los nodos. Cuando dos transacciones compiten por lo mismo, por ejemplo dos ofertas que quieren la misma liquidez, gana la que va antes en este orden, y enviarla antes no lo decide.
 
 ### El hash del ledger
 
-Cuando se cierra un ledger, se calcula un **hash** que resume:
-- El hash del ledger anterior (cadena de ledgers)
-- Todas las transacciones incluidas y sus metadatas
-- El estado completo del ledger (árbol de estado)
+Cuando un ledger se cierra, su hash cubre el hash del ledger anterior, las transacciones con sus metadatos y el estado entero. Un cambio en cualquiera de ellos cambia el hash. Cada validador firma el hash que calculó. Un ledger queda validado cuando suficientes validadores de la UNL, el 80%, firmaron el mismo hash. Un nodo que calculó un hash distinto no se queda con su versión: toma el ledger validado.`,
+        pt: `Uma transação não escreve um saldo novo em algum lugar: ela muda **objetos** do estado do ledger. Os seus metadados listam cada objeto que mudou, então os metadados são o registro exato do que uma transação fez. Esta lição mostra como lê-los, o que é a reserva e como todos os nós chegam ao mesmo resultado.
 
-Si un validador calcula un hash diferente al 80% de la UNL, su ledger se descarta, esto garantiza la consistencia de la red.`,
-        pt: `Para entender realmente como as transações funcionam, você precisa ver o que acontece **dentro do ledger** quando uma transação é processada. Isso ajudará você a depurar problemas complexos e entender a metadata.
-### Como uma transação modifica o ledger?
-Quando uma transação é processada com sucesso, modifica o **estado do ledger**, os objetos armazenados no banco de dados do ledger. Essas alterações são registradas na **metadata** da transação.
-### AffectedNodes: A pegada da transação
-O campo \`meta.AffectedNodes\` é um array que descreve **exatamente o que mudou** no ledger. Cada nó afetado pode ser de três tipos:
-### CreatedNode: Objeto novo
-Um novo objeto foi criado no ledger:
-\`\`\`
+### O estado do ledger é feito de objetos
+
+O ledger guarda objetos, também chamados de entradas do ledger. Cada um tem um tipo, \`LedgerEntryType\`, e um ID único, \`LedgerIndex\`. Alguns tipos que você verá neste curso:
+
+| Tipo | O que é |
+|---|---|
+| \`AccountRoot\` | Uma conta: o seu saldo, o seu \`Sequence\` e quantos objetos possui (\`OwnerCount\`) |
+| \`RippleState\` | Uma trust line entre duas contas, com o saldo do token |
+| \`Offer\` | Uma oferta no DEX |
+| \`URIToken\` | Um NFT |
+| \`Ticket\` | Um número de Sequence reservado |
+
+Uma transação cria, modifica ou exclui objetos. \`meta.AffectedNodes\` lista cada um deles como um de três tipos de nó.
+
+### CreatedNode, ModifiedNode, DeletedNode
+
+Um **CreatedNode** é um objeto novo. \`NewFields\` contém os seus campos: uma primeira trust line, uma oferta nova, um URIToken cunhado.
+
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // Tipo de objeto
-    "LedgerIndex": "ABC123...",         // ID único do objeto
-    "NewFields": {                      // Os campos do novo objeto
-      "Saldo": { "value": "100" },
-      "LowLimit": { ... },
-      "HighLimit": { ... }
-    }
-  }
-}
-\`\`\`
-Exemplos: nova trust line, nova oferta no DEX, novo URIToken.
-### ModifiedNode: Objeto modificado
-Um objeto existente foi modificado:
-\`\`\`
-{
-  "ModifiedNode": {
-    "LedgerEntryType": "AccountRoot",
-    "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // Estado ANTES
-      "Saldo": "100000000"
-    },
-    "FinalFields": {                   // Estado DEPOIS
-      "Saldo": "95000000",
-      "Sequence": 43
-    }
-  }
-}
-\`\`\`
-\`PreviousFields\` mostra apenas os campos que **mudaram** (não todos os campos do objeto). \`FinalFields\` mostra o estado completo depois da alteração.
-### DeletedNode: Objeto eliminado
-Um objeto foi eliminado do ledger:
-\`\`\`
-{
-  "DeletedNode": {
-    "LedgerEntryType": "Offer",
-    "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // Estado no momento da eliminação
-      "TakerPays": "0",
-      "TakerGets": "0"
-    }
-  }
-}
-\`\`\`
-Exemplos: oferta completada/cancelada, trust line eliminada (saldo 0), URIToken queimado.
-### Mudanças de saldo: acompanhar o dinheiro
-Em uma transação de pagamento, você pode rastrear exatamente como o dinheiro se moveu observando os \`ModifiedNode\` de tipo \`AccountRoot\`:
-- A conta de origem: \`Saldo\` diminui (enviou XAH)
-- A conta de destino: \`Saldo\` aumenta (recebeu XAH)
-- A diferença entre os saldos é o \`Amount\` + \`Fee\`
-Para tokens (IOUs), as alterações são vistas nos \`ModifiedNode\` de tipo \`RippleState\`.
-### Reserves: O sistema de reservas
-A rede Xahau usa um sistema de **reservas** que afeta seu saldo disponível:
-- **Reserva base**: 1 XAH — mínimo para uma conta existir
-- **Reserva por objeto**: 0.2 XAH por cada objeto que sua conta possui
-Cada objeto no ledger (trust line, oferta, URIToken, Hook) aumenta sua reserva. O XAH reservado não pode ser gasto até que você elimine o objeto.
-### Ordem de processamento em um ledger
-Dentro de um ledger, as transações são processadas em uma **ordem determinística**:
-1. As transações são ordenadas por **hash canônico** (não por Sequence nem por hora de envio)
-2. São processadas sequencialmente nessa ordem
-3. Cada transação vê o estado do ledger depois da transação anterior
-4. Se duas transações competem pelos mesmos recursos, a primeira (por hash) vence
-Isso garante que **todos os validadores calculem exatamente o mesmo resultado**, independentemente da ordem em que receberam as transações.
-### O hash do ledger
-Quando um ledger é fechado, é calculado um **hash** que resume:
-- O hash do ledger anterior (cadeia de ledgers)
-- Todas as transações incluídas e suas metadatas
-- O estado completo do ledger (árvore de estado)
-Se um validador calcula um hash diferente de 80% da UNL, seu ledger é descartado; isso garante a consistência da rede.`,
-        en: `To truly understand how transactions work, you need to see what happens **inside the ledger** when a transaction is processed. This will help you debug complex issues and understand metadata.
-
-### How does a transaction modify the ledger?
-
-When a transaction is successfully processed, it modifies the **ledger state**, the objects stored in the ledger database. These changes are recorded in the transaction's **metadata**.
-
-### AffectedNodes: The transaction's footprint
-
-The \`meta.AffectedNodes\` field is an array that describes **exactly what changed** in the ledger. Each affected node can be one of three types:
-
-### CreatedNode: New object
-
-A new object was created in the ledger:
-
-\`\`\`
-{
-  "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // Object type
-    "LedgerIndex": "ABC123...",         // Unique object ID
-    "NewFields": {                      // The new object's fields
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -4539,40 +4499,35 @@ A new object was created in the ledger:
 }
 \`\`\`
 
-Examples: new trust line, new DEX offer, new URIToken.
+Um **ModifiedNode** é um objeto que já existia e mudou. \`PreviousFields\` contém só os campos que mudaram, com os valores anteriores. \`FinalFields\` contém o objeto inteiro depois da mudança, incluindo os campos que não mudaram.
 
-### ModifiedNode: Modified object
-
-An existing object was modified:
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // State BEFORE
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // State AFTER
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-\`PreviousFields\` only shows the fields that **changed** (not all the object's fields). \`FinalFields\` shows the complete state after the change.
+Um **DeletedNode** é um objeto que não existe mais: uma oferta executada ou cancelada, uma trust line que voltou a zero e foi excluída, um URIToken queimado. \`FinalFields\` contém o seu último estado.
 
-### DeletedNode: Deleted object
-
-An object was removed from the ledger:
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // State at the time of deletion
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -4580,66 +4535,244 @@ An object was removed from the ledger:
 }
 \`\`\`
 
-Examples: completed/canceled offer, deleted trust line (zero balance), burned URIToken.
+### Seguir um pagamento
 
-### Balance changes: Follow the money
+O primeiro exemplo envia 5 XAH e classifica os nós dos seus metadados. Saída na testnet:
 
-In a payment transaction, you can trace exactly how money moved by observing the \`ModifiedNode\` entries of type \`AccountRoot\`:
+\`\`\`
+=== ANÁLISE DE METADADOS ===
+Resultado: tesSUCCESS
+Nós afetados: 2
+--- OBJETOS MODIFICADOS ---
+  ~ AccountRoot
+   Saldo: 5620.459088 → 5625.459088 XAH
+   Variação: +5.000000 XAH
+   Sequence: 805924369
+  ~ AccountRoot
+   Saldo: 660.702452 → 655.702442 XAH
+   Variação: -5.000010 XAH
+   Sequence: 843750954
+--- RESUMO ---
+Fee pago: 0.00001 XAH
+O fee foi queimado (não foi a nenhuma conta).
+\`\`\`
 
-- The source account: \`Balance\` decreases (sent XAH)
-- The destination account: \`Balance\` increases (received XAH)
-- The difference between balances is the \`Amount\` + \`Fee\`
+- **Mudaram dois objetos \`AccountRoot\`**, e nada foi criado nem excluído: um pagamento em XAH entre contas existentes só toca as duas contas.
+- **O primeiro é o destino.** O seu saldo cresceu exatamente 5 XAH, o \`Amount\`.
+- **O segundo é a sua conta.** Ela perdeu 5.000010 XAH: o \`Amount\` mais o \`Fee\` de 10 drops. O seu \`Sequence\` é um a mais do que antes, porque cada transação consome um.
+- **O destino também mostra um \`Sequence\`**, embora ele não tenha mudado: o script o lê de \`FinalFields\`, que contém o objeto inteiro.
+- **O fee não está em nenhum saldo.** Na Xahau, os fees são queimados: saem da oferta total.
 
-For tokens (IOUs), changes are visible in the \`ModifiedNode\` entries of type \`RippleState\`.
+Um pagamento de um token muda objetos \`RippleState\` da mesma forma: o saldo da trust line, em vez do \`Balance\` de um \`AccountRoot\`.
 
-### Reserves: The reserve system
+### A reserva
 
-The Xahau Network uses a **reserve** system that affects your available balance:
+Cada objeto é guardado por todos os nós da rede. Para que esse armazenamento tenha um custo, uma conta precisa reter parte dos seus XAH enquanto possui objetos. Essa parte é a **reserva**, e não pode ser enviada:
 
-- **Base reserve**: 1 XAH — minimum for an account to exist
-- **Owner reserve**: 0.2 XAH for each object your account owns
+- **Reserva base**: para que a própria conta exista.
+- **Reserva por objeto**: por cada objeto que a conta possui, contado em \`OwnerCount\`.
 
-Each object in the ledger (trust line, offer, URIToken, Hook) increases your reserve. Reserved XAH cannot be spent until you remove the object.
+Excluir um objeto libera a sua parte da reserva. A rede define os dois valores; \`server_info\` devolve os atuais. O segundo exemplo os lê junto com os objetos da conta. Saída para uma conta com 3 Tickets e 2 trust lines:
 
-### Processing order within a ledger
+\`\`\`
+=== RESERVAS DA REDE ===
+Reserva base (por conta): 1 XAH
+Reserva por objeto: 0.2 XAH
+=== SUA CONTA ===
+Endereço: rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+Saldo total: 655.702442 XAH
+Objetos no ledger: 5
+Reserva total: 2 XAH
+  → 1 XAH (base)
+  + 5 x 0.2 = 1 XAH (objetos)
+Disponível para gastar: 653.702442 XAH
+=== OBJETOS POR TIPO ===
+  Ticket: 3 (reserva: 0.6 XAH)
+  RippleState: 2 (reserva: 0.4 XAH)
+\`\`\`
 
-Within a ledger, transactions are processed in a **deterministic order**:
+O script arredonda para 6 casas decimais, a precisão de um drop: em ponto flutuante, 0.2 × 3 dá 0.6000000000000001.
 
-1. Transactions are sorted by **canonical hash** (not by Sequence or submission time)
-2. They are processed sequentially in that order
-3. Each transaction sees the ledger state after the previous transaction
-4. If two transactions compete for the same resources, the first one (by hash) wins
+### A ordem das transações num ledger
 
-This ensures that **all validators compute exactly the same result**, regardless of the order in which they received the transactions.
+Os validadores entram em acordo sobre o **conjunto** de transações de um ledger, não sobre uma ordem. Depois, cada nó aplica esse conjunto numa **ordem canônica** que qualquer nó calcula da mesma forma:
+
+1. As transações são agrupadas por conta.
+2. As contas são ordenadas com um valor derivado do hash do conjunto inteiro, então ninguém pode escolher ir primeiro.
+3. As transações de cada conta são aplicadas em ordem de \`Sequence\`.
+
+Cada transação vê o estado que a anterior deixou. O mesmo conjunto, aplicado na mesma ordem sobre o mesmo estado, dá o mesmo resultado em todos os nós. Quando duas transações disputam a mesma coisa, por exemplo duas ofertas que querem a mesma liquidez, ganha a que vem antes nessa ordem, e enviá-la primeiro não decide isso.
+
+### O hash do ledger
+
+Quando um ledger fecha, o seu hash cobre o hash do ledger anterior, as transações com os seus metadados e o estado inteiro. Uma mudança em qualquer um deles muda o hash. Cada validador assina o hash que calculou. Um ledger é validado quando validadores suficientes da UNL, 80%, assinaram o mesmo hash. Um nó que calculou um hash diferente não fica com a sua versão: ele adota o ledger validado.`,
+        en: `A transaction doesn't write a new balance somewhere: it changes **objects** in the ledger state. Its metadata lists every object it changed, so the metadata is the exact record of what a transaction did. This lesson shows how to read it, what the reserve is, and how every node reaches the same result.
+
+### The ledger state is made of objects
+
+The ledger stores objects, also called ledger entries. Each one has a type, \`LedgerEntryType\`, and a unique ID, \`LedgerIndex\`. Some types you will meet in this course:
+
+| Type | What it is |
+|---|---|
+| \`AccountRoot\` | An account: its balance, its \`Sequence\` and how many objects it owns (\`OwnerCount\`) |
+| \`RippleState\` | A trust line between two accounts, with its token balance |
+| \`Offer\` | An offer on the DEX |
+| \`URIToken\` | An NFT |
+| \`Ticket\` | A reserved Sequence number |
+
+A transaction creates, modifies or deletes objects. \`meta.AffectedNodes\` lists each of them as one of three kinds of node.
+
+### CreatedNode, ModifiedNode, DeletedNode
+
+A **CreatedNode** is a new object. \`NewFields\` holds its fields: a first trust line, a new offer, a minted URIToken.
+
+\`\`\`json
+{
+  "CreatedNode": {
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
+      "Balance": { "value": "100" },
+      "LowLimit": { ... },
+      "HighLimit": { ... }
+    }
+  }
+}
+\`\`\`
+
+A **ModifiedNode** is an object that existed and changed. \`PreviousFields\` holds only the fields that changed, with their old values. \`FinalFields\` holds the whole object after the change, including fields that didn't change.
+
+\`\`\`json
+{
+  "ModifiedNode": {
+    "LedgerEntryType": "AccountRoot",
+    "LedgerIndex": "DEF456...",
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
+    },
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
+    }
+  }
+}
+\`\`\`
+
+A **DeletedNode** is an object that no longer exists: an offer that was filled or cancelled, a trust line back to zero and deleted, a burned URIToken. \`FinalFields\` holds its last state.
+
+\`\`\`json
+{
+  "DeletedNode": {
+    "LedgerEntryType": "Offer",
+    "LedgerIndex": "GHI789...",
+    "FinalFields": {
+      "TakerPays": "0",
+      "TakerGets": "0"
+    }
+  }
+}
+\`\`\`
+
+### Following a payment
+
+The first example sends 5 XAH and classifies the nodes of its metadata. Output on testnet:
+
+\`\`\`
+=== METADATA ANALYSIS ===
+Result: tesSUCCESS
+Affected nodes: 2
+--- MODIFIED OBJECTS ---
+  ~ AccountRoot
+   Balance: 5585.459088 → 5590.459088 XAH
+   Change: +5.000000 XAH
+   Sequence: 805924369
+  ~ AccountRoot
+   Balance: 695.702522 → 690.702512 XAH
+   Change: -5.000010 XAH
+   Sequence: 843750947
+--- SUMMARY ---
+Fee paid: 0.00001 XAH
+The fee was burned (it didn't go to any account).
+\`\`\`
+
+- **Two \`AccountRoot\` objects changed**, and nothing was created or deleted: a XAH payment between existing accounts only touches the two accounts.
+- **The first one is the destination.** Its balance grew by exactly 5 XAH, the \`Amount\`.
+- **The second one is your account.** It lost 5.000010 XAH: the \`Amount\` plus the \`Fee\` of 10 drops. Its \`Sequence\` is one higher than before, because each transaction uses one.
+- **The destination also shows a \`Sequence\`**, although it didn't change: the script reads it from \`FinalFields\`, which holds the whole object.
+- **The fee isn't in any balance.** On Xahau, fees are burned: they leave the supply.
+
+A payment of a token changes \`RippleState\` objects in the same way: the balance of the trust line, instead of \`Balance\` on an \`AccountRoot\`.
+
+### The reserve
+
+Every object is stored by every node of the network. So that storage has a cost, an account must hold part of its XAH while it owns objects. That part is the **reserve**, and it can't be sent:
+
+- **Base reserve**: for the account itself to exist.
+- **Owner reserve**: for each object the account owns, counted in \`OwnerCount\`.
+
+Deleting an object frees its part of the reserve. The network sets both values; \`server_info\` returns the current ones. The second example reads them and the account's objects. Output for an account with 3 Tickets and 2 trust lines:
+
+\`\`\`
+=== NETWORK RESERVES ===
+Base reserve (per account): 1 XAH
+Owner reserve (per object): 0.2 XAH
+=== YOUR ACCOUNT ===
+Address: rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+Total balance: 660.702452 XAH
+Objects in the ledger: 5
+Total reserve: 2 XAH
+  → 1 XAH (base)
+  + 5 x 0.2 = 1 XAH (objects)
+Available to spend: 658.702452 XAH
+=== OBJECTS BY TYPE ===
+  Ticket: 3 (reserve: 0.6 XAH)
+  RippleState: 2 (reserve: 0.4 XAH)
+\`\`\`
+
+The script rounds to 6 decimals, the precision of a drop: in floating point, 0.2 × 3 is 0.6000000000000001.
+
+### The order of transactions in a ledger
+
+Validators agree on the **set** of transactions of a ledger, not on an order. Each node then applies that set in a **canonical order** that any node computes the same way:
+
+1. Transactions are grouped by account.
+2. The accounts are ordered using a value derived from the hash of the whole set, so no one can choose to go first.
+3. Each account's transactions are applied in \`Sequence\` order.
+
+Each transaction sees the state the previous one left. The same set, applied in the same order to the same state, gives the same result on every node. When two transactions compete for the same thing, for example two offers that want the same liquidity, the one earlier in this order wins, and submitting first doesn't decide it.
 
 ### The ledger hash
 
-When a ledger closes, a **hash** is calculated that summarizes:
-- The previous ledger's hash (chain of ledgers)
-- All included transactions and their metadata
-- The complete ledger state (state tree)
+When a ledger closes, its hash covers the hash of the previous ledger, the transactions with their metadata, and the whole state. A change to any of them changes the hash. Each validator signs the hash it computed. A ledger is validated when enough validators of the UNL, 80%, signed the same hash. A node that computed a different hash doesn't keep its version: it takes the validated ledger.`,
+        jp: `トランザクションは、どこかに新しい残高を書き込むわけではありません。台帳の状態にある**オブジェクト**を変更します。メタデータには変更されたオブジェクトがすべて記録されるため、トランザクションが何をしたかを正確に知ることができます。このレッスンでは、メタデータの読み方、リザーブとは何か、そしてすべてのノードがどのように同じ結果に到達するかを説明します。
 
-If a validator computes a different hash from 80% of the UNL, its ledger is discarded — this guarantees network consistency.`,
-        jp: `トランザクションがどのように機能するかを本当に理解するには、トランザクションが処理されるときに**レジャー内部で何が起こるか**を見る必要があります。これにより、複雑な問題をデバッグしてメタデータを理解するのに役立ちます。
+### 台帳の状態はオブジェクトでできている
 
-### トランザクションはどのようにレジャーを変更するか？
+台帳はオブジェクト（台帳エントリ）を保存しています。各オブジェクトには型 \`LedgerEntryType\` と一意の ID \`LedgerIndex\` があります。このコースで出てくる型の例です。
 
-トランザクションが正常に処理されると、**レジャーの状態**（レジャーデータベースに保存されているオブジェクト）が変更されます。これらの変更はトランザクションの**メタデータ**に記録されます。
+| 型 | 内容 |
+|---|---|
+| \`AccountRoot\` | アカウント：残高、\`Sequence\`、所有するオブジェクトの数（\`OwnerCount\`） |
+| \`RippleState\` | 2つのアカウント間のトラストラインとトークン残高 |
+| \`Offer\` | DEX のオファー |
+| \`URIToken\` | NFT |
+| \`Ticket\` | 予約された Sequence 番号 |
 
-### AffectedNodes：トランザクションの足跡
+トランザクションはオブジェクトを作成、変更、削除します。\`meta.AffectedNodes\` は、それぞれを3種類のノードのいずれかとして記録します。
 
-\`meta.AffectedNodes\`フィールドは、レジャーで**正確に何が変わったか**を説明する配列です。影響を受けた各ノードは次の3つのタイプのいずれかになります。
+### CreatedNode、ModifiedNode、DeletedNode
 
-### CreatedNode：新しいオブジェクト
+**CreatedNode** は新しいオブジェクトです。\`NewFields\` にそのフィールドが入ります。最初のトラストライン、新しいオファー、ミントされた URIToken などです。
 
-レジャーに新しいオブジェクトが作成された。
-
-\`\`\`
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // オブジェクトタイプ
-    "LedgerIndex": "ABC123...",         // オブジェクトの一意ID
-    "NewFields": {                      // 新しいオブジェクトのフィールド
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -4648,40 +4781,35 @@ If a validator computes a different hash from 80% of the UNL, its ledger is disc
 }
 \`\`\`
 
-例：新しいトラストライン、新しいDEXオファー、新しいURIToken
+**ModifiedNode** は既存のオブジェクトが変更されたものです。\`PreviousFields\` には変更されたフィールドだけが元の値で入ります。\`FinalFields\` には変更後のオブジェクト全体が入り、変わっていないフィールドも含まれます。
 
-### ModifiedNode：変更されたオブジェクト
-
-既存のオブジェクトが変更された。
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // 変更前の状態
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // 変更後の状態
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-\`PreviousFields\`は**変更された**フィールドのみを表示します（オブジェクトの全フィールドではない）。\`FinalFields\`は変更後の完全な状態を表示します。
+**DeletedNode** はなくなったオブジェクトです。約定またはキャンセルされたオファー、ゼロに戻って削除されたトラストライン、バーンされた URIToken などです。\`FinalFields\` に最後の状態が入ります。
 
-### DeletedNode：削除されたオブジェクト
-
-レジャーからオブジェクトが削除された。
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // 削除時の状態
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -4689,66 +4817,103 @@ If a validator computes a different hash from 80% of the UNL, its ledger is disc
 }
 \`\`\`
 
-例：完了/キャンセルされたオファー、削除されたトラストライン（残高ゼロ）、バーンされたURIToken
+### 支払いを追う
 
-### 残高の変化：お金の流れを追う
-
-Paymentトランザクションでは、\`AccountRoot\`タイプの\`ModifiedNode\`エントリを観察して、お金がどのように移動したかを正確に追跡できます。
-
-- 送信元アカウント：\`Balance\`が減少（XAHを送信）
-- 宛先アカウント：\`Balance\`が増加（XAHを受信）
-- 残高の差は\`Amount\` + \`Fee\`です
-
-トークン（IOU）の場合、変更は\`RippleState\`タイプの\`ModifiedNode\`エントリで確認できます。
-
-### 準備金：準備金システム
-
-Xahauでは利用可能な残高に影響する**準備金**システムを使用します。
-
-- **基本準備金**：1 XAH — アカウントが存在するための最小値
-- **所有者準備金**：アカウントが所有する各オブジェクトにつき0.2 XAH
-
-レジャー内の各オブジェクト（トラストライン、オファー、URIToken、Hook）が準備金を増加させます。オブジェクトを削除するまで、準備金としてロックされたXAHは使用できません。
-
-### レジャー内の処理順序
-
-レジャー内で、トランザクションは**決定論的な順序**で処理されます：
-
-1. トランザクションは**正規ハッシュ**で並べられます（Sequenceや送信時間ではない）
-2. その順序で順次処理されます
-3. 各トランザクションは前のトランザクション後のレジャー状態を見ます
-4. 2つのトランザクションが同じリソースを競う場合、最初のもの（ハッシュ順）が勝ちます
-
-これにより、**すべてのバリデーターが受け取ったトランザクションの順序に関係なく、まったく同じ結果を計算する**ことが保証されます。
-
-### レジャーハッシュ
-
-レジャーが閉じると、以下を要約した**ハッシュ**が計算されます。
-- 前のレジャーのハッシュ（レジャーの連鎖）
-- 含まれるすべてのトランザクションとそのメタデータ
-- レジャーの完全な状態（状態ツリー）
-
-バリデーターがUNLの80%と異なるハッシュを計算した場合、そのレジャーは破棄されます—これがネットワークの一貫性を保証します。`,
-        ko: `트랜잭션이 실제로 어떻게 동작하는지 이해하려면, 트랜잭션이 처리될 때 **ledger 내부에서 무엇이 일어나는지** 봐야 합니다. 이것은 복잡한 문제를 디버깅하고 metadata를 이해하는 데 큰 도움이 됩니다.
-
-### 트랜잭션은 ledger를 어떻게 바꾸는가?
-
-트랜잭션이 성공적으로 처리되면 **ledger 상태**, 즉 ledger 데이터베이스에 저장된 객체들이 변경됩니다. 이 변화는 트랜잭션의 **metadata**에 기록됩니다.
-
-### AffectedNodes: 트랜잭션의 흔적
-
-\`meta.AffectedNodes\` 필드는 ledger에서 **정확히 무엇이 바뀌었는지** 설명하는 배열입니다. 각 affected node는 세 가지 유형 중 하나입니다:
-
-### CreatedNode: 새 객체
-
-ledger에 새 객체가 생성되었습니다:
+最初の例は 5 XAH を送り、そのメタデータのノードを分類します。テストネットでの出力です。
 
 \`\`\`
+=== メタデータ分析 ===
+結果： tesSUCCESS
+影響ノード数： 2
+--- 変更されたオブジェクト ---
+  ~ AccountRoot
+   残高： 5600.459088 → 5605.459088 XAH
+   変化： +5.000000 XAH
+   Sequence： 805924369
+  ~ AccountRoot
+   残高： 680.702492 → 675.702482 XAH
+   変化： -5.000010 XAH
+   Sequence： 843750950
+--- まとめ ---
+支払ったFee： 0.00001 XAH
+Feeはバーンされました（どのアカウントにも渡らない）。
+\`\`\`
+
+- **変更されたのは2つの \`AccountRoot\`** で、作成も削除もありません。既存のアカウント間の XAH の支払いは、その2つのアカウントだけに触れます。
+- **1つ目は送金先です。** 残高がちょうど 5 XAH（\`Amount\`）増えています。
+- **2つ目は自分のアカウントです。** 5.000010 XAH 減っています。\`Amount\` に 10 drops の \`Fee\` を加えた額です。トランザクションごとに1つ使うため、\`Sequence\` は1つ増えています。
+- **送金先にも \`Sequence\` が表示されます**が、変わってはいません。スクリプトはオブジェクト全体を含む \`FinalFields\` から読んでいるためです。
+- **手数料はどの残高にも入りません。** Xahau では手数料はバーンされ、総供給から消えます。
+
+トークンの支払いも同じように \`RippleState\` オブジェクトを変更します。\`AccountRoot\` の \`Balance\` ではなく、トラストラインの残高が変わります。
+
+### リザーブ
+
+各オブジェクトはネットワークのすべてのノードに保存されます。その保存にコストを持たせるため、アカウントはオブジェクトを所有している間、XAH の一部を保持しておく必要があります。この部分が**リザーブ**で、送金できません。
+
+- **基本リザーブ**：アカウント自体が存在するため。
+- **オーナーリザーブ**：アカウントが所有するオブジェクトごと。\`OwnerCount\` で数えます。
+
+オブジェクトを削除すると、その分のリザーブが解放されます。どちらの値もネットワークが決め、\`server_info\` が現在の値を返します。2つ目の例はそれらとアカウントのオブジェクトを読み取ります。Ticket 3つとトラストライン2つを持つアカウントでの出力です。
+
+\`\`\`
+=== ネットワークリザーブ ===
+基本リザーブ（アカウントごと）： 1 XAH
+所有者リザーブ（オブジェクトごと）： 0.2 XAH
+=== あなたのアカウント ===
+アドレス： rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+総残高： 660.702452 XAH
+レジャー内のオブジェクト数： 5
+総リザーブ： 2 XAH
+  → 1 XAH（基本）
+  + 5 x 0.2 = 1 XAH（オブジェクト）
+使用可能残高： 658.702452 XAH
+=== タイプ別オブジェクト ===
+  Ticket： 3 （リザーブ： 0.6 XAH）
+  RippleState： 2 （リザーブ： 0.4 XAH）
+\`\`\`
+
+スクリプトは drop の精度である小数点以下6桁に丸めています。浮動小数点では 0.2 × 3 が 0.6000000000000001 になるためです。
+
+### 台帳内のトランザクションの順序
+
+バリデータが合意するのは台帳のトランザクションの**集合**であり、順序ではありません。その後、各ノードはどのノードでも同じように計算できる**正規順序**でその集合を適用します。
+
+1. トランザクションをアカウントごとにまとめます。
+2. 集合全体のハッシュから導いた値でアカウントを並べます。そのため、誰も先頭を選べません。
+3. 各アカウントのトランザクションを \`Sequence\` の順に適用します。
+
+各トランザクションは、直前のトランザクションが残した状態を見ます。同じ集合を同じ順序で同じ状態に適用すれば、すべてのノードで同じ結果になります。2つのトランザクションが同じものを取り合う場合、例えば2つのオファーが同じ流動性を求める場合は、この順序で先に来るほうが勝ちます。先に送信したかどうかでは決まりません。
+
+### 台帳のハッシュ
+
+台帳が閉じると、そのハッシュは前の台帳のハッシュ、メタデータ付きのトランザクション、状態全体をカバーします。どれか1つが変われば、ハッシュも変わります。各バリデータは自分が計算したハッシュに署名します。UNL の十分なバリデータ（80%）が同じハッシュに署名すると、台帳は検証済みになります。異なるハッシュを計算したノードは自分の版を保持せず、検証済みの台帳を採用します。`,
+        ko: `트랜잭션은 어딘가에 새 잔액을 적는 것이 아니라 원장 상태의 **객체**를 바꿉니다. 메타데이터에는 바뀐 객체가 모두 기록되므로, 메타데이터가 트랜잭션이 한 일의 정확한 기록입니다. 이 레슨에서는 메타데이터를 읽는 법, reserve가 무엇인지, 그리고 모든 노드가 어떻게 같은 결과에 도달하는지 설명합니다.
+
+### 원장 상태는 객체로 이루어져 있다
+
+원장은 객체(원장 항목)를 저장합니다. 각 객체에는 타입 \`LedgerEntryType\`과 고유 ID \`LedgerIndex\`가 있습니다. 이 강좌에서 만나는 타입의 예입니다.
+
+| 타입 | 내용 |
+|---|---|
+| \`AccountRoot\` | 계정: 잔액, \`Sequence\`, 소유한 객체 수(\`OwnerCount\`) |
+| \`RippleState\` | 두 계정 사이의 트러스트 라인과 토큰 잔액 |
+| \`Offer\` | DEX의 오퍼 |
+| \`URIToken\` | NFT |
+| \`Ticket\` | 예약된 Sequence 번호 |
+
+트랜잭션은 객체를 생성, 수정, 삭제합니다. \`meta.AffectedNodes\`는 각각을 세 종류의 노드 중 하나로 기록합니다.
+
+### CreatedNode, ModifiedNode, DeletedNode
+
+**CreatedNode**는 새 객체입니다. \`NewFields\`에 필드가 들어 있습니다. 첫 트러스트 라인, 새 오퍼, 민팅된 URIToken 등입니다.
+
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // 객체 유형
-    "LedgerIndex": "ABC123...",         // 고유 객체 ID
-    "NewFields": {                      // 새 객체의 필드
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -4757,40 +4922,35 @@ ledger에 새 객체가 생성되었습니다:
 }
 \`\`\`
 
-예: 새 trust line, 새 DEX 오퍼, 새 URIToken
+**ModifiedNode**는 이미 있던 객체가 바뀐 것입니다. \`PreviousFields\`에는 바뀐 필드만 이전 값으로 들어 있습니다. \`FinalFields\`에는 바뀐 뒤의 객체 전체가 들어 있으며, 바뀌지 않은 필드도 포함됩니다.
 
-### ModifiedNode: 수정된 객체
-
-기존 객체가 수정되었습니다:
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // 변경 전 상태
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // 변경 후 상태
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-\`PreviousFields\`는 **바뀐 필드만** 보여 주고, \`FinalFields\`는 변경 후 전체 상태를 보여 줍니다.
+**DeletedNode**는 더 이상 존재하지 않는 객체입니다. 체결되거나 취소된 오퍼, 0으로 돌아가 삭제된 트러스트 라인, 소각된 URIToken 등입니다. \`FinalFields\`에 마지막 상태가 들어 있습니다.
 
-### DeletedNode: 삭제된 객체
-
-ledger에서 객체가 제거되었습니다:
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // 삭제 시점의 상태
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -4798,66 +4958,103 @@ ledger에서 객체가 제거되었습니다:
 }
 \`\`\`
 
-예: 완료/취소된 오퍼, 삭제된 trust line(잔액 0), 소각된 URIToken
+### 결제 따라가기
 
-### 잔액 변화: 돈의 흐름 추적
-
-Payment 트랜잭션에서는 \`AccountRoot\` 타입의 \`ModifiedNode\`를 보면 돈이 정확히 어떻게 움직였는지 추적할 수 있습니다:
-
-- 출발 계정: \`Balance\` 감소 (XAH 전송)
-- 도착 계정: \`Balance\` 증가 (XAH 수신)
-- 두 잔액 차이는 \`Amount\` + \`Fee\`입니다
-
-토큰(IOU)의 경우 변화는 \`RippleState\` 타입 \`ModifiedNode\`에 나타납니다.
-
-### Reserve: reserve 시스템
-
-Xahau 네트워크는 사용 가능한 잔액에 영향을 주는 **reserve** 시스템을 사용합니다:
-
-- **기본 reserve**: 1 XAH — 계정이 존재하기 위한 최소값
-- **객체 reserve**: 계정이 소유한 각 객체당 0.2 XAH
-
-ledger의 각 객체(trust line, offer, URIToken, Hook)는 reserve를 늘립니다. reserve로 묶인 XAH는 해당 객체를 제거하기 전까지 사용할 수 없습니다.
-
-### Ledger 내부 처리 순서
-
-하나의 ledger 안에서 트랜잭션은 **결정적인 순서**로 처리됩니다:
-
-1. 트랜잭션은 **canonical hash**로 정렬됩니다 (Sequence나 전송 시각 기준 아님)
-2. 그 순서대로 하나씩 처리됩니다
-3. 각 트랜잭션은 이전 트랜잭션 처리 후의 ledger 상태를 봅니다
-4. 같은 자원을 두 tx가 경쟁하면 hash 기준 앞선 쪽이 이깁니다
-
-이 구조 덕분에 **모든 검증자가 트랜잭션을 받은 순서와 상관없이 똑같은 결과를 계산**합니다.
-
-### Ledger hash
-
-ledger가 닫히면 다음을 요약하는 **hash**가 계산됩니다:
-- 이전 ledger의 hash (ledger 체인)
-- 포함된 모든 트랜잭션과 metadata
-- 완전한 ledger 상태 (state tree)
-
-검증자가 UNL의 80%와 다른 hash를 계산하면 그 ledger는 버려집니다. 이것이 네트워크 일관성을 보장합니다.`,
-        zh: `如果你想真正理解交易是如何工作的，就需要看到交易被处理时**账本内部发生了什么**。这能帮助你调试复杂问题，也能更好理解 metadata。
-
-### 一笔交易如何修改账本？
-
-当一笔交易被成功处理后，它会修改**账本状态**，也就是账本数据库中存储的对象。这些变化会记录在交易的 **metadata** 中。
-
-### AffectedNodes：交易留下的痕迹
-
-\`meta.AffectedNodes\` 字段是一个数组，用来描述账本中**到底发生了哪些变化**。每个受影响节点都属于以下三种类型之一：
-
-### CreatedNode：新对象
-
-账本中新建了一个对象：
+첫 번째 예제는 5 XAH를 보내고 메타데이터의 노드를 분류합니다. 테스트넷 출력입니다.
 
 \`\`\`
+=== METADATA 분석 ===
+결과: tesSUCCESS
+영향 받은 노드 수: 2
+--- 수정된 객체 ---
+  ~ AccountRoot
+   잔액: 5605.459088 → 5610.459088 XAH
+   변화: +5.000000 XAH
+   Sequence: 805924369
+  ~ AccountRoot
+   잔액: 675.702482 → 670.702472 XAH
+   변화: -5.000010 XAH
+   Sequence: 843750951
+--- 요약 ---
+지불한 Fee: 0.00001 XAH
+Fee는 소각되었으며 어떤 계정에도 전달되지 않았습니다.
+\`\`\`
+
+- **바뀐 것은 \`AccountRoot\` 객체 두 개**이고, 생성되거나 삭제된 것은 없습니다. 기존 계정 사이의 XAH 결제는 두 계정만 건드립니다.
+- **첫 번째는 받는 계정입니다.** 잔액이 정확히 5 XAH(\`Amount\`) 늘었습니다.
+- **두 번째는 내 계정입니다.** 5.000010 XAH가 줄었습니다. \`Amount\`에 10 drops의 \`Fee\`를 더한 금액입니다. 트랜잭션마다 하나씩 쓰므로 \`Sequence\`가 하나 늘었습니다.
+- **받는 계정에도 \`Sequence\`가 표시되지만** 바뀌지는 않았습니다. 스크립트가 객체 전체를 담은 \`FinalFields\`에서 읽기 때문입니다.
+- **수수료는 어떤 잔액에도 들어가지 않습니다.** Xahau에서 수수료는 소각되어 총공급량에서 빠집니다.
+
+토큰 결제도 같은 방식으로 \`RippleState\` 객체를 바꿉니다. \`AccountRoot\`의 \`Balance\` 대신 트러스트 라인의 잔액이 바뀝니다.
+
+### Reserve
+
+모든 객체는 네트워크의 모든 노드에 저장됩니다. 이 저장에 비용을 두기 위해, 계정은 객체를 소유하는 동안 XAH의 일부를 묶어 두어야 합니다. 이 부분이 **reserve**이며 보낼 수 없습니다.
+
+- **기본 reserve**: 계정 자체가 존재하기 위한 것.
+- **소유자 reserve**: 계정이 소유한 객체마다, \`OwnerCount\`로 셉니다.
+
+객체를 삭제하면 그만큼의 reserve가 풀립니다. 두 값은 네트워크가 정하며, \`server_info\`가 현재 값을 반환합니다. 두 번째 예제는 이 값과 계정의 객체를 읽습니다. Ticket 3개와 트러스트 라인 2개가 있는 계정의 출력입니다.
+
+\`\`\`
+=== 네트워크 RESERVE ===
+기본 reserve (계정당): 1 XAH
+객체 reserve (객체당): 0.2 XAH
+=== 내 계정 ===
+주소: rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+총 잔액: 660.702452 XAH
+ledger 객체 수: 5
+총 reserve: 2 XAH
+  → 1 XAH (기본)
+  + 5 x 0.2 = 1 XAH (객체)
+사용 가능 잔액: 658.702452 XAH
+=== 유형별 객체 ===
+  Ticket: 3 (reserve: 0.6 XAH)
+  RippleState: 2 (reserve: 0.4 XAH)
+\`\`\`
+
+스크립트는 drop의 정밀도인 소수점 6자리로 반올림합니다. 부동소수점에서 0.2 × 3은 0.6000000000000001이 되기 때문입니다.
+
+### 원장 안의 트랜잭션 순서
+
+검증자들이 합의하는 것은 원장의 트랜잭션 **집합**이지 순서가 아닙니다. 그다음 각 노드는 어느 노드나 같은 방식으로 계산하는 **정규 순서**로 그 집합을 적용합니다.
+
+1. 트랜잭션을 계정별로 묶습니다.
+2. 집합 전체의 해시에서 얻은 값으로 계정의 순서를 정합니다. 그래서 누구도 먼저 가겠다고 고를 수 없습니다.
+3. 각 계정의 트랜잭션은 \`Sequence\` 순서로 적용합니다.
+
+각 트랜잭션은 앞 트랜잭션이 남긴 상태를 봅니다. 같은 집합을 같은 순서로 같은 상태에 적용하면 모든 노드에서 같은 결과가 나옵니다. 두 트랜잭션이 같은 것을 두고 경쟁하면, 예를 들어 두 오퍼가 같은 유동성을 원하면, 이 순서에서 앞선 쪽이 이깁니다. 먼저 제출했다고 결정되지 않습니다.
+
+### 원장 해시
+
+원장이 닫히면 그 해시는 이전 원장의 해시, 메타데이터가 포함된 트랜잭션, 상태 전체를 포괄합니다. 어느 하나라도 바뀌면 해시가 바뀝니다. 각 검증자는 자신이 계산한 해시에 서명합니다. UNL의 충분한 검증자, 즉 80%가 같은 해시에 서명하면 원장이 검증됩니다. 다른 해시를 계산한 노드는 자기 버전을 유지하지 않고 검증된 원장을 받아들입니다.`,
+        zh: `交易并不是在某处写入一个新余额：它改变的是账本状态中的**对象**。它的元数据列出了它改变的每个对象，所以元数据就是交易所做之事的精确记录。本课说明如何阅读元数据、什么是储备金，以及所有节点如何得到相同的结果。
+
+### 账本状态由对象组成
+
+账本存储对象，也称为账本条目。每个对象都有一个类型 \`LedgerEntryType\` 和一个唯一 ID \`LedgerIndex\`。本课程中会遇到的一些类型：
+
+| 类型 | 是什么 |
+|---|---|
+| \`AccountRoot\` | 一个账户：余额、\`Sequence\` 以及拥有的对象数量（\`OwnerCount\`） |
+| \`RippleState\` | 两个账户之间的信任线及其代币余额 |
+| \`Offer\` | DEX 上的一个报价 |
+| \`URIToken\` | 一个 NFT |
+| \`Ticket\` | 一个预留的 Sequence 号 |
+
+交易会创建、修改或删除对象。\`meta.AffectedNodes\` 把每个对象列为三种节点之一。
+
+### CreatedNode、ModifiedNode、DeletedNode
+
+**CreatedNode** 是一个新对象。\`NewFields\` 包含它的字段：第一条信任线、一个新报价、一个铸造的 URIToken。
+
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // 对象类型
-    "LedgerIndex": "ABC123...",         // 对象唯一 ID
-    "NewFields": {                      // 新对象的字段
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -4866,40 +5063,35 @@ ledger가 닫히면 다음을 요약하는 **hash**가 계산됩니다:
 }
 \`\`\`
 
-例如：新的 trust line、新的 DEX 报价、新的 URIToken。
+**ModifiedNode** 是一个已存在并发生变化的对象。\`PreviousFields\` 只包含变化了的字段及其旧值。\`FinalFields\` 包含变化后的整个对象，包括没有变化的字段。
 
-### ModifiedNode：已修改对象
-
-一个已有对象被修改：
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // 修改前状态
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // 修改后状态
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-\`PreviousFields\` 只展示**发生变化的字段**，而不是对象的全部字段。\`FinalFields\` 展示修改后的完整状态。
+**DeletedNode** 是一个不再存在的对象：已成交或已取消的报价、回到零并被删除的信任线、被销毁的 URIToken。\`FinalFields\` 包含它最后的状态。
 
-### DeletedNode：已删除对象
-
-一个对象从账本中被移除：
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // 删除时的状态
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -4907,46 +5099,77 @@ ledger가 닫히면 다음을 요약하는 **hash**가 계산됩니다:
 }
 \`\`\`
 
-例如：报价已完成或取消、trust line 被删除（余额为 0）、URIToken 被销毁。
+### 追踪一笔付款
 
-### Balance changes：追踪资金流动
+第一个示例发送 5 XAH，并对其元数据中的节点进行分类。测试网上的输出：
 
-在 Payment 交易中，你可以通过查看 \`AccountRoot\` 类型的 \`ModifiedNode\`，准确追踪资金如何流动：
+\`\`\`
+=== METADATA 分析 ===
+结果: tesSUCCESS
+受影响节点数: 2
+--- 已修改对象 ---
+  ~ AccountRoot
+   余额: 5615.459088 → 5620.459088 XAH
+   变化: +5.000000 XAH
+   Sequence: 805924369
+  ~ AccountRoot
+   余额: 665.702462 → 660.702452 XAH
+   变化: -5.000010 XAH
+   Sequence: 843750953
+--- 摘要 ---
+已支付 Fee: 0.00001 XAH
+该 Fee 已被销毁（不会进入任何账户）。
+\`\`\`
 
-- 源账户：\`Balance\` 减少（发送了 XAH）
-- 目标账户：\`Balance\` 增加（收到了 XAH）
-- 两边余额差额等于 \`Amount\` + \`Fee\`
+- **改变的是两个 \`AccountRoot\` 对象**，没有创建或删除任何对象：现有账户之间的 XAH 付款只涉及这两个账户。
+- **第一个是收款方。** 它的余额正好增加了 5 XAH，即 \`Amount\`。
+- **第二个是你的账户。** 它减少了 5.000010 XAH：\`Amount\` 加上 10 drops 的 \`Fee\`。每笔交易使用一个 \`Sequence\`，所以它的 \`Sequence\` 增加了一。
+- **收款方也显示了 \`Sequence\`**，尽管它没有变化：脚本是从包含整个对象的 \`FinalFields\` 中读取的。
+- **手续费不在任何余额中。** 在 Xahau 上，手续费会被销毁：它们离开了总供应量。
 
-如果是代币（IOU），变化会出现在 \`RippleState\` 类型的 \`ModifiedNode\` 中。
+代币付款以同样的方式改变 \`RippleState\` 对象：变化的是信任线的余额，而不是 \`AccountRoot\` 的 \`Balance\`。
 
-### Reserves：reserve 系统
+### 储备金
 
-Xahau 网络使用一套会影响可用余额的 **reserve** 系统：
+每个对象都由网络中的每个节点存储。为了让这种存储有成本，账户在拥有对象期间必须保留一部分 XAH。这部分就是**储备金**，它不能被发送：
 
-- **基础 reserve**：1 XAH —— 账户存在所需的最低值
-- **对象 reserve**：账户每拥有一个对象，就要额外占用 0.2 XAH
+- **基础储备金**：账户本身存在所需。
+- **所有者储备金**：账户拥有的每个对象，按 \`OwnerCount\` 计数。
 
-账本中的每个对象（trust line、报价、URIToken、Hook）都会提高 reserve。被占用的 XAH 在删除对象之前无法使用。
+删除对象会释放它占用的那部分储备金。这两个值由网络设定；\`server_info\` 返回当前值。第二个示例读取它们以及账户的对象。一个拥有 3 个 Ticket 和 2 条信任线的账户的输出：
 
-### 一个账本中的处理顺序
+\`\`\`
+=== 网络 RESERVE ===
+基础 reserve（每个账户）： 1 XAH
+对象 reserve（每个对象）： 0.2 XAH
+=== 你的账户 ===
+地址: rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+总余额: 660.702452 XAH
+账本中的对象数: 5
+总 reserve: 2 XAH
+  → 1 XAH（基础）
+  + 5 x 0.2 = 1 XAH（对象）
+可用余额: 658.702452 XAH
+=== 按类型统计对象 ===
+  Ticket: 3 (reserve: 0.6 XAH)
+  RippleState: 2 (reserve: 0.4 XAH)
+\`\`\`
 
-在同一个账本内，交易会按**确定性的顺序**处理：
+脚本四舍五入到 6 位小数，即一个 drop 的精度：在浮点运算中，0.2 × 3 等于 0.6000000000000001。
 
-1. 交易按**规范哈希（canonical hash）**排序，而不是按 Sequence 或发送时间排序
-2. 按该顺序逐笔处理
-3. 每笔交易都会看到前一笔交易执行后的账本状态
-4. 如果两笔交易争夺同一资源，哈希顺序靠前的那笔会获胜
+### 账本中交易的顺序
 
-这保证了**所有验证者都会计算出完全相同的结果**，无论他们接收交易的顺序如何。
+验证者就账本的交易**集合**达成一致，而不是就顺序达成一致。然后每个节点按照任何节点都以同样方式计算出的**规范顺序**应用这个集合：
 
-### Ledger hash
+1. 交易按账户分组。
+2. 账户按照从整个集合的哈希派生出的值排序，所以没有人能选择排在最前。
+3. 每个账户的交易按 \`Sequence\` 顺序应用。
 
-一个账本关闭时，会计算一个**hash** 来汇总：
-- 上一个账本的 hash（账本链）
-- 所有被纳入的交易及其 metadata
-- 完整账本状态（state tree）
+每笔交易看到的是前一笔交易留下的状态。同一个集合，按同样的顺序应用到同样的状态上，在每个节点上都得到相同的结果。当两笔交易争夺同一样东西时，例如两个报价想要同一份流动性，在这个顺序中靠前的那笔获胜，先提交并不能决定这一点。
 
-如果某个验证者算出的 hash 与 UNL 中 80% 的结果不一致，它的账本就会被丢弃。这就是网络一致性的保障。`,
+### 账本哈希
+
+账本关闭时，它的哈希涵盖上一个账本的哈希、带有元数据的交易以及整个状态。其中任何一项变化都会改变哈希。每个验证者对自己计算出的哈希进行签名。当 UNL 中足够多的验证者（80%）签署了同一个哈希时，账本就被验证。计算出不同哈希的节点不会保留自己的版本：它采用已验证的账本。`,
       },
       codeBlocks: [
         {
@@ -5022,7 +5245,7 @@ async function analizarMetadata() {
           const despues = Number(n.FinalFields.Balance) / 1000000;
           const diff = despues - antes;
           console.log("   Balance:", antes, "→", despues, "XAH");
-          console.log("   Cambio:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+          console.log("   Cambio:", (diff > 0 ? "+" : "") + diff.toFixed(6), "XAH");
         }
         // Mostrar cambio de Sequence
         if (n.FinalFields.Sequence) {
@@ -5066,7 +5289,7 @@ async function analizarMetadata() {
   const signed = wallet.sign(prepared);
   const result = await client.submitAndWait(signed.tx_blob);
   const meta = result.result.meta;
-  console.log("=== ANÁLISIS DE METADATA ===");
+  console.log("=== ANÁLISE DE METADADOS ===");
   console.log("Resultado:", meta.TransactionResult);
   console.log("Nós afetados:", meta.AffectedNodes.length);
   // Classificar os nós afetados
@@ -5084,7 +5307,7 @@ async function analizarMetadata() {
   }
   // Mostrar objetos creados
   if (creados.length > 0) {
-    console.log("--- OBJETOS CREADOS ---");
+    console.log("--- OBJETOS CRIADOS ---");
     for (const n of creados) {
       console.log("  +", n.LedgerEntryType);
       console.log("   Index:", n.LedgerIndex);
@@ -5102,7 +5325,7 @@ async function analizarMetadata() {
           const depois = Number(n.FinalFields.Balance) / 1000000;
           const diff = depois - antes;
           console.log("   Saldo:", antes, "→", depois, "XAH");
-          console.log("   Cambio:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+          console.log("   Variação:", (diff > 0 ? "+" : "") + diff.toFixed(6), "XAH");
         }
         // Mostrar alteração de Sequence
         if (n.FinalFields.Sequence) {
@@ -5120,8 +5343,8 @@ async function analizarMetadata() {
   }
   // Resumo de saldo
   console.log("--- RESUMO ---");
-  console.log("Fee pagado:", Number(result.result.Fee) / 1000000, "XAH");
-  console.log("O fee foi queimado (não foi a ninguma conta).");
+  console.log("Fee pago:", Number(result.result.Fee) / 1000000, "XAH");
+  console.log("O fee foi queimado (não foi a nenhuma conta).");
   await client.disconnect();
 }
 analizarMetadata().catch(console.error);`,
@@ -5187,7 +5410,7 @@ async function analizarMetadata() {
           const after = Number(n.FinalFields.Balance) / 1000000;
           const diff = after - before;
           console.log("   Balance:", before, "→", after, "XAH");
-          console.log("   Change:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+          console.log("   Change:", (diff > 0 ? "+" : "") + diff.toFixed(6), "XAH");
         }
         // Show Sequence change
         if (n.FinalFields.Sequence) {
@@ -5276,7 +5499,7 @@ async function analyzeMetadata() {
           const after = Number(n.FinalFields.Balance) / 1000000;
           const diff = after - before;
           console.log("   残高：", before, "→", after, "XAH");
-          console.log("   変化：", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+          console.log("   変化：", (diff > 0 ? "+" : "") + diff.toFixed(6), "XAH");
         }
         // Sequenceの変化を表示
         if (n.FinalFields.Sequence) {
@@ -5365,7 +5588,7 @@ async function analyzeMetadata() {
           const after = Number(n.FinalFields.Balance) / 1000000;
           const diff = after - before;
           console.log("   잔액:", before, "→", after, "XAH");
-          console.log("   변화:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+          console.log("   변화:", (diff > 0 ? "+" : "") + diff.toFixed(6), "XAH");
         }
         // Sequence 변화 표시
         if (n.FinalFields.Sequence) {
@@ -5454,7 +5677,7 @@ async function analyzeMetadata() {
           const after = Number(n.FinalFields.Balance) / 1000000;
           const diff = after - before;
           console.log("   余额:", before, "→", after, "XAH");
-          console.log("   变化:", diff > 0 ? "+" : "", diff.toFixed(6), "XAH");
+          console.log("   变化:", (diff > 0 ? "+" : "") + diff.toFixed(6), "XAH");
         }
         // 显示 Sequence 变化
         if (n.FinalFields.Sequence) {
@@ -5486,7 +5709,7 @@ analyzeMetadata().catch(console.error);`,
         {
           title: {
             es: "Consultar la reserva actual de tu cuenta",
-            pt: "Consultar a reserva atual de seu conta",
+            pt: "Consultar a reserva atual de sua conta",
             en: "Query your account's current reserve",
             jp: "アカウントの現在のリザーブを照会",
             ko: "계정의 현재 reserve 조회",
@@ -5521,8 +5744,9 @@ async function consultarReserva(address) {
   const account = accountInfo.result.account_data;
   const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
-  const reservaTotal = reservaBase + (ownerCount * reservaObjeto);
-  const disponible = balance - reservaTotal;
+  // Redondeado a drops: 0.2 × 3 da 0.6000000000000001 en coma flotante
+  const reservaTotal = +(reservaBase + ownerCount * reservaObjeto).toFixed(6);
+  const disponible = +(balance - reservaTotal).toFixed(6);
 
   console.log("=== TU CUENTA ===");
   console.log("Dirección:", address);
@@ -5530,7 +5754,7 @@ async function consultarReserva(address) {
   console.log("Objetos en el ledger:", ownerCount);
   console.log("Reserva total:", reservaTotal, "XAH");
   console.log("  →", reservaBase, "XAH (base)");
-  console.log("  +", ownerCount, "x", reservaObjeto, "=", ownerCount * reservaObjeto, "XAH (objetos)");
+  console.log("  +", ownerCount, "x", reservaObjeto, "=", +(ownerCount * reservaObjeto).toFixed(6), "XAH (objetos)");
   console.log("Disponible para gastar:", disponible, "XAH");
 
   // Mostrar qué objetos tienes
@@ -5548,7 +5772,7 @@ async function consultarReserva(address) {
 
   console.log("=== OBJETOS POR TIPO ===");
   for (const [tipo, cantidad] of Object.entries(porTipo)) {
-    console.log("  " + tipo + ":", cantidad, "(reserva:", cantidad * reservaObjeto, "XAH)");
+    console.log("  " + tipo + ":", cantidad, "(reserva:", +(cantidad * reservaObjeto).toFixed(6), "XAH)");
   }
 
   await client.disconnect();
@@ -5561,12 +5785,12 @@ const { Client, Wallet } = require("xahau");
 async function consultarReserva(address) {
   const client = new Client("wss://xahau-test.net");
   await client.connect();
-  // Obter info do servidor para as reservas atuales
+  // Obter info do servidor para as reservas atuais
   const serverInfo = await client.request({ command: "server_info" });
   const ledgerInfo = serverInfo.result.info.validated_ledger;
   const reservaBase = ledgerInfo.reserve_base_xrp; // Em XAH
   const reservaObjeto = ledgerInfo.reserve_inc_xrp; // Em XAH
-  console.log("=== RESERVAS DE A REDE ===");
+  console.log("=== RESERVAS DA REDE ===");
   console.log("Reserva base (por conta):", reservaBase, "XAH");
   console.log("Reserva por objeto:", reservaObjeto, "XAH");
   // Obter info da conta
@@ -5578,15 +5802,16 @@ async function consultarReserva(address) {
   const account = accountInfo.result.account_data;
   const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
-  const reservaTotal = reservaBase + (ownerCount * reservaObjeto);
-  const disponible = balance - reservaTotal;
-  console.log("=== SEU CONTA ===");
-  console.log("Endereçou:", address);
+  // Arredondado para drops: 0.2 × 3 dá 0.6000000000000001 em ponto flutuante
+  const reservaTotal = +(reservaBase + ownerCount * reservaObjeto).toFixed(6);
+  const disponible = +(balance - reservaTotal).toFixed(6);
+  console.log("=== SUA CONTA ===");
+  console.log("Endereço:", address);
   console.log("Saldo total:", balance, "XAH");
   console.log("Objetos no ledger:", ownerCount);
   console.log("Reserva total:", reservaTotal, "XAH");
   console.log("  →", reservaBase, "XAH (base)");
-  console.log("  +", ownerCount, "x", reservaObjeto, "=", ownerCount * reservaObjeto, "XAH (objetos)");
+  console.log("  +", ownerCount, "x", reservaObjeto, "=", +(ownerCount * reservaObjeto).toFixed(6), "XAH (objetos)");
   console.log("Disponível para gastar:", disponible, "XAH");
   // Mostrar quais objetos você tem
   const objects = await client.request({
@@ -5601,11 +5826,11 @@ async function consultarReserva(address) {
   }
   console.log("=== OBJETOS POR TIPO ===");
   for (const [tipo, quantidade] of Object.entries(porTipo)) {
-    console.log("  " + tipo + ":", quantidade, "(reserva:", quantidade * reservaObjeto, "XAH)");
+    console.log("  " + tipo + ":", quantidade, "(reserva:", +(quantidade * reservaObjeto).toFixed(6), "XAH)");
   }
   await client.disconnect();
 }
-//Você pode usar seu conta ou rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
+//Você pode usar sua conta ou rf1NrYAsv92UPDd8nyCG4A3bez7dhYE61r
 // A conta a consultar: o primeiro argumento, ou a WALLET do .env
 consultarReserva(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             en: `require("dotenv").config();
@@ -5635,8 +5860,9 @@ async function consultarReserva(address) {
   const account = accountInfo.result.account_data;
   const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
-  const totalReserve = baseReserve + (ownerCount * ownerReserve);
-  const available = balance - totalReserve;
+  // Rounded to drops: 0.2 × 3 is 0.6000000000000001 in floating point
+  const totalReserve = +(baseReserve + ownerCount * ownerReserve).toFixed(6);
+  const available = +(balance - totalReserve).toFixed(6);
 
   console.log("=== YOUR ACCOUNT ===");
   console.log("Address:", address);
@@ -5644,7 +5870,7 @@ async function consultarReserva(address) {
   console.log("Objects in the ledger:", ownerCount);
   console.log("Total reserve:", totalReserve, "XAH");
   console.log("  →", baseReserve, "XAH (base)");
-  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH (objects)");
+  console.log("  +", ownerCount, "x", ownerReserve, "=", +(ownerCount * ownerReserve).toFixed(6), "XAH (objects)");
   console.log("Available to spend:", available, "XAH");
 
   // Show what objects you have
@@ -5662,7 +5888,7 @@ async function consultarReserva(address) {
 
   console.log("=== OBJECTS BY TYPE ===");
   for (const [tipo, count] of Object.entries(byType)) {
-    console.log("  " + tipo + ":", count, "(reserve:", count * ownerReserve, "XAH)");
+    console.log("  " + tipo + ":", count, "(reserve:", +(count * ownerReserve).toFixed(6), "XAH)");
   }
 
   await client.disconnect();
@@ -5697,8 +5923,9 @@ async function checkReserve(address) {
   const account = accountInfo.result.account_data;
   const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
-  const totalReserve = baseReserve + (ownerCount * ownerReserve);
-  const available = balance - totalReserve;
+  // drops 単位に丸める：浮動小数点では 0.2 × 3 が 0.6000000000000001 になる
+  const totalReserve = +(baseReserve + ownerCount * ownerReserve).toFixed(6);
+  const available = +(balance - totalReserve).toFixed(6);
 
   console.log("=== あなたのアカウント ===");
   console.log("アドレス：", address);
@@ -5706,7 +5933,7 @@ async function checkReserve(address) {
   console.log("レジャー内のオブジェクト数：", ownerCount);
   console.log("総リザーブ：", totalReserve, "XAH");
   console.log("  →", baseReserve, "XAH（基本）");
-  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH（オブジェクト）");
+  console.log("  +", ownerCount, "x", ownerReserve, "=", +(ownerCount * ownerReserve).toFixed(6), "XAH（オブジェクト）");
   console.log("使用可能残高：", available, "XAH");
 
   // 所有するオブジェクトを表示
@@ -5724,7 +5951,7 @@ async function checkReserve(address) {
 
   console.log("=== タイプ別オブジェクト ===");
   for (const [tipo, count] of Object.entries(byType)) {
-    console.log("  " + tipo + "：", count, "（リザーブ：", count * ownerReserve, "XAH）");
+    console.log("  " + tipo + "：", count, "（リザーブ：", +(count * ownerReserve).toFixed(6), "XAH）");
   }
 
   await client.disconnect();
@@ -5759,8 +5986,9 @@ async function checkReserve(address) {
   const account = accountInfo.result.account_data;
   const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
-  const totalReserve = baseReserve + (ownerCount * ownerReserve);
-  const available = balance - totalReserve;
+  // drops 단위로 반올림: 부동소수점에서 0.2 × 3은 0.6000000000000001이 됨
+  const totalReserve = +(baseReserve + ownerCount * ownerReserve).toFixed(6);
+  const available = +(balance - totalReserve).toFixed(6);
 
   console.log("=== 내 계정 ===");
   console.log("주소:", address);
@@ -5768,7 +5996,7 @@ async function checkReserve(address) {
   console.log("ledger 객체 수:", ownerCount);
   console.log("총 reserve:", totalReserve, "XAH");
   console.log("  →", baseReserve, "XAH (기본)");
-  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH (객체)");
+  console.log("  +", ownerCount, "x", ownerReserve, "=", +(ownerCount * ownerReserve).toFixed(6), "XAH (객체)");
   console.log("사용 가능 잔액:", available, "XAH");
 
   // 어떤 객체를 보유 중인지 확인
@@ -5786,7 +6014,7 @@ async function checkReserve(address) {
 
   console.log("=== 유형별 객체 ===");
   for (const [type, count] of Object.entries(byType)) {
-    console.log("  " + type + ":", count, "(reserve:", count * ownerReserve, "XAH)");
+    console.log("  " + type + ":", count, "(reserve:", +(count * ownerReserve).toFixed(6), "XAH)");
   }
 
   await client.disconnect();
@@ -5821,8 +6049,9 @@ async function checkReserve(address) {
   const account = accountInfo.result.account_data;
   const balance = Number(account.Balance) / 1000000;
   const ownerCount = account.OwnerCount;
-  const totalReserve = baseReserve + (ownerCount * ownerReserve);
-  const available = balance - totalReserve;
+  // 按 drops 取整：在浮点运算中 0.2 × 3 等于 0.6000000000000001
+  const totalReserve = +(baseReserve + ownerCount * ownerReserve).toFixed(6);
+  const available = +(balance - totalReserve).toFixed(6);
 
   console.log("=== 你的账户 ===");
   console.log("地址:", address);
@@ -5830,7 +6059,7 @@ async function checkReserve(address) {
   console.log("账本中的对象数:", ownerCount);
   console.log("总 reserve:", totalReserve, "XAH");
   console.log("  →", baseReserve, "XAH（基础）");
-  console.log("  +", ownerCount, "x", ownerReserve, "=", ownerCount * ownerReserve, "XAH（对象）");
+  console.log("  +", ownerCount, "x", ownerReserve, "=", +(ownerCount * ownerReserve).toFixed(6), "XAH（对象）");
   console.log("可用余额:", available, "XAH");
 
   // 显示你拥有哪些对象
@@ -5848,7 +6077,7 @@ async function checkReserve(address) {
 
   console.log("=== 按类型统计对象 ===");
   for (const [type, count] of Object.entries(byType)) {
-    console.log("  " + type + ":", count, "(reserve:", count * ownerReserve, "XAH)");
+    console.log("  " + type + ":", count, "(reserve:", +(count * ownerReserve).toFixed(6), "XAH)");
   }
 
   await client.disconnect();
@@ -5894,12 +6123,66 @@ A marca exata da transação`,
         {
           title: { es: "Orden y consistencia", pt: "Ordem e consistência", en: "Order and consistency", jp: "順序と一貫性", ko: "순서와 일관성", zh: "顺序与一致性" },
           content: {
-            es: "Dentro de un ledger:\n\n• Txs ordenadas por hash canónico\n• Procesadas secuencialmente\n• Mismo resultado en todos los nodos\n\nHash del ledger resume:\n• Ledger anterior + Txs + Estado\n• 80% UNL debe coincidir\n• Garantiza consistencia total",
-            pt: "Dentro de um ledger:\n\n• Txs ordenadas por hash canônico\n• Processadas sequencialmente\n• Mesmo resultado em todos os nós\n\nHash do ledger resume:\n• Ledger anterior + Txs + Estado\n• 80% UNL deve coincidir\n• Garante consistência total",
-            en: "Within a ledger:\n\n• Txs ordered by canonical hash\n• Processed sequentially\n• Same result on all nodes\n\nLedger hash summarizes:\n• Previous ledger + Txs + State\n• 80% UNL must agree\n• Guarantees total consistency",
-            jp: "レジャー内：\n\n• 正規ハッシュで順序付け\n• 順次処理\n• すべてのノードで同じ結果\n\nレジャーハッシュが要約：\n• 前のレジャー + トランザクション + 状態\n• UNLの80%が一致必要\n• 完全な一貫性を保証",
-            ko: "하나의 ledger 안에서:\n\n• tx는 canonical hash 순으로 정렬\n• 순차적으로 처리\n• 모든 노드에서 같은 결과\n\nledger hash는 다음을 요약:\n• 이전 ledger + tx + 상태\n• UNL의 80%가 일치해야 함\n• 완전한 일관성 보장",
-            zh: "在一个 ledger 内：\n\n• 交易按 canonical hash 排序\n• 按顺序逐笔处理\n• 所有节点得到相同结果\n\nledger hash 汇总了：\n• 前一个 ledger + 交易 + 状态\n• 必须有 80% 的 UNL 一致\n• 这保证了完整一致性",
+            es: `Los validadores acuerdan el CONJUNTO de transacciones
+
+Orden canónico, igual en todos los nodos:
+• Agrupadas por cuenta
+• Cuentas ordenadas por un hash del conjunto
+• Cada cuenta por Sequence
+
+Mismo conjunto + mismo orden + mismo estado
+→ mismo resultado y mismo hash del ledger
+• El 80% de la UNL firma el mismo hash`,
+            pt: `Os validadores acordam o CONJUNTO de transações
+
+Ordem canônica, igual em todos os nós:
+• Agrupadas por conta
+• Contas ordenadas por um hash do conjunto
+• Cada conta por Sequence
+
+Mesmo conjunto + mesma ordem + mesmo estado
+→ mesmo resultado e mesmo hash do ledger
+• 80% da UNL assina o mesmo hash`,
+            en: `Validators agree on the SET of transactions
+
+Canonical order, the same on every node:
+• Grouped by account
+• Accounts ordered by a hash of the set
+• Each account by Sequence
+
+Same set + same order + same state
+→ same result and same ledger hash
+• 80% of the UNL signs the same hash`,
+            jp: `バリデータが合意するのはトランザクションの集合
+
+正規順序（すべてのノードで同じ）：
+• アカウントごとにまとめる
+• 集合のハッシュでアカウントを並べる
+• 各アカウントは Sequence 順
+
+同じ集合 + 同じ順序 + 同じ状態
+→ 同じ結果、同じ台帳ハッシュ
+• UNL の 80% が同じハッシュに署名`,
+            ko: `검증자는 트랜잭션 집합에 합의
+
+정규 순서(모든 노드에서 동일):
+• 계정별로 묶음
+• 집합의 해시로 계정 순서 결정
+• 각 계정은 Sequence 순
+
+같은 집합 + 같은 순서 + 같은 상태
+→ 같은 결과, 같은 원장 해시
+• UNL의 80%가 같은 해시에 서명`,
+            zh: `验证者就交易集合达成一致
+
+规范顺序（每个节点都相同）：
+• 按账户分组
+• 按集合的哈希给账户排序
+• 每个账户按 Sequence
+
+相同集合 + 相同顺序 + 相同状态
+→ 相同结果和相同账本哈希
+• UNL 的 80% 签署同一个哈希`,
           },
           visual: "🔗",
         },
@@ -6313,26 +6596,32 @@ result.result.hash                     → معرّف المعاملة الفر�
     },
     m5bl5: {
       title: "المعاملات على مستوى الـ ledger",
-      theory: `لكي تفهم فعليًا كيف تعمل المعاملات، تحتاج إلى رؤية ما يحدث **داخل الـ ledger** عند معالجة معاملة. هذا سيساعدك على تشخيص المشاكل المعقدة وفهم الـ metadata.
+      theory: `لا تكتب المعاملة رصيدًا جديدًا في مكان ما: إنها تغيّر **كائنات** في حالة الـ ledger. تسرد بياناتها الوصفية كل كائن تغيّر، لذا فالبيانات الوصفية هي السجل الدقيق لما فعلته المعاملة. يوضح هذا الدرس كيف تقرؤها، وما هو الاحتياطي، وكيف تصل كل العقد إلى النتيجة نفسها.
 
-### كيف تعدّل المعاملة الـ ledger؟
+### حالة الـ ledger مكوّنة من كائنات
 
-عندما تُعالَج معاملة بنجاح، فإنها تعدّل **حالة الـ ledger**، أي الكائنات المخزّنة في قاعدة بيانات الـ ledger. تُسجَّل هذه التغييرات في **metadata** المعاملة.
+يخزّن الـ ledger كائنات تُسمى أيضًا مدخلات الـ ledger. لكل منها نوع، \`LedgerEntryType\`، ومعرّف فريد، \`LedgerIndex\`. بعض الأنواع التي ستقابلها في هذه الدورة:
 
-### AffectedNodes: بصمة المعاملة
+| النوع | ما هو |
+|---|---|
+| \`AccountRoot\` | حساب: رصيده و\`Sequence\` الخاص به وعدد الكائنات التي يملكها (\`OwnerCount\`) |
+| \`RippleState\` | خط ثقة بين حسابين، مع رصيد الـ token |
+| \`Offer\` | عرض على الـ DEX |
+| \`URIToken\` | NFT |
+| \`Ticket\` | رقم Sequence محجوز |
 
-حقل \`meta.AffectedNodes\` هو مصفوفة تصف **بالضبط ما الذي تغيّر** في الـ ledger. يمكن أن تكون كل عقدة (node) متأثرة من أحد ثلاثة أنواع:
+تنشئ المعاملة كائنات أو تعدّلها أو تحذفها. يسرد \`meta.AffectedNodes\` كلًا منها كنوع من ثلاثة أنواع من العقد.
 
-### CreatedNode: كائن جديد
+### CreatedNode وModifiedNode وDeletedNode
 
-أُنشئ كائن جديد في الـ ledger:
+**CreatedNode** كائن جديد. يحتوي \`NewFields\` على حقوله: أول خط ثقة، أو عرض جديد، أو URIToken مسكوك.
 
-\`\`\`
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // نوع الكائن
-    "LedgerIndex": "ABC123...",         // المعرّف الفريد للكائن
-    "NewFields": {                      // حقول الكائن الجديد
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -6341,40 +6630,35 @@ result.result.hash                     → معرّف المعاملة الفر�
 }
 \`\`\`
 
-أمثلة: trust line جديدة، عرض جديد في الـ DEX، URIToken جديد.
+**ModifiedNode** كائن كان موجودًا وتغيّر. يحتوي \`PreviousFields\` على الحقول التي تغيّرت فقط، بقيمها السابقة. ويحتوي \`FinalFields\` على الكائن كاملًا بعد التغيير، بما في ذلك الحقول التي لم تتغير.
 
-### ModifiedNode: كائن مُعدَّل
-
-عُدِّل كائن موجود:
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // الحالة قبل التعديل
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // الحالة بعد التعديل
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-يعرض \`PreviousFields\` فقط الحقول التي **تغيّرت** (وليس كل حقول الكائن). يعرض \`FinalFields\` الحالة الكاملة بعد التغيير.
+**DeletedNode** كائن لم يعد موجودًا: عرض نُفّذ أو أُلغي، أو خط ثقة عاد إلى الصفر وحُذف، أو URIToken أُحرق. يحتوي \`FinalFields\` على آخر حالة له.
 
-### DeletedNode: كائن محذوف
-
-أُزيل كائن من الـ ledger:
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // الحالة وقت الحذف
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -6382,46 +6666,77 @@ result.result.hash                     → معرّف المعاملة الفر�
 }
 \`\`\`
 
-أمثلة: عرض مكتمل/ملغى، trust line محذوفة (رصيد صفر)، URIToken محروق.
+### تتبّع دفعة
 
-### تتبع تغييرات الرصيد
+يرسل المثال الأول 5 XAH ويصنّف عقد بياناته الوصفية. المخرجات على testnet:
 
-في معاملة دفع، يمكنك تتبع بالضبط كيف تحرّكت الأموال بمراقبة عناصر \`ModifiedNode\` من نوع \`AccountRoot\`:
+\`\`\`
+=== تحليل البيانات الوصفية ===
+النتيجة: tesSUCCESS
+العقد المتأثرة: 2
+--- الكائنات المعدّلة ---
+  ~ AccountRoot
+   الرصيد: 5580.459088 → 5585.459088 XAH
+   التغيّر: +5.000000 XAH
+   Sequence: 805924369
+  ~ AccountRoot
+   الرصيد: 700.702532 → 695.702522 XAH
+   التغيّر: -5.000010 XAH
+   Sequence: 843750946
+--- الملخص ---
+الرسوم المدفوعة: 0.00001 XAH
+أُحرقت الرسوم (لم تذهب إلى أي حساب).
+\`\`\`
 
-- الحساب المرسل: \`Balance\` ينخفض (أرسل XAH)
-- الحساب المستقبل: \`Balance\` يرتفع (استقبل XAH)
-- الفرق بين الأرصدة هو \`Amount\` + \`Fee\`
+- **تغيّر كائنا \`AccountRoot\`** ولم يُنشأ أو يُحذف شيء: دفعة XAH بين حسابين موجودين لا تمس إلا الحسابين.
+- **الأول هو الوجهة.** زاد رصيده بمقدار 5 XAH بالضبط، أي الـ \`Amount\`.
+- **الثاني هو حسابك.** نقص بمقدار 5.000010 XAH: الـ \`Amount\` مضافًا إليه \`Fee\` قدره 10 drops. وزاد \`Sequence\` الخاص به بواحد، لأن كل معاملة تستهلك رقمًا واحدًا.
+- **تُظهر الوجهة أيضًا \`Sequence\`** رغم أنه لم يتغير: يقرؤه السكربت من \`FinalFields\` الذي يحتوي على الكائن كاملًا.
+- **الرسوم ليست في أي رصيد.** على Xahau تُحرق الرسوم: تخرج من المعروض الكلي.
 
-بالنسبة للرموز (IOUs)، تظهر التغييرات في عناصر \`ModifiedNode\` من نوع \`RippleState\`.
+دفعة الـ token تغيّر كائنات \`RippleState\` بالطريقة نفسها: يتغير رصيد خط الثقة بدلًا من \`Balance\` في \`AccountRoot\`.
 
-### Reserves: نظام الاحتياطي
+### الاحتياطي
 
-يستخدم ledger في Xahau نظام **احتياطي (reserve)** يؤثر على رصيدك المتاح:
+كل كائن تخزّنه كل عقد الشبكة. ولكي يكون لهذا التخزين ثمن، يجب على الحساب أن يحتجز جزءًا من XAH الخاص به ما دام يملك كائنات. هذا الجزء هو **الاحتياطي**، ولا يمكن إرساله:
 
-- **الاحتياطي الأساسي**: 1 XAH — الحد الأدنى لوجود حساب
-- **احتياطي الكائن**: 0.2 XAH عن كل كائن يملكه حسابك
+- **الاحتياطي الأساسي**: لكي يوجد الحساب نفسه.
+- **احتياطي المالك**: عن كل كائن يملكه الحساب، ويُعدّ في \`OwnerCount\`.
 
-كل كائن في الـ ledger (trust line، عرض، URIToken، Hook) يزيد احتياطيك. لا يمكن إنفاق الـ XAH المحجوز حتى تحذف الكائن.
+حذف كائن يحرّر حصته من الاحتياطي. تحدد الشبكة القيمتين؛ ويعيد \`server_info\` القيم الحالية. يقرأ المثال الثاني هذه القيم مع كائنات الحساب. المخرجات لحساب لديه 3 Tickets وخطا ثقة:
 
-### ترتيب المعالجة داخل ledger
+\`\`\`
+=== احتياطيات الشبكة ===
+الاحتياطي الأساسي (لكل حساب): 1 XAH
+احتياطي المالك (لكل كائن): 0.2 XAH
+=== حسابك ===
+العنوان: rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+إجمالي الرصيد: 660.702452 XAH
+الكائنات في الـ ledger: 5
+إجمالي الاحتياطي: 2 XAH
+  → 1 XAH (أساسي)
+  + 5 x 0.2 = 1 XAH (كائنات)
+المتاح للإنفاق: 658.702452 XAH
+=== الكائنات حسب النوع ===
+  Ticket: 3 (الاحتياطي: 0.6 XAH)
+  RippleState: 2 (الاحتياطي: 0.4 XAH)
+\`\`\`
 
-داخل ledger واحد، تُعالَج المعاملات بـ **ترتيب حتمي**:
+يقرّب السكربت إلى 6 منازل عشرية، وهي دقة الـ drop: في الفاصلة العائمة، 0.2 × 3 تساوي 0.6000000000000001.
 
-1. تُرتَّب المعاملات حسب **hash قانوني (canonical hash)** (وليس حسب Sequence أو وقت الإرسال)
-2. تُعالَج تسلسليًا وفق هذا الترتيب
-3. ترى كل معاملة حالة الـ ledger بعد المعاملة السابقة
-4. إذا تنافست معاملتان على نفس الموارد، تفوز الأولى (حسب الـ hash)
+### ترتيب المعاملات داخل الـ ledger
 
-هذا يضمن أن **كل المدققين يحسبون النتيجة نفسها بالضبط**، بغض النظر عن الترتيب الذي استقبلوا به المعاملات.
+يتفق المدققون على **مجموعة** معاملات الـ ledger، لا على ترتيبها. ثم تطبّق كل عقدة تلك المجموعة وفق **ترتيب قانوني** تحسبه أي عقدة بالطريقة نفسها:
 
-### hash الـ ledger
+1. تُجمَّع المعاملات حسب الحساب.
+2. تُرتَّب الحسابات بقيمة مشتقة من هاش المجموعة كاملة، فلا يستطيع أحد أن يختار أن يكون أولًا.
+3. تُطبَّق معاملات كل حساب بترتيب \`Sequence\`.
 
-عند إغلاق ledger، يُحسب **hash** يلخّص:
-- hash الـ ledger السابق (سلسلة الـ ledgers)
-- كل المعاملات المُدرجة و metadata الخاصة بها
-- حالة الـ ledger الكاملة (شجرة الحالة)
+ترى كل معاملة الحالة التي تركتها المعاملة السابقة. المجموعة نفسها، مطبّقة بالترتيب نفسه على الحالة نفسها، تعطي النتيجة نفسها على كل العقد. عندما تتنافس معاملتان على الشيء نفسه، مثل عرضين يريدان السيولة نفسها، تفوز التي تأتي أولًا في هذا الترتيب، ولا يحسم ذلك إرسالها أولًا.
 
-إذا حسب أحد المدققين hash مختلفًا عن 80% من الـ UNL، يُهمَل ledger الخاص به، وهذا يضمن اتساق الشبكة.`,
+### هاش الـ ledger
+
+عندما يُغلق الـ ledger، يغطي هاشه هاش الـ ledger السابق، والمعاملات مع بياناتها الوصفية، والحالة كاملة. أي تغيير في أي منها يغيّر الهاش. يوقّع كل مدقق الهاش الذي حسبه. يُعتمد الـ ledger عندما يوقّع عدد كافٍ من مدققي الـ UNL، أي 80%، على الهاش نفسه. العقدة التي حسبت هاشًا مختلفًا لا تحتفظ بنسختها: بل تأخذ الـ ledger المعتمد.`,
       codeTitles: [
         "تحليل AffectedNodes لمعاملة",
         "استعلام reserve الحالي لحسابك",
@@ -6437,7 +6752,16 @@ result.result.hash                     → معرّف المعاملة الفر�
         },
         {
           title: "الترتيب والاتساق",
-          content: "Sequence يرتب معاملات الحساب\nConsensus يرتب معاملات الشبكة\nValidated ledger يعطي حالة واحدة متفق عليها\n\nالنتيجة: اتساق بين كل العقد.",
+          content: `يتفق المدققون على مجموعة المعاملات
+
+ترتيب قانوني، نفسه على كل عقدة:
+• تُجمَّع حسب الحساب
+• تُرتَّب الحسابات بهاش المجموعة
+• كل حساب بترتيب Sequence
+
+المجموعة نفسها + الترتيب نفسه + الحالة نفسها
+← النتيجة نفسها وهاش الـ ledger نفسه
+• 80% من الـ UNL توقّع الهاش نفسه`,
         },
       ],
     },
@@ -6825,26 +7149,32 @@ result.result.hash                     → Hash unique de la transaction
     },
     m5bl5: {
       title: "Les transactions au niveau du ledger",
-      theory: `Pour vraiment comprendre comment fonctionnent les transactions, tu dois voir ce qui se passe **à l'intérieur du ledger** quand une transaction est traitée. Cela t'aidera à déboguer des problèmes complexes et à comprendre les métadonnées.
+      theory: `Une transaction n'écrit pas un nouveau solde quelque part : elle modifie des **objets** de l'état du ledger. Ses métadonnées listent chaque objet modifié : elles sont donc le relevé exact de ce qu'a fait une transaction. Cette leçon montre comment les lire, ce qu'est la réserve et comment tous les nœuds arrivent au même résultat.
 
-### Comment une transaction modifie-t-elle le ledger ?
+### L'état du ledger est fait d'objets
 
-Quand une transaction est traitée avec succès, elle modifie l'**état du ledger**, c'est-à-dire les objets stockés dans la base de données du ledger. Ces changements sont enregistrés dans les **métadonnées** de la transaction.
+Le ledger stocke des objets, aussi appelés entrées du ledger. Chacun a un type, \`LedgerEntryType\`, et un ID unique, \`LedgerIndex\`. Quelques types que tu rencontreras dans ce cours :
 
-### AffectedNodes : l'empreinte de la transaction
+| Type | Ce que c'est |
+|---|---|
+| \`AccountRoot\` | Un compte : son solde, son \`Sequence\` et le nombre d'objets qu'il possède (\`OwnerCount\`) |
+| \`RippleState\` | Une trust line entre deux comptes, avec son solde de token |
+| \`Offer\` | Une offre sur le DEX |
+| \`URIToken\` | Un NFT |
+| \`Ticket\` | Un numéro de Sequence réservé |
 
-Le champ \`meta.AffectedNodes\` est un tableau qui décrit **exactement ce qui a changé** dans le ledger. Chaque nœud affecté peut être de l'un des trois types suivants :
+Une transaction crée, modifie ou supprime des objets. \`meta.AffectedNodes\` les liste chacun comme l'un de trois types de nœud.
 
-### CreatedNode : nouvel objet
+### CreatedNode, ModifiedNode, DeletedNode
 
-Un nouvel objet a été créé dans le ledger :
+Un **CreatedNode** est un nouvel objet. \`NewFields\` contient ses champs : une première trust line, une nouvelle offre, un URIToken frappé.
 
-\`\`\`
+\`\`\`json
 {
   "CreatedNode": {
-    "LedgerEntryType": "RippleState",  // Type d'objet
-    "LedgerIndex": "ABC123...",         // ID unique de l'objet
-    "NewFields": {                      // Les champs du nouvel objet
+    "LedgerEntryType": "RippleState",
+    "LedgerIndex": "ABC123...",
+    "NewFields": {
       "Balance": { "value": "100" },
       "LowLimit": { ... },
       "HighLimit": { ... }
@@ -6853,40 +7183,35 @@ Un nouvel objet a été créé dans le ledger :
 }
 \`\`\`
 
-Exemples : nouvelle trust line, nouvelle offre sur le DEX, nouveau URIToken.
+Un **ModifiedNode** est un objet qui existait et qui a changé. \`PreviousFields\` ne contient que les champs modifiés, avec leurs anciennes valeurs. \`FinalFields\` contient l'objet entier après la modification, y compris les champs inchangés.
 
-### ModifiedNode : objet modifié
-
-Un objet existant a été modifié :
-
-\`\`\`
+\`\`\`json
 {
   "ModifiedNode": {
     "LedgerEntryType": "AccountRoot",
     "LedgerIndex": "DEF456...",
-    "PreviousFields": {                // État AVANT
-      "Balance": "100000000"
+    "PreviousFields": {
+      "Balance": "100000000",
+      "Sequence": 42
     },
-    "FinalFields": {                   // État APRÈS
-      "Balance": "95000000",
-      "Sequence": 43
+    "FinalFields": {
+      "Account": "r...",
+      "Balance": "94999990",
+      "Sequence": 43,
+      "OwnerCount": 2
     }
   }
 }
 \`\`\`
 
-\`PreviousFields\` ne montre que les champs qui ont **changé** (pas tous les champs de l'objet). \`FinalFields\` montre l'état complet après le changement.
+Un **DeletedNode** est un objet qui n'existe plus : une offre exécutée ou annulée, une trust line revenue à zéro et supprimée, un URIToken brûlé. \`FinalFields\` contient son dernier état.
 
-### DeletedNode : objet supprimé
-
-Un objet a été retiré du ledger :
-
-\`\`\`
+\`\`\`json
 {
   "DeletedNode": {
     "LedgerEntryType": "Offer",
     "LedgerIndex": "GHI789...",
-    "FinalFields": {                   // État au moment de la suppression
+    "FinalFields": {
       "TakerPays": "0",
       "TakerGets": "0"
     }
@@ -6894,51 +7219,91 @@ Un objet a été retiré du ledger :
 }
 \`\`\`
 
-Exemples : offre complétée/annulée, trust line supprimée (solde nul), URIToken brûlé.
+### Suivre un paiement
 
-### Changements de solde : suivre l'argent
+Le premier exemple envoie 5 XAH et classe les nœuds de ses métadonnées. Sortie sur le testnet :
 
-Dans une transaction de paiement, tu peux tracer exactement comment l'argent s'est déplacé en observant les entrées \`ModifiedNode\` de type \`AccountRoot\` :
+\`\`\`
+=== ANALYSE DES MÉTADONNÉES ===
+Résultat : tesSUCCESS
+Nœuds affectés : 2
+--- OBJETS MODIFIÉS ---
+  ~ AccountRoot
+   Solde : 5595.459088 → 5600.459088 XAH
+   Variation : +5.000000 XAH
+   Sequence : 805924369
+  ~ AccountRoot
+   Solde : 685.702502 → 680.702492 XAH
+   Variation : -5.000010 XAH
+   Sequence : 843750949
+--- RÉSUMÉ ---
+Frais payés : 0.00001 XAH
+Les frais ont été brûlés (ils ne sont allés sur aucun compte).
+\`\`\`
 
-- Le compte source : \`Balance\` diminue (a envoyé du XAH)
-- Le compte destination : \`Balance\` augmente (a reçu du XAH)
-- La différence entre les soldes correspond au \`Amount\` + \`Fee\`
+- **Deux objets \`AccountRoot\` ont changé**, et rien n'a été créé ni supprimé : un paiement en XAH entre comptes existants ne touche que les deux comptes.
+- **Le premier est la destination.** Son solde a augmenté d'exactement 5 XAH, l'\`Amount\`.
+- **Le second est ton compte.** Il a perdu 5.000010 XAH : l'\`Amount\` plus le \`Fee\` de 10 drops. Son \`Sequence\` a augmenté de un, car chaque transaction en consomme un.
+- **La destination affiche aussi un \`Sequence\`**, bien qu'il n'ait pas changé : le script le lit dans \`FinalFields\`, qui contient l'objet entier.
+- **Les frais ne sont dans aucun solde.** Sur Xahau, les frais sont brûlés : ils sortent de l'offre totale.
 
-Pour les tokens (IOUs), les changements sont visibles dans les entrées \`ModifiedNode\` de type \`RippleState\`.
+Un paiement de token modifie des objets \`RippleState\` de la même façon : le solde de la trust line, au lieu du \`Balance\` d'un \`AccountRoot\`.
 
-### Reserves : le système de réserve
+### La réserve
 
-Le réseau Xahau utilise un système de **réserve** qui affecte ton solde disponible :
+Chaque objet est stocké par tous les nœuds du réseau. Pour que ce stockage ait un coût, un compte doit immobiliser une partie de ses XAH tant qu'il possède des objets. Cette partie est la **réserve**, et elle ne peut pas être envoyée :
 
-- **Réserve de base** : 1 XAH — minimum pour qu'un compte existe
-- **Réserve par objet** : 0,2 XAH pour chaque objet possédé par ton compte
+- **Réserve de base** : pour que le compte lui-même existe.
+- **Réserve par objet** : pour chaque objet que possède le compte, compté dans \`OwnerCount\`.
 
-Chaque objet du ledger (trust line, offre, URIToken, Hook) augmente ta réserve. Le XAH réservé ne peut pas être dépensé tant que tu ne supprimes pas l'objet.
+Supprimer un objet libère sa part de la réserve. Le réseau fixe les deux valeurs ; \`server_info\` renvoie les valeurs actuelles. Le second exemple les lit avec les objets du compte. Sortie pour un compte avec 3 Tickets et 2 trust lines :
 
-### Ordre de traitement au sein d'un ledger
+\`\`\`
+=== RÉSERVES DU RÉSEAU ===
+Réserve de base (par compte) : 1 XAH
+Réserve propriétaire (par objet) : 0.2 XAH
+=== TON COMPTE ===
+Adresse : rBLuS1gEPkFMvyogRRyPyMQWZPfSMRZCqU
+Solde total : 660.702452 XAH
+Objets dans le ledger : 5
+Réserve totale : 2 XAH
+  → 1 XAH (base)
+  + 5 x 0.2 = 1 XAH (objets)
+Disponible à dépenser : 658.702452 XAH
+=== OBJETS PAR TYPE ===
+  Ticket: 3 (réserve : 0.6 XAH)
+  RippleState: 2 (réserve : 0.4 XAH)
+\`\`\`
 
-À l'intérieur d'un ledger, les transactions sont traitées dans un **ordre déterministe** :
+Le script arrondit à 6 décimales, la précision d'un drop : en virgule flottante, 0.2 × 3 donne 0.6000000000000001.
 
-1. Les transactions sont triées par **hash canonique** (pas par Sequence ni par ordre de soumission)
-2. Elles sont traitées séquentiellement dans cet ordre
-3. Chaque transaction voit l'état du ledger après la transaction précédente
-4. Si deux transactions se disputent les mêmes ressources, la première (par hash) l'emporte
+### L'ordre des transactions dans un ledger
 
-Cela garantit que **tous les validateurs calculent exactement le même résultat**, quel que soit l'ordre dans lequel ils ont reçu les transactions.
+Les validateurs se mettent d'accord sur l'**ensemble** des transactions d'un ledger, pas sur un ordre. Chaque nœud applique ensuite cet ensemble dans un **ordre canonique** que tout nœud calcule de la même façon :
+
+1. Les transactions sont regroupées par compte.
+2. Les comptes sont ordonnés à l'aide d'une valeur dérivée du hash de l'ensemble : personne ne peut choisir de passer en premier.
+3. Les transactions de chaque compte sont appliquées dans l'ordre de \`Sequence\`.
+
+Chaque transaction voit l'état laissé par la précédente. Le même ensemble, appliqué dans le même ordre au même état, donne le même résultat sur tous les nœuds. Quand deux transactions se disputent la même chose, par exemple deux offres qui visent la même liquidité, celle qui vient en premier dans cet ordre l'emporte ; l'envoyer plus tôt ne le décide pas.
 
 ### Le hash du ledger
 
-Quand un ledger se ferme, un **hash** est calculé qui résume :
-- Le hash du ledger précédent (chaîne de ledgers)
-- Toutes les transactions incluses et leurs métadonnées
-- L'état complet du ledger (state tree)
-
-Si un validateur calcule un hash différent de celui de 80 % de l'UNL, son ledger est rejeté — cela garantit la cohérence du réseau.`,
+Quand un ledger se ferme, son hash couvre le hash du ledger précédent, les transactions avec leurs métadonnées et l'état entier. Un changement dans l'un d'eux change le hash. Chaque validateur signe le hash qu'il a calculé. Un ledger est validé quand assez de validateurs de l'UNL, 80 %, ont signé le même hash. Un nœud qui a calculé un hash différent ne garde pas sa version : il adopte le ledger validé.`,
       codeTitles: ["Analyser les AffectedNodes d'une transaction", "Consulter la réserve actuelle de ton compte"],
       slides: [
         ["AffectedNodes", "Liste des objets touchés par une transaction\n\n• CreatedNode\n• ModifiedNode\n• DeletedNode\n\nC'est la trace exacte de l'effet sur le ledger."],
         ["Système de réserve", "Un compte doit garder une réserve de base\n\nCertains objets augmentent la réserve requise\n\nCela évite de remplir le ledger gratuitement."],
-        ["Ordre et cohérence", "Les transactions s'appliquent dans un ordre déterministe\n\nLe ledger validé final est le résultat commun accepté par le consensus."],
+        ["Ordre et cohérence", `Les validateurs s'accordent sur l'ENSEMBLE des transactions
+
+Ordre canonique, identique sur chaque nœud :
+• Regroupées par compte
+• Comptes ordonnés par un hash de l'ensemble
+• Chaque compte par Sequence
+
+Même ensemble + même ordre + même état
+→ même résultat et même hash du ledger
+• 80 % de l'UNL signe le même hash`],
       ],
     },
   },

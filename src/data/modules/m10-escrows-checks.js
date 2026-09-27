@@ -4287,11 +4287,11 @@ claimReward();`,
           title: { es: "Cómo reclamar", pt: "Como reivindicar", en: "How to claim", jp: "請求方法", zh: "如何领取" },
           content: {
             es: "1ª vez → Activa tu cuenta para recompensas\nSiguientes → Reclama lo acumulado\n\nCampos:\n• Account: tu cuenta\n• Issuer: genesis account de la red\n• Flags: 0 (reclamar) / 1 (desactivar)\n\nFee estándar, compatible con Hooks",
-            pt: `1ª vez → Activa seu conta para recompensas
+            pt: `1ª vez → Activa sua conta para recompensas
 Próximos → Reclame o acumulado
 
 Campos:
-• Account: seu conta
+• Account: sua conta
 • Issuer: genesis account da rede
 • Flags: 0 (reclamar) / 1 (desativar)
 

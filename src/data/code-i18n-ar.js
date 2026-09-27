@@ -1059,4 +1059,5 @@ export const AR = {
   "The CASH account from .env receives the funds": "حساب CASH من .env يستقبل الأموال",
   "The connected device only needs the address, never the seed": "الجهاز المتصل يحتاج إلى العنوان فقط، ولا يحتاج أبدًا إلى الـ seed",
   "The same amount in XAH, as an XFL: drops × 10^-6": "المبلغ نفسه بالـ XAH، بصيغة XFL: drops × 10^-6",
+  "Rounded to drops: 0.2 × 3 is 0.6000000000000001 in floating point": "مقرّب إلى الـ drops: في الفاصلة العائمة 0.2 × 3 تساوي 0.6000000000000001",
 }

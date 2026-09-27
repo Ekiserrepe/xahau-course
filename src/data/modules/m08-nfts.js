@@ -1363,7 +1363,7 @@ async function buyURIToken() {
   if (result.result.meta.TransactionResult === "tesSUCCESS") {
     console.log("URIToken comprado com sucesso!");
     console.log("O NFT agora é seu.");
-        console.log("Endereçou do comprador:", buyer.address);
+        console.log("Endereço do comprador:", buyer.address);
   }
   await client.disconnect();
 }

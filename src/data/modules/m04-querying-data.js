@@ -387,7 +387,7 @@ async function getAccountInfo(address) {
   });
   const data = response.result.account_data;
   console.log("=== Dados da conta ===");
-  console.log("Endereçou:", data.Account);
+  console.log("Endereço:", data.Account);
   console.log("Saldo:", Number(data.Balance) / 1_000_000, "XAH");
   console.log("Sequência:", data.Sequence);
   console.log("Objetos do proprietário:", data.OwnerCount);
@@ -814,7 +814,7 @@ async function getAccountTransactions(address) {
   }
   await client.disconnect();
 }
-//Exemplo de endereçou: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
+//Exemplo de endereço: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
 // A conta a consultar: o primeiro argumento, ou a WALLET do .env
 getAccountTransactions(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             en: `require("dotenv").config();
@@ -1050,7 +1050,7 @@ async function getAccountObjects(address) {
   // Manter a conexão aberta por 60 segundos
   setTimeout(() => client.disconnect(), 60000);
 }
-//Exemplo de endereçou: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
+//Exemplo de endereço: rDADDYfnLvVY9FBnS8zFXhwYFHPuU5q2Sk
 // A conta a consultar: o primeiro argumento, ou a WALLET do .env
 getAccountObjects(process.argv[2] ?? Wallet.fromSeed(process.env.WALLET_SEED, {algorithm: 'secp256k1'}).address);`,
             en: `require("dotenv").config();
