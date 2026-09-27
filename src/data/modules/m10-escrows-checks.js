@@ -7922,30 +7922,30 @@ applyFrenchTranslations(moduleData);
 
 const expandedM10Theory = {
   m10l1: {
-    fr: `Un **Escrow** est un paiement conditionnel qui verrouille des fonds jusqu'a ce que des conditions precises soient remplies. C'est comparable a une enveloppe scellee contenant de l'argent, ou a un coffre qui ne s'ouvre que dans certaines circonstances.
+    fr: `Un **Escrow** est un paiement conditionnel qui verrouille des fonds jusqu'à ce que des conditions précises soient remplies. C'est comparable à une enveloppe scellée contenant de l'argent, ou à un coffre qui ne s'ouvre que dans certaines circonstances.
 
 ### Cas d'usage
 
-- **Paiements programmes** : liberer des fonds a une date future precise
-- **Atomic swaps** : echanger entre parties qui ne se font pas confiance
-- **Liberation conditionnelle** : liberer seulement avec une preuve cryptographique
+- **Paiements programmés** : libérer des fonds à une date future précise
+- **Atomic swaps** : échanger entre parties qui ne se font pas confiance
+- **Libération conditionnelle** : libérer seulement avec une preuve cryptographique
 - **Vesting** : distribuer progressivement des tokens dans le temps
 
 ### EscrowCreate
 
-\`EscrowCreate\` verrouille un montant avec des conditions. \`Amount\` indique ce qui est bloque, \`Destination\` indique le destinataire, \`FinishAfter\` indique la date minimale de liberation, \`CancelAfter\` la date a partir de laquelle on peut annuler, et \`Condition\` ajoute une crypto-condition optionnelle.
+\`EscrowCreate\` verrouille un montant avec des conditions. \`Amount\` indique ce qui est bloqué, \`Destination\` indique le destinataire, \`FinishAfter\` indique la date minimale de libération, \`CancelAfter\` la date à partir de laquelle on peut annuler, et \`Condition\` ajoute une crypto-condition optionnelle.
 
-Regles importantes : il faut au moins \`FinishAfter\` ou \`Condition\`; si \`CancelAfter\` existe, il doit etre apres \`FinishAfter\`; les temps utilisent le Ripple Epoch, en secondes depuis le 01/01/2000 UTC.
+Règles importantes : il faut au moins \`FinishAfter\` ou \`Condition\`; si \`CancelAfter\` existe, il doit être après \`FinishAfter\`; les temps utilisent le Ripple Epoch, en secondes depuis le 01/01/2000 UTC.
 
 ### EscrowFinish et EscrowCancel
 
-\`EscrowFinish\` libere les fonds vers le destinataire. Tout compte peut l'executer, mais seulement apres \`FinishAfter\` et, s'il existe une \`Condition\`, avec le bon \`Fulfillment\`. \`Owner\` et \`OfferSequence\` identifient l'escrow.
+\`EscrowFinish\` libère les fonds vers le destinataire. Tout compte peut l'exécuter, mais seulement après \`FinishAfter\` et, s'il existe une \`Condition\`, avec le bon \`Fulfillment\`. \`Owner\` et \`OfferSequence\` identifient l'escrow.
 
-\`EscrowCancel\` renvoie les fonds au createur apres \`CancelAfter\`. Toute personne peut envoyer l'annulation, mais les fonds retournent toujours au compte createur.
+\`EscrowCancel\` renvoie les fonds au créateur après \`CancelAfter\`. Toute personne peut envoyer l'annulation, mais les fonds retournent toujours au compte créateur.
 
 ### Crypto-conditions
 
-Xahau supporte les crypto-conditions Interledger, notamment PREIMAGE-SHA-256. Le createur genere une \`Condition\` et conserve le \`Fulfillment\`. Pour terminer l'escrow, il faut prouver que l'on connait la preimage correspondant au hash.
+Xahau supporte les crypto-conditions Interledger, notamment PREIMAGE-SHA-256. Le créateur génère une \`Condition\` et conserve le \`Fulfillment\`. Pour terminer l'escrow, il faut prouver que l'on connaît la preimage correspondant au hash.
 
 ### Exécuter les exemples
 
@@ -7980,21 +7980,21 @@ Le premier exemple crée l'escrow depuis \`WALLET\` et affiche son \`Sequence\`.
 ينشئ المثال الأول الـ escrow من \`WALLET\` ويطبع الـ \`Sequence\` الخاص به. بعد مرور الدقيقتين الخاصتين بـ \`FinishAfter\`، شغّل المثال الثاني مع ذلك الـ \`Sequence\` كأول وسيط. قبل ذلك، يطبع السكربت عدد الثواني المتبقية.`,
   },
   m10l4: {
-    fr: `Xahau possede un **systeme natif de recompenses** qui distribue du XAH aux comptes qui participent activement au reseau. La transaction \`ClaimReward\` sert a reclamer les recompenses accumulees.
+    fr: `Xahau possède un **système natif de récompenses** qui distribue du XAH aux comptes qui participent activement au réseau. La transaction \`ClaimReward\` sert à réclamer les récompenses accumulées.
 
-Contrairement aux blockchains Proof of Stake, il n'est pas necessaire de staker, deleguer ou executer un validateur. Les recompenses s'accumulent selon le solde XAH et le temps ecoule. Pour les recevoir, le compte envoie periodiquement \`ClaimReward\`; le montant est alors ajoute au solde.
+Contrairement aux blockchains Proof of Stake, il n'est pas nécessaire de staker, déléguer ou exécuter un validateur. Les récompenses s'accumulent selon le solde XAH et le temps écoulé. Pour les recevoir, le compte envoie périodiquement \`ClaimReward\`; le montant est alors ajoute au solde.
 
 ### Champs
 
-\`TransactionType\` vaut \`"ClaimReward"\`, \`Account\` est le compte qui reclame, \`Issuer\` est l'adresse de l'issuer des recompenses du reseau, et \`Flags: 1\` permet d'arreter la participation.
+\`TransactionType\` vaut \`"ClaimReward"\`, \`Account\` est le compte qui réclame, \`Issuer\` est l'adresse de l'issuer des récompenses du réseau, et \`Flags: 1\` permet d'arrêter la participation.
 
-### Activation, reclamation et desactivation
+### Activation, réclamation et désactivation
 
-Le premier \`ClaimReward\` active le compte dans le systeme. Les suivants reclament ce qui s'est accumule depuis la derniere reclamation. On peut reclamer regulierement, par exemple chaque jour ou semaine. Pour se desactiver, envoyer \`ClaimReward\` avec \`Flags: 1\`.
+Le premier \`ClaimReward\` active le compte dans le système. Les suivants réclament ce qui s'est accumulé depuis la dernière réclamation. On peut réclamer régulièrement, par exemple chaque jour ou semaine. Pour se désactiver, envoyer \`ClaimReward\` avec \`Flags: 1\`.
 
-### Considerations
+### Considérations
 
-Les recompenses dependent du solde, du temps et du reseau. Les frais sont standards. Les comptes avec Hooks restent compatibles. L'adresse \`Issuer\` n'est pas universelle : elle depend du reseau testnet ou mainnet.
+Les récompenses dépendent du solde, du temps et du réseau. Les frais sont standards. Les comptes avec Hooks restent compatibles. L'adresse \`Issuer\` n'est pas universelle : elle dépend du réseau testnet ou mainnet.
 
 ### ClaimReward sur le testnet
 
@@ -8020,21 +8020,21 @@ Sur le testnet, le compte genèse n'a pas de Hook de récompenses installé : l'
 على testnet لا يحمل حساب التكوين (genesis) Hook المكافآت، لذلك يعيد المثال \`tecNO_TARGET\`: المعاملة صالحة، لكن لا توجد مكافآت للمطالبة بها. على mainnet يحمل حساب التكوين الـ Hooks التي تحسب المكافآت، والمعاملة نفسها تطالب بها.`,
   },
   m10l5: {
-    fr: `\`Invoke\` est une transaction propre a Xahau qui permet **d'activer volontairement un Hook** sans envoyer de paiement ni autre effet economique. C'est le mecanisme de declenchement direct d'un Hook.
+    fr: `\`Invoke\` est une transaction propre à Xahau qui permet **d'activer volontairement un Hook** sans envoyer de paiement ni autre effet économique. C'est le mécanisme de déclenchement direct d'un Hook.
 
-Les Hooks s'executent normalement de facon reactive quand une transaction traverse le compte. Mais il existe des cas ou l'on veut declencher la logique sans transfert : maintenance, recalcul, synchronisation, test ou activation d'un autre Hook.
+Les Hooks s'exécutent normalement de façon réactive quand une transaction traverse le compte. Mais il existe des cas où l'on veut déclencher la logique sans transfert : maintenance, recalcul, synchronisation, test ou activation d'un autre Hook.
 
 ### Champs
 
-\`TransactionType\` vaut \`"Invoke"\`; \`Account\` est l'emetteur; \`Destination\` est optionnel. Sans \`Destination\`, les Hooks du compte emetteur s'activent. Avec \`Destination\`, les Hooks du compte destination sont appeles.
+\`TransactionType\` vaut \`"Invoke"\`; \`Account\` est l'émetteur; \`Destination\` est optionnel. Sans \`Destination\`, les Hooks du compte émetteur s'activent. Avec \`Destination\`, les Hooks du compte destination sont appelÃ©s.
 
-### Passer des donnees
+### Passer des données
 
-On peut ajouter des donnees dans \`Memos\` ou \`HookParameters\` afin que le Hook sache quelle action effectuer. Un Hook peut aussi emettre un \`Invoke\` vers un autre compte.
+On peut ajouter des données dans \`Memos\` ou \`HookParameters\` afin que le Hook sache quelle action effectuer. Un Hook peut aussi émettre un \`Invoke\` vers un autre compte.
 
-### Considerations
+### Considérations
 
-\`Invoke\` ne transfere pas de fonds. Le Hook doit ecouter Invoke dans \`HookOn\`. Les frais sont standards. \`CronSet\` couvre la planification native, mais \`Invoke\` reste utile pour les declenchements manuels et les flux personnalises.`,
+\`Invoke\` ne transfère pas de fonds. Le Hook doit écouter Invoke dans \`HookOn\`. Les frais sont standards. \`CronSet\` couvre la planification native, mais \`Invoke\` reste utile pour les déclenchements manuels et les flux personnalisés.`,
     ar: `\`Invoke\` معاملة خاصة بـ Xahau تسمح **بتفعيل Hook عمدا** دون إرسال دفع أو أثر اقتصادي آخر. هي طريقة استدعاء Hook مباشرة.
 
 عادة تعمل Hooks بشكل تفاعلي عندما تمر معاملة عبر الحساب. لكن أحيانا نحتاج تشغيل المنطق دون تحويل: صيانة، إعادة حساب، مزامنة، اختبار، أو تفعيل Hook آخر.
@@ -8052,23 +8052,35 @@ On peut ajouter des donnees dans \`Memos\` ou \`HookParameters\` afin que le Hoo
 \`Invoke\` لا ينقل أموالا. يجب أن يكون Hook مستعدا لـ Invoke في \`HookOn\`. الرسوم عادية. \`CronSet\` يغطي الجدولة الأصلية، لكن \`Invoke\` يبقى مفيدا للتشغيل اليدوي والتدفقات الخاصة.`,
   },
   m10l6: {
-    fr: `\`SetRemarks\` attache des **paires cle-valeur** a des objets existants du ledger sur le réseau Xahau. Ce n'est pas un systeme de messages dans les transactions : c'est une annotation persistante associee a l'objet lui-meme.
+    fr: `\`SetRemarks\` attache des **paires clé-valeur** à des objets existants du ledger sur le réseau Xahau. Ce n'est pas un système de messages dans les transactions : c'est une annotation persistante associée à l'objet lui-même.
 
 ### Objets compatibles
 
-Remarks peut annoter AccountRoot, Offer, Escrow, Ticket, PayChannel, Check, DepositPreauth, URIToken et RippleState. Seul le proprietaire ou l'issuer de l'objet peut modifier ses Remarks, avec des regles particulieres pour URITokens et TrustLines.
+Remarks peut annoter AccountRoot, Offer, Escrow, Ticket, PayChannel, Check, DepositPreauth, URIToken et RippleState. Seul le propriétaire ou l'issuer de l'objet peut modifier ses Remarks, avec des règles particulières pour URITokens et TrustLines.
 
 ### Champs et structure
 
-\`SetRemarks\` contient \`Account\`, \`ObjectID\` et un tableau \`Remarks\`. Chaque \`Remark\` contient \`RemarkName\` (cle hex, 1-256 bytes), \`RemarkValue\` optionnel (valeur hex, 1-256 bytes) et \`Flags\`. Omettre \`RemarkValue\` supprime la Remark. \`Flags: 1\` (\`tfImmutable\`) la rend permanente.
+\`SetRemarks\` contient \`Account\`, \`ObjectID\` et un tableau \`Remarks\`. Chaque \`Remark\` contient \`RemarkName\` (clé hex, 1-256 bytes), \`RemarkValue\` optionnel (valeur hex, 1-256 bytes) et \`Flags\`. Omettre \`RemarkValue\` supprime la Remark. \`Flags: 1\` (\`tfImmutable\`) la rend permanente.
 
 ### ObjectID
 
-Pour AccountRoot, l'ObjectID est le champ \`index\` retourne par \`account_info\`. Pour Escrow, Check, Offer et autres objets, il correspond au \`LedgerIndex\` visible dans les \`AffectedNodes\` lors de la creation.
+Pour AccountRoot, l'ObjectID est le champ \`index\` retourne par \`account_info\`. Pour Escrow, Check, Offer et autres objets, il correspond au \`LedgerIndex\` visible dans les \`AffectedNodes\` lors de la création.
 
-### Limites, couts et erreurs
+### Limites, coûts et erreurs
 
-Maximum 32 Remarks par objet. Les frais ajoutent 1 drop par byte de nom et valeur. Les noms doivent etre uniques par objet. Erreurs courantes : \`temDISABLED\`, \`tecNO_PERMISSION\`, \`tecIMMUTABLE\`, \`tecTOO_MANY_REMARKS\`.`,
+Maximum 32 Remarks par objet. Les frais ajoutent 1 drop par byte de nom et valeur. Les noms doivent être uniques par objet. Erreurs courantes : \`temDISABLED\`, \`tecNO_PERMISSION\`, \`tecIMMUTABLE\`, \`tecTOO_MANY_REMARKS\`.
+
+### Pourquoi ce n'est pas un Memo
+
+Un Memo est attaché à une transaction historique. Une Remark est attachée à un objet encore présent dans le ledger. Cela signifie qu'elle reste consultable avec l'objet, par exemple un AccountRoot, une TrustLine ou un URIToken, et qu'elle peut être mise à jour ou supprimée selon les règles.
+
+### Champs en détail
+
+\`ObjectID\` est obligatoire et pointe vers l'objet à annoter. \`Remarks\` est un tableau, ce qui permet de créer ou modifier plusieurs entrées dans une seule transaction. \`RemarkName\` doit être unique pour cet objet. \`RemarkValue\` est facultatif uniquement parce que son absence signifie suppression. \`tfImmutable\` doit être choisi avec prudence, car il rend l'entrée définitive.
+
+### Conseils de conception
+
+Utilise des noms courts et stables, encode proprement en hexadécimal, évite de stocker des données personnelles, et réserve les Remarks immutables aux certifications ou références qui ne doivent jamais changer.`,
     ar: `\`SetRemarks\` تضيف **أزواج مفتاح/قيمة** إلى كائنات موجودة في ledger شبكة Xahau. ليست رسائل داخل المعاملة، بل ملاحظات دائمة مرتبطة بالكائن نفسه.
 
 ### الكائنات المدعومة
@@ -8088,23 +8100,39 @@ Maximum 32 Remarks par objet. Les frais ajoutent 1 drop par byte de nom et valeu
 الحد الأقصى 32 Remark لكل كائن. تضاف رسوم 1 drop لكل بايت من الاسم والقيمة. يجب أن تكون الأسماء فريدة. الأخطاء الشائعة: \`temDISABLED\`, \`tecNO_PERMISSION\`, \`tecIMMUTABLE\`, \`tecTOO_MANY_REMARKS\`.`,
   },
   m10l7: {
-    fr: `\`Remit\` est une transaction exclusive a Xahau qui combine plusieurs actions en une seule operation atomique. Elle peut activer un compte, envoyer XAH ou IOUs, transferer des URITokens ou minter un URIToken directement a la destination.
+    fr: `\`Remit\` est une transaction exclusive à Xahau qui combine plusieurs actions en une seule opération atomique. Elle peut activer un compte, envoyer XAH ou IOUs, transférer des URITokens ou minter un URIToken directement à la destination.
 
 ### Pourquoi Remit ?
 
-Au lieu d'envoyer plusieurs transactions separees, Remit execute tout ensemble. Cela economise du temps et des frais, et garantit que toutes les actions reussissent ensemble ou echouent ensemble.
+Au lieu d'envoyer plusieurs transactions séparées, Remit exécute tout ensemble. Cela économise du temps et des frais, et garantit que toutes les actions réussissent ensemble ou échouent ensemble.
 
 ### Champs principaux
 
-\`Account\` et \`Destination\` sont requis. \`Amounts\` peut contenir jusqu'a 32 paiements, \`URITokenIDs\` jusqu'a 32 URITokens a transferer, \`MintURIToken\` decrit un NFT a creer, \`DestinationTag\`, \`Inform\`, \`Blob\` et \`InvoiceID\` ajoutent des options de routage, Hook ou reference.
+\`Account\` et \`Destination\` sont requis. \`Amounts\` peut contenir jusqu'à 32 paiements, \`URITokenIDs\` jusqu'à 32 URITokens à transférer, \`MintURIToken\` décrit un NFT à créer, \`DestinationTag\`, \`Inform\`, \`Blob\` et \`InvoiceID\` ajoutent des options de routage, Hook ou référence.
 
 ### AmountEntry et URITokens
 
-Chaque \`AmountEntry\` peut etre du XAH en drops ou un IOU avec \`currency\`, \`issuer\` et \`value\`. Les montants dupliques dans la meme devise ne sont pas autorises. \`MintURIToken\` contient \`URI\`, \`Digest\` optionnel et \`Flags\` comme \`tfBurnable\`.
+Chaque \`AmountEntry\` peut être du XAH en drops ou un IOU avec \`currency\`, \`issuer\` et \`value\`. Les montants dupliqués dans la même devise ne sont pas autorisés. \`MintURIToken\` contient \`URI\`, \`Digest\` optionnel et \`Flags\` comme \`tfBurnable\`.
 
-### Frais et reserves
+### Frais et réserves
 
-Remit couvre automatiquement l'activation du compte destination, les reserves des nouvelles TrustLines necessaires et les reserves des URITokens transferes ou crees. Ces couts sont deduits du compte emetteur, en plus des frais standards.`,
+Remit couvre automatiquement l'activation du compte destination, les réserves des nouvelles TrustLines nécessaires et les réserves des URITokens transférés ou créés. Ces coûts sont déduits du compte émetteur, en plus des frais standards.
+
+### Atomicité
+
+L'intérêt principal de Remit est l'atomicité : si une partie du flux ne peut pas être exécutée, la transaction entière échoue. Cela évite les états intermédiaires où un compte serait activé mais sans recevoir l'actif attendu, ou un URIToken serait transféré sans le paiement associé.
+
+### Amounts et doublons
+
+Le tableau \`Amounts\` accepte plusieurs actifs, mais pas deux entrées équivalentes pour la même devise et le même issuer. Pour les IOUs, le destinataire peut avoir besoin d'une TrustLine ; Remit peut couvrir la réserve nécessaire selon les règles de la transaction.
+
+### Inform et Blob
+
+\`Inform\` permet de notifier un compte avec Hook. \`Blob\` transporte des données arbitraires en hex, jusqu'à une taille importante, pour que le Hook puisse comprendre le contexte de l'opération. Ces champs rendent Remit utile dans des workflows d'application, pas seulement dans des paiements simples.
+
+### Exécuter l'exemple deux fois
+
+L'ID d'un URIToken vient de son émetteur et de son URI. Une deuxième exécution de l'exemple avec la même URI renvoie \`tecDUPLICATE\`, et le paiement n'est pas envoyé non plus : tout le Remit échoue. Pour l'exécuter à nouveau, change l'URI.`,
     ar: `\`Remit\` معاملة خاصة بـ Xahau تجمع عدة أفعال في عملية ذرية واحدة. يمكنها تفعيل حساب، إرسال XAH أو IOUs، نقل URITokens، أو إنشاء URIToken مباشرة للوجهة.
 
 ### لماذا Remit؟
@@ -8124,15 +8152,15 @@ Remit couvre automatiquement l'activation du compte destination, les reserves de
 تغطي Remit تلقائيا تفعيل حساب الوجهة، واحتياطيات TrustLines الجديدة اللازمة، واحتياطيات URITokens المنقولة أو المنشأة. تخصم هذه التكاليف من حساب المرسل إضافة إلى الرسوم العادية.`,
   },
   m10l2: {
-    fr: `Un **Check** ressemble a un cheque bancaire : l'emetteur cree un cheque pour un montant donne, et le destinataire peut l'encaisser quand il le souhaite. Contrairement a un paiement direct, les fonds ne sont pas transferes immediatement ; le destinataire doit executer \`CheckCash\`.
+    fr: `Un **Check** ressemble à un chèque bancaire : l'émetteur crée un chèque pour un montant donne, et le destinataire peut l'encaisser quand il le souhaite. Contrairement à un paiement direct, les fonds ne sont pas transférés immédiatement ; le destinataire doit exécuter \`CheckCash\`.
 
 ### Pourquoi utiliser Checks ?
 
-Le destinataire controle le moment de l'encaissement, le check peut rester dans le ledger en attendant, il peut permettre un encaissement partiel, et il fonctionne avec XAH natif comme avec des IOUs.
+Le destinataire contrôle le moment de l'encaissement, le check peut rester dans le ledger en attendant, il peut permettre un encaissement partiel, et il fonctionne avec XAH natif comme avec des IOUs.
 
 ### CheckCreate
 
-\`CheckCreate\` contient \`Account\` (emetteur), \`Destination\` (compte qui peut encaisser), \`SendMax\` (montant maximum), \`Expiration\` optionnel et \`InvoiceID\` optionnel. \`SendMax\` peut etre une string en drops pour XAH ou un objet Amount pour un IOU avec \`currency\`, \`issuer\` et \`value\`.
+\`CheckCreate\` contient \`Account\` (émetteur), \`Destination\` (compte qui peut encaisser), \`SendMax\` (montant maximum), \`Expiration\` optionnel et \`InvoiceID\` optionnel. \`SendMax\` peut être une string en drops pour XAH ou un objet Amount pour un IOU avec \`currency\`, \`issuer\` et \`value\`.
 
 ### CheckCash
 
@@ -8140,7 +8168,36 @@ Le destinataire encaisse avec \`CheckCash\`. Deux modes existent : \`Amount\` po
 
 ### CheckCancel et erreurs courantes
 
-\`CheckCancel\` annule un check par son \`CheckID\`. L'emetteur ou le destinataire peut annuler, et un check expire peut aussi l'etre. Erreurs typiques : \`tecNO_ENTRY\` si le check n'existe plus, \`tecNO_LINE\` si la TrustLine manque, \`tecUNFUNDED\` si l'emetteur n'a pas les fonds, \`tecEXPIRED\` si le check a expire.`,
+\`CheckCancel\` annule un check par son \`CheckID\`. L'émetteur ou le destinataire peut annuler, et un check expirÃ© peut aussi l'être. Erreurs typiques : \`tecNO_ENTRY\` si le check n'existe plus, \`tecNO_LINE\` si la TrustLine manque, \`tecUNFUNDED\` si l'émetteur n'a pas les fonds, \`tecEXPIRED\` si le check a expiré.
+
+### Exemple de SendMax
+
+Pour un check en XAH, \`SendMax\` est une string en drops, par exemple \`"10000000"\` pour 10 XAH. Pour un IOU, \`SendMax\` est un objet avec \`currency\`, \`issuer\` et \`value\`. Cela permet au même mécanisme de fonctionner avec l'actif natif et avec des tokens émis.
+
+### Détails pratiques
+
+Le \`CheckID\` est l'identifiant de l'objet Check dans le ledger. Après un \`CheckCreate\`, tu le récupérés en inspectant les objets créés dans les métadonnées ou avec les commandes de lecture du compte. Pour vérifier un encaissement, regarde toujours \`TransactionResult\` et les \`AffectedNodes\` afin de voir si le Check a été supprimé et si le solde a changé.
+
+### Lancer les scripts de cette leçon
+
+Le script CheckCreate signe avec \`WALLET_SEED\` et établit le Check au profit du compte \`CASH_SEED\` ; \`cash-check.js\` signe avec \`CASH_SEED\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Le premier script affiche la commande exacte pour le second. Sortie sur le testnet :
+
+\`\`\`
+=== CheckCreate ===
+Result: tesSUCCESS
+CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
+
+=== CheckCash ===
+Result: tesSUCCESS
+Check cashed successfully!
+Amount received: 50 XAH
+\`\`\`
+
+- **CheckCreate \`tesSUCCESS\`** : un objet Check existe maintenant ; aucun XAH n'a encore bougé. Son **CheckID** est l'index de cet objet dans le ledger.
+- **CheckCash \`tesSUCCESS\`** : CASH a encaissé exactement 50 XAH et l'objet Check a été supprimé. L'encaisser à nouveau renvoie \`tecNO_ENTRY\`.
+
+\`cash-check.js\` n'envoie rien sans CheckID hex de 64 caractères et indique quoi passer.`,
     ar: `**Check** يشبه الشيك البنكي: ينشئ المرسل شيكا بمبلغ معين، ويمكن للمستلم صرفه لاحقا. على عكس Payment، لا تنتقل الأموال فورا؛ يجب أن ينفذ المستلم \`CheckCash\`.
 
 ### لماذا نستخدم Checks؟
@@ -8160,21 +8217,21 @@ Le destinataire encaisse avec \`CheckCash\`. Deux modes existent : \`Amount\` po
 \`CheckCancel\` يلغي الشيك باستخدام \`CheckID\`. يمكن للمرسل أو المستلم الإلغاء، كما يمكن إلغاء الشيك المنتهي. من الأخطاء الشائعة: \`tecNO_ENTRY\` إذا لم يعد الشيك موجودا، \`tecNO_LINE\` عند غياب TrustLine، \`tecUNFUNDED\` إذا لم يملك المصدر الأموال، و\`tecEXPIRED\` إذا انتهت الصلاحية.`,
   },
   m10l3: {
-    fr: `Un **Ticket** permet d'envoyer des transactions hors de l'ordre normal de \`Sequence\`. D'habitude, chaque transaction doit utiliser le prochain numero de sequence du compte. Les Tickets reservent des numeros a l'avance pour eviter ce blocage.
+    fr: `Un **Ticket** permet d'envoyer des transactions hors de l'ordre normal de \`Sequence\`. D'habitude, chaque transaction doit utiliser le prochain numéro de séquence du compte. Les Tickets réservent des numéros à l'avance pour éviter ce blocage.
 
-Chaque compte a une \`Sequence\` qui augmente a chaque transaction. Un Ticket reserve une sequence future ; la transaction utilise alors \`TicketSequence\` et met \`Sequence: 0\`. Les Tickets peuvent etre consommes dans n'importe quel ordre.
+Chaque compte a une \`Sequence\` qui augmente à chaque transaction. Un Ticket réserve une séquence future ; la transaction utilise alors \`TicketSequence\` et met \`Sequence: 0\`. Les Tickets peuvent être consommés dans n'importe quel ordre.
 
 ### Usages
 
-Ils servent aux transactions paralleles, transactions pre-signees, multi-signing, operations de secours et backends qui doivent preparer plusieurs transactions sans attendre que la precedente soit validee.
+Ils servent aux transactions parallèles, transactions pre-signées, multi-signing, opérations de secours et backends qui doivent préparer plusieurs transactions sans attendre que la précédente soit validée.
 
-### TicketCreate, reserve et limites
+### TicketCreate, réserve et limites
 
-\`TicketCreate\` prend \`TicketCount\`, de 1 a 250. Chaque Ticket actif consomme une owner reserve, comme une TrustLine ou une offre DEX. Un compte peut avoir au maximum 250 Tickets actifs et ils n'expirent pas. Quand un Ticket est utilise, il est detruit et la reserve est liberee.
+\`TicketCreate\` prend \`TicketCount\`, de 1 à 250. Chaque Ticket actif consomme une owner réserve, comme une TrustLine ou une offre DEX. Un compte peut avoir au maximum 250 Tickets actifs et ils n'expirent pas. Quand un Ticket est utilisÃ©, il est détruit et la réserve est libérée.
 
 ### Annulation
 
-Il n'existe pas de transaction dediee pour annuler un Ticket. On peut utiliser une transaction \`AccountSet\` vide avec \`TicketSequence\` pour consommer le Ticket et liberer la reserve.`,
+Il n'existe pas de transaction dédiée pour annuler un Ticket. On peut utiliser une transaction \`AccountSet\` vide avec \`TicketSequence\` pour consommer le Ticket et libérer la réserve.`,
     ar: `**Ticket** هو آلية تسمح بإرسال معاملات **خارج الترتيب التسلسلي** العادي. عادة، يجب أن تستخدم كل معاملة على Xahau رقم \`Sequence\` التالي للحساب. تزيل Tickets هذا القيد عن طريق حجز أرقام تسلسل مسبقا.
 
 ### ما هو Ticket؟
@@ -8441,23 +8498,23 @@ const startIn1Hour = rippleEpoch + 3600;
 | \`temDISABLED\` | تعديل Cron غير مفعّل على الشبكة |`,
   },
   m10l9: {
-    fr: `Un **Price Oracle** est un objet de ledger qui permet a un compte de publier des prix d'actifs directement sur Xahau. Applications et Hooks peuvent lire ces prix depuis le ledger au lieu de dependre d'une valeur codee en dur ou d'un serveur prive.
+    fr: `Un **Price Oracle** est un objet de ledger qui permet à un compte de publier des prix d'actifs directement sur Xahau. Applications et Hooks peuvent lire ces prix depuis le ledger au lieu de dépendre d'une valeur codée en dur ou d'un serveur privé.
 
-### Probleme resolu
+### Problème résolu
 
-La DeFi a besoin de prix : XAH/USD, BTC/USD, token/USD, ratios de collateral, conversions de recompenses et seuils de liquidation. Price Oracle transforme ces donnees de marche externes en donnees on-chain inspectables.
+La DeFi a besoin de prix : XAH/USD, BTC/USD, token/USD, ratios de collateral, conversions de récompenses et seuils de liquidation. Price Oracle transforme ces données de marche externes en données on-chain inspectables.
 
 ### Transactions et objet Oracle
 
-\`OracleSet\` cree ou met a jour un Oracle. \`OracleDelete\` supprime l'objet et libere la reserve. L'objet appartient au compte qui publie et un meme compte peut avoir plusieurs \`OracleDocumentID\`.
+\`OracleSet\` crée ou met à jour un Oracle. \`OracleDelete\` supprime l'objet et libère la réserve. L'objet appartient au compte qui publie et un même compte peut avoir plusieurs \`OracleDocumentID\`.
 
-Les champs principaux sont \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`AssetClass\`, \`LastUpdateTime\`, \`PriceDataSeries\` et \`URI\` optionnel. Chaque prix contient \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\` et \`Scale\`. Le prix reel est \`AssetPrice * 10^(-Scale)\`; par exemple 74560 avec Scale 4 donne 7.456.
+Les champs principaux sont \`Owner\`, \`OracleDocumentID\`, \`Provider\`, \`AssetClass\`, \`LastUpdateTime\`, \`PriceDataSeries\` et \`URI\` optionnel. Chaque prix contient \`BaseAsset\`, \`QuoteAsset\`, \`AssetPrice\` et \`Scale\`. Le prix réel est \`AssetPrice * 10^(-Scale)\`; par exemple 74560 avec Scale 4 donne 7.456.
 
-### Regles, reserve et aggregation
+### Règles, réserve et aggregation
 
-\`Provider\` et \`AssetClass\` sont requis a la creation. \`PriceDataSeries\` doit contenir 1 a 10 entrees, base et quote doivent differer, \`Scale\` va de 0 a 10 et \`LastUpdateTime\` doit etre plus recent. Omettre \`AssetPrice\` pour une paire existante la supprime.
+\`Provider\` et \`AssetClass\` sont requis à la création. \`PriceDataSeries\` doit contenir 1 à 10 entrées, base et quote doivent différer, \`Scale\` va de 0 à 10 et \`LastUpdateTime\` doit être plus récent. Omettre \`AssetPrice\` pour une paire existante la supprime.
 
-Les Oracles consomment 1 owner reserve pour 1-5 paires et 2 reserves pour 6-10. En production, on agrege plusieurs providers via \`get_aggregate_price\`; \`trim\` et \`time_threshold\` reduisent outliers et prix obsoletes. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.
+Les Oracles consomment 1 owner réserve pour 1-5 paires et 2 réserves pour 6-10. En production, on agrégé plusieurs providers via \`get_aggregate_price\`; \`trim\` et \`time_threshold\` réduisent outliers et prix obsolètes. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temARRAY_EMPTY\`, \`temARRAY_TOO_LARGE\`, \`tecINVALID_UPDATE_TIME\`, \`tecINSUFFICIENT_RESERVE\`, \`tecNO_ENTRY\`.
 
 ### Lancer les scripts de cette leçon
 
@@ -8485,23 +8542,39 @@ Ces scripts signent avec \`ORACLE_SEED\` de \`.env\`, créé par \`create-accoun
 تُوقّع هذه السكربتات بـ \`ORACLE_SEED\` من \`.env\`، الذي ينشئه \`create-accounts.js\` ([الوحدة 3](?m=3&l=1)). حساب منفصل يُبقي كائن Oracle، والاحتياطي الذي يحجزه، بعيدًا عن حسابك الرئيسي. إذا كان المتغير مفقودًا تتوقف السكربتات قبل الإرسال وتوضح ما يجب تشغيله.`,
   },
   m10l10: {
-    fr: `La fonctionnalite s'appelle **IOURewardClaim**, mais la transaction envoyee reste **ClaimReward**. L'amendment etend \`ClaimReward\` pour que des issuers de tokens puissent executer des programmes de recompenses personnalises pour les detenteurs d'IOUs.
+    fr: `La fonctionnalité s'appelle **IOURewardClaim**, mais la transaction envoyée reste **ClaimReward**. L'amendment étend \`ClaimReward\` pour que des issuers de tokens puissent exécuter des programmes de récompenses personnalisés pour les détenteurs d'IOUs.
 
-### Probleme resolu
+### Problème résolu
 
-Les recompenses natives XAH sont liees au systeme genesis. IOURewardClaim apporte un suivi similaire aux devises emises : tokens de fidelite, recus de staking, points DAO, IOUs a rendement, devises de jeux ou d'apps. Le ledger stocke les compteurs sur la TrustLine et le Hook de l'issuer decide du payout.
+Les récompenses natives XAH sont liées au système genesis. IOURewardClaim apporte un suivi similaire aux devises émises : tokens de fidélité, reçus de staking, points DAO, IOUs à rendement, devises de jeux ou d'apps. Le ledger stocke les compteurs sur la TrustLine et le Hook de l'issuer décide du payout.
 
-### Pas un type separe
+### Pas un type séparé
 
-Il n'existe pas de \`TransactionType: \"IOURewardClaim\"\`. On utilise \`ClaimReward\` avec \`Account\`, \`Issuer\` et \`ClaimCurrency\`. \`Issuer\` est le compte dont le Hook de recompense doit s'executer. \`ClaimCurrency.issuer\` est l'issuer du token IOU lui-meme.
+Il n'existe pas de \`TransactionType: "IOURewardClaim"\`. On utilise \`ClaimReward\` avec \`Account\`, \`Issuer\` et \`ClaimCurrency\`. \`Issuer\` est le compte dont le Hook de récompense doit s'exécuter. \`ClaimCurrency.issuer\` est l'issuer du token IOU lui-même.
 
-Dans l'exemple Learning Xahau, le programme de recompenses est \`rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\` et l'issuer RWD est \`rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\`.
+Dans l'exemple Learning Xahau, le programme de récompenses est \`rQDaZ361xnkezCjgUxKsuLjLckqu4kw6nm\` et l'issuer RWD est \`rHjU4oLTNBmsUV4CtifNhHVGWJTJfGC9vf\`.
 
-### Fonctionnement et differences
+### Fonctionnement et différences
 
-Le holder doit avoir une TrustLine. Le reward issuer doit avoir un Hook declenche par \`ClaimReward\`. Au premier claim, Xahau initialise les compteurs sur \`RippleState\`. Quand le solde change, le ledger met a jour \`TrustLineRewardAccumulator\`. Aux claims suivants, le ledger remet les compteurs a zero et declenche le Hook, qui lit l'accumulation et emet la recompense.
+Le holder doit avoir une TrustLine. Le reward issuer doit avoir un Hook déclenche par \`ClaimReward\`. Au premier claim, Xahau initialise les compteurs sur \`RippleState\`. Quand le solde change, le ledger met à jour \`TrustLineRewardAccumulator\`. Aux claims suivants, le ledger remet les compteurs à zéro et déclenche le Hook, qui lit l'accumulation et émet la récompense.
 
-XAH rewards stocke les compteurs sur \`AccountRoot\`; IOU rewards les stocke sur \`RippleState\`. Le payout XAH vient du Hook genesis; le payout IOU vient du Hook de l'issuer. Exigences : amendment actif, TrustLine, Hook sur \`Issuer\`, Hook actif sur \`ClaimReward\`, devise non-XAH et issuer non-AMM. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temBAD_ISSUER\`, \`tecNO_ISSUER\`, \`tecNO_PERMISSION\`, \`tecNO_TARGET\`, \`tecNO_LINE\`.`,
+XAH rewards stocke les compteurs sur \`AccountRoot\`; IOU rewards les stocke sur \`RippleState\`. Le payout XAH vient du Hook genesis; le payout IOU vient du Hook de l'issuer. Exigences : amendment actif, TrustLine, Hook sur \`Issuer\`, Hook actif sur \`ClaimReward\`, devise non-XAH et issuer non-AMM. Erreurs : \`temDISABLED\`, \`temMALFORMED\`, \`temBAD_ISSUER\`, \`tecNO_ISSUER\`, \`tecNO_PERMISSION\`, \`tecNO_TARGET\`, \`tecNO_LINE\`.
+
+### Trois comptes typiques
+
+Un système de récompenses IOU utilise souvent trois rôles : le token issuer qui crée la devise, le reward issuer ou réserve qui détient les fonds et installe le Hook, et le holder qui possède l'IOU et envoie \`ClaimReward\`. Ces rôles peuvent parfois être combines, mais les séparer rend le modèle plus clair.
+
+### Séparation tracking / payout
+
+Le ledger suit l'exposition du holder dans le temps via les compteurs de TrustLine. Le Hook ne fait pas ce suivi lui-même : il lit la valeur accumulée et applique la logique métier, comme cooldowns, plafonds, conversion vers un autre token ou refus si les conditions ne sont pas remplies.
+
+### Erreurs de configuration fréquentes
+
+Si \`Issuer\` pointe vers le mauvais compte, aucun Hook ne sera déclenche. Si \`ClaimCurrency.issuer\` ne correspond pas au token, la TrustLine attendue ne sera pas trouvée. Si le holder n'a pas créé de TrustLine RWD, la réclamation échouera avec une erreur de ligne manquante.
+
+### Lancer les scripts de cette leçon
+
+Ces scripts signent avec \`HOLDER_SEED\` de \`.env\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Le détenteur n'a besoin de XAH que pour la réserve de la TrustLine et les frais ; l'émetteur de RWD et le programme de récompenses sont des comptes testnet existants. Si la variable manque, les scripts s'arrêtent avant d'envoyer quoi que ce soit et indiquent quoi lancer.`,
     ar: `تسمى الميزة **IOURewardClaim** لكن المعاملة المرسلة تبقى **ClaimReward**. يوسع amendment معاملة \`ClaimReward\` حتى يستطيع issuers للتوكنات تشغيل برامج مكافآت مخصصة لحاملي IOUs.
 
 ### المشكلة
@@ -8535,28 +8608,7 @@ applyExpandedM10Theory(moduleData);
 
 const additionalM10TheoryDetails = {
   m10l2: {
-    fr: `\n\n### Exemple de SendMax\n\nPour un check en XAH, \`SendMax\` est une string en drops, par exemple \`\"10000000\"\` pour 10 XAH. Pour un IOU, \`SendMax\` est un objet avec \`currency\`, \`issuer\` et \`value\`. Cela permet au meme mecanisme de fonctionner avec l'actif natif et avec des tokens emis.\n\n### Details pratiques\n\nLe \`CheckID\` est l'identifiant de l'objet Check dans le ledger. Apres un \`CheckCreate\`, tu le recuperes en inspectant les objets crees dans les metadonnees ou avec les commandes de lecture du compte. Pour verifier un encaissement, regarde toujours \`TransactionResult\` et les \`AffectedNodes\` afin de voir si le Check a ete supprime et si le solde a change.
-
-### Lancer les scripts de cette leçon
-
-Le script CheckCreate signe avec \`WALLET_SEED\` et établit le Check au profit du compte \`CASH_SEED\` ; \`cash-check.js\` signe avec \`CASH_SEED\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Le premier script affiche la commande exacte pour le second. Sortie sur le testnet :
-
-\`\`\`
-=== CheckCreate ===
-Result: tesSUCCESS
-CheckID: CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
-Cash it as CASH with: node cash-check.js CA18586BA4A172DA953A8D35082FA0F43E022216618EED3310214B6D565B340A
-
-=== CheckCash ===
-Result: tesSUCCESS
-Check cashed successfully!
-Amount received: 50 XAH
-\`\`\`
-
-- **CheckCreate \`tesSUCCESS\`** : un objet Check existe maintenant ; aucun XAH n'a encore bougé. Son **CheckID** est l'index de cet objet dans le ledger.
-- **CheckCash \`tesSUCCESS\`** : CASH a encaissé exactement 50 XAH et l'objet Check a été supprimé. L'encaisser à nouveau renvoie \`tecNO_ENTRY\`.
-
-\`cash-check.js\` n'envoie rien sans CheckID hex de 64 caractères et indique quoi passer.`,
+    fr: ``,
     ar: `\n\n### مثال SendMax\n\nفي Check بـ XAH يكون \`SendMax\` نصا بالدروبس مثل \`\"10000000\"\` لـ 10 XAH. أما IOU فيكون \`SendMax\` كائنا يحتوي \`currency\` و\`issuer\` و\`value\`. لذلك يعمل نفس النظام مع الأصل الأصلي والتوكنات الصادرة.\n\n### تفاصيل عملية\n\n\`CheckID\` هو معرف كائن Check في ledger. بعد \`CheckCreate\` يمكنك الحصول عليه من الكائنات المنشأة في metadata أو عبر أوامر قراءة الحساب. للتحقق من الصرف، اقرأ دائما \`TransactionResult\` و\`AffectedNodes\` لمعرفة هل حذف Check وهل تغير الرصيد.
 
 ### تشغيل سكربتات هذا الدرس
@@ -8581,27 +8633,11 @@ Amount received: 50 XAH
 لا يرسل \`cash-check.js\` شيئًا بدون CheckID بصيغة hex من 64 حرفًا، ويوضح ما يجب تمريره.`,
   },
   m10l6: {
-    fr: `\n\n### Pourquoi ce n'est pas un Memo\n\nUn Memo est attache a une transaction historique. Une Remark est attachee a un objet encore present dans le ledger. Cela signifie qu'elle reste consultable avec l'objet, par exemple un AccountRoot, une TrustLine ou un URIToken, et qu'elle peut etre mise a jour ou supprimee selon les regles.\n\n### Champs en detail\n\n\`ObjectID\` est obligatoire et pointe vers l'objet a annoter. \`Remarks\` est un tableau, ce qui permet de creer ou modifier plusieurs entrees dans une seule transaction. \`RemarkName\` doit etre unique pour cet objet. \`RemarkValue\` est facultatif uniquement parce que son absence signifie suppression. \`tfImmutable\` doit etre choisi avec prudence, car il rend l'entree definitive.\n\n### Conseils de conception\n\nUtilise des noms courts et stables, encode proprement en hexadecimal, evite de stocker des donnees personnelles, et reserve les Remarks immutables aux certifications ou references qui ne doivent jamais changer.`,
+    fr: ``,
     ar: `\n\n### لماذا ليست Memo؟\n\nMemo مرتبط بمعاملة تاريخية. أما Remark فمرتبطة بكائن ما زال موجودا في ledger. لذلك تبقى قابلة للقراءة مع الكائن نفسه، مثل AccountRoot أو TrustLine أو URIToken، ويمكن تحديثها أو حذفها حسب القواعد.\n\n### تفاصيل الحقول\n\n\`ObjectID\` إلزامي ويشير إلى الكائن المراد التعليق عليه. \`Remarks\` مصفوفة، ولذلك يمكن إنشاء أو تعديل عدة إدخالات في معاملة واحدة. \`RemarkName\` يجب أن يكون فريدا داخل الكائن. \`RemarkValue\` اختياري فقط لأن غيابه يعني الحذف. \`tfImmutable\` يجب استخدامه بحذر لأنه يجعل الإدخال نهائيا.\n\n### نصائح تصميم\n\nاستخدم أسماء قصيرة وثابتة، ورمز القيم إلى hexadecimal بشكل صحيح، وتجنب البيانات الشخصية، واجعل Remarks غير القابلة للتعديل مخصصة للشهادات أو المراجع التي لا يجب أن تتغير.`,
   },
   m10l7: {
-    fr: `
-
-### Atomicite
-
-L'interet principal de Remit est l'atomicite : si une partie du flux ne peut pas etre executee, la transaction entiere echoue. Cela evite les etats intermediaires ou un compte serait active mais sans recevoir l'actif attendu, ou un URIToken serait transfere sans le paiement associe.
-
-### Amounts et doublons
-
-Le tableau \`Amounts\` accepte plusieurs actifs, mais pas deux entrees equivalentes pour la meme devise et le meme issuer. Pour les IOUs, le destinataire peut avoir besoin d'une TrustLine ; Remit peut couvrir la reserve necessaire selon les regles de la transaction.
-
-### Inform et Blob
-
-\`Inform\` permet de notifier un compte avec Hook. \`Blob\` transporte des donnees arbitraires en hex, jusqu'a une taille importante, pour que le Hook puisse comprendre le contexte de l'operation. Ces champs rendent Remit utile dans des workflows d'application, pas seulement dans des paiements simples.
-
-### Exécuter l'exemple deux fois
-
-L'ID d'un URIToken vient de son émetteur et de son URI. Une deuxième exécution de l'exemple avec la même URI renvoie \`tecDUPLICATE\`, et le paiement n'est pas envoyé non plus : tout le Remit échoue. Pour l'exécuter à nouveau, change l'URI.`,
+    fr: ``,
     ar: `
 
 ### الذرية
@@ -8625,11 +8661,7 @@ L'ID d'un URIToken vient de son émetteur et de son URI. Une deuxième exécutio
     ar: ``,
   },
   m10l10: {
-    fr: `\n\n### Trois comptes typiques\n\nUn systeme de recompenses IOU utilise souvent trois roles : le token issuer qui cree la devise, le reward issuer ou reserve qui detient les fonds et installe le Hook, et le holder qui possede l'IOU et envoie \`ClaimReward\`. Ces roles peuvent parfois etre combines, mais les separer rend le modele plus clair.\n\n### Separation tracking / payout\n\nLe ledger suit l'exposition du holder dans le temps via les compteurs de TrustLine. Le Hook ne fait pas ce suivi lui-meme : il lit la valeur accumulee et applique la logique metier, comme cooldowns, plafonds, conversion vers un autre token ou refus si les conditions ne sont pas remplies.\n\n### Erreurs de configuration frequentes\n\nSi \`Issuer\` pointe vers le mauvais compte, aucun Hook ne sera declenche. Si \`ClaimCurrency.issuer\` ne correspond pas au token, la TrustLine attendue ne sera pas trouvee. Si le holder n'a pas cree de TrustLine RWD, la reclamation echouera avec une erreur de ligne manquante.
-
-### Lancer les scripts de cette leçon
-
-Ces scripts signent avec \`HOLDER_SEED\` de \`.env\`, créé par \`create-accounts.js\` ([module 3](?m=3&l=1)). Le détenteur n'a besoin de XAH que pour la réserve de la TrustLine et les frais ; l'émetteur de RWD et le programme de récompenses sont des comptes testnet existants. Si la variable manque, les scripts s'arrêtent avant d'envoyer quoi que ce soit et indiquent quoi lancer.`,
+    fr: ``,
     ar: `\n\n### ثلاثة حسابات نموذجية\n\nيستخدم نظام مكافآت IOU غالبا ثلاثة أدوار: token issuer الذي ينشئ العملة، وreward issuer أو reserve الذي يحتفظ بالمكافآت ويثبت Hook، وholder الذي يملك IOU ويرسل \`ClaimReward\`. يمكن دمج بعض الأدوار، لكن فصلها يجعل النموذج أوضح.\n\n### فصل التتبع عن الدفع\n\nيتتبع ledger تعرض holder عبر الزمن بواسطة عدادات TrustLine. لا يقوم Hook بهذا التتبع بنفسه؛ بل يقرأ القيمة المتراكمة ويطبق منطق الأعمال مثل cooldowns والحدود والتحويل إلى توكن آخر أو الرفض إذا لم تتحقق الشروط.\n\n### أخطاء إعداد شائعة\n\nإذا أشار \`Issuer\` إلى حساب خاطئ فلن يعمل Hook. إذا لم يطابق \`ClaimCurrency.issuer\` issuer للتوكن فلن توجد TrustLine المتوقعة. وإذا لم ينشئ holder TrustLine لـ RWD فستفشل المطالبة بخطأ line مفقودة.
 
 ### تشغيل سكربتات هذا الدرس
