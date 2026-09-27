@@ -830,7 +830,11 @@ cd xaman-login
 npm install xumm xahau
 # After modifying src/App.jsx run:
 npm run dev`,
-            jp: ``,
+            jp: `npm create vite@latest xaman-login -- --template react
+cd xaman-login
+npm install xumm xahau
+# src/App.jsx を変更したら次を実行：
+npm run dev`,
             ko: `npm create vite@latest xaman-login -- --template react
 cd xaman-login
 npm install xumm xahau
@@ -2065,7 +2069,12 @@ cd xaman-login
 npm install xumm xahau
 # After modifying src/App.jsx run:
 npm run dev`,
-            jp: ``,
+            jp: `# 前のステップで実行済みなら、この部分は不要です
+npm create vite@latest xaman-login -- --template react
+cd xaman-login
+npm install xumm xahau
+# src/App.jsx を変更したら次を実行：
+npm run dev`,
             zh: `# 如果上一节已经做过，这一步可以跳过
 npm create vite@latest xaman-login -- --template react
 cd xaman-login

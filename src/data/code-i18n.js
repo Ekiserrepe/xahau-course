@@ -16,6 +16,7 @@
 
 import { FR } from "./code-i18n-fr.js"
 import { AR } from "./code-i18n-ar.js"
+import { KO } from "./code-i18n-ko.js"
 
 /** Index of the first `marker` outside a string literal, or -1. */
 function outsideStrings(line, marker) {
@@ -129,10 +130,14 @@ export function untranslatedIn(code, language, dict) {
   return miss
 }
 
+/** Blocks whose Korean code was derived, because they had none of their own (for the test). */
+export const derivedKorean = new WeakSet()
+
 /**
  * Give every code block of a module its French and Arabic code: the English
- * code with its prose translated. Blocks marked `manual` carry all their
- * languages already (the course-accounts and token-distribution scripts).
+ * code with its prose translated. A block with no Korean code gets it the same
+ * way. Blocks marked `manual` carry all their languages already (the
+ * course-accounts and token-distribution scripts).
  */
 export function deriveCodeTranslations(module) {
   for (const lesson of module.lessons) {
@@ -142,6 +147,10 @@ export function deriveCodeTranslations(module) {
       const en = block.code.en ?? block.code.es
       block.code.fr = localizeCode(en, block.language, FR)
       block.code.ar = localizeCode(en, block.language, AR)
+      if (!block.code.ko) {
+        block.code.ko = localizeCode(en, block.language, KO)
+        derivedKorean.add(block)
+      }
     }
   }
 }

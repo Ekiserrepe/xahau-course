@@ -22,9 +22,10 @@ import { LOCALES } from '../src/data/locales.js'
 import { UI_LABELS } from '../src/data/i18n.js'
 import { COURSE_MANIFEST } from '../src/data/generated/manifest.js'
 import { codeFile } from '../src/data/code-files.js'
-import { localizeCode, untranslatedIn } from '../src/data/code-i18n.js'
+import { derivedKorean, localizeCode, untranslatedIn } from '../src/data/code-i18n.js'
 import { FR } from '../src/data/code-i18n-fr.js'
 import { AR } from '../src/data/code-i18n-ar.js'
+import { KO } from '../src/data/code-i18n-ko.js'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -118,7 +119,7 @@ describe('modules', () => {
     }
   })
 
-  it('the French and Arabic code is the English code, line by line, fully translated', () => {
+  it('the derived code (French, Arabic, Korean where missing) is the English code, line by line, fully translated', () => {
     // Both are derived from the English code (src/data/code-i18n.js): the code
     // is identical and only comments, messages and UI text change. A text with
     // no dictionary entry would stay in English.
@@ -134,10 +135,28 @@ describe('modules', () => {
           for (const [lang, dict] of [['fr', FR], ['ar', AR]]) {
             for (const text of untranslatedIn(en, block.language, dict)) missing.push(`${lesson.id} (${lang}): ${text}`)
           }
+          // A block with no Korean code of its own gets it the same way
+          if (derivedKorean.has(block)) {
+            for (const text of untranslatedIn(en, block.language, KO)) missing.push(`${lesson.id} (ko): ${text}`)
+          }
         }
       }
     }
-    expect(missing, 'add these to src/data/code-i18n-fr.js / code-i18n-ar.js').toEqual([])
+    expect(missing, 'add these to src/data/code-i18n-fr.js / -ar.js / -ko.js').toEqual([])
+  })
+
+  it('no code block shows an empty version in any language', () => {
+    // An empty string doesn't fall back to English: the Code tab shows nothing
+    const empty = []
+    for (const { mod } of modules) {
+      for (const lesson of mod.lessons) {
+        for (const [i, block] of (lesson.codeBlocks ?? []).entries()) {
+          if (typeof block.code === 'string') continue
+          for (const [lang, code] of Object.entries(block.code)) if (!code.trim()) empty.push(`${lesson.id} #${i} (${lang})`)
+        }
+      }
+    }
+    expect(empty).toEqual([])
   })
 
   it('every link to a lesson points at one that exists, outside headings and code', () => {

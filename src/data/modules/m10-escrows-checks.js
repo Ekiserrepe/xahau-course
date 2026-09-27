@@ -1,4 +1,5 @@
 import { deriveCodeTranslations } from "../code-i18n.js";
+import { applyKoreanM10 } from "../m10-ko.js";
 import { MISSING_ROLE } from "../course-accounts.js";
 
 // The line that stops a script when .env lacks the account it signs with
@@ -5675,7 +5676,15 @@ deleteRemark();`,
           content: {
             es: "Metadata clave-valor en objetos del ledger\n\n• Adjunta Remarks a: AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (en hex)\n• Solo el propietario/emisor puede modificar\n• Máximo 32 Remarks por objeto\n\nNo es un mensaje: es metadata del objeto",
             pt: "Metadata chave-valor em objetos do ledger\n\n• Anexa Remarks a: AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (em hex)\n• Apenas o proprietário/emissor pode modificar\n• Máximo 32 Remarks por objeto\n\nNão é uma mensagem: é metadados do objeto",
-            en: "Key-value metadados on ledger objects\n\n• Attach Remarks to: AccountRoot, Offer,\n  Escrow, Check, URIToken, TrustLine...\n• RemarkName + RemarkValue (in hex)\n• Only the owner/issuer can modify\n• Maximum 32 Remarks per object\n\nNot a message: it is object metadados",
+            en: `Key-value metadata on ledger objects
+
+• Attach Remarks to: AccountRoot, Offer,
+  Escrow, Check, URIToken, TrustLine...
+• RemarkName + RemarkValue (in hex)
+• Only the owner/issuer can modify
+• Maximum 32 Remarks per object
+
+Not a message: it is object metadata`,
             jp: "レジャーオブジェクトへのキーと値のメタデータ\n\n• Remarksの添付先：AccountRoot、Offer、\n  Escrow、Check、URIToken、TrustLine...\n• RemarkName + RemarkValue（16進数）\n• 所有者/発行者のみ変更可能\n• オブジェクトあたり最大32 Remarks\n\nメッセージではない：オブジェクトのメタデータです",
             zh: "账本对象上的键值元数据\n\n• 可附加到：AccountRoot、Offer、\n  Escrow、Check、URIToken、TrustLine...\n• RemarkName + RemarkValue（十六进制）\n• 只有所有者/发行者可以修改\n• 每个对象最多 32 条 Remarks\n\n它不是消息，而是对象元数据",
           },
@@ -5697,7 +5706,14 @@ deleteRemark();`,
           content: {
             es: "Cada objeto del ledger tiene un ID único:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  de los AffectedNodes al crear el objeto\n\nSetRemarks necesita ese ID para saber\na qué objeto adjuntar la metadata",
             pt: "Cada objeto do ledger tem um ID único:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  dos AffectedNodes ao criar o objeto\n\nSetRemarks precisa esse ID para saber\na qual objeto anexar a metadados",
-            en: "Each ledger object has a unique ID:\n\n• AccountRoot → account_data.index\n• Escrow, Check, Offer → LedgerIndex\n  from AffectedNodes when creating the object\n\nSetRemarks needs that ID to know\nwhich object to attach the metadados to",
+            en: `Each ledger object has a unique ID:
+
+• AccountRoot → account_data.index
+• Escrow, Check, Offer → LedgerIndex
+  from AffectedNodes when creating the object
+
+SetRemarks needs that ID to know
+which object to attach the metadata to`,
             jp: "各レジャーオブジェクトには一意のIDがあります：\n\n• AccountRoot → account_data.index\n• Escrow、Check、Offer → オブジェクト作成時の\n  AffectedNodesのLedgerIndex\n\nSetRemarksはそのIDを使用して\nどのオブジェクトにメタデータを\n添付するかを識別します",
             zh: "每个账本对象都有唯一 ID：\n\n• AccountRoot → account_data.index\n• Escrow、Check、Offer → 创建对象时\n  AffectedNodes 中的 LedgerIndex\n\nSetRemarks 需要这个 ID，才能知道\n要把元数据附加到哪个对象",
           },
@@ -8634,6 +8650,7 @@ function applyAdditionalM10TheoryDetails(module) {
 applyAdditionalM10TheoryDetails(moduleData);
 
 // French and Arabic code: the English code, line by line, with its prose translated
+applyKoreanM10(moduleData);
 deriveCodeTranslations(moduleData);
 
 export default moduleData;
