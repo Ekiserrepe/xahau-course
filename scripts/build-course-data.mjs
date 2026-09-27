@@ -7,6 +7,9 @@
  *                                   time someone opens search
  *   public/sitemap.xml              one entry per lesson deep link
  *   public/robots.txt               points crawlers at the sitemap
+ *   public/llms.txt                 the course index for language models
+ *   public/llms-full.txt            every lesson, in one Markdown file
+ *   public/lessons/<m>-<l>.md       each lesson in Markdown (theory + code)
  *   public/CNAME                    the custom domain, when the site owns one
  *
  * Why: courses.js used to import all twelve modules statically, so every
@@ -117,11 +120,62 @@ await writeFile(
     `\n</urlset>\n`,
 )
 
+// ── 4. llms.txt ─────────────────────────────────────────────────────────────
+// The site is a single-page app: without running JavaScript, a crawler sees an
+// empty page. llms.txt (https://llmstxt.org) gives language models and other
+// tools the course as plain Markdown instead: an index, one file per lesson,
+// and everything in one file. English, the reference language of the course.
+
+const lessonUrl = (m, l) => `${SITE}/?m=${m}&l=${l}`
+// Links inside the theory are relative to the app: make them absolute
+const absolute = (md) => md.replace(/\]\(\?/g, `](${SITE}/?`)
+
+function lessonMarkdown(mod, m, lesson, l) {
+  const parts = [
+    `# ${pick(lesson.title, 'en')}`,
+    `Module ${m}: ${pick(mod.title, 'en')} · Lesson ${m}.${l + 1} · ${lessonUrl(m, l)}`,
+    absolute(pick(lesson.theory, 'en')),
+  ]
+  for (const block of lesson.codeBlocks ?? []) {
+    const code = typeof block.code === 'string' ? block.code : pick(block.code, 'en')
+    parts.push(`## ${pick(block.title, 'en')}\n\n\`\`\`${block.language ?? ''}\n${code}\n\`\`\``)
+  }
+  return parts.join('\n\n') + '\n'
+}
+
+const LLMS_SUMMARY =
+  'A free, open-source basic course on the Xahau Network, in eight languages: ' +
+  'accounts, transactions, payments, tokens, NFTs (URITokens), Hooks (smart contracts in C ' +
+  'compiled to WebAssembly) and the Xaman wallet. Every lesson has runnable Node.js code ' +
+  'that uses the xahau library against testnet.'
+
+await rm(path.join(ROOT, 'public/lessons'), { recursive: true, force: true })
+await mkdir(path.join(ROOT, 'public/lessons'), { recursive: true })
+const full = [`# Xahau Learn\n\n> ${LLMS_SUMMARY}\n`]
+const index = [
+  `# Xahau Learn\n\n> ${LLMS_SUMMARY}\n`,
+  `The course runs in order, from setting up Node.js to a backend that signs with Xaman. ` +
+    `Each lesson below links to its Markdown version; ${SITE}/llms-full.txt has all of them in one file.\n`,
+]
+for (const [m, { mod }] of modules.entries()) {
+  index.push(`## Module ${m}: ${pick(mod.title, 'en')}\n`)
+  for (const [l, lesson] of mod.lessons.entries()) {
+    const md = lessonMarkdown(mod, m, lesson, l)
+    await writeFile(path.join(ROOT, `public/lessons/${m}-${l}.md`), md)
+    index.push(`- [${pick(lesson.title, 'en')}](${SITE}/lessons/${m}-${l}.md)`)
+    full.push(md)
+  }
+  index.push('')
+}
+index.push(`## Optional\n\n- [Sitemap](${SITE}/sitemap.xml): the course pages in every language\n`)
+await writeFile(path.join(ROOT, 'public/llms.txt'), index.join('\n'))
+await writeFile(path.join(ROOT, 'public/llms-full.txt'), full.join('\n---\n\n'))
+
 // robots.txt has to name the sitemap's absolute URL, so it is generated from
 // the same constant rather than left as a static file that can drift.
 await writeFile(
   path.join(ROOT, 'public/robots.txt'),
-  `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`,
+  `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n\n# The course as Markdown, for language models: ${SITE}/llms.txt\n`,
 )
 
 // GitHub Pages serves a custom domain only while the deployed site carries a
@@ -142,5 +196,6 @@ console.log(
     `  manifest  src/data/generated/manifest.js\n` +
     `  search    ${sizes.join(', ')}\n` +
     `  sitemap   ${urls.length} urls at ${SITE}\n` +
+    `  llms.txt  ${lessons} lessons in public/lessons, llms-full.txt\n` +
     `  CNAME     ${ownsDomain ? HOST : 'none (not at the root of its own domain)'}`,
 )
