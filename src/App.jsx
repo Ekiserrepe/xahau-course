@@ -227,7 +227,15 @@ export default function App() {
     document.title = lessonTitle
       ? `${lessonTitle} — ${t.title}`
       : `${t.title} — ${t.subtitle}`
-  }, [view, activeLessonIdx, currentMeta, lang, t])
+
+    // index.html also names the home page as canonical. Left as it is, every
+    // lesson would tell search engines it is a copy of the home page, and only
+    // the home page would be indexed. Each lesson is its own canonical URL.
+    const base = window.location.origin + window.location.pathname
+    const canonical = view === 'lesson' ? `${base}?m=${activeModuleIdx}&l=${activeLessonIdx}` : base
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', canonical)
+    document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonical)
+  }, [view, activeModuleIdx, activeLessonIdx, currentMeta, lang, t])
 
   // Central navigation: updates state AND pushes a browser history entry
   const navigate = useCallback((nextView, mIdx, lIdx, slides = false, file = null) => {
