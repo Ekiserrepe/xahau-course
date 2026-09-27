@@ -1,4 +1,5 @@
 import { deriveCodeTranslations } from "../code-i18n.js";
+import { addNewWords } from "../glossary.js";
 import { addCourseAccounts } from "../course-accounts.js";
 
 const moduleData = {
@@ -4883,4 +4884,5 @@ addCourseAccounts(moduleData, "m3l2");
 // French and Arabic code: the English code, line by line, with its prose translated
 deriveCodeTranslations(moduleData);
 
+addNewWords(moduleData, 3);
 export default moduleData;

@@ -1,4 +1,5 @@
 import { deriveCodeTranslations } from "../code-i18n.js";
+import { addNewWords } from "../glossary.js";
 const moduleData = {
   id: "m5b",
   icon: "🔬",
@@ -7340,4 +7341,5 @@ applyFrenchTranslations(moduleData);
 // French and Arabic code: the English code, line by line, with its prose translated
 deriveCodeTranslations(moduleData);
 
+addNewWords(moduleData, 5);
 export default moduleData;

@@ -1,4 +1,5 @@
 import { deriveCodeTranslations } from "../code-i18n.js";
+import { addNewWords } from "../glossary.js";
 import { addDistributeToken } from "../token-distribution.js";
 
 const moduleData = {
@@ -5360,4 +5361,5 @@ addDistributeToken(moduleData, "m6l1b");
 // French and Arabic code: the English code, line by line, with its prose translated
 deriveCodeTranslations(moduleData);
 
+addNewWords(moduleData, 7);
 export default moduleData;

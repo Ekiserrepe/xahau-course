@@ -1,4 +1,5 @@
 import { deriveCodeTranslations } from "../code-i18n.js";
+import { addNewWords } from "../glossary.js";
 import { applyKoreanM10 } from "../m10-ko.js";
 import { MISSING_ROLE } from "../course-accounts.js";
 
@@ -8685,4 +8686,5 @@ applyAdditionalM10TheoryDetails(moduleData);
 applyKoreanM10(moduleData);
 deriveCodeTranslations(moduleData);
 
+addNewWords(moduleData, 10);
 export default moduleData;
